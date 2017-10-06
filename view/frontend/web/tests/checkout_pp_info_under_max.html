@@ -1,0 +1,31 @@
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<link rel="stylesheet" type="text/css" href="../css/sequrapayment.css" media="all" />
+		<script type="text/javascript" src="https://sandbox.sequracdn.com/scripts/dummy/ADc3ZdOLh4/pp3_pp5_cost.js"></script>
+		<script type="text/javascript" src="../js/sequrapayment.js"></script>
+	</head>
+	<body>
+	<div id="sequra_partpayment_info_container" class="sequra_popup_embedded"></div>
+	<a href="https://www.sequra.es/preguntas-frecuentes.html" target="_blank">Tengo más preguntas</a>
+	<script type="text/javascript">
+        function loadDefered() {
+            if(typeof SequraPartPaymentTeaser === 'undefined'){
+                setTimeout(loadDefered,100);
+                return;
+            }
+            Sequra.decimal_separator = ',';
+            creditAgreements = Sequra.loan.compute({
+                total_with_tax:  30000,
+            });
+            SequraPartPaymentMoreInfo.draw(creditAgreements['pp3'],'checkout','pp3',false);
+            jQuery('#sequra_partpayments_popup_checkout .sequra_white_content').find('.sq-modal-head').remove();
+            jQuery('#sequra_partpayments_popup_checkout .sequra_white_content').find('.sequra_popup_close').remove();
+            jQuery('#sequra_partpayment_info_container').append(
+                jQuery('#sequra_partpayments_popup_checkout .sequra_white_content')
+            );
+        }
+        loadDefered();
+	</script>
+	</body>
+</html>
