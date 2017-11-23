@@ -8,9 +8,7 @@
         "pagos",
         "magento2"
     ],
-    "license": [
-        "proprietary"
-    ],
+    "license": "MIT",
     "authors": [
         {
             "name": "Sequra Engineering",
