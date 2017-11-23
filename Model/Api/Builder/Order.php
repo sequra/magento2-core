@@ -138,7 +138,8 @@ class Order extends AbstractBuilder
             $item["reference"] = self::notNull($itemOb->getSku());
             $item["name"] = $itemOb->getName() ? self::notNull($itemOb->getName()) : self::notNull($itemOb->getSku());
             $item["downloadable"] = ($itemOb->getIsVirtual() ? true : false);
-            $qty = $itemOb->getQtyOrdered();
+
+            $qty = $itemOb->getQty();
             if ((int)$qty == $qty) {
                 $item["quantity"] = (int)$qty;
                 $item["price_without_tax"] = $item["price_with_tax"] = self::integerPrice(self::notNull($itemOb->getPriceInclTax()));
