@@ -5,6 +5,7 @@
 
 namespace Sequra\Core\Model\Api;
 
-interface BuilderInterface {
+interface BuilderInterface
+{
 
 }

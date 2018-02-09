@@ -3,6 +3,7 @@
  * Copyright © 2015 Magento. All rights reserved.
  * See COPYING.txt for license details.
  */
+
 namespace Sequra\Core\Model\Adminhtml\Source;
 
 /**
@@ -16,10 +17,10 @@ class Hour implements \Magento\Framework\Option\ArrayInterface
     public function toOptionArray()
     {
         return [
-	        [
-		        'value' => 0,
-		        'label' => __('00:00 AM')
-	        ],
+            [
+                'value' => 0,
+                'label' => __('00:00 AM')
+            ],
             [
                 'value' => 1,
                 'label' => __('01:00 AM')

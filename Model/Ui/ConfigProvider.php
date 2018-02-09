@@ -12,19 +12,21 @@ use Magento\Checkout\Model\ConfigProviderInterface;
 /**
  * Class ConfigProvider
  */
-final class ConfigProvider implements ConfigProviderInterface {
-	const CODE = 'sequra';
+final class ConfigProvider implements ConfigProviderInterface
+{
+    const CODE = 'sequra';
 
-	/**
-	 * Retrieve assoc array of checkout configuration
-	 *
-	 * @return array
-	 */
-	public function getConfig() {
-		return [
-			'payment' => [
-				self::CODE => []
-			]
-		];
-	}
+    /**
+     * Retrieve assoc array of checkout configuration
+     *
+     * @return array
+     */
+    public function getConfig()
+    {
+        return [
+            'payment' => [
+                self::CODE => []
+            ]
+        ];
+    }
 }

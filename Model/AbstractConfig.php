@@ -5,8 +5,8 @@
 
 namespace Sequra\Core\Model;
 
-use Magento\Store\Model\ScopeInterface;
 use Magento\Payment\Model\Method\ConfigInterface;
+use Magento\Store\Model\ScopeInterface;
 
 /**
  * Class AbstractConfig
@@ -22,35 +22,34 @@ abstract class AbstractConfig implements ConfigInterface
 
     const PAYMENT_ACTION_ORDER = 'Order';
     /**#@-*/
-
+    /**
+     * @var string
+     */
+    private static $bnCode = 'Magento_Cart_%s';
     /**
      * Current payment method code
      *
      * @var string
      */
     protected $_methodCode;
-
     /**
      * Current store id
      *
      * @var int
      */
     protected $_storeId;
-
     /**
      * @var string
      */
     protected $pathPattern;
-
     /**
      * @var ProductMetadataInterface
      */
     protected $productMetadata;
-
     /**
-     * @var string
+     * @var MethodInterface
      */
-    private static $bnCode = 'Magento_Cart_%s';
+    protected $methodInstance;
 
     /**
      * @param \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig
@@ -62,11 +61,6 @@ abstract class AbstractConfig implements ConfigInterface
         $this->_scopeConfig = $scopeConfig;
         $this->_methodCode = $methodCode;
     }
-
-    /**
-     * @var MethodInterface
-     */
-    protected $methodInstance;
 
     /**
      * Sets method instance used for retrieving method specific data
@@ -107,6 +101,17 @@ abstract class AbstractConfig implements ConfigInterface
     }
 
     /**
+     * Sets method code
+     *
+     * @param string $methodCode
+     * @return void
+     */
+    public function setMethodCode($methodCode)
+    {
+        $this->_methodCode = $methodCode;
+    }
+
+    /**
      * Store ID setter
      *
      * @param int $storeId
@@ -116,6 +121,34 @@ abstract class AbstractConfig implements ConfigInterface
     {
         $this->_storeId = (int)$storeId;
         return $this;
+    }
+
+    /**
+     * Returns payment configuration value
+     *
+     * @param string $key
+     * @param null $storeId
+     * @return null|string
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+     */
+    public function getCoreValue($key, $storeId = null)
+    {
+        $this->setPathPattern('sequra/core/%2$s');
+        $ret = $this->getValue($key, $storeId);
+        $this->setPathPattern(null);
+        return $ret;
+    }
+
+    /**
+     * Sets path pattern
+     *
+     * @param string $pathPattern
+     * @return void
+     */
+    public function setPathPattern($pathPattern)
+    {
+        $this->pathPattern = $pathPattern;
     }
 
     /**
@@ -146,45 +179,6 @@ abstract class AbstractConfig implements ConfigInterface
                 }
         }
         return null;
-    }
-
-    /**
-     * Returns payment configuration value
-     *
-     * @param string $key
-     * @param null $storeId
-     * @return null|string
-     *
-     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
-     */
-    public function getCoreValue($key, $storeId = null)
-    {
-        $this->setPathPattern('sequra/core/%2$s');
-        $ret = $this->getValue($key, $storeId);
-        $this->setPathPattern(null);
-        return $ret;
-    }
-
-    /**
-     * Sets method code
-     *
-     * @param string $methodCode
-     * @return void
-     */
-    public function setMethodCode($methodCode)
-    {
-        $this->_methodCode = $methodCode;
-    }
-
-    /**
-     * Sets path pattern
-     *
-     * @param string $pathPattern
-     * @return void
-     */
-    public function setPathPattern($pathPattern)
-    {
-        $this->pathPattern = $pathPattern;
     }
 
     /**

@@ -5,7 +5,7 @@
 
 namespace Sequra\Core\Model;
 
-use \Sequra\Core\Model\Adminhtml\Source\Endpoint;
+use Sequra\Core\Model\Adminhtml\Source\Endpoint;
 
 class Config extends AbstractConfig
 {
@@ -130,24 +130,6 @@ class Config extends AbstractConfig
     }
 
     /**
-     * Return merchant country code, use default country if it not specified in General settings
-     *
-     * @return string
-     */
-    public function getMerchantCountry()
-    {
-        $countryCode = $this->_scopeConfig->getValue(
-            $this->_mapGeneralFieldset('merchant_country'),
-            \Magento\Store\Model\ScopeInterface::SCOPE_STORE,
-            $this->_storeId
-        );
-        if (!$countryCode) {
-            $countryCode = $this->directoryHelper->getDefaultCountry($this->_storeId);
-        }
-        return $countryCode;
-    }
-
-    /**
      * Check whether method supported for specified country or not
      * Use $_methodCode and merchant country by default
      *
@@ -164,6 +146,24 @@ class Config extends AbstractConfig
             $countryCode = $this->getMerchantCountry();
         }
         return in_array($method, $this->getCountryMethods($countryCode));
+    }
+
+    /**
+     * Return merchant country code, use default country if it not specified in General settings
+     *
+     * @return string
+     */
+    public function getMerchantCountry()
+    {
+        $countryCode = $this->_scopeConfig->getValue(
+            $this->_mapGeneralFieldset('merchant_country'),
+            \Magento\Store\Model\ScopeInterface::SCOPE_STORE,
+            $this->_storeId
+        );
+        if (!$countryCode) {
+            $countryCode = $this->directoryHelper->getDefaultCountry($this->_storeId);
+        }
+        return $countryCode;
     }
 
     /**
@@ -272,33 +272,38 @@ class Config extends AbstractConfig
         return false;
     }
 
-    public function getMaxOrderTotal($storeId = null){
+    public function getMaxOrderTotal($storeId = null)
+    {
         return $this->getValue('max_order_total', $storeId);
     }
 
-    public function getMinOrderTotal($storeId = null){
+    public function getMinOrderTotal($storeId = null)
+    {
         return $this->getValue('min_order_total', $storeId);
     }
 
-    public function getProduct($storeId = null){
+    public function getProduct($storeId = null)
+    {
         return $this->getValue('product', $storeId);
     }
 
-    public function getAssetsKey($storeId = null){
-        return $this->getCoreValue('assets_key', $storeId);
+    public function getCostUrl($product, $storeId = null)
+    {
+        $url = 'https://';
+        if ($this->getCoreValue('endpoint', $storeId) == Endpoint::LIVE) {
+            $url .= 'live';
+        } else {
+            $url .= 'sandbox';
+        }
+        $url .= '.sequracdn.com/scripts/' .
+            $this->getCoreValue('merchant_ref', $storeId) . '/' .
+            $this->getAssetsKey($storeId) . '/' .
+            $product . '_cost.js';
+        return $url;
     }
 
-    public function getCostUrl($product,$storeId = null){
-        $url = 'https://';
-        if($this->getCoreValue('endpoint', $storeId)==Endpoint::LIVE){
-            $url .='live';
-        }else{
-            $url .='sandbox';
-        }
-        $url .= '.sequracdn.com/scripts/'.
-            $this->getCoreValue('merchant_ref', $storeId).'/'.
-            $this->getAssetsKey($storeId).'/'.
-            $product.'_cost.js';
-        return $url;
+    public function getAssetsKey($storeId = null)
+    {
+        return $this->getCoreValue('assets_key', $storeId);
     }
 }

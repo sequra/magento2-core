@@ -42,20 +42,6 @@ class AbstractIpn
     }
 
     /**
-     * IPN request data getter
-     *
-     * @param string $key
-     * @return array|string
-     */
-    public function getRequestData($key = null, $default = null)
-    {
-        if (null === $key) {
-            return $this->_ipnRequest;
-        }
-        return isset($this->_ipnRequest[$key]) ? $this->_ipnRequest[$key] : $default;
-    }
-
-    /**
      * Post back to PayPal to check whether this request is a valid one
      *
      * @return void
@@ -99,6 +85,31 @@ class AbstractIpn
             $this->_addDebugData('postback_result', $postbackResult);
             throw new \Exception('PayPal IPN postback failure. See system.log for details.');
         }
+    }
+
+    /**
+     * IPN request data getter
+     *
+     * @param string $key
+     * @return array|string
+     */
+    public function getRequestData($key = null, $default = null)
+    {
+        if (null === $key) {
+            return $this->_ipnRequest;
+        }
+        return isset($this->_ipnRequest[$key]) ? $this->_ipnRequest[$key] : $default;
+    }
+
+    /**
+     * @param string $key
+     * @param array|string $value
+     * @return $this
+     */
+    protected function _addDebugData($key, $value)
+    {
+        $this->_debugData[$key] = $value;
+        return $this;
     }
 
     /**
@@ -152,16 +163,5 @@ class AbstractIpn
         if ($this->_config && $this->_config->getValue('debug')) {
             $this->logger->debug(var_export($this->_debugData, true));
         }
-    }
-
-    /**
-     * @param string $key
-     * @param array|string $value
-     * @return $this
-     */
-    protected function _addDebugData($key, $value)
-    {
-        $this->_debugData[$key] = $value;
-        return $this;
     }
 }

@@ -55,20 +55,6 @@ class SubmissionService implements SubmissionInterface
         $this->_context = $context;
     }
 
-    public function getConfigData($field, $storeId = null)
-    {
-        $path = 'sequra/core/' . $field;
-
-        return $this->_scopeConfig->getValue($path, \Magento\Store\Model\ScopeInterface::SCOPE_STORE, $storeId);
-    }
-
-    public function getPaymentConfigData($payment_code, $field, $storeId = null)
-    {
-        $path = 'payment/'.$payment_code.'/' . $field;
-
-        return $this->_scopeConfig->getValue($path, \Magento\Store\Model\ScopeInterface::SCOPE_STORE, $storeId);
-    }
-
     public function getForm()
     {
         $quote = $this->_checkoutSession->getQuote();
@@ -84,16 +70,30 @@ class SubmissionService implements SubmissionInterface
         );
         $client->startSolicitation($data);
         $url = $client->getOrderUri();
-        if(!$client->succeeded()){
+        if (!$client->succeeded()) {
             http_response_code($client->getStatus());
             die();
         }
         $payment_code = $quote->getPayment()->getMethod();
         $options = array(
             'ajax' => true,
-            'product' => $this->getPaymentConfigData($payment_code,'product'),
-            'campaign' => $this->getPaymentConfigData($payment_code,'campaign')
+            'product' => $this->getPaymentConfigData($payment_code, 'product'),
+            'campaign' => $this->getPaymentConfigData($payment_code, 'campaign')
         );
         return $client->getIdentificationForm($url, $options);
+    }
+
+    public function getConfigData($field, $storeId = null)
+    {
+        $path = 'sequra/core/' . $field;
+
+        return $this->_scopeConfig->getValue($path, \Magento\Store\Model\ScopeInterface::SCOPE_STORE, $storeId);
+    }
+
+    public function getPaymentConfigData($payment_code, $field, $storeId = null)
+    {
+        $path = 'payment/' . $payment_code . '/' . $field;
+
+        return $this->_scopeConfig->getValue($path, \Magento\Store\Model\ScopeInterface::SCOPE_STORE, $storeId);
     }
 }

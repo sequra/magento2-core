@@ -5,8 +5,6 @@
 
 namespace Sequra\Core\Controller\Ipn;
 
-use Magento\Framework\Exception\RemoteServiceUnavailableException;
-
 /**
  * Unified IPN controller for all supported PayPal methods
  */
@@ -54,7 +52,7 @@ class Index extends \Magento\Framework\App\Action\Action
         } catch (\Exception $e) {
             $this->_logger->critical($e->getMessage());
             $this->getResponse()->setHttpResponseCode(500);
-            $this->getResponse()->setBody($e->getMessage()."\n".$e->getTraceAsString());
+            $this->getResponse()->setBody($e->getMessage() . "\n" . $e->getTraceAsString());
             $this->getResponse()->sendResponse();
         }
     }

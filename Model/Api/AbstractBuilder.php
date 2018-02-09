@@ -11,35 +11,30 @@ abstract class AbstractBuilder implements BuilderInterface
 {
     const STATE_CONFIRMED = 'confirmed';
     const STATE_APPROVED = 'approved';
-
+    public static $centsPerWhole = 100;
     protected $merchant_id;
     /**
      * @var \Magento\Sales\Model\OrderFactory
      */
     protected $_orderFactory;
-
     /**
      * @var \Magento\Catalog\Api\ProductRepositoryInterface
      */
     protected $_productRepository;
-
     /**
      * Order object or Quote Object
      *
      * @var \Magento\Framework\Model\AbstractModel
      */
     protected $_order;
-
     /**
      * @var \Magento\Framework\UrlInterface
      */
     protected $_urlBuilder;
-
     /**
      * @var \Magento\Framework\Locale\ResolverInterface
      */
     protected $_localeResolver;
-
     /**
      * Core store config
      *
@@ -80,30 +75,6 @@ abstract class AbstractBuilder implements BuilderInterface
 
     public abstract function invoiceAddress();
 
-    protected function fixRoundingProblems($order)
-    {
-        $totals = \Sequra\PhpClient\Helper::totals($order['cart']);
-        $diff_with_tax = $order['cart']['order_total_with_tax'] - $totals['with_tax'];
-        $diff_without_tax = $order['cart']['order_total_without_tax'] - $totals['without_tax'];
-        /*Don't correct error bigger than 1 cent per line*/
-        if (($diff_with_tax == 0 && $diff_without_tax == 0) || count($order['cart']['items']) < abs($diff_with_tax)) {
-            return $order;
-        }
-
-        $item['type'] = 'discount';
-        $item['reference'] = 'Ajuste';
-        $item['name'] = 'Ajuste';
-        $item['total_without_tax'] = $diff_without_tax;
-        $item['total_with_tax'] = $diff_with_tax;
-        if ($diff_with_tax > 0) {
-            $item['type'] = 'handling';
-            $item['tax_rate'] = $diff_without_tax ? round(abs(($diff_with_tax * $diff_without_tax)) - 1) * 100 : 0;
-        }
-        $order['cart']['items'][] = $item;
-
-        return $order;
-    }
-
     public function items($order)
     {
         return array_merge(
@@ -112,6 +83,8 @@ abstract class AbstractBuilder implements BuilderInterface
             $this->handlingItems()
         );
     }
+
+    public abstract function productItem();
 
     public function extraItems($order)
     {
@@ -147,7 +120,15 @@ abstract class AbstractBuilder implements BuilderInterface
         return $items;
     }
 
-    public abstract function getShippingInclTax();
+    public static function notNull($value1)
+    {
+        return is_null($value1) ? '' : $value1;
+    }
+
+    public static function integerPrice($price)
+    {
+        return intval(round(self::$centsPerWhole * $price));
+    }
 
     public function handlingItems()
     {
@@ -174,6 +155,23 @@ abstract class AbstractBuilder implements BuilderInterface
         return $items;
     }
 
+    public function getDeliveryMethod()
+    {
+        $shippingMethod = $this->getShippingMethod();
+        $carrier = explode('_', $shippingMethod, 2);
+        $title = $this->_scopeConfig->getValue('carriers/' . $carrier[0] . '/title');
+
+        return array(
+            'name' => self::notNull(isset($carrier[1]) ? $carrier[1] : 'Envío'),
+            'days' => self::notNull($title),
+            'provider' => self::notNull($carrier[0]),
+        );
+    }
+
+    public abstract function getShippingMethod();
+
+    public abstract function getShippingInclTax();
+
     public function address($address)
     {
         $data = array();
@@ -197,21 +195,6 @@ abstract class AbstractBuilder implements BuilderInterface
         $data['vat_number'] = self::notNull($address->getVatId());
 
         return $data;
-    }
-
-    public abstract function getShippingMethod();
-
-    public function getDeliveryMethod()
-    {
-        $shippingMethod = $this->getShippingMethod();
-        $carrier = explode('_', $shippingMethod, 2);
-        $title = $this->_scopeConfig->getValue('carriers/' . $carrier[0] . '/title');
-
-        return array(
-            'name' => self::notNull(isset($carrier[1]) ? $carrier[1] : 'Envío'),
-            'days' => self::notNull($title),
-            'provider' => self::notNull($carrier[0]),
-        );
     }
 
     public function customer()
@@ -250,7 +233,12 @@ abstract class AbstractBuilder implements BuilderInterface
         return $data;
     }
 
-    public abstract function productItem();
+    public abstract function getObjWithCustomerData();
+
+    public static function dateOrBlank($date)
+    {
+        return $date ? date_format(date_create($date), 'Y-m-d') : '';
+    }
 
     public function fillOptionalProductItemFields($product)
     {
@@ -279,13 +267,6 @@ abstract class AbstractBuilder implements BuilderInterface
         return $item;
     }
 
-    public abstract function getObjWithCustomerData();
-
-    public static function dateOrBlank($date)
-    {
-        return $date ? date_format(date_create($date), 'Y-m-d') : '';
-    }
-
     public function gui()
     {
         $data = array(
@@ -295,39 +276,6 @@ abstract class AbstractBuilder implements BuilderInterface
         return $data;
     }
 
-    public function platform()
-    {
-
-        $objectManager = \Magento\Framework\App\ObjectManager::getInstance();
-        $productMetadata = $objectManager->get('Magento\Framework\App\ProductMetadataInterface');
-
-        $data = array(
-            'name' => 'Magento',
-            'version' => self::notNull($productMetadata->getVersion()),
-            'plugin_version' => '1.0.0',//@todo
-            'php_version' => phpversion(),
-            'php_os' => PHP_OS,
-            'uname' => php_uname(),
-            'db_name' => 'mysql',//@todo
-            'db_version' => '5.7.x or later'//@todo
-        );
-
-        return $data;
-    }
-
-    public static $centsPerWhole = 100;
-
-    public static function integerPrice($price)
-    {
-        return intval(round(self::$centsPerWhole * $price));
-    }
-
-    public static function notNull($value1)
-    {
-        return is_null($value1) ? '' : $value1;
-    }
-
-    // TODO: find out were this method was copied from so that we can see when it is updated.
     public static function isMobile()
     {
         $regex_match = "/(nokia|iphone|android|motorola|^mot\-|softbank|foma|docomo|kddi|up\.browser|up\.link|"
@@ -448,8 +396,55 @@ abstract class AbstractBuilder implements BuilderInterface
         return false;
     }
 
-    public function sign($value){
+    public function platform()
+    {
+
+        $objectManager = \Magento\Framework\App\ObjectManager::getInstance();
+        $productMetadata = $objectManager->get('Magento\Framework\App\ProductMetadataInterface');
+
+        $data = array(
+            'name' => 'Magento',
+            'version' => self::notNull($productMetadata->getVersion()),
+            'plugin_version' => '1.0.0',//@todo
+            'php_version' => phpversion(),
+            'php_os' => PHP_OS,
+            'uname' => php_uname(),
+            'db_name' => 'mysql',//@todo
+            'db_version' => '5.7.x or later'//@todo
+        );
+
+        return $data;
+    }
+
+    // TODO: find out were this method was copied from so that we can see when it is updated.
+
+    public function sign($value)
+    {
         return hash_hmac('sha256', $value, $this->getConfigData('user_secret'));
+    }
+
+    protected function fixRoundingProblems($order)
+    {
+        $totals = \Sequra\PhpClient\Helper::totals($order['cart']);
+        $diff_with_tax = $order['cart']['order_total_with_tax'] - $totals['with_tax'];
+        $diff_without_tax = $order['cart']['order_total_without_tax'] - $totals['without_tax'];
+        /*Don't correct error bigger than 1 cent per line*/
+        if (($diff_with_tax == 0 && $diff_without_tax == 0) || count($order['cart']['items']) < abs($diff_with_tax)) {
+            return $order;
+        }
+
+        $item['type'] = 'discount';
+        $item['reference'] = 'Ajuste';
+        $item['name'] = 'Ajuste';
+        $item['total_without_tax'] = $diff_without_tax;
+        $item['total_with_tax'] = $diff_with_tax;
+        if ($diff_with_tax > 0) {
+            $item['type'] = 'handling';
+            $item['tax_rate'] = $diff_without_tax ? round(abs(($diff_with_tax * $diff_without_tax)) - 1) * 100 : 0;
+        }
+        $order['cart']['items'][] = $item;
+
+        return $order;
     }
 
 }

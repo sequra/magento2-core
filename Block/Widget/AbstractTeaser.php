@@ -6,16 +6,14 @@
 namespace Sequra\Core\Block\Widget;
 
 use Magento\Framework\View\Element\Template;
-use Magento\Widget\Block\BlockInterface;
 use Magento\Payment\Gateway\ConfigInterface;
+use Magento\Widget\Block\BlockInterface;
 
 class AbstractTeaser extends Template implements BlockInterface
 {
 
-    protected $_template = "widget/teaser.phtml";
-
     static protected $_paymentCode;
-
+    protected $_template = "widget/teaser.phtml";
     /**
      * @var \Sequra\Core\Model\Config
      */
@@ -30,8 +28,8 @@ class AbstractTeaser extends Template implements BlockInterface
     public function __construct(
         ConfigInterface $config,
         \Magento\Framework\View\Element\Template\Context $context,
-        array $data = [])
-    {
+        array $data = []
+    ) {
         $this->_config = $config;
         parent::__construct($context, $data);
     }

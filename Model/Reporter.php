@@ -6,9 +6,6 @@
 namespace Sequra\Core\Model;
 
 
-use Exception;
-use Magento\Sales\Model\Order\Email\Sender\OrderSender;
-
 /**
  * Sequra Instant Payment Notification processor model
  */
@@ -86,6 +83,6 @@ class Reporter implements ReporterInterface
                 $this->_logger->info($x);
             }
         }
-        return count($ret)?$ret:false;
+        return count($ret) ? $ret : false;
     }
 }

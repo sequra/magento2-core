@@ -67,38 +67,6 @@ class Order extends AbstractBuilder
         return $order;
     }
 
-    public function deliveryAddress()
-    {
-        $address = $this->_order->getShippingAddress();
-        if ('' == $address->getFirstname()) {
-            $address = $this->_order->getBillingAddress();
-        }
-        $extra = array();
-        /*Specific for biebersdorf_customerordercomment extension*/
-        if ('' != $this->_order->getData('biebersdorf_customerordercomment')) {
-            $extra['extra'] = $this->_order->getData('biebersdorf_customerordercomment');
-        }
-
-        return array_merge($extra, $this->address($address));
-    }
-
-    public function getShippingInclTax()
-    {
-       return $this->_order->getShippingAddress()->getShippingInclTax();
-    }
-
-    public function getShippingMethod()
-    {
-        return $this->_order->getShippingAddress()->getShippingMethod();
-    }
-
-    public function invoiceAddress()
-    {
-        $address = $this->_order->getBillingAddress();
-
-        return $this->address($address);
-    }
-
     public function merchant()
     {
         $ret = parent::merchant();
@@ -130,40 +98,26 @@ class Order extends AbstractBuilder
         return $data;
     }
 
-    public function productItem()
+    public function deliveryAddress()
     {
-        $items = array();
-        foreach ($this->_order->getAllVisibleItems() as $itemOb) {
-            $item = array();
-            $item["reference"] = self::notNull($itemOb->getSku());
-            $item["name"] = $itemOb->getName() ? self::notNull($itemOb->getName()) : self::notNull($itemOb->getSku());
-            $item["downloadable"] = ($itemOb->getIsVirtual() ? true : false);
-
-            $qty = $itemOb->getQty();
-            if ((int)$qty == $qty) {
-                $item["quantity"] = (int)$qty;
-                $item["price_without_tax"] = $item["price_with_tax"] = self::integerPrice(self::notNull($itemOb->getPriceInclTax()));
-                $item["tax_rate"] = 0;
-                $item["total_without_tax"] = $item["total_with_tax"] = self::integerPrice(self::notNull($itemOb->getRowTotalInclTax()));
-            } else { //Fake qty and unitary price
-                $item["quantity"] = 1;
-                $item["tax_rate"] = 0;
-                $item["price_without_tax"] = $item["price_with_tax"] = $item["total_without_tax"] = $item["total_with_tax"] = self::integerPrice(self::notNull($itemOb->getRowTotalInclTax()));
-            }
-
-            $product = $this->_productRepository->getById($itemOb->getProductId());
-            $items[] = array_merge($item, $this->fillOptionalProductItemFields($product));
+        $address = $this->_order->getShippingAddress();
+        if ('' == $address->getFirstname()) {
+            $address = $this->_order->getBillingAddress();
+        }
+        $extra = array();
+        /*Specific for biebersdorf_customerordercomment extension*/
+        if ('' != $this->_order->getData('biebersdorf_customerordercomment')) {
+            $extra['extra'] = $this->_order->getData('biebersdorf_customerordercomment');
         }
 
-        return $items;
+        return array_merge($extra, $this->address($address));
     }
 
-    public function getObjWithCustomerData()
+    public function invoiceAddress()
     {
-        if ($this->_customerSession->isLoggedIn()) {
-            return $this->_customerSession->getCustomer();
-        }
-        return $this->_order->getBillingAddress();
+        $address = $this->_order->getBillingAddress();
+
+        return $this->address($address);
     }
 
     public function customer()
@@ -208,6 +162,52 @@ class Order extends AbstractBuilder
         }
 
         return $orders;
+    }
+
+    public function getShippingInclTax()
+    {
+        return $this->_order->getShippingAddress()->getShippingInclTax();
+    }
+
+    public function getShippingMethod()
+    {
+        return $this->_order->getShippingAddress()->getShippingMethod();
+    }
+
+    public function productItem()
+    {
+        $items = array();
+        foreach ($this->_order->getAllVisibleItems() as $itemOb) {
+            $item = array();
+            $item["reference"] = self::notNull($itemOb->getSku());
+            $item["name"] = $itemOb->getName() ? self::notNull($itemOb->getName()) : self::notNull($itemOb->getSku());
+            $item["downloadable"] = ($itemOb->getIsVirtual() ? true : false);
+
+            $qty = $itemOb->getQty();
+            if ((int)$qty == $qty) {
+                $item["quantity"] = (int)$qty;
+                $item["price_without_tax"] = $item["price_with_tax"] = self::integerPrice(self::notNull($itemOb->getPriceInclTax()));
+                $item["tax_rate"] = 0;
+                $item["total_without_tax"] = $item["total_with_tax"] = self::integerPrice(self::notNull($itemOb->getRowTotalInclTax()));
+            } else { //Fake qty and unitary price
+                $item["quantity"] = 1;
+                $item["tax_rate"] = 0;
+                $item["price_without_tax"] = $item["price_with_tax"] = $item["total_without_tax"] = $item["total_with_tax"] = self::integerPrice(self::notNull($itemOb->getRowTotalInclTax()));
+            }
+
+            $product = $this->_productRepository->getById($itemOb->getProductId());
+            $items[] = array_merge($item, $this->fillOptionalProductItemFields($product));
+        }
+
+        return $items;
+    }
+
+    public function getObjWithCustomerData()
+    {
+        if ($this->_customerSession->isLoggedIn()) {
+            return $this->_customerSession->getCustomer();
+        }
+        return $this->_order->getBillingAddress();
     }
 
 }

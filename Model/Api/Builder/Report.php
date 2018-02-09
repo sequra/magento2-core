@@ -31,12 +31,12 @@ class Report extends AbstractBuilder
      */
     protected $_orderRepository;
 
-	/**
-	 * @var \Magento\Sales\Model\ResourceModel\Order\CollectionFactory
-	 */
-	protected $_orderCollectionFactory;
+    /**
+     * @var \Magento\Sales\Model\ResourceModel\Order\CollectionFactory
+     */
+    protected $_orderCollectionFactory;
 
-	/**
+    /**
      * @var \Magento\Customer\Api\CustomerRepositoryInterface
      */
     protected $customerRepository;
@@ -49,7 +49,7 @@ class Report extends AbstractBuilder
     public function __construct(
         \Magento\Sales\Api\OrderRepositoryInterface $orderRepository,
         \Magento\Sales\Model\ResourceModel\Order\CollectionFactory $orderCollectionFactory,
-	    \Magento\Customer\Api\CustomerRepositoryInterface $customerRepository,
+        \Magento\Customer\Api\CustomerRepositoryInterface $customerRepository,
         \Magento\Framework\Api\SearchCriteriaBuilder $searchCriteriaBuilder,
         \Magento\Sales\Model\OrderFactory $orderFactory,
         \Magento\Catalog\Api\ProductRepositoryInterface $productRepository,
@@ -58,8 +58,8 @@ class Report extends AbstractBuilder
         \Magento\Framework\Locale\ResolverInterface $localeResolver
     ) {
         $this->_orderRepository = $orderRepository;
-	    $this->_orderCollectionFactory = $orderCollectionFactory;
-	    $this->customerRepository = $customerRepository;
+        $this->_orderCollectionFactory = $orderCollectionFactory;
+        $this->customerRepository = $customerRepository;
         $this->_searchCriteriaBuilder = $searchCriteriaBuilder;
         parent::__construct($orderFactory, $productRepository, $urlBuilder, $scopeConfig, $localeResolver);
     }
@@ -92,19 +92,14 @@ class Report extends AbstractBuilder
         );
     }
 
-    public function getBuiltData()
-    {
-        return $this->_builtData;
-    }
-
     protected function getOrders()
     {
         $this->getSequraOrders();
         $this->_orders = array();
-	    foreach ( $this->_sequraOrders as $order ) {
-		    $this->_order    = $this->_orderRepository->get( $order->getId() );//needed to populate related objects e.g.: customer
+        foreach ($this->_sequraOrders as $order) {
+            $this->_order = $this->_orderRepository->get($order->getId());//needed to populate related objects e.g.: customer
             $this->_orders[] = $this->orderWithItems($this->_order);
-            $this->_ids[] =  $this->_order->getId();
+            $this->_ids[] = $this->_order->getId();
             $order->addStatusHistoryComment('Envío informado a SeQura');
         }
         $this->getBrokenOrders();
@@ -114,29 +109,145 @@ class Report extends AbstractBuilder
      * Loads orders paid with sequra and not sent in previous delivery reports
      * @return null
      */
-    protected function getSequraOrders(){
-		$collection = $this->_orderCollectionFactory->create()->addFieldToSelect(
-			'entity_id'//load minimun fields, anyway later, we need to populate all and load related objects.
-		)->addFieldToFilter(
-			'sequra_order_send',
-			[ 'eq' => 1 ]
-		);
-		/* join with payment table */
-		$collection->getSelect()
-		           ->join(
-			           [ "sop" => "sales_order_payment" ],
-			           'main_table.entity_id = sop.parent_id',
-			           array( 'method' )
-		           )
-		           ->join(
-			           array( 'sp' => "sales_shipment" ),
-			           'main_table.entity_id = sp.order_id and main_table.store_id = sp.store_id',
-			           '' )
-		           ->where( 'sop.method like ?', 'sequra\_%' )
-		           ->distinct( true );
-		$this->_sequraOrders = $collection;
+    protected function getSequraOrders()
+    {
+        $collection = $this->_orderCollectionFactory->create()->addFieldToSelect(
+            'entity_id'//load minimun fields, anyway later, we need to populate all and load related objects.
+        )->addFieldToFilter(
+            'sequra_order_send',
+            ['eq' => 1]
+        );
+        /* join with payment table */
+        $collection->getSelect()
+            ->join(
+                ["sop" => "sales_order_payment"],
+                'main_table.entity_id = sop.parent_id',
+                array('method')
+            )
+            ->join(
+                array('sp' => "sales_shipment"),
+                'main_table.entity_id = sp.order_id and main_table.store_id = sp.store_id',
+                '')
+            ->where('sop.method like ?', 'sequra\_%')
+            ->distinct(true);
+        $this->_sequraOrders = $collection;
 
-		return $this->_sequraOrders;
+        return $this->_sequraOrders;
+    }
+
+    public function orderWithItems($order)
+    {
+        $this->_currentshipment = $order->getShipmentsCollection()->getFirstItem();
+        $this->_order = $order;
+        $aux['sent_at'] = self::dateOrBlank($this->_currentshipment->getCreatedAt());
+        $aux['state'] = "delivered";
+        $aux['delivery_address'] = $this->deliveryAddress();
+        $aux['invoice_address'] = $this->invoiceAddress();
+        $aux['customer'] = $this->customer();
+        $aux['cart'] = $this->shipmentCart();
+        $remainingCart = $this->orderRemainingCart();
+        if (!is_null($remainingCart)) {
+            $aux['remaining_cart'] = $remainingCart;
+        }
+        $aux['merchant_reference'] = $this->orderMerchantReference($order);
+
+        return $this->fixRoundingProblems($aux);
+    }
+
+    public function deliveryAddress()
+    {
+        return self::address($this->_order->getShippingAddress());
+    }
+
+    public function invoiceAddress()
+    {
+        return self::address($this->_order->getBillingAddress());
+    }
+
+    public function customer()
+    {
+        $data = parent::customer();
+        $customer_id = $this->_order->getCustomerId();
+        if ($customer_id) {
+            $customer = $this->customerRepository->getById($customer_id);
+            $data['email'] = self::notNull($customer->getEmail());
+            $data['ref'] = self::notNull($customer_id);
+        }
+        return $data;
+    }
+
+    public function shipmentCart()
+    {
+        $data = array();
+        $data['currency'] = $this->_order->getOrderCurrencyCode();
+        $data['delivery_method'] = $this->getDeliveryMethod();
+        $data['gift'] = false;
+        $data['items'] = $this->items($this->_order);
+
+        if (count($data['items']) > 0) {
+            $totals = Helper::totals($data);
+            $data['order_total_without_tax'] = $data['order_total_with_tax'] = $totals['with_tax'];
+        }
+
+        return $data;
+    }
+
+    public function orderRemainingCart()
+    {
+        $data = array();
+        $data['items'] = array();
+        foreach ($this->_order->getAllVisibleItems() as $itemOb) {
+            if (is_null($itemOb->getProductId())) {
+                continue;
+            }
+            $item = array();
+            $item["reference"] = self::notNull($itemOb->getSku());
+            $item["name"] = self::notNull($itemOb->getName());
+            $item["downloadable"] = ($itemOb->getIsVirtual() ? true : false);
+            $qty = $itemOb->getQtyOrdered() - $itemOb->getQtyShipped();
+            if ((int)$qty == $qty) {
+                $item["quantity"] = $qty;
+                $item["price_without_tax"] = $item["price_with_tax"] = self::integerPrice(self::notNull($itemOb->getPriceInclTax()));
+                $item["tax_rate"] = 0;
+                $item["total_without_tax"] = $item["total_with_tax"] = $item["quantity"] * $item["price_with_tax"];
+            } else {
+                $item["quantity"] = 1;
+                $item["total_without_tax"] = $item["total_with_tax"] = $item["price_without_tax"] = $item["price_with_tax"] = self::integerPrice(self::notNull($qty * $itemOb->getPriceInclTax()));
+                $item["tax_rate"] = 0;
+            }
+            $product = $this->_productRepository->getById($itemOb->getProductId());
+            if ($item["quantity"] > 0) {
+                $data['items'][] = array_merge($item, $this->fillOptionalProductItemFields($product));
+            }
+        }
+
+        if (count($data['items']) > 0) {
+            $totals = Helper::totals($data);
+            $data['order_total_without_tax'] = $totals['without_tax'];
+            $data['order_total_with_tax'] = $totals['with_tax'];
+            return $data;
+        }
+        return null;
+    }
+
+    public function orderMerchantReference($order)
+    {
+        $data['order_ref_1'] = $order->getOriginalIncrementId() ? $order->getOriginalIncrementId() : $order->getIncrementId();
+        return $data;
+    }
+
+    private function getBrokenOrders()
+    {
+        $cleaned_orders = array();
+        $this->_brokenorders = array();
+        foreach ($this->_orders as $key => $order) {
+            if (!Helper::isConsistentCart($order['cart'])) {
+                $this->_brokenorders[] = $order;
+            } else {
+                $cleaned_orders[] = $order;
+            }
+        }
+        $this->_orders = $cleaned_orders;
     }
 
     /**
@@ -271,53 +382,9 @@ class Report extends AbstractBuilder
         return $orderResult->getItems();
     }
 
-    private function getBrokenOrders()
+    public function getBuiltData()
     {
-        $cleaned_orders = array();
-        $this->_brokenorders = array();
-        foreach ($this->_orders as $key => $order) {
-            if (!Helper::isConsistentCart($order['cart'])) {
-                $this->_brokenorders[] = $order;
-            } else {
-                $cleaned_orders[] = $order;
-            }
-        }
-        $this->_orders = $cleaned_orders;
-    }
-
-    public function orderWithItems($order)
-    {
-        $this->_currentshipment = $order->getShipmentsCollection()->getFirstItem();
-        $this->_order = $order;
-        $aux['sent_at'] = self::dateOrBlank($this->_currentshipment->getCreatedAt());
-        $aux['state'] = "delivered";
-        $aux['delivery_address'] = $this->deliveryAddress();
-        $aux['invoice_address'] = $this->invoiceAddress();
-        $aux['customer'] = $this->customer();
-        $aux['cart'] = $this->shipmentCart();
-        $remainingCart = $this->orderRemainingCart();
-        if (!is_null($remainingCart)) {
-            $aux['remaining_cart'] = $remainingCart;
-        }
-        $aux['merchant_reference'] = $this->orderMerchantReference($order);
-
-        return $this->fixRoundingProblems($aux);
-    }
-
-    public function shipmentCart()
-    {
-        $data = array();
-        $data['currency'] = $this->_order->getOrderCurrencyCode();
-        $data['delivery_method'] = $this->getDeliveryMethod();
-        $data['gift'] = false;
-        $data['items'] = $this->items($this->_order);
-
-        if (count($data['items']) > 0) {
-            $totals = Helper::totals($data);
-            $data['order_total_without_tax'] = $data['order_total_with_tax'] = $totals['with_tax'];
-        }
-
-        return $data;
+        return $this->_builtData;
     }
 
     public function productItem()
@@ -348,44 +415,6 @@ class Report extends AbstractBuilder
         return $items;
     }
 
-    public function orderRemainingCart()
-    {
-        $data = array();
-        $data['items'] = array();
-        foreach ($this->_order->getAllVisibleItems() as $itemOb) {
-            if (is_null($itemOb->getProductId())) {
-                continue;
-            }
-            $item = array();
-            $item["reference"] = self::notNull($itemOb->getSku());
-            $item["name"] = self::notNull($itemOb->getName());
-            $item["downloadable"] = ($itemOb->getIsVirtual() ? true : false);
-            $qty = $itemOb->getQtyOrdered() - $itemOb->getQtyShipped();
-            if ((int)$qty == $qty) {
-                $item["quantity"] = $qty;
-                $item["price_without_tax"] = $item["price_with_tax"] = self::integerPrice(self::notNull($itemOb->getPriceInclTax()));
-                $item["tax_rate"] = 0;
-                $item["total_without_tax"] = $item["total_with_tax"] = $item["quantity"] * $item["price_with_tax"];
-            } else {
-                $item["quantity"] = 1;
-                $item["total_without_tax"] = $item["total_with_tax"] = $item["price_without_tax"] = $item["price_with_tax"] = self::integerPrice(self::notNull($qty * $itemOb->getPriceInclTax()));
-                $item["tax_rate"] = 0;
-            }
-            $product = $this->_productRepository->getById($itemOb->getProductId());
-            if ($item["quantity"] > 0) {
-                $data['items'][] = array_merge($item, $this->fillOptionalProductItemFields($product));
-            }
-        }
-
-        if (count($data['items']) > 0) {
-            $totals = Helper::totals($data);
-            $data['order_total_without_tax'] = $totals['without_tax'];
-            $data['order_total_with_tax'] = $totals['with_tax'];
-            return $data;
-        }
-        return null;
-    }
-
     public function getShippingInclTax()
     {
         return $this->_order->getShippingInclTax();
@@ -396,36 +425,8 @@ class Report extends AbstractBuilder
         return $this->_order->getShippingMethod();
     }
 
-    public function deliveryAddress()
-    {
-        return self::address($this->_order->getShippingAddress());
-    }
-
-    public function invoiceAddress()
-    {
-        return self::address($this->_order->getBillingAddress());
-    }
-
-    public function customer()
-    {
-        $data = parent::customer();
-        $customer_id = $this->_order->getCustomerId();
-        if ($customer_id) {
-            $customer = $this->customerRepository->getById($customer_id);
-            $data['email'] = self::notNull($customer->getEmail());
-            $data['ref'] = self::notNull($customer_id);
-        }
-        return $data;
-    }
-
     public function getObjWithCustomerData()
     {
         return $this->_order->getBillingAddress();
-    }
-
-    public function orderMerchantReference($order)
-    {
-        $data['order_ref_1'] = $order->getOriginalIncrementId() ? $order->getOriginalIncrementId() : $order->getIncrementId();
-        return $data;
     }
 }

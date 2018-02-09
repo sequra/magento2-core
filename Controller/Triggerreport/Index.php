@@ -5,8 +5,6 @@
 
 namespace Sequra\Core\Controller\Triggerreport;
 
-use Magento\Framework\Exception\RemoteServiceUnavailableException;
-
 /**
  * Unified IPN controller for all supported PayPal methods
  */
@@ -36,7 +34,7 @@ class Index extends \Magento\Framework\App\Action\Action
      */
     public function execute()
     {
-        if($this->_reporter->sendOrderWithShipment()){
+        if ($this->_reporter->sendOrderWithShipment()) {
             die('ok');
         }
         die('ko');

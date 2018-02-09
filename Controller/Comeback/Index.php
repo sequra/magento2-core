@@ -5,8 +5,6 @@
 
 namespace Sequra\Core\Controller\Comeback;
 
-use Magento\Framework\Exception\RemoteServiceUnavailableException;
-
 /**
  * Unified IPN controller for all supported PayPal methods
  */
@@ -25,7 +23,7 @@ class Index extends \Magento\Checkout\Controller\Onepage
         );
         $order =
             \Magento\Framework\App\ObjectManager::getInstance()->create('Magento\Sales\Model\Order')->loadByIncrementId($quote->getReservedOrderId());
-        if(!$order){
+        if (!$order) {
             $this->resultRedirectFactory->create()->setPath('checkout/cart');
         }
         $session = $this->getOnepage()->getCheckout();
