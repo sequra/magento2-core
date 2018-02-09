@@ -253,6 +253,11 @@ class Ipn extends \Sequra\Core\Model\AbstractIpn implements IpnInterface
         }
         $this->ignoreAddressValidation();
         $this->_quote->collectTotals();
+        if (!$this->_quote->getPayment()->getMethod()) {//@todo: In some prod envs this is sometimes empty
+            $this->_quote->getPayment()->setMethod(
+                $this->getRequestData('method')
+            );
+        }
         // Create Order From Quote
         $this->_order = $this->quoteManagement->submit($this->_quote);
         $this->_order->setEmailSent(0);

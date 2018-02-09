@@ -74,6 +74,7 @@ class Order extends AbstractBuilder
         $ret['notify_url'] = $this->_urlBuilder->getUrl('sequra/ipn');
         $ret['notification_parameters'] = array(
             'id' => $id,
+            'method' => $this->_order->getPayment()->getMethod(),
             'signature' => $this->sign($id)
         );
         $ret['return_url'] = $this->_urlBuilder->getUrl('sequra/comeback', ['quote_id' => $id]);
