@@ -6,7 +6,6 @@
 namespace Sequra\Core\Model\Api\Builder;
 
 use Sequra\Core\Model\Api\AbstractBuilder;
-use Sequra\PhpClient\Client;
 use Sequra\PhpClient\Helper;
 
 class Report extends AbstractBuilder
@@ -32,7 +31,12 @@ class Report extends AbstractBuilder
      */
     protected $_orderRepository;
 
-    /**
+	/**
+	 * @var \Magento\Sales\Model\ResourceModel\Order\CollectionFactory
+	 */
+	protected $_orderCollectionFactory;
+
+	/**
      * @var \Magento\Customer\Api\CustomerRepositoryInterface
      */
     protected $customerRepository;
@@ -44,7 +48,8 @@ class Report extends AbstractBuilder
 
     public function __construct(
         \Magento\Sales\Api\OrderRepositoryInterface $orderRepository,
-        \Magento\Customer\Api\CustomerRepositoryInterface $customerRepository,
+        \Magento\Sales\Model\ResourceModel\Order\CollectionFactory $orderCollectionFactory,
+	    \Magento\Customer\Api\CustomerRepositoryInterface $customerRepository,
         \Magento\Framework\Api\SearchCriteriaBuilder $searchCriteriaBuilder,
         \Magento\Sales\Model\OrderFactory $orderFactory,
         \Magento\Catalog\Api\ProductRepositoryInterface $productRepository,
@@ -53,7 +58,8 @@ class Report extends AbstractBuilder
         \Magento\Framework\Locale\ResolverInterface $localeResolver
     ) {
         $this->_orderRepository = $orderRepository;
-        $this->customerRepository = $customerRepository;
+	    $this->_orderCollectionFactory = $orderCollectionFactory;
+	    $this->customerRepository = $customerRepository;
         $this->_searchCriteriaBuilder = $searchCriteriaBuilder;
         parent::__construct($orderFactory, $productRepository, $urlBuilder, $scopeConfig, $localeResolver);
     }
@@ -95,13 +101,10 @@ class Report extends AbstractBuilder
     {
         $this->getSequraOrders();
         $this->_orders = array();
-        foreach ($this->_sequraOrders as $i => $order) {
-            if (!$order->getShipmentsCollection()->getTotalCount()) {
-                unset($this->_sequraOrders[$i]);
-                continue; //ignore if it has no shipments
-            }
-            $this->_orders[] = $this->orderWithItems($order);
-            $this->_ids[] = $order->getId();
+	    foreach ( $this->_sequraOrders as $order ) {
+		    $this->_order    = $this->_orderRepository->get( $order->getId() );//needed to populate related objects e.g.: customer
+            $this->_orders[] = $this->orderWithItems($this->_order);
+            $this->_ids[] =  $this->_order->getId();
             $order->addStatusHistoryComment('Envío informado a SeQura');
         }
         $this->getBrokenOrders();
@@ -111,14 +114,29 @@ class Report extends AbstractBuilder
      * Loads orders paid with sequra and not sent in previous delivery reports
      * @return null
      */
-    protected function getSequraOrders()
-    {
-        $criteria = $this->_searchCriteriaBuilder
-            ->addFilter('sequra_order_send', 1)
-            ->create();
-        $orderResult = $this->_orderRepository->getList($criteria);
-        $this->_sequraOrders = $orderResult->getItems();
-        return $this->_sequraOrders;
+    protected function getSequraOrders(){
+		$collection = $this->_orderCollectionFactory->create()->addFieldToSelect(
+			'entity_id'//load minimun fields, anyway later, we need to populate all and load related objects.
+		)->addFieldToFilter(
+			'sequra_order_send',
+			[ 'eq' => 1 ]
+		);
+		/* join with payment table */
+		$collection->getSelect()
+		           ->join(
+			           [ "sop" => "sales_order_payment" ],
+			           'main_table.entity_id = sop.parent_id',
+			           array( 'method' )
+		           )
+		           ->join(
+			           array( 'sp' => "sales_shipment" ),
+			           'main_table.entity_id = sp.order_id and main_table.store_id = sp.store_id',
+			           '' )
+		           ->where( 'sop.method like ?', 'sequra\_%' )
+		           ->distinct( true );
+		$this->_sequraOrders = $collection;
+
+		return $this->_sequraOrders;
     }
 
     /**
@@ -306,7 +324,7 @@ class Report extends AbstractBuilder
     {
         $items = array();
         foreach ($this->_order->getAllVisibleItems() as $itemOb) {
-            if (is_null($itemOb->getProductId()) || $itemOb->getQtyShipped() <= 0) {
+            if (isnull($itemOb->getProductId()) || $itemOb->getQtyShipped() <= 0) {
                 continue;
             }
             $product = $this->_productRepository->getById($itemOb->getProductId());
