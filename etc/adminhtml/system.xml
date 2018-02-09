@@ -25,7 +25,12 @@
                 <field id="assets_key" translate="label" type="text" sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="0">
                     <config_path>sequra/core/assets_key</config_path>
                     <label>Assets key</label>
-                </field>
+                </field><!--
+                <field id="autoinvoice" translate="label" type="text" sortOrder="50" showInDefault="1" showInWebsite="1" showInStore="0">
+                    <config_path>sequra/core/autoinvoice</config_path>
+                    <label>Create invoice</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>-->
                 <field id="test_ip" translate="label" type="text" sortOrder="50" showInDefault="1" showInWebsite="1" showInStore="0">
                     <config_path>sequra/core/test_ip</config_path>
                     <label>Test IP addrs.</label>

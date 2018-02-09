@@ -13,6 +13,7 @@
                 <user_name>dummy</user_name>
                 <user_secret backend_model="Magento\Config\Model\Config\Backend\Encrypted">ZqbjrN6bhPYVIyram3wcuQgHUmP1C4</user_secret>
                 <assets_key>ADc3ZdOLh4</assets_key>
+                <autoinvoice>0</autoinvoice>
                 <test_ip>127.0.0.1,54.76.175.81</test_ip>
                 <endpoint>1</endpoint>
                 <reporting>1</reporting>

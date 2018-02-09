@@ -306,7 +306,7 @@ class Report extends AbstractBuilder
     {
         $items = array();
         foreach ($this->_order->getAllVisibleItems() as $itemOb) {
-            if ($itemOb->getQtyShipped() <= 0) {
+            if (is_null($itemOb->getProductId()) || $itemOb->getQtyShipped() <= 0) {
                 continue;
             }
             $product = $this->_productRepository->getById($itemOb->getProductId());
@@ -335,6 +335,9 @@ class Report extends AbstractBuilder
         $data = array();
         $data['items'] = array();
         foreach ($this->_order->getAllVisibleItems() as $itemOb) {
+            if (is_null($itemOb->getProductId())) {
+                continue;
+            }
             $item = array();
             $item["reference"] = self::notNull($itemOb->getSku());
             $item["name"] = self::notNull($itemOb->getName());

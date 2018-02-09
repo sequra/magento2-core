@@ -309,14 +309,16 @@ class Ipn extends \Sequra\Core\Model\AbstractIpn implements IpnInterface
         $this->_order->setData('sequra_order_send', 1);
         $this->orderRepositoryInterface->save($this->_order);
 
-
-        // notify customer
-        $invoice = $payment->getCreatedInvoice();
-        if ($invoice && !$this->_order->getEmailSent()) {
-            $this->orderSender->send($this->_order);
+        if($this->getConfigData('autoinvoice')){//@todo: find where the invoice is created
+            $invoice = $payment->getCreatedInvoice();
             $this->_order->addStatusHistoryComment(
                 __('You notified customer about invoice #%1.', $invoice->getIncrementId())
-            )->setIsCustomerNotified(
+            );
+        }
+        // notify customer
+        if (!$this->_order->getEmailSent()) {
+            $this->orderSender->send($this->_order);
+            $this->_order->setIsCustomerNotified(
                 true
             )->save();
         }
