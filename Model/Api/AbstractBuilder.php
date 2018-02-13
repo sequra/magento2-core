@@ -405,7 +405,7 @@ abstract class AbstractBuilder implements BuilderInterface
         $data = array(
             'name' => 'Magento',
             'version' => self::notNull($productMetadata->getVersion()),
-            'plugin_version' => '1.0.0',//@todo
+            'plugin_version' => '1.0.2',//@todo
             'php_version' => phpversion(),
             'php_os' => PHP_OS,
             'uname' => php_uname(),
@@ -415,8 +415,6 @@ abstract class AbstractBuilder implements BuilderInterface
 
         return $data;
     }
-
-    // TODO: find out were this method was copied from so that we can see when it is updated.
 
     public function sign($value)
     {
