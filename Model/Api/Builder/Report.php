@@ -317,8 +317,9 @@ class Report extends AbstractBuilder
                     case 'i4seur_cashondelivery':
                         $payment_method_enum = 'COD';
                         break;
-                    case 'sequrapayment':
-                    case 'sequrapartpayment':
+                    case 'sequra_invoice':
+                    case 'sequra_partpayments':
+                    case 'sequra_campaign':
                         $payment_method_enum = 'SQ';
                         break;
                     default:
