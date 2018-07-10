@@ -13,28 +13,34 @@ abstract class AbstractBuilder implements BuilderInterface
     const STATE_APPROVED = 'approved';
     public static $centsPerWhole = 100;
     protected $merchant_id;
+
     /**
      * @var \Magento\Sales\Model\OrderFactory
      */
     protected $_orderFactory;
+
     /**
      * @var \Magento\Catalog\Api\ProductRepositoryInterface
      */
     protected $_productRepository;
+
     /**
      * Order object or Quote Object
      *
      * @var \Magento\Framework\Model\AbstractModel
      */
     protected $_order;
+
     /**
      * @var \Magento\Framework\UrlInterface
      */
     protected $_urlBuilder;
+
     /**
      * @var \Magento\Framework\Locale\ResolverInterface
      */
     protected $_localeResolver;
+
     /**
      * Core store config
      *
@@ -42,12 +48,18 @@ abstract class AbstractBuilder implements BuilderInterface
      */
     protected $_scopeConfig;
 
+    /**
+     * @var \Psr\Log\LoggerInterface
+     */
+    protected $_logger;
+
     public function __construct(
         \Magento\Sales\Model\OrderFactory $orderFactory,
         \Magento\Catalog\Api\ProductRepositoryInterface $productRepository,
         \Magento\Framework\UrlInterface $urlBuilder,
         \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
-        \Magento\Framework\Locale\ResolverInterface $localeResolver
+        \Magento\Framework\Locale\ResolverInterface $localeResolver,
+        \Psr\Log\LoggerInterface $logger
     ) {
         $this->_orderFactory = $orderFactory;
         $this->_productRepository = $productRepository;
@@ -55,6 +67,7 @@ abstract class AbstractBuilder implements BuilderInterface
         $this->_scopeConfig = $scopeConfig;
         $this->_localeResolver = $localeResolver;
         $this->merchant_id = $this->getConfigData('merchant_ref');
+        $this->_logger = $logger;
     }
 
     public function getConfigData($field, $storeId = null)

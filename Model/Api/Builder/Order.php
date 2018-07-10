@@ -28,13 +28,16 @@ class Order extends AbstractBuilder
         \Magento\Framework\UrlInterface $urlBuilder,
         \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
         \Magento\Framework\Locale\ResolverInterface $localeResolver,
+        \Psr\Log\LoggerInterface $logger,
         \Magento\Customer\Model\Session $customerSession
     ) {
         parent::__construct($orderFactory,
             $productRepository,
             $urlBuilder,
             $scopeConfig,
-            $localeResolver);
+            $localeResolver,
+            $logger
+        );
         $this->_customerSession = $customerSession;
     }
 

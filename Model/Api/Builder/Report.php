@@ -55,13 +55,14 @@ class Report extends AbstractBuilder
         \Magento\Catalog\Api\ProductRepositoryInterface $productRepository,
         \Magento\Framework\UrlInterface $urlBuilder,
         \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
-        \Magento\Framework\Locale\ResolverInterface $localeResolver
+        \Magento\Framework\Locale\ResolverInterface $localeResolver,
+        \Psr\Log\LoggerInterface $logger
     ) {
         $this->_orderRepository = $orderRepository;
         $this->_orderCollectionFactory = $orderCollectionFactory;
         $this->customerRepository = $customerRepository;
         $this->_searchCriteriaBuilder = $searchCriteriaBuilder;
-        parent::__construct($orderFactory, $productRepository, $urlBuilder, $scopeConfig, $localeResolver);
+        parent::__construct($orderFactory, $productRepository, $urlBuilder, $scopeConfig, $localeResolver, $logger);
     }
 
 
@@ -392,10 +393,20 @@ class Report extends AbstractBuilder
     {
         $items = array();
         foreach ($this->_order->getAllVisibleItems() as $itemOb) {
-            if (isnull($itemOb->getProductId()) || $itemOb->getQtyShipped() <= 0) {
+            if (is_null($itemOb->getProductId()) || $itemOb->getQtyShipped() <= 0) {
                 continue;
             }
-            $product = $this->_productRepository->getById($itemOb->getProductId());
+            try {
+                $product = $this->_productRepository->getById($itemOb->getProductId());
+            } catch (Exception $e) {
+                $this->_logger->addError(
+                    'Can not get product for id: ' .
+                    $itemOb->getProductId() .
+                    '  ' . $e->getMessage()
+                );
+                continue;
+            }
+            
             $item = $this->fillOptionalProductItemFields($product);
             $item["reference"] = self::notNull($itemOb->getSku());
             $item["name"] = $itemOb->getName() ? self::notNull($itemOb->getName()) : self::notNull($itemOb->getSku());
