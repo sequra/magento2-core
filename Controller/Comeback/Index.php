@@ -6,12 +6,12 @@
 namespace Sequra\Core\Controller\Comeback;
 
 /**
- * Unified IPN controller for all supported PayPal methods
+ * Comeback controller
  */
 class Index extends \Magento\Checkout\Controller\Onepage
 {
     /**
-     * Instantiate IPN model and pass IPN request to it
+     * Rebuild session and redirect to default success controller
      *
      * @return void
      * @SuppressWarnings(PHPMD.ExitExpression)
@@ -29,7 +29,6 @@ class Index extends \Magento\Checkout\Controller\Onepage
         $session = $this->getOnepage()->getCheckout();
         // prepare session to success or cancellation page
         $session->clearHelperData();
-        $session->setLastRealOrder($order);
         $session->setLastQuoteId($quote->getId())
             ->setLastSuccessQuoteId($quote->getId())
             ->setLastOrderId($order->getId())
