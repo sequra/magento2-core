@@ -19,6 +19,7 @@
                 <reporting>1</reporting>
                 <reportingtime>4</reportingtime>
                 <allowspecificstattypes>0</allowspecificstattypes>
+                <order_status>processing</order_status>
             </core>
         </sequra>
     </default>

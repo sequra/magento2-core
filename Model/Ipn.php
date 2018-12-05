@@ -171,7 +171,7 @@ class Ipn extends \Sequra\Core\Model\AbstractIpn implements IpnInterface
         $this->order_data = $builder->setOrder($quote)->build($builder::STATE_CONFIRMED, $sendRef);
         $this->getClient()->updateOrder($this->getRequestData('order_ref'), $this->order_data);
         if ($this->_client->succeeded()) {
-            return true;
+            return $quote->getReservedOrderId();
         }
         if ($this->_client->cartHasChanged()) {
             $log_msg = $_SERVER['SERVER_PROTOCOL'] . ' 410 Cart has changed';
@@ -226,7 +226,12 @@ class Ipn extends \Sequra\Core\Model\AbstractIpn implements IpnInterface
         try {
             // Handle payment_status
             $this->_registerPaymentCapture();
-            $this->sendOrderRefToSequra();
+            if($sent_ref = $this->sendOrderRefToSequra()){
+                $this->_order->setState('processing');;
+                $this->_order->addStatusHistoryComment(__('Order ref sent to SeQura: %1',$sent_ref),$this->getConfigData('order_status'));
+                $this->_order->setData('sequra_order_send', 1);
+                $this->orderRepositoryInterface->save($this->_order);
+            }
         } catch (\Magento\Framework\Exception\LocalizedException $e) {
             if ($this->_order) {
                 $comment = $this->_createIpnComment(__('Note: %1', $e->getMessage()), true);
@@ -290,21 +295,12 @@ class Ipn extends \Sequra\Core\Model\AbstractIpn implements IpnInterface
             $this->order_data['cart']['order_total_with_tax'] / 100,
             $skipFraudDetection && $parentTransactionId
         );
-        $this->_order->setData('sequra_order_send', 1);
-        $this->orderRepositoryInterface->save($this->_order);
 
         if ($this->getConfigData('autoinvoice')) {//@todo: find where the invoice is created
             $invoice = $payment->getCreatedInvoice();
             $this->_order->addStatusHistoryComment(
                 __('You notified customer about invoice #%1.', $invoice->getIncrementId())
             );
-        }
-        // notify customer
-        if (!$this->_order->getEmailSent()) {
-            $this->orderSender->send($this->_order);
-            $this->_order->setIsCustomerNotified(
-                true
-            )->save();
         }
     }
 
