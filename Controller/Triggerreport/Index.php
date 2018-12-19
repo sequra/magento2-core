@@ -37,6 +37,7 @@ class Index extends \Magento\Framework\App\Action\Action
         if ($this->_reporter->sendOrderWithShipment()) {
             die('ok');
         }
+        http_response_code(599);
         die('ko');
     }
 }
