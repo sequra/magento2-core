@@ -23,4 +23,13 @@
     </virtualType>
 
     <preference for="Sequra\Core\Api\SubmissionInterface" type="Sequra\Core\Model\Service\SubmissionService"/>
+
+    <!-- Commandline option to triggerrerport -->
+    <type name="Magento\Framework\Console\CommandList">
+       <arguments>
+           <argument name="commands" xsi:type="array">
+               <item name="triggerReport" xsi:type="object">Sequra\Core\Console\TriggerReport</item>
+           </argument>
+       </arguments>
+   </type>
 </config>
