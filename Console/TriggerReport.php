@@ -5,15 +5,20 @@
 
 namespace Sequra\Core\Console;
 
-use \Sequra\Core\Model\ConfigFactory;
-use \Symfony\Component\Console\Command\Command;
-use \Symfony\Component\Console\Input\InputArgument;
-use \Symfony\Component\Console\Input\InputInterface;
-use \Symfony\Component\Console\Output\OutputInterface;
+use Sequra\Core\Model\ConfigFactory;
+use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Output\OutputInterface;
 
+/**
+ * Console command to trigger DR report
+ */
 class TriggerReport extends Command
-{   
-    /** Command name */
+{
+    /**
+     *  Command name
+     */
     const NAME = 'sequra:triggerreport';
 
     /**
@@ -22,31 +27,39 @@ class TriggerReport extends Command
     const INPUT_KEY_SHOPCODES = 'shopcodes';
 
     /**
+     * Configuration Object
+     *
      * @var \Sequra\Core\Model\Config
      */
-    protected $_config;
+    protected $config;
 
     /**
+     * Reporter
+     *
      * @var \Sequra\Core\Model\ReporterFactory
      */
-    protected $_reporter;
-
+    protected $reporter;
 
     /**
      * Constructor
      *
-     * @param ConfigFactory $configFactory
-     * @param \Sequra\Core\Model\ReporterFactory $reporterFactory
+     * @param ConfigFactory                      $configFactory   configFactory
+     * @param \Sequra\Core\Model\ReporterFactory $reporterFactory reporteFactory
      */
     public function __construct(
         ConfigFactory $configFactory,
         \Sequra\Core\Model\ReporterFactory $reporterFactory
     ) {
-        $this->_config = $configFactory->create();
-        $this->_reporter = $reporterFactory->create();
+        $this->config = $configFactory->create();
+        $this->reporter = $reporterFactory->create();
         parent::__construct();
     }
 
+    /**
+     * Initialize triggerreport command
+     *
+     * @return void
+     */
     protected function configure()
     {
         $this->addArgument(
@@ -55,25 +68,34 @@ class TriggerReport extends Command
             'Shop code'
         );
         $this->setName(self::NAME)
-             ->setDescription('Send Delivery Report to SeQura');
+            ->setDescription('Send Delivery Report to SeQura');
 
         parent::configure();
     }
 
+    /**
+     * Execute command.
+     *
+     * @param InputInterface  $input  InputInterface
+     * @param OutputInterface $output OutputInterface
+     *
+     * @return                                        void
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+     */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $codeKeys = $input->getArgument(self::INPUT_KEY_SHOPCODES);
         $output->write('Trigger Delivery Report for ');
-        if(count($codeKeys)<1){
-            $codeKeys[0] = false; 
+        if (count($codeKeys)<1) {
+            $codeKeys[0] = false;
             $output->writeln('all shops');
         } else {
-            $output->writeln(implode(',',$codeKeys));
+            $output->writeln(implode(',', $codeKeys));
         }
-        foreach ($codeKeys as $codeKey){
-            if ($results = $this->_reporter->sendOrderWithShipment($codeKey)) {
+        foreach ($codeKeys as $codeKey) {
+            if ($results = $this->reporter->sendOrderWithShipment($codeKey)) {
                 $output->writeln('Ok, report Sent!');
-                foreach($results as $key => $value){
+                foreach ($results as $key => $value) {
                     $output->writeln($key . ' => ' . $value . ' orders sent');
                 }
                 return;
