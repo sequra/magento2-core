@@ -5,8 +5,6 @@
 
 namespace Sequra\Core\Model\Api;
 
-use Sequra\Client;
-
 abstract class AbstractBuilder implements BuilderInterface
 {
     const STATE_CONFIRMED = 'confirmed';
@@ -42,6 +40,11 @@ abstract class AbstractBuilder implements BuilderInterface
     protected $_localeResolver;
 
     /**
+     * @var \Magento\Framework\Module\ResourceInterface
+     */
+    protected $moduleResource;
+
+    /**
      * Core store config
      *
      * @var \Magento\Framework\App\Config\ScopeConfigInterface
@@ -59,6 +62,7 @@ abstract class AbstractBuilder implements BuilderInterface
         \Magento\Framework\UrlInterface $urlBuilder,
         \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
         \Magento\Framework\Locale\ResolverInterface $localeResolver,
+        \Magento\Framework\Module\ResourceInterface $moduleResource,
         \Psr\Log\LoggerInterface $logger
     ) {
         $this->_orderFactory = $orderFactory;
@@ -66,6 +70,7 @@ abstract class AbstractBuilder implements BuilderInterface
         $this->_urlBuilder = $urlBuilder;
         $this->_scopeConfig = $scopeConfig;
         $this->_localeResolver = $localeResolver;
+        $this->moduleResource = $moduleResource;
         $this->merchant_id = $this->getConfigData('merchant_ref');
         $this->_logger = $logger;
     }
@@ -79,14 +84,14 @@ abstract class AbstractBuilder implements BuilderInterface
 
     public function merchant()
     {
-        return array(
+        return [
             'id' => $this->merchant_id,
-        );
+        ];
     }
 
-    public abstract function deliveryAddress();
+    abstract public function deliveryAddress();
 
-    public abstract function invoiceAddress();
+    abstract public function invoiceAddress();
 
     public function items($order)
     {
@@ -97,11 +102,11 @@ abstract class AbstractBuilder implements BuilderInterface
         );
     }
 
-    public abstract function productItem();
+    abstract public function productItem();
 
     public function extraItems($order)
     {
-        $items = array();
+        $items = [];
         $discount_with_tax = 0;
         //@todo
 
@@ -113,7 +118,7 @@ abstract class AbstractBuilder implements BuilderInterface
         //order discounts
         if ($discount_with_tax > 0) {
             //$discountExclTax=$discount*1.21; //What kind of tax?
-            $item = array();
+            $item = [];
             $item["type"] = "discount";
             $item["reference"] = self::notNull($order->getCouponCode());
             $item["name"] = 'Descuento';
@@ -122,7 +127,7 @@ abstract class AbstractBuilder implements BuilderInterface
         }
         //add Customer fee (without tax)
         if ($order->getSequraSequrapayment() > 0) {
-            $item = array();
+            $item = [];
             $item["type"] = "invoice_fee";
             $item["tax_rate"] = 0;
             $item["total_without_tax"] = $item["total_with_tax"] = self::integerPrice($order->getSequraSequrapayment());
@@ -145,23 +150,23 @@ abstract class AbstractBuilder implements BuilderInterface
 
     public function handlingItems()
     {
-        $items = array();
+        $items = [];
         $deliveryMethod = $this->getDeliveryMethod();
 
         if (!$deliveryMethod['provider']) {
-            return array();
+            return [];
         }
 
         $incl_tax = $this->getShippingInclTax();
 
-        $handling = array(
+        $handling = [
             'type' => 'handling',
             'reference' => $deliveryMethod['provider'],
             'name' => $deliveryMethod['name'],
             'tax_rate' => 0,
             'total_without_tax' => self::integerPrice($incl_tax),
             'total_with_tax' => self::integerPrice($incl_tax),
-        );
+        ];
 
         $items[] = $handling;
 
@@ -174,20 +179,20 @@ abstract class AbstractBuilder implements BuilderInterface
         $carrier = explode('_', $shippingMethod, 2);
         $title = $this->_scopeConfig->getValue('carriers/' . $carrier[0] . '/title');
 
-        return array(
+        return [
             'name' => self::notNull(isset($carrier[1]) ? $carrier[1] : 'Envío'),
             'days' => self::notNull($title),
             'provider' => self::notNull($carrier[0]),
-        );
+        ];
     }
 
-    public abstract function getShippingMethod();
+    abstract public function getShippingMethod();
 
-    public abstract function getShippingInclTax();
+    abstract public function getShippingInclTax();
 
     public function address($address)
     {
-        $data = array();
+        $data = [];
         $data['given_names'] = self::notNull($address->getFirstname());
         $data['surnames'] = self::notNull($address->getLastname());
         $data['company'] = self::notNull($address->getCompany());
@@ -213,7 +218,7 @@ abstract class AbstractBuilder implements BuilderInterface
     public function customer()
     {
         $customer = $this->getObjWithCustomerData();
-        $data = array();
+        $data = [];
         $data['given_names'] = self::notNull($customer->getFirstname());
         $data['surnames'] = self::notNull($customer->getLastname());
         $data['email'] = self::notNull($customer->getEmail());
@@ -237,8 +242,8 @@ abstract class AbstractBuilder implements BuilderInterface
         $data['ref'] = self::notNull($customer->getId());
         if ($title = $customer->getPrefix()) {
             $data['title'] = str_replace(
-                array('sra', 'dña', 'srta', 'sr', 'd'),
-                array('mrs', 'mrs', 'miss', 'mr', 'mr'),
+                ['sra', 'dña', 'srta', 'sr', 'd'],
+                ['mrs', 'mrs', 'miss', 'mr', 'mr'],
                 strtolower(trim($title, '.'))
             );
         }
@@ -246,7 +251,7 @@ abstract class AbstractBuilder implements BuilderInterface
         return $data;
     }
 
-    public abstract function getObjWithCustomerData();
+    abstract public function getObjWithCustomerData();
 
     public static function dateOrBlank($date)
     {
@@ -255,12 +260,12 @@ abstract class AbstractBuilder implements BuilderInterface
 
     public function fillOptionalProductItemFields($product)
     {
-        $item = array();
+        $item = [];
         if (is_object($product)) {
             $item["description"] = self::notNull($product->getDescription());
             $item["product_id"] = self::notNull($product->getId());
             $item["url"] = self::notNull($product->getProductUrl());
-//@todo
+            //@todo
             /*			$categoryIds         = $product->getCategoryIds();
                         if ( count( $categoryIds ) ) {
                             $firstCategoryId = $categoryIds[0];
@@ -282,9 +287,9 @@ abstract class AbstractBuilder implements BuilderInterface
 
     public function gui()
     {
-        $data = array(
+        $data = [
             'layout' => $this->isMobile() ? 'mobile' : 'desktop',
-        );
+        ];
 
         return $data;
     }
@@ -309,7 +314,7 @@ abstract class AbstractBuilder implements BuilderInterface
         }
 
         $mobile_ua = strtolower(substr($_SERVER['HTTP_USER_AGENT'], 0, 4));
-        $mobile_agents = array(
+        $mobile_agents = [
             'w3c ',
             'acs-',
             'alav',
@@ -396,7 +401,7 @@ abstract class AbstractBuilder implements BuilderInterface
             'winw',
             'xda ',
             'xda-'
-        );
+        ];
 
         if (in_array($mobile_ua, $mobile_agents)) {
             return true;
@@ -411,20 +416,19 @@ abstract class AbstractBuilder implements BuilderInterface
 
     public function platform()
     {
-
         $objectManager = \Magento\Framework\App\ObjectManager::getInstance();
         $productMetadata = $objectManager->get('Magento\Framework\App\ProductMetadataInterface');
 
-        $data = array(
+        $data = [
             'name' => 'Magento',
             'version' => self::notNull($productMetadata->getVersion()),
-            'plugin_version' => '1.0.2',//@todo
+            'plugin_version' => $this->moduleResource->getDbVersion('Sequra_Core'),
             'php_version' => phpversion(),
             'php_os' => PHP_OS,
             'uname' => php_uname(),
             'db_name' => 'mysql',//@todo
             'db_version' => '5.7.x or later'//@todo
-        );
+        ];
 
         return $data;
     }
@@ -457,5 +461,4 @@ abstract class AbstractBuilder implements BuilderInterface
 
         return $order;
     }
-
 }

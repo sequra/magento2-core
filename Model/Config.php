@@ -167,89 +167,6 @@ class Config extends AbstractConfig
     }
 
     /**
-     * Return list of allowed methods for specified country iso code
-     *
-     * @param string|null $countryCode 2-letters iso code
-     * @return array
-     * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
-     */
-    public function getCountryMethods($countryCode = null)
-    {
-        $countryMethods = [
-            'other' => [
-                self::METHOD_WPP_EXPRESS,
-                self::METHOD_BILLING_AGREEMENT,
-            ],
-            'US' => [
-                self::METHOD_PAYFLOWADVANCED,
-                self::METHOD_PAYFLOWPRO,
-                self::METHOD_PAYFLOWLINK,
-                self::METHOD_WPP_EXPRESS,
-                self::METHOD_WPP_BML,
-                self::METHOD_BILLING_AGREEMENT,
-                self::METHOD_WPP_PE_EXPRESS,
-                self::METHOD_WPP_PE_BML,
-            ],
-            'CA' => [
-                self::METHOD_PAYFLOWPRO,
-                self::METHOD_PAYFLOWLINK,
-                self::METHOD_WPP_EXPRESS,
-                self::METHOD_BILLING_AGREEMENT,
-                self::METHOD_WPP_PE_EXPRESS,
-            ],
-            'GB' => [
-                self::METHOD_HOSTEDPRO,
-                self::METHOD_WPP_EXPRESS,
-                self::METHOD_BILLING_AGREEMENT,
-            ],
-            'AU' => [
-                self::METHOD_PAYFLOWPRO,
-                self::METHOD_HOSTEDPRO,
-                self::METHOD_WPP_EXPRESS,
-                self::METHOD_BILLING_AGREEMENT,
-            ],
-            'NZ' => [
-                self::METHOD_PAYFLOWPRO,
-                self::METHOD_WPP_EXPRESS,
-                self::METHOD_BILLING_AGREEMENT,
-            ],
-            'JP' => [
-                self::METHOD_HOSTEDPRO,
-                self::METHOD_WPP_EXPRESS,
-                self::METHOD_BILLING_AGREEMENT,
-            ],
-            'FR' => [
-                self::METHOD_HOSTEDPRO,
-                self::METHOD_WPP_EXPRESS,
-                self::METHOD_BILLING_AGREEMENT,
-            ],
-            'IT' => [
-                self::METHOD_HOSTEDPRO,
-                self::METHOD_WPP_EXPRESS,
-                self::METHOD_BILLING_AGREEMENT,
-            ],
-            'ES' => [
-                self::METHOD_HOSTEDPRO,
-                self::METHOD_WPP_EXPRESS,
-                self::METHOD_BILLING_AGREEMENT,
-            ],
-            'HK' => [
-                self::METHOD_HOSTEDPRO,
-                self::METHOD_WPP_EXPRESS,
-                self::METHOD_BILLING_AGREEMENT,
-            ],
-            'DE' => [
-                self::METHOD_WPP_EXPRESS,
-                self::METHOD_BILLING_AGREEMENT,
-            ],
-        ];
-        if ($countryCode === null) {
-            return $countryMethods;
-        }
-        return isset($countryMethods[$countryCode]) ? $countryMethods[$countryCode] : $countryMethods['other'];
-    }
-
-    /**
      * Check whether specified currency code is supported
      *
      * @param string $code
@@ -258,15 +175,6 @@ class Config extends AbstractConfig
     public function isCurrencyCodeSupported($code)
     {
         if (in_array($code, $this->_supportedCurrencyCodes)) {
-            return true;
-        }
-        if ($this->getMerchantCountry() == 'BR' && $code == 'BRL') {
-            return true;
-        }
-        if ($this->getMerchantCountry() == 'MY' && $code == 'MYR') {
-            return true;
-        }
-        if ($this->getMerchantCountry() == 'TR' && $code == 'TRY') {
             return true;
         }
         return false;
@@ -287,23 +195,21 @@ class Config extends AbstractConfig
         return $this->getValue('product', $storeId);
     }
 
-    public function getCostUrl($product, $storeId = null)
+    public function getScriptUri($storeId = null)
     {
-        $url = 'https://';
         if ($this->getCoreValue('endpoint', $storeId) == Endpoint::LIVE) {
-            $url .= 'live';
-        } else {
-            $url .= 'sandbox';
+            return 'https://live.sequracdn.com/assets/sequra-checkout.min.js';
         }
-        $url .= '.sequracdn.com/scripts/' .
-            $this->getCoreValue('merchant_ref', $storeId) . '/' .
-            $this->getAssetsKey($storeId) . '/' .
-            $product . '_cost.js';
-        return $url;
+        return 'https://sandbox.sequracdn.com/assets/sequra-checkout.min.js';
     }
 
     public function getAssetsKey($storeId = null)
     {
         return $this->getCoreValue('assets_key', $storeId);
+    }
+
+    public function getMerchantRef($storeId = null)
+    {
+        return $this->getCoreValue('merchant_ref', $storeId);
     }
 }

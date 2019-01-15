@@ -19,11 +19,11 @@ class Report extends AbstractBuilder
 
     protected $_builtData;
     protected $_sequraOrders = null;
-    protected $_orders = array();
+    protected $_orders = [];
     protected $_currentshipment = null;
-    protected $_ids = array();
-    protected $_brokenorders = array();
-    protected $_stats = array();
+    protected $_ids = [];
+    protected $_brokenorders = [];
+    protected $_stats = [];
     protected $_store_id = null;
 
     /**
@@ -56,15 +56,15 @@ class Report extends AbstractBuilder
         \Magento\Framework\UrlInterface $urlBuilder,
         \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
         \Magento\Framework\Locale\ResolverInterface $localeResolver,
+        \Magento\Framework\Module\ResourceInterface $moduleResource,
         \Psr\Log\LoggerInterface $logger
     ) {
         $this->_orderRepository = $orderRepository;
         $this->_orderCollectionFactory = $orderCollectionFactory;
         $this->customerRepository = $customerRepository;
         $this->_searchCriteriaBuilder = $searchCriteriaBuilder;
-        parent::__construct($orderFactory, $productRepository, $urlBuilder, $scopeConfig, $localeResolver, $logger);
+        parent::__construct($orderFactory, $productRepository, $urlBuilder, $scopeConfig, $localeResolver, $moduleResource, $logger);
     }
-
 
     public function getOrderCount()
     {
@@ -84,19 +84,19 @@ class Report extends AbstractBuilder
         $this->_store_id = $store_id;
         $this->getOrders();
         $this->getStats();
-        $this->_builtData = array(
+        $this->_builtData = [
             'merchant' => $this->merchant(),
             'orders' => $this->_orders,
             'broken_orders' => $this->_brokenorders,
-            'statistics' => array('orders' => $this->_stats),
+            'statistics' => ['orders' => $this->_stats],
             'platform' => self::platform()
-        );
+        ];
     }
 
     protected function getOrders()
     {
         $this->getSequraOrders();
-        $this->_orders = array();
+        $this->_orders = [];
         foreach ($this->_sequraOrders as $order) {
             $this->_order = $this->_orderRepository->get($order->getId());//needed to populate related objects e.g.: customer
             $this->_orders[] = $this->orderWithItems($this->_order);
@@ -123,10 +123,10 @@ class Report extends AbstractBuilder
             ->join(
                 ["sop" => "sales_order_payment"],
                 'main_table.entity_id = sop.parent_id',
-                array('method')
+                ['method']
             )
             ->join(
-                array('sp' => "sales_shipment"),
+                ['sp' => "sales_shipment"],
                 'main_table.entity_id = sp.order_id and main_table.store_id = sp.store_id',
                 '')
             ->where('sop.method like ?', 'sequra\_%')
@@ -179,7 +179,7 @@ class Report extends AbstractBuilder
 
     public function shipmentCart()
     {
-        $data = array();
+        $data = [];
         $data['currency'] = $this->_order->getOrderCurrencyCode();
         $data['delivery_method'] = $this->getDeliveryMethod();
         $data['gift'] = false;
@@ -195,13 +195,13 @@ class Report extends AbstractBuilder
 
     public function orderRemainingCart()
     {
-        $data = array();
-        $data['items'] = array();
+        $data = [];
+        $data['items'] = [];
         foreach ($this->_order->getAllVisibleItems() as $itemOb) {
             if (is_null($itemOb->getProductId())) {
                 continue;
             }
-            $item = array();
+            $item = [];
             $item["reference"] = self::notNull($itemOb->getSku());
             $item["name"] = self::notNull($itemOb->getName());
             $item["downloadable"] = ($itemOb->getIsVirtual() ? true : false);
@@ -239,8 +239,8 @@ class Report extends AbstractBuilder
 
     private function getBrokenOrders()
     {
-        $cleaned_orders = array();
-        $this->_brokenorders = array();
+        $cleaned_orders = [];
+        $this->_brokenorders = [];
         foreach ($this->_orders as $key => $order) {
             if (!Helper::isConsistentCart($order['cart'])) {
                 $this->_brokenorders[] = $order;
@@ -257,7 +257,7 @@ class Report extends AbstractBuilder
     private function getStats()
     {
         $statsCollection = $this->getStatsCollection();
-        $this->_stats = array();
+        $this->_stats = [];
         foreach ($statsCollection as $order) {
             $status = 'processing';
             if ($order->getData('sp_id')) {
@@ -297,7 +297,7 @@ class Report extends AbstractBuilder
                     case 'ccsave':
                         $payment_method_enum = 'CC';
                         break;
-                    case \Magento\Paypal\Model\Config::METHOD_BILLING_AGREEMENT;
+                    case \Magento\Paypal\Model\Config::METHOD_BILLING_AGREEMENT:
                     case \Magento\Paypal\Model\Config::METHOD_EXPRESS:
                     case \Magento\Paypal\Model\Config::METHOD_HOSTEDPRO:
                     case \Magento\Paypal\Model\Config::METHOD_PAYFLOWADVANCED:
@@ -328,13 +328,13 @@ class Report extends AbstractBuilder
                 }
             }
 
-            $stat = array(
+            $stat = [
                 "completed_at" => $order->getData('created_at'),
-                "merchant_reference" => array(
+                "merchant_reference" => [
                     "order_ref_1" => $order->getOriginalIncrementId() ? $order->getOriginalIncrementId() : $order->getRealOrderId(),
                     "order_ref_2" => $order->getId(),
-                )
-            );
+                ]
+            ];
             $stattypes = explode(',', $this->getConfigData('specificstattypes'));
             if ('0' == $this->getConfigData('allowspecificstattypes') || in_array(\Sequra\Core\Model\Adminhtml\Source\Specificstattypes::STAT_AMOUNT,
                     $stattypes)
@@ -391,7 +391,7 @@ class Report extends AbstractBuilder
 
     public function productItem()
     {
-        $items = array();
+        $items = [];
         foreach ($this->_order->getAllVisibleItems() as $itemOb) {
             if (is_null($itemOb->getProductId()) || $itemOb->getQtyShipped() <= 0) {
                 continue;
@@ -406,7 +406,7 @@ class Report extends AbstractBuilder
                 );
                 continue;
             }
-            
+
             $item = $this->fillOptionalProductItemFields($product);
             $item["reference"] = self::notNull($itemOb->getSku());
             $item["name"] = $itemOb->getName() ? self::notNull($itemOb->getName()) : self::notNull($itemOb->getSku());

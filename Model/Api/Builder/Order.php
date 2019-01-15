@@ -19,7 +19,6 @@ class Order extends AbstractBuilder
      */
     protected $_customerSession;
 
-
     protected $_shippingAddress;
 
     public function __construct(
@@ -28,14 +27,17 @@ class Order extends AbstractBuilder
         \Magento\Framework\UrlInterface $urlBuilder,
         \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
         \Magento\Framework\Locale\ResolverInterface $localeResolver,
+        \Magento\Framework\Module\ResourceInterface $moduleResource,
         \Psr\Log\LoggerInterface $logger,
         \Magento\Customer\Model\Session $customerSession
     ) {
-        parent::__construct($orderFactory,
+        parent::__construct(
+            $orderFactory,
             $productRepository,
             $urlBuilder,
             $scopeConfig,
             $localeResolver,
+            $moduleResource,
             $logger
         );
         $this->_customerSession = $customerSession;
@@ -49,7 +51,7 @@ class Order extends AbstractBuilder
 
     public function build($state = '', $sendRef = false)
     {
-        $order = array(
+        $order = [
             'merchant' => $this->merchant(),
             'cart' => $this->cartWithItems(),
             'delivery_address' => $this->deliveryAddress(),
@@ -58,13 +60,13 @@ class Order extends AbstractBuilder
             'gui' => $this->gui(),
             'platform' => $this->platform(),
             'state' => $state
-        );
+        ];
         $order = $this->fixRoundingProblems($order);
         if ($sendRef) {
-            $order['merchant_reference'] = array(
+            $order['merchant_reference'] = [
                 'order_ref_1' => $this->_order->getReservedOrderId(),
                 'order_ref_2' => $this->_order->getId()
-            );
+            ];
         }
 
         return $order;
@@ -75,11 +77,11 @@ class Order extends AbstractBuilder
         $ret = parent::merchant();
         $id = $this->_order->getId();
         $ret['notify_url'] = $this->_urlBuilder->getUrl('sequra/ipn');
-        $ret['notification_parameters'] = array(
+        $ret['notification_parameters'] = [
             'id' => $id,
             'method' => $this->_order->getPayment()->getMethod(),
             'signature' => $this->sign($id)
-        );
+        ];
         $ret['return_url'] = $this->_urlBuilder->getUrl('sequra/comeback', ['quote_id' => $id]);
         $ret['abort_url'] = $this->_urlBuilder->getUrl('sequra/abort');
 
@@ -88,7 +90,7 @@ class Order extends AbstractBuilder
 
     public function cartWithItems()
     {
-        $data = array();
+        $data = [];
         $data['delivery_method'] = $this->getDeliveryMethod();
         $data['gift'] = false;
         $data['currency'] = $this->_order->getQuoteCurrencyCode();//$this->_order->getOrderCurrencyCode();
@@ -108,7 +110,7 @@ class Order extends AbstractBuilder
         if ('' == $address->getFirstname()) {
             $address = $this->_order->getBillingAddress();
         }
-        $extra = array();
+        $extra = [];
         /*Specific for biebersdorf_customerordercomment extension*/
         if ('' != $this->_order->getData('biebersdorf_customerordercomment')) {
             $extra['extra'] = $this->_order->getData('biebersdorf_customerordercomment');
@@ -153,11 +155,11 @@ class Order extends AbstractBuilder
     {
         $order_model = $this->_orderFactory->create();
         $orderCollection = $order_model->getCollection()->addFieldToFilter('customer_id',
-            array('eq' => array($customerID)));
-        $orders = array();
+            ['eq' => [$customerID]]);
+        $orders = [];
         if ($orderCollection) {
-            foreach ($orderCollection AS $order_row) {
-                $order = array();
+            foreach ($orderCollection as $order_row) {
+                $order = [];
                 $order['amount'] = self::integerPrice($order_row->getData('grand_total'));
                 $order['currency'] = $order_row->getData('order_currency_code');
                 $order['created_at'] = str_replace(' ', 'T', $order_row->getData('created_at'));
@@ -180,9 +182,9 @@ class Order extends AbstractBuilder
 
     public function productItem()
     {
-        $items = array();
+        $items = [];
         foreach ($this->_order->getAllVisibleItems() as $itemOb) {
-            $item = array();
+            $item = [];
             $item["reference"] = self::notNull($itemOb->getSku());
             $item["name"] = $itemOb->getName() ? self::notNull($itemOb->getName()) : self::notNull($itemOb->getSku());
             $item["downloadable"] = ($itemOb->getIsVirtual() ? true : false);
@@ -213,5 +215,4 @@ class Order extends AbstractBuilder
         }
         return $this->_order->getBillingAddress();
     }
-
 }
