@@ -108,13 +108,15 @@ class Report extends AbstractBuilder
 
     /**
      * Loads orders paid with sequra and not sent in previous delivery reports
+     *
      * @return null
      */
     protected function getSequraOrders()
     {
-        $collection = $this->_orderCollectionFactory->create()->addFieldToSelect(
-            'entity_id'//load minimun fields, anyway later, we need to populate all and load related objects.
-        )->addFieldToFilter(
+        $collection = $this->_orderCollectionFactory->create()->addFieldToSelect([
+            'entity_id',//load minimun fields, anyway later, we need to populate all and load related objects.
+            'increment_id'
+        ])->addFieldToFilter(
             'sequra_order_send',
             ['eq' => 1]
         );
@@ -128,7 +130,8 @@ class Report extends AbstractBuilder
             ->join(
                 ['sp' => "sales_shipment"],
                 'main_table.entity_id = sp.order_id and main_table.store_id = sp.store_id',
-                '')
+                ''
+            )
             ->where('sop.method like ?', 'sequra\_%')
             ->distinct(true);
         $this->_sequraOrders = $collection;
@@ -264,9 +267,9 @@ class Report extends AbstractBuilder
                 $status = 'shipped';
             }
             switch ($order->getState()) {
-                case \Magento\Sales\Model\Order::STATE_CANCELED:
-                    $status = 'cancelled';
-                    break;
+            case \Magento\Sales\Model\Order::STATE_CANCELED:
+                $status = 'cancelled';
+                break;
             }
             $address = $order->getBillingAddress();
             if (!is_object($address)) {
@@ -336,25 +339,33 @@ class Report extends AbstractBuilder
                 ]
             ];
             $stattypes = explode(',', $this->getConfigData('specificstattypes'));
-            if ('0' == $this->getConfigData('allowspecificstattypes') || in_array(\Sequra\Core\Model\Adminhtml\Source\Specificstattypes::STAT_AMOUNT,
-                    $stattypes)
+            if ('0' == $this->getConfigData('allowspecificstattypes') || in_array(
+                \Sequra\Core\Model\Adminhtml\Source\Specificstattypes::STAT_AMOUNT,
+                $stattypes
+            )
             ) {
                 $stat['currency'] = $order->getOrderCurrencyCode();
                 $stat['amount'] = self::integerPrice($order->getGrandTotal());
             }
-            if ('0' == $this->getConfigData('allowspecificstattypes') || in_array(\Sequra\Core\Model\Adminhtml\Source\Specificstattypes::STAT_COUNTRY,
-                    $stattypes)
+            if ('0' == $this->getConfigData('allowspecificstattypes') || in_array(
+                \Sequra\Core\Model\Adminhtml\Source\Specificstattypes::STAT_COUNTRY,
+                $stattypes
+            )
             ) {
                 $stat['country'] = $address->getCountryId();
             }
-            if ('0' == $this->getConfigData('allowspecificstattypes') || in_array(\Sequra\Core\Model\Adminhtml\Source\Specificstattypes::STAT_PAYMENT,
-                    $stattypes)
+            if ('0' == $this->getConfigData('allowspecificstattypes') || in_array(
+                \Sequra\Core\Model\Adminhtml\Source\Specificstattypes::STAT_PAYMENT,
+                $stattypes
+            )
             ) {
                 $stat['payment_method'] = $payment_method_enum;
                 $stat['payment_method_raw'] = $payment_method_raw;
             }
-            if ('0' == $this->getConfigData('allowspecificstattypes') || in_array(\Sequra\Core\Model\Adminhtml\Source\Specificstattypes::STAT_STATUS,
-                    $stattypes)
+            if ('0' == $this->getConfigData('allowspecificstattypes') || in_array(
+                \Sequra\Core\Model\Adminhtml\Source\Specificstattypes::STAT_STATUS,
+                $stattypes
+            )
             ) {
                 $stat['status'] = $status;
                 $stat['raw_status'] = $order->getStatus();
@@ -367,6 +378,7 @@ class Report extends AbstractBuilder
 
     /**
      * Get collection with orders not paid by sequra for statistics
+     *
      * @return collection
      */
     private function getStatsCollection()
