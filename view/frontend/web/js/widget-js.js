@@ -11,6 +11,16 @@ define([
             product: 'i1',
             theme: ''
         },
+        presets: {
+            L:        '{"alignment":"left"}',
+            R:        '{"alignment":"right"}',
+            legacy:   '{"type":"legacy"}',
+            legacyL:  '{"type":"legacy","alignment":"left"}',
+            legacyR:  '{"type":"legacy","alignment":"right"}',
+            minimal:  '{"type":"text","branding":"none","size":"S","starting-text":"as-low-as"}',
+            minimalL: '{"type":"text","branding":"none","size":"S","starting-text":"as-low-as","alignment":"left"}',
+            minimalR: '{"type":"text","branding":"none","size":"S","starting-text":"as-low-as","alignment":"right"}'  
+        },
         drawnWidgets: [],
         getText: function (selector) {
             return  selector && document.querySelector(selector)?document.querySelector(selector).innerText:"0";
@@ -65,7 +75,6 @@ define([
                 price_in_cents = this.selectorToCents(price_src)
             }
             catch(e){
-                debugger;
                 if(price_src){
                     console.error(price_src + ' is not a valid css selector to read the price from, for sequra widget.');
                     return;
@@ -81,16 +90,15 @@ define([
             promoWidgetNode.className = 'sequra-promotion-widget';
             promoWidgetNode.setAttribute('data-amount',price_in_cents);
             promoWidgetNode.setAttribute('data-product',product);
-            if(theme){
-                try {
-                    attributes = JSON.parse(theme);
-                    for (var key in attributes) {
-                        promoWidgetNode.setAttribute('data-'+key,""+attributes[key]);
-                    }
-                } catch(e){
-                    promoWidgetNode.setAttribute('data-theme',theme);
+            if(this.presets[theme]){
+                theme = this.presets[theme]
+            }
+            try {
+                attributes = JSON.parse(theme);
+                for (var key in attributes) {
+                    promoWidgetNode.setAttribute('data-'+key,""+attributes[key]);
                 }
-            }else{
+            } catch(e){
                 promoWidgetNode.setAttribute('data-type','text');
             }
             if(reverse){

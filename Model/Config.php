@@ -20,36 +20,9 @@ class Config extends AbstractConfig
     const METHOD_PARTPAYMENTS = 'sequra_partpayments';
 
     /**
-     * Currency codes supported by SeQura methods
-     *
-     * @var string[]
-     */
-    protected $_supportedCurrencyCodes = [
-        'EUR',
-    ];
-
-    /**
-     * Merchant country supported by SeQura methods
-     *
-     * @var string[]
-     */
-    protected $_supportedCountryCodes = [
-        'ES'
-    ];
-
-    /**
-     * Buyer country supported by SeQura methods
-     *
-     * @var string[]
-     */
-    protected $_supportedBuyerCountryCodes = [
-        'ES'
-    ];
-
-    /**
      * Locale codes supported by misc images (marks, shortcuts etc)
      *
-     * @var string[]
+     * @var  string[]
      * @link https://cms.paypal.com/us/cgi-bin/?cmd=_render-content&content_ID=developer/e_howto_api_ECButtonIntegration#id089QD0O0TX4__id08AH904I0YK
      */
     protected $_supportedImageLocales = [
@@ -60,94 +33,30 @@ class Config extends AbstractConfig
      * Check whether method available for checkout or not
      * Logic based on merchant country, methods dependence
      *
-     * @param string|null $methodCode
-     * @return bool
+     * @param                                        string|null $methodCode
+     * @return                                       bool
      * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      */
+    /*
     public function isMethodAvailable($methodCode = null)
     {
         $result = parent::isMethodAvailable($methodCode);
 
         switch ($methodCode) {
-            case self::METHOD_WPP_EXPRESS:
-            case self::METHOD_WPS_EXPRESS:
-                if ($this->isMethodActive(self::METHOD_PAYFLOWPRO)
-                    || $this->isMethodActive(self::METHOD_PAYMENT_PRO)
-                ) {
+            case self::METHOD_INVOICE:
+                if ($this->isMethodActive(self::METHOD_INVOICE)) {
                     $result = true;
                 }
                 break;
-            case self::METHOD_WPP_BML:
-            case self::METHOD_WPS_BML:
-                // check for express payments dependence
-                if (!$this->isMethodActive(self::METHOD_WPP_EXPRESS)
-                    && !$this->isMethodActive(self::METHOD_WPS_EXPRESS)
-                ) {
+            case self::METHOD_PARTPAYMENTS:
+                if (!$this->isMethodActive(self::METHOD_PARTPAYMENTS)) {
                     $result = false;
                 }
-                break;
-            case self::METHOD_WPP_PE_EXPRESS:
-                // check for direct payments dependence
-                if ($this->isMethodActive(self::METHOD_PAYFLOWLINK)
-                    || $this->isMethodActive(self::METHOD_PAYFLOWADVANCED)
-                ) {
-                    $result = true;
-                } elseif (!$this->isMethodActive(self::METHOD_PAYFLOWPRO)) {
-                    $result = false;
-                }
-                break;
-            case self::METHOD_WPP_PE_BML:
-                // check for express payments dependence
-                if (!$this->isMethodActive(self::METHOD_WPP_PE_EXPRESS)) {
-                    $result = false;
-                }
-                break;
-            case self::METHOD_BILLING_AGREEMENT:
-                $result = $this->isWppApiAvailabe();
                 break;
         }
         return $result;
     }
-
-    /**
-     * Return merchant country codes supported by PayPal
-     *
-     * @return string[]
-     */
-    public function getSupportedMerchantCountryCodes()
-    {
-        return $this->_supportedCountryCodes;
-    }
-
-    /**
-     * Return buyer country codes supported by PayPal
-     *
-     * @return string[]
-     */
-    public function getSupportedBuyerCountryCodes()
-    {
-        return $this->_supportedBuyerCountryCodes;
-    }
-
-    /**
-     * Check whether method supported for specified country or not
-     * Use $_methodCode and merchant country by default
-     *
-     * @param string|null $method
-     * @param string|null $countryCode
-     * @return bool
-     */
-    public function isMethodSupportedForCountry($method = null, $countryCode = null)
-    {
-        if ($method === null) {
-            $method = $this->getMethodCode();
-        }
-        if ($countryCode === null) {
-            $countryCode = $this->getMerchantCountry();
-        }
-        return in_array($method, $this->getCountryMethods($countryCode));
-    }
-
+    */
     /**
      * Return merchant country code, use default country if it not specified in General settings
      *
@@ -169,15 +78,23 @@ class Config extends AbstractConfig
     /**
      * Check whether specified currency code is supported
      *
-     * @param string $code
+     * @param  string $code
      * @return bool
      */
     public function isCurrencyCodeSupported($code)
     {
-        if (in_array($code, $this->_supportedCurrencyCodes)) {
-            return true;
+        $isValid = true;
+        if (!!$this->config->getCoreValue('country', $storeId)) {
+            $availableCountries = explode(
+                ',',
+                $this->config->getValue('country', $storeId)
+            );
+
+            if (!in_array($code, $availableCountries)) {
+                $isValid = false;
+            }
         }
-        return false;
+        return $isValid;
     }
 
     public function getMaxOrderTotal($storeId = null)

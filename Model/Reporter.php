@@ -2,9 +2,7 @@
 /**
  * Copyright © 2017 SeQura Engineering. All rights reserved.
  */
-
 namespace Sequra\Core\Model;
-
 
 /**
  * Sequra Instant Payment Notification processor model
@@ -38,9 +36,9 @@ class Reporter implements ReporterInterface
     /**
      * Constructor
      *
-     * @param ConfigFactory $configFactory
-     * @param \Psr\Log\LoggerInterface $logger
-     * @param \Sequra\Core\Model\Api\BuilderFactory $builderFactory
+     * @param ConfigFactory                               $configFactory
+     * @param \Psr\Log\LoggerInterface                    $logger
+     * @param \Sequra\Core\Model\Api\BuilderFactory       $builderFactory
      * @param \Magento\Store\Api\StoreRepositoryInterface $storeRepository
      */
     public function __construct(
@@ -51,7 +49,7 @@ class Reporter implements ReporterInterface
     ) {
         $this->_config = $configFactory->create();
         $this->_logger = $logger;
-        $this->_builder = $builderFactory->create('report');;
+        $this->_builder = $builderFactory->create('report');
         $this->_storeManager = $storeManager;
     }
 
@@ -72,7 +70,7 @@ class Reporter implements ReporterInterface
         //
 
         foreach ($stores as $store) {
-            if($codeKey && $store->getCode()!==$codeKey){
+            if ($codeKey && $store->getCode()!==$codeKey) {
                 continue;
             }
             $client = new \Sequra\PhpClient\Client(

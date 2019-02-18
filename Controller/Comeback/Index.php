@@ -105,7 +105,7 @@ class Index extends \Magento\Checkout\Controller\Onepage
             ->setLastSuccessQuoteId($quote->getId())
             ->setLastOrderId($order->getId())
             ->setLastRealOrderId($quote->getReservedOrderId());
-        // Reset mincart.
+        // Reset minicart.
         $metadata = $this->cookieMetadataFactory
             ->createPublicCookieMetadata()
             ->setPath('/');

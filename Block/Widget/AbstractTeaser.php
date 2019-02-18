@@ -6,8 +6,8 @@
 namespace Sequra\Core\Block\Widget;
 
 use Magento\Framework\View\Element\Template;
-use Magento\Payment\Gateway\ConfigInterface;
 use Magento\Widget\Block\BlockInterface;
+use Sequra\Core\Gateway\Validator\CurrencyValidator;
 
 class AbstractTeaser extends Template implements BlockInterface
 {
@@ -29,9 +29,14 @@ class AbstractTeaser extends Template implements BlockInterface
     protected $formatter;
 
     /**
-     * @var \Sequra\Core\Model\Config
+     * @var Sequra\Core\Model\Config
      */
     protected $config;
+
+    /**
+     * @var IpAddressValidator
+     */
+    private $currencyValidator;
 
     /**
      * Constructor
@@ -40,10 +45,11 @@ class AbstractTeaser extends Template implements BlockInterface
      * @param array $data
      */
     public function __construct(
-        ConfigInterface $config,
+        \Sequra\Core\Model\Config $config,
         \Magento\Framework\App\ScopeResolverInterface $scopeResolver,
         \Magento\Framework\Locale\ResolverInterface $localeResolver,
         \Magento\Framework\View\Element\Template\Context $context,
+        CurrencyValidator $currencyValidator,
         array $data = []
     ) {
         $this->config = $config;
@@ -51,7 +57,29 @@ class AbstractTeaser extends Template implements BlockInterface
         $this->localeResolver = $localeResolver;
         parent::__construct($context, $data);
         $this->formatter = $this->getFormatter();
+        $this->currencyValidator = $currencyValidator;
     }
+    
+    /**
+     * Validate before producing html
+     *
+     * @return string
+     */
+    // phpcs:disable PSR2.Methods.MethodDeclaration.Underscore
+    protected function _toHtml()
+    {
+        $currency = $this->scopeResolver->getScope()->getCurrentCurrency();
+        $storeId = $this->scopeResolver->getScope()->getStoreId();
+        $result = $this->currencyValidator->validate([
+            'storeId' => $storeId,
+            'currency' => $currency->getCode()
+        ]);
+        if ($result->isValid()) {
+            return parent::_toHtml();
+        }
+        return '';
+    }
+    // phpcs:enable
 
     private function getFormatter()
     {

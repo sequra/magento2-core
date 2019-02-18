@@ -29,7 +29,7 @@ class Index extends \Magento\Framework\App\Action\Action
     /**
      * Instantiate IPN model and pass IPN request to it
      *
-     * @return void
+     * @return                                 void
      * @SuppressWarnings(PHPMD.ExitExpression)
      */
     public function execute()
