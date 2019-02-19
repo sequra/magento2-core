@@ -81,7 +81,10 @@ define([
                 }
             }
             try{
-                var destNode = document.querySelector(dest);
+                var destNode = srcNode;
+                if (dest){
+                    destNode = document.querySelector(dest);
+                }
             }
             catch(e){
                 console.error(dest + ' is not a valid css selector to write sequra widget to.');
