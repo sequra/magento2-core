@@ -11,14 +11,14 @@ define([
             theme: ''
         },
         presets: {
-            L:        '{"alignment":"left"}',
-            R:        '{"alignment":"right"}',
-            legacy:   '{"type":"legacy"}',
-            legacyL:  '{"type":"legacy","alignment":"left"}',
-            legacyR:  '{"type":"legacy","alignment":"right"}',
-            minimal:  '{"type":"text","branding":"none","size":"S","starting-text":"as-low-as"}',
-            minimalL: '{"type":"text","branding":"none","size":"S","starting-text":"as-low-as","alignment":"left"}',
-            minimalR: '{"type":"text","branding":"none","size":"S","starting-text":"as-low-as","alignment":"right"}'  
+            L:        {"alignment":"left"},
+            R:        {"alignment":"right"},
+            legacy:   {"type":"legacy"},
+            legacyL:  {"type":"legacy","alignment":"left"},
+            legacyR:  {"type":"legacy","alignment":"right"},
+            minimal:  {"type":"text","branding":"none","size":"S","starting-text":"as-low-as"},
+            minimalL: {"type":"text","branding":"none","size":"S","starting-text":"as-low-as","alignment":"left"},
+            minimalR: {"type":"text","branding":"none","size":"S","starting-text":"as-low-as","alignment":"right"}  
         },
         drawnWidgets: [],
         getText: function (selector) {
@@ -53,6 +53,7 @@ define([
         },
 
         drawPromotionWidget: function (price_src,dest,product,theme,reverse,campaign) {
+            debugger;
             if(this.drawnWidgets.indexOf(price_src+dest+product+theme+reverse+campaign)>=0){
                   return;
               }
@@ -89,16 +90,16 @@ define([
             promoWidgetNode.className = 'sequra-promotion-widget';
             promoWidgetNode.setAttribute('data-amount',price_in_cents);
             promoWidgetNode.setAttribute('data-product',product);
-            if(this.presets[theme]){
-                theme = this.presets[theme]
-            }
-            try {
-                attributes = JSON.parse(theme);
-                for (var key in attributes) {
-                    promoWidgetNode.setAttribute('data-'+key,""+attributes[key]);
+            var attributes = this.presets[theme];
+            if('undefined' === typeof attributes){
+                try {
+                    attributes = JSON.parse(theme);
+                } catch(e){
+                    attributes = {"data-type":"text"};
                 }
-            } catch(e){
-                promoWidgetNode.setAttribute('data-type','text');
+            }
+            for (var key in attributes) {
+                promoWidgetNode.setAttribute('data-'+key,""+attributes[key]);
             }
             if(reverse){
                 promoWidgetNode.setAttribute('data-reverse',reverse);
