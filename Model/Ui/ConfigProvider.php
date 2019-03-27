@@ -12,9 +12,35 @@ use Magento\Checkout\Model\ConfigProviderInterface;
 /**
  * Class ConfigProvider
  */
-final class ConfigProvider implements ConfigProviderInterface
+class ConfigProvider implements ConfigProviderInterface
 {
     const CODE = 'core';
+
+    /**
+     * @var Magento\Payment\Model\Method\ConfigInterface
+     */
+    protected $config;
+
+    /**
+     * @var \Magento\Framework\App\ScopeResolverInterface
+     */
+    protected $scopeResolver;
+
+    /**
+     * @var \Magento\Framework\Locale\ResolverInterface
+     */
+    protected $localeResolver;
+
+    public function __construct(
+        \Magento\Payment\Model\Method\ConfigInterface $config,
+        \Magento\Framework\App\ScopeResolverInterface $scopeResolver,
+        \Magento\Framework\Locale\ResolverInterface $localeResolver
+    ) {
+        $this->config = $config;
+        $this->localeResolver = $localeResolver;
+        $this->scopeResolver = $scopeResolver;
+        $this->formatter = $this->getFormatter();
+    }
 
     /**
      * Retrieve assoc array of checkout configuration
@@ -24,9 +50,37 @@ final class ConfigProvider implements ConfigProviderInterface
     public function getConfig()
     {
         return [
-            'sequra' => [
-                self::CODE => []
+            'payment' => [
+                'sequra_configuration' => [
+                    'merchant' => $this->config->getMerchantRef(),
+                    'assetKey' => $this->config->getAssetsKey(),
+                    'products' => ['i1','pp3','pp5'],
+                    'scriptUri' => $this->config->getScriptUri(),
+                    'decimalSeparator' => $this->getDecimalSeparator(),
+                    'thousandSeparator' => $this->getThousandsSeparator(),
+                    'rebranding' => true
+                ]
             ]
         ];
+    }
+
+    private function getFormatter()
+    {
+        $localeCode = $this->localeResolver->getLocale();
+        $currency = $this->scopeResolver->getScope()->getCurrentCurrency();
+        return new \NumberFormatter(
+            $localeCode . '@currency=' . $currency->getCode(),
+            \NumberFormatter::CURRENCY
+        );
+    }
+
+    public function getDecimalSeparator()
+    {
+        return $this->formatter->getSymbol(\NumberFormatter::DECIMAL_SEPARATOR_SYMBOL);
+    }
+
+    public function getThousandsSeparator()
+    {
+        return $this->formatter->getSymbol(\NumberFormatter::GROUPING_SEPARATOR_SYMBOL);
     }
 }

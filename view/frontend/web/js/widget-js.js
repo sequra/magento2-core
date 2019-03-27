@@ -1,7 +1,6 @@
 define([
-    'jquery',
-    'Magento_Catalog/js/price-utils'
-], function ($, priceUtils) {
+    'jquery'
+], function ($) {
     'use strict';
     $.widget('sequra.widget', {
         options: {
@@ -132,18 +131,17 @@ define([
                     .replace(decimalSymbol, '.')
             );
             if (self.options.max_amount==0 || price < self.options.max_amount) {
-                window.SequraConfiguration = self.options.sequra_configuration;
-                window.SequraOnLoad = [];
-                window.Sequra = {
-                    onLoad: function (callback) {
-                        window.SequraOnLoad.push(callback);
-                    }
-                };
-                if('undefined' == typeof window.Sequra.scriptEnqued){
+                if('undefined' == typeof window.Sequra){
+                    window.SequraConfiguration = self.options.sequra_configuration;
+                    window.SequraOnLoad = [];
+                    window.Sequra = {
+                        onLoad: function (callback) {
+                            window.SequraOnLoad.push(callback);
+                        }
+                    };
                     var a = document.createElement('script');a.async = 1;a.src = window.SequraConfiguration.scriptUri;
                     var m = document.getElementsByTagName('script')[0];
                     m.parentNode.insertBefore(a, m);
-                    window.Sequra.scriptEnqued = true;
                 }
                 $(function () { window.Sequra.onLoad(function () {
                     self.drawPromotionWidget(self.options.css_price_selector, self.options.css_dest_selector, self.options.product, self.options.theme, 0);

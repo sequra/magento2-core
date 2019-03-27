@@ -14,6 +14,12 @@
         </arguments>
     </virtualType>
 
+    <type name="Sequra\Core\Model\Ui\ConfigProvider">
+       <arguments>
+           <argument name="config" xsi:type="object">SequraGatewayConfig</argument>
+       </arguments>
+    </type>
+
     <!-- Logger, initialized with SequraGatewayConfig -->
     <virtualType name="SequraGatewayLogger" type="Magento\Payment\Model\Method\Logger">
         <arguments>
@@ -36,4 +42,6 @@
             <argument name="config" xsi:type="object">SequraGatewayConfig</argument>
         </arguments>
     </virtualType>
+
+
 </config>
