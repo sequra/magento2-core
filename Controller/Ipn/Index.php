@@ -33,6 +33,13 @@ class Index extends \Magento\Framework\App\Action\Action
         $this->_logger = $logger;
         $this->_ipnFactory = $ipnFactory;
         parent::__construct($context);
+        // Fix for Magento2.3 adding isAjax to the request params
+        if (interface_exists("\Magento\Framework\App\CsrfAwareActionInterface")) {
+            $request = $this->getRequest();
+            if ($request instanceof \Magento\Framework\App\Request\Http && $request->isPost()) {
+                $request->setParam('isAjax', true);
+            }
+        }
     }
 
     /**
