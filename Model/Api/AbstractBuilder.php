@@ -108,16 +108,14 @@ abstract class AbstractBuilder implements BuilderInterface
     {
         $items = [];
         $discount_with_tax = 0;
-        //@todo
 
         foreach ($order->getAllItems() as $item) {
-            $dto = $item->getDiscountAmount();
+            $dto = $item->getDiscountAmount() * ( 1 + $item->getTaxPercent() / 100 );
             $discount_with_tax += $dto * 100;
         }
 
         //order discounts
         if ($discount_with_tax > 0) {
-            //$discountExclTax=$discount*1.21; //What kind of tax?
             $item = [];
             $item["type"] = "discount";
             $item["reference"] = self::notNull($order->getCouponCode());
@@ -307,9 +305,9 @@ abstract class AbstractBuilder implements BuilderInterface
             return true;
         }
 
-        if ((strpos(strtolower($_SERVER['HTTP_ACCEPT']),
-                    'application/vnd.wap.xhtml+xml') > 0) or ((isset($_SERVER['HTTP_X_WAP_PROFILE']) or isset($_SERVER['HTTP_PROFILE'])))
-        ) {
+        if (strpos(strtolower($_SERVER['HTTP_ACCEPT']), 'application/vnd.wap.xhtml+xml') > 0 or
+            isset($_SERVER['HTTP_X_WAP_PROFILE']) or
+            isset($_SERVER['HTTP_PROFILE'])) {
             return true;
         }
 
