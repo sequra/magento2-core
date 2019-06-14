@@ -53,7 +53,6 @@ define([
         },
 
         drawPromotionWidget: function (price_src,dest,product,theme,reverse,campaign) {
-            debugger;
             if(this.drawnWidgets.indexOf(price_src+dest+product+theme+reverse+campaign)>=0){
                   return;
               }
