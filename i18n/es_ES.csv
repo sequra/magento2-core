@@ -1,0 +1,35 @@
+"All Allowed statistics","All Allowed statistics"
+"Specific statistics","Specific statistics"
+Sandbox,Sandbox
+Live,Live
+"00:00 AM","00:00 AM"
+"01:00 AM","01:00 AM"
+"02:00 AM","02:00 AM"
+"03:00 AM","03:00 AM"
+"04:00 AM","04:00 AM"
+"05:00 AM","05:00 AM"
+"06:00 AM","06:00 AM"
+"Grand total","Grand total"
+"Payment method","Payment method"
+Country,Country
+Browser,Browser
+Status,Status
+"Order ref sent to SeQura: %1","Order ref sent to SeQura: %1"
+"Note: %1","Note: %1"
+"You notified customer about invoice #%1.","You notified customer about invoice #%1."
+"IPN ""%1""","IPN ""%1"""
+"Pending Sequra","Pending Sequra"
+"Approved in Sequra","Approved in Sequra"
+"SeQura Payment Solutions","SeQura Payment Solutions"
+"Merchant Ref","Merchant Ref"
+User,User
+Password,Password
+"Assets key","Assets key"
+"Test IP addrs.","Test IP addrs."
+Mode,Mode
+"New Order Status","New Order Status"
+"Sequra Reporting","Sequra Reporting"
+"Enable Delivery Report sending to SeQura","Enable Delivery Report sending to SeQura"
+"Time to send reports to SeQura","Time to send reports to SeQura"
+"Allow sending statistics with the report","Allow sending statistics with the report"
+"Select allowed stats if any","Select allowed stats if any"
