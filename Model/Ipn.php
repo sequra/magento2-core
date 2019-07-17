@@ -156,7 +156,7 @@ class Ipn extends \Sequra\Core\Model\AbstractIpn implements IpnInterface
     /**
      *
      */
-    function isValidSignature()
+    private function isValidSignature()
     {
         return $this->builder->sign($this->getRequestData('id')) == $this->getRequestData('signature');
     }
@@ -174,9 +174,11 @@ class Ipn extends \Sequra\Core\Model\AbstractIpn implements IpnInterface
             return $quote->getReservedOrderId();
         }
         if ($this->_client->cartHasChanged()) {
-            $log_msg = $_SERVER['SERVER_PROTOCOL'] . ' 410 Cart has changed';
+            $log_msg = $_SERVER['SERVER_PROTOCOL'] . '410 Cart has changed';
             header($log_msg, true, 410);
-            die($log_msg);
+            die(
+                json_encode($this->_client->getJson())
+            );
         } else {
             header($_SERVER['SERVER_PROTOCOL'] . ' Unknown error', true, 500);
             die($this->_client->dump());
@@ -226,9 +228,17 @@ class Ipn extends \Sequra\Core\Model\AbstractIpn implements IpnInterface
         try {
             // Handle payment_status
             $this->_registerPaymentCapture();
-            if($sent_ref = $this->sendOrderRefToSequra()){
-                $this->_order->setState('processing');;
-                $this->_order->addStatusHistoryComment(__('Order ref sent to SeQura: %1',$sent_ref),$this->getConfigData('order_status'));
+            $sent_ref = $this->sendOrderRefToSequra();
+            if ($sent_ref) {
+                $status_name = (bool) $this->getConfigData('autoinvoice')?
+                    'order_status':
+                    'new_order_status';
+                $status = $this->getConfigData($status_name);
+                $this->_order->setState($status);
+                $this->_order->addStatusHistoryComment(
+                    __('Order ref sent to SeQura: %1',$sent_ref),
+                    $status
+                );
                 $this->_order->setData('sequra_order_send', 1);
                 $this->orderRepositoryInterface->save($this->_order);
             }
@@ -273,30 +283,29 @@ class Ipn extends \Sequra\Core\Model\AbstractIpn implements IpnInterface
             http_response_code(410);
             die($log_msg = '{"result": "Error", "message":"' . $log_msg . '"}"');
         }
+        if ((bool) $this->getConfigData('autoinvoice')) {//@todo: find where the invoice is created
+            $payment = $this->_order->getPayment();
+            $payment->setTransactionId(
+                $this->getRequestData('order_ref')
+            );
+            $payment->setCurrencyCode('EUR');
+            $payment->setPreparedMessage(
+                $this->_createIpnComment('SEQURA notification received')
+            );
+            $payment->setParentTransactionId(
+                $parentTransactionId
+            );
+            $payment->setShouldCloseParentTransaction(
+                true
+            );
+            $payment->setIsTransactionClosed(
+                0
+            );
+            $payment->registerCaptureNotification(
+                $this->order_data['cart']['order_total_with_tax'] / 100,
+                $skipFraudDetection && $parentTransactionId
+            );
 
-        $payment = $this->_order->getPayment();
-        $payment->setTransactionId(
-            $this->getRequestData('order_ref')
-        );
-        $payment->setCurrencyCode('EUR');
-        $payment->setPreparedMessage(
-            $this->_createIpnComment('SEQURA notification received')
-        );
-        $payment->setParentTransactionId(
-            $parentTransactionId
-        );
-        $payment->setShouldCloseParentTransaction(
-            true
-        );
-        $payment->setIsTransactionClosed(
-            0
-        );
-        $payment->registerCaptureNotification(
-            $this->order_data['cart']['order_total_with_tax'] / 100,
-            $skipFraudDetection && $parentTransactionId
-        );
-
-        if ($this->getConfigData('autoinvoice')) {//@todo: find where the invoice is created
             $invoice = $payment->getCreatedInvoice();
             $this->_order->addStatusHistoryComment(
                 __('You notified customer about invoice #%1.', $invoice->getIncrementId())

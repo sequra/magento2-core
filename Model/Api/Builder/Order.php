@@ -77,6 +77,11 @@ class Order extends AbstractBuilder
         $ret = parent::merchant();
         $id = $this->_order->getId();
         $ret['notify_url'] = $this->_urlBuilder->getUrl('sequra/ipn');
+        // Fix for Magento2.3 adding isAjax to the request params
+        if (interface_exists("\Magento\Framework\App\CsrfAwareActionInterface")) {
+            $ret['notify_url'] = $this->_urlBuilder->getUrl('sequra/ipn2');
+        }
+
         $ret['notification_parameters'] = [
             'id' => $id,
             'method' => $this->_order->getPayment()->getMethod(),
