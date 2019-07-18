@@ -6,7 +6,7 @@
 namespace Sequra\Core\Controller\Ipn;
 
 /**
- * Unified IPN controller for all supported PayPal methods
+ * Unified IPN controller for all supported SeQura methods
  */
 class Index extends \Magento\Framework\App\Action\Action
 {

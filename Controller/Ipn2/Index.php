@@ -9,7 +9,7 @@ use Magento\Framework\App\CsrfAwareActionInterface;
 use Magento\Framework\App\RequestInterface;
 
 /**
- * Unified IPN controller for all supported PayPal methods
+ * Unified IPN controller for all supported SeQura methods
  */
 class Index extends \Sequra\Core\Controller\Ipn\Index implements CsrfAwareActionInterface
 {
