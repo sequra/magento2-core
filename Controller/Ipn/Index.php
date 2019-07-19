@@ -2,16 +2,13 @@
 /**
  * Copyright © 2017 SeQura Engineering. All rights reserved.
  */
+
 namespace Sequra\Core\Controller\Ipn;
 
-use Magento\Framework\App\CsrfAwareActionInterface;
-use Magento\Framework\App\Request\InvalidRequestException;
-use Magento\Framework\App\RequestInterface;
-
 /**
- * Unified IPN controller for all supported SeQura methods
+ * Unified IPN controller for all supported PayPal methods
  */
-class Index extends \Magento\Framework\App\Action\Action implements CsrfAwareActionInterface
+class Index extends \Magento\Framework\App\Action\Action
 {
     /**
      * @var \Psr\Log\LoggerInterface
@@ -36,6 +33,13 @@ class Index extends \Magento\Framework\App\Action\Action implements CsrfAwareAct
         $this->_logger = $logger;
         $this->_ipnFactory = $ipnFactory;
         parent::__construct($context);
+        // Fix for Magento2.3 adding isAjax to the request params
+        if (interface_exists("\Magento\Framework\App\CsrfAwareActionInterface")) {
+            $request = $this->getRequest();
+            if ($request instanceof \Magento\Framework\App\Request\Http && $request->isPost()) {
+                $request->setParam('isAjax', true);
+            }
+        }
     }
 
     /**
@@ -58,22 +62,5 @@ class Index extends \Magento\Framework\App\Action\Action implements CsrfAwareAct
             $this->getResponse()->setBody($e->getMessage() . "\n" . $e->getTraceAsString());
             $this->getResponse()->sendResponse();
         }
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function createCsrfValidationException(
-        RequestInterface $request
-    ): ?InvalidRequestException {
-        return null;
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function validateForCsrf(RequestInterface $request): ?bool
-    {
-        return true;
     }
 }
