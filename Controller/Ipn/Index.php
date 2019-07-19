@@ -2,13 +2,16 @@
 /**
  * Copyright © 2017 SeQura Engineering. All rights reserved.
  */
-
 namespace Sequra\Core\Controller\Ipn;
+
+use Magento\Framework\App\CsrfAwareActionInterface;
+use Magento\Framework\App\Request\InvalidRequestException;
+use Magento\Framework\App\RequestInterface;
 
 /**
  * Unified IPN controller for all supported SeQura methods
  */
-class Index extends \Magento\Framework\App\Action\Action
+class Index extends \Magento\Framework\App\Action\Action implements CsrfAwareActionInterface
 {
     /**
      * @var \Psr\Log\LoggerInterface
@@ -55,5 +58,22 @@ class Index extends \Magento\Framework\App\Action\Action
             $this->getResponse()->setBody($e->getMessage() . "\n" . $e->getTraceAsString());
             $this->getResponse()->sendResponse();
         }
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function createCsrfValidationException(
+        RequestInterface $request
+    ): ?InvalidRequestException {
+        return null;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function validateForCsrf(RequestInterface $request): ?bool
+    {
+        return true;
     }
 }
