@@ -8,7 +8,8 @@ define([
             css_price_selector: '.price',
             css_dest_selector: '',
             product: 'i1',
-            theme: ''
+            theme: '',
+            campaign: ''
         },
         presets: {
             L:        {"alignment":"left"},
@@ -54,8 +55,8 @@ define([
 
         drawPromotionWidget: function (price_src,dest,product,theme,reverse,campaign) {
             if(this.drawnWidgets.indexOf(price_src+dest+product+theme+reverse+campaign)>=0){
-                  return;
-              }
+                return;
+            }
             this.drawnWidgets.push(price_src+dest+product+theme+reverse+campaign);
             var promoWidgetNode = document.createElement('div');
             var price_in_cents = 0;
@@ -144,7 +145,7 @@ define([
                     m.parentNode.insertBefore(a, m);
                 }
                 $(function () { window.Sequra.onLoad(function () {
-                    self.drawPromotionWidget(self.options.css_price_selector, self.options.css_dest_selector, self.options.product, self.options.theme, 0);
+                    self.drawPromotionWidget(self.options.css_price_selector, self.options.css_dest_selector, self.options.product, self.options.theme, 0, self.options.campaign);
                     window.Sequra.refreshComponents();
                 })});
             }
