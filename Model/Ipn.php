@@ -307,9 +307,11 @@ class Ipn extends \Sequra\Core\Model\AbstractIpn implements IpnInterface
             );
 
             $invoice = $payment->getCreatedInvoice();
-            $this->_order->addStatusHistoryComment(
-                __('You notified customer about invoice #%1.', $invoice->getIncrementId())
-            );
+            if (!is_null($invoice)) {
+                $this->_order->addStatusHistoryComment(
+                    __('You notified customer about invoice #%1.', $invoice->getIncrementId())
+                );
+            }
         }
     }
 
