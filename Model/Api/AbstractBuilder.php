@@ -228,12 +228,12 @@ abstract class AbstractBuilder implements BuilderInterface
         if (!is_null($company)) {
             $data['company'] = self::notNull($company);
         }
-        $vat = $customer->getVatId();
+        $vat = $customer->getTaxvat();
         if (!is_null($vat)) {
             $data['vat_number'] = self::notNull($vat);
             $data['nin'] = self::notNull($vat);
         }
-        $dob = $customer->getCustomerDob();
+        $dob = $customer->getDob();
         if (!is_null($dob)) {
             $data['date_of_birth'] = self::dateOrBlank($dob);
         }
