@@ -65,7 +65,7 @@ define([
                 var MutationObserver    = window.MutationObserver || window.WebKitMutationObserver;
                 if(MutationObserver && srcNode){//Don't break if not supported in browser
                     if(!srcNode.getAttribute('observed-by-sequra-promotion-widget')){//Define only one observer per price_src
-                        var mo = new MutationObserver(this.mutationCallback);
+                        var mo = new MutationObserver(this.mutationCallback.bind(this));
                         mo.observe(srcNode, {childList: true, subtree: true});
                         mo.observed_as = price_src;
                         srcNode.setAttribute('observed-by-sequra-promotion-widget',1);
