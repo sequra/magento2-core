@@ -12,14 +12,14 @@ class Order extends AbstractBuilder
     /**
      * @var \Magento\Checkout\Model\Session
      */
-    protected $_checkoutSession;
+    protected $checkoutSession;
 
     /**
      * @var \Magento\Customer\Model\Session
      */
-    protected $_customerSession;
+    protected $customerSession;
 
-    protected $_shippingAddress;
+    protected $shippingAddress;
 
     public function __construct(
         \Magento\Sales\Model\OrderFactory $orderFactory,
@@ -40,12 +40,12 @@ class Order extends AbstractBuilder
             $moduleResource,
             $logger
         );
-        $this->_customerSession = $customerSession;
+        $this->customerSession = $customerSession;
     }
 
     public function setOrder(\Magento\Framework\Model\AbstractModel $order)
     {
-        $this->_order = $order;
+        $this->order = $order;
         return $this;
     }
 
@@ -64,8 +64,8 @@ class Order extends AbstractBuilder
         $order = $this->fixRoundingProblems($order);
         if ($sendRef) {
             $order['merchant_reference'] = [
-                'order_ref_1' => $this->_order->getReservedOrderId(),
-                'order_ref_2' => $this->_order->getId()
+                'order_ref_1' => $this->order->getReservedOrderId(),
+                'order_ref_2' => $this->order->getId()
             ];
         }
 
@@ -75,15 +75,15 @@ class Order extends AbstractBuilder
     public function merchant()
     {
         $ret = parent::merchant();
-        $id = $this->_order->getId();
-        $ret['notify_url'] = $this->_urlBuilder->getUrl('sequra/ipn');
+        $id = $this->order->getId();
+        $ret['notify_url'] = $this->urlBuilder->getUrl('sequra/ipn');
         $ret['notification_parameters'] = [
             'id' => $id,
-            'method' => $this->_order->getPayment()->getMethod(),
+            'method' => $this->order->getPayment()->getMethod(),
             'signature' => $this->sign($id)
         ];
-        $ret['return_url'] = $this->_urlBuilder->getUrl('sequra/comeback', ['quote_id' => $id]);
-        $ret['abort_url'] = $this->_urlBuilder->getUrl('sequra/abort');
+        $ret['return_url'] = $this->urlBuilder->getUrl('sequra/comeback', ['quote_id' => $id]);
+        $ret['abort_url'] = $this->urlBuilder->getUrl('sequra/abort');
 
         return $ret;
     }
@@ -93,27 +93,27 @@ class Order extends AbstractBuilder
         $data = [];
         $data['delivery_method'] = $this->getDeliveryMethod();
         $data['gift'] = false;
-        $data['currency'] = $this->_order->getQuoteCurrencyCode();//$this->_order->getOrderCurrencyCode();
-        $data['created_at'] = $this->_order->getCreatedAt();
-        $data['updated_at'] = $this->_order->getUpdatedAt();
-        $data['cart_ref'] = $this->_order->getId();//$this->_order->getQuoteId();
-        $data['order_total_with_tax'] = self::integerPrice($this->_order->getGrandTotal());
+        $data['currency'] = $this->order->getQuoteCurrencyCode();//$this->order->getOrderCurrencyCode();
+        $data['created_at'] = $this->order->getCreatedAt();
+        $data['updated_at'] = $this->order->getUpdatedAt();
+        $data['cart_ref'] = $this->order->getId();//$this->order->getQuoteId();
+        $data['order_total_with_tax'] = self::integerPrice($this->order->getGrandTotal());
         $data['order_total_without_tax'] = $data['order_total_with_tax'];
-        $data['items'] = $this->items($this->_order);
+        $data['items'] = $this->items($this->order);
 
         return $data;
     }
 
     public function deliveryAddress()
     {
-        $address = $this->_order->getShippingAddress();
+        $address = $this->order->getShippingAddress();
         if ('' == $address->getFirstname()) {
-            $address = $this->_order->getBillingAddress();
+            $address = $this->order->getBillingAddress();
         }
         $extra = [];
         /*Specific for biebersdorf_customerordercomment extension*/
-        if ('' != $this->_order->getData('biebersdorf_customerordercomment')) {
-            $extra['extra'] = $this->_order->getData('biebersdorf_customerordercomment');
+        if ('' != $this->order->getData('biebersdorf_customerordercomment')) {
+            $extra['extra'] = $this->order->getData('biebersdorf_customerordercomment');
         }
 
         return array_merge($extra, $this->address($address));
@@ -121,7 +121,7 @@ class Order extends AbstractBuilder
 
     public function invoiceAddress()
     {
-        $address = $this->_order->getBillingAddress();
+        $address = $this->order->getBillingAddress();
 
         return $this->address($address);
     }
@@ -129,7 +129,7 @@ class Order extends AbstractBuilder
     public function customer()
     {
         $data = parent::customer();
-        $data['language_code'] = self::notNull($this->_localeResolver->getLocale());
+        $data['language_code'] = self::notNull($this->localeResolver->getLocale());
         if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
             $data['ip_number'] = $_SERVER['HTTP_CLIENT_IP'];
         } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
@@ -138,14 +138,14 @@ class Order extends AbstractBuilder
             $data['ip_number'] = $_SERVER['REMOTE_ADDR'];
         }
         $data['user_agent'] = $_SERVER["HTTP_USER_AGENT"];
-        $data['logged_in'] = (1 == $this->_customerSession->isLoggedIn());
+        $data['logged_in'] = (1 == $this->customerSession->isLoggedIn());
 
         if ($data['logged_in']) {
-            $customer = $this->_customerSession->getCustomer();
+            $customer = $this->customerSession->getCustomer();
             $data['created_at'] = self::dateOrBlank($customer->getCreatedAt());
             $data['updated_at'] = self::dateOrBlank($customer->getUpdatedAt());
             $data['date_of_birth'] = self::dateOrBlank($customer->getDob());
-            $data['previous_orders'] = self::getPreviousOrders($customer->getId());
+            $data['previousorders'] = self::getPreviousOrders($customer->getId());
         }
 
         return $data;
@@ -153,9 +153,10 @@ class Order extends AbstractBuilder
 
     public function getPreviousOrders($customerID)
     {
-        $order_model = $this->_orderFactory->create();
-        $orderCollection = $order_model->getCollection()->addFieldToFilter('customer_id',
-            ['eq' => [$customerID]]);
+        $order_model = $this->orderFactory->create();
+        $orderCollection = $order_model
+            ->getCollection()
+            ->addFieldToFilter('customer_id', ['eq' => [$customerID]]);
         $orders = [];
         if ($orderCollection) {
             foreach ($orderCollection as $order_row) {
@@ -172,18 +173,18 @@ class Order extends AbstractBuilder
 
     public function getShippingInclTax()
     {
-        return $this->_order->getShippingAddress()->getShippingInclTax();
+        return $this->order->getShippingAddress()->getShippingInclTax();
     }
 
     public function getShippingMethod()
     {
-        return $this->_order->getShippingAddress()->getShippingMethod();
+        return $this->order->getShippingAddress()->getShippingMethod();
     }
 
     public function productItem()
     {
         $items = [];
-        foreach ($this->_order->getAllVisibleItems() as $itemOb) {
+        foreach ($this->order->getAllVisibleItems() as $itemOb) {
             $item = [];
             $item["reference"] = self::notNull($itemOb->getSku());
             $item["name"] = $itemOb->getName() ? self::notNull($itemOb->getName()) : self::notNull($itemOb->getSku());
@@ -201,7 +202,7 @@ class Order extends AbstractBuilder
                 $item["price_without_tax"] = $item["price_with_tax"] = $item["total_without_tax"] = $item["total_with_tax"] = self::integerPrice(self::notNull($itemOb->getRowTotalInclTax()));
             }
 
-            $product = $this->_productRepository->getById($itemOb->getProductId());
+            $product = $this->productRepository->getById($itemOb->getProductId());
             $items[] = array_merge($item, $this->fillOptionalProductItemFields($product));
         }
 
@@ -210,9 +211,9 @@ class Order extends AbstractBuilder
 
     public function getObjWithCustomerData()
     {
-        if ($this->_customerSession->isLoggedIn()) {
-            return $this->_customerSession->getCustomer();
+        if ($this->customerSession->isLoggedIn()) {
+            return $this->customerSession->getCustomer();
         }
-        return $this->_order->getBillingAddress();
+        return $this->order->getBillingAddress();
     }
 }
