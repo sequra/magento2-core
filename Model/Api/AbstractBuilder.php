@@ -15,29 +15,29 @@ abstract class AbstractBuilder implements BuilderInterface
     /**
      * @var \Magento\Sales\Model\OrderFactory
      */
-    protected $_orderFactory;
+    protected $orderFactory;
 
     /**
      * @var \Magento\Catalog\Api\ProductRepositoryInterface
      */
-    protected $_productRepository;
+    protected $productRepository;
 
     /**
      * Order object or Quote Object
      *
      * @var \Magento\Framework\Model\AbstractModel
      */
-    protected $_order;
+    protected $order;
 
     /**
      * @var \Magento\Framework\UrlInterface
      */
-    protected $_urlBuilder;
+    protected $urlBuilder;
 
     /**
      * @var \Magento\Framework\Locale\ResolverInterface
      */
-    protected $_localeResolver;
+    protected $localeResolver;
 
     /**
      * @var \Magento\Framework\Module\ResourceInterface
@@ -49,12 +49,12 @@ abstract class AbstractBuilder implements BuilderInterface
      *
      * @var \Magento\Framework\App\Config\ScopeConfigInterface
      */
-    protected $_scopeConfig;
+    protected $scopeConfig;
 
     /**
      * @var \Psr\Log\LoggerInterface
      */
-    protected $_logger;
+    protected $logger;
 
     public function __construct(
         \Magento\Sales\Model\OrderFactory $orderFactory,
@@ -65,21 +65,26 @@ abstract class AbstractBuilder implements BuilderInterface
         \Magento\Framework\Module\ResourceInterface $moduleResource,
         \Psr\Log\LoggerInterface $logger
     ) {
-        $this->_orderFactory = $orderFactory;
-        $this->_productRepository = $productRepository;
-        $this->_urlBuilder = $urlBuilder;
-        $this->_scopeConfig = $scopeConfig;
-        $this->_localeResolver = $localeResolver;
+        $this->orderFactory = $orderFactory;
+        $this->productRepository = $productRepository;
+        $this->urlBuilder = $urlBuilder;
+        $this->scopeConfig = $scopeConfig;
+        $this->localeResolver = $localeResolver;
         $this->moduleResource = $moduleResource;
         $this->merchant_id = $this->getConfigData('merchant_ref');
-        $this->_logger = $logger;
+        $this->logger = $logger;
     }
 
-    public function getConfigData($field, $storeId = null)
+    protected function getConfigData($field, $storeId = null)
     {
         $path = 'sequra/core/' . $field;
 
-        return $this->_scopeConfig->getValue($path, \Magento\Store\Model\ScopeInterface::SCOPE_STORE, $storeId);
+        return $this->getGlobalConfigData($path, $storeId);
+    }
+
+    protected function getGlobalConfigData($path, $storeId = null)
+    {
+        return $this->scopeConfig->getValue($path, \Magento\Store\Model\ScopeInterface::SCOPE_STORE, $storeId);
     }
 
     public function merchant()
@@ -108,9 +113,11 @@ abstract class AbstractBuilder implements BuilderInterface
     {
         $items = [];
         $discount_with_tax = 0;
-
         foreach ($order->getAllItems() as $item) {
-            $dto = $item->getDiscountAmount() * ( 1 + $item->getTaxPercent() / 100 );
+            $dto = $item->getDiscountAmount();
+            if (!$this->getGlobalConfigData(\Magento\Tax\Model\Config::CONFIG_XML_PATH_PRICE_INCLUDES_TAX)) {
+                $dto *= ( 1 + $item->getTaxPercent() / 100 );
+            }
             $discount_with_tax += $dto * 100;
         }
 
@@ -175,7 +182,7 @@ abstract class AbstractBuilder implements BuilderInterface
     {
         $shippingMethod = $this->getShippingMethod();
         $carrier = explode('_', $shippingMethod, 2);
-        $title = $this->_scopeConfig->getValue('carriers/' . $carrier[0] . '/title');
+        $title = $this->scopeConfig->getValue('carriers/' . $carrier[0] . '/title');
 
         return [
             'name' => self::notNull(isset($carrier[1]) ? $carrier[1] : 'Envío'),
@@ -221,7 +228,7 @@ abstract class AbstractBuilder implements BuilderInterface
         $data['surnames'] = self::notNull($customer->getLastname());
         $data['email'] = self::notNull($customer->getEmail());
         if (!$data['email']) {
-            $data['email'] = self::notNull($this->_order->getData('customer_email'));
+            $data['email'] = self::notNull($this->order->getData('customer_email'));
         }
         // OPTIONAL
         $company = $customer->getCompany();

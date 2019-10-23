@@ -15,26 +15,26 @@ class Report extends AbstractBuilder
      *
      * @var \Magento\Sales\Model\Order
      */
-    protected $_order;
+    protected $order;
 
-    protected $_builtData;
-    protected $_sequraOrders = null;
-    protected $_orders = [];
-    protected $_currentshipment = null;
-    protected $_ids = [];
-    protected $_brokenorders = [];
-    protected $_stats = [];
-    protected $_store_id = null;
+    protected $builtData;
+    protected $sequraOrders = null;
+    protected $orders = [];
+    protected $currentshipment = null;
+    protected $ids = [];
+    protected $brokenorders = [];
+    protected $stats = [];
+    protected $store_id = null;
 
     /**
      * @var \Magento\Sales\Api\OrderRepositoryInterface
      */
-    protected $_orderRepository;
+    protected $orderRepository;
 
     /**
      * @var \Magento\Sales\Model\ResourceModel\Order\CollectionFactory
      */
-    protected $_orderCollectionFactory;
+    protected $orderCollectionFactory;
 
     /**
      * @var \Magento\Customer\Api\CustomerRepositoryInterface
@@ -44,7 +44,7 @@ class Report extends AbstractBuilder
     /**
      * @var \Magento\Framework\Api\SearchCriteriaBuilder
      */
-    protected $_searchCriteriaBuilder;
+    protected $searchCriteriaBuilder;
 
     public function __construct(
         \Magento\Sales\Api\OrderRepositoryInterface $orderRepository,
@@ -59,36 +59,36 @@ class Report extends AbstractBuilder
         \Magento\Framework\Module\ResourceInterface $moduleResource,
         \Psr\Log\LoggerInterface $logger
     ) {
-        $this->_orderRepository = $orderRepository;
-        $this->_orderCollectionFactory = $orderCollectionFactory;
+        $this->orderRepository = $orderRepository;
+        $this->orderCollectionFactory = $orderCollectionFactory;
         $this->customerRepository = $customerRepository;
-        $this->_searchCriteriaBuilder = $searchCriteriaBuilder;
+        $this->searchCriteriaBuilder = $searchCriteriaBuilder;
         parent::__construct($orderFactory, $productRepository, $urlBuilder, $scopeConfig, $localeResolver, $moduleResource, $logger);
     }
 
     public function getOrderCount()
     {
-        return count($this->_ids);
+        return count($this->ids);
     }
 
     public function setOrdersAsSent()
     {
-        foreach ($this->_sequraOrders as $order) {
-            $order->setData('sequra_order_send', 0);
-            $this->_orderRepository->save($order);
+        foreach ($this->sequraOrders as $order) {
+            $order->setData('sequraorder_send', 0);
+            $this->orderRepository->save($order);
         }
     }
 
     public function build($store_id)
     {
-        $this->_store_id = $store_id;
+        $this->store_id = $store_id;
         $this->getOrders();
         $this->getStats();
-        $this->_builtData = [
+        $this->builtData = [
             'merchant' => $this->merchant(),
-            'orders' => $this->_orders,
-            'broken_orders' => $this->_brokenorders,
-            'statistics' => ['orders' => $this->_stats],
+            'orders' => $this->orders,
+            'brokenorders' => $this->brokenorders,
+            'statistics' => ['orders' => $this->stats],
             'platform' => self::platform()
         ];
     }
@@ -96,11 +96,11 @@ class Report extends AbstractBuilder
     protected function getOrders()
     {
         $this->getSequraOrders();
-        $this->_orders = [];
-        foreach ($this->_sequraOrders as $order) {
-            $this->_order = $this->_orderRepository->get($order->getId());//needed to populate related objects e.g.: customer
-            $this->_orders[] = $this->orderWithItems($this->_order);
-            $this->_ids[] = $this->_order->getId();
+        $this->orders = [];
+        foreach ($this->sequraOrders as $order) {
+            $this->order = $this->orderRepository->get($order->getId());//needed to populate related objects e.g.: customer
+            $this->orders[] = $this->orderWithItems($this->order);
+            $this->ids[] = $this->order->getId();
             $order->addStatusHistoryComment('Envío informado a SeQura');
         }
         $this->getBrokenOrders();
@@ -113,17 +113,17 @@ class Report extends AbstractBuilder
      */
     protected function getSequraOrders()
     {
-        $collection = $this->_orderCollectionFactory->create()->addFieldToSelect([
+        $collection = $this->orderCollectionFactory->create()->addFieldToSelect([
             'entity_id',//load minimun fields, anyway later, we need to populate all and load related objects.
             'increment_id'
         ])->addFieldToFilter(
-            'sequra_order_send',
+            'sequraorder_send',
             ['eq' => 1]
         );
         /* join with payment table */
         $collection->getSelect()
             ->join(
-                ["sop" => "sales_order_payment"],
+                ["sop" => "salesorder_payment"],
                 'main_table.entity_id = sop.parent_id',
                 ['method']
             )
@@ -134,16 +134,16 @@ class Report extends AbstractBuilder
             )
             ->where('sop.method like ?', 'sequra\_%')
             ->distinct(true);
-        $this->_sequraOrders = $collection;
+        $this->sequraOrders = $collection;
 
-        return $this->_sequraOrders;
+        return $this->sequraOrders;
     }
 
     public function orderWithItems($order)
     {
-        $this->_currentshipment = $order->getShipmentsCollection()->getFirstItem();
-        $this->_order = $order;
-        $aux['sent_at'] = self::dateOrBlank($this->_currentshipment->getCreatedAt());
+        $this->currentshipment = $order->getShipmentsCollection()->getFirstItem();
+        $this->order = $order;
+        $aux['sent_at'] = self::dateOrBlank($this->currentshipment->getCreatedAt());
         $aux['state'] = "delivered";
         $aux['delivery_address'] = $this->deliveryAddress();
         $aux['invoice_address'] = $this->invoiceAddress();
@@ -160,18 +160,18 @@ class Report extends AbstractBuilder
 
     public function deliveryAddress()
     {
-        return self::address($this->_order->getShippingAddress());
+        return self::address($this->order->getShippingAddress());
     }
 
     public function invoiceAddress()
     {
-        return self::address($this->_order->getBillingAddress());
+        return self::address($this->order->getBillingAddress());
     }
 
     public function customer()
     {
         $data = parent::customer();
-        $customer_id = $this->_order->getCustomerId();
+        $customer_id = $this->order->getCustomerId();
         if ($customer_id) {
             $customer = $this->customerRepository->getById($customer_id);
             $data['email'] = self::notNull($customer->getEmail());
@@ -183,10 +183,10 @@ class Report extends AbstractBuilder
     public function shipmentCart()
     {
         $data = [];
-        $data['currency'] = $this->_order->getOrderCurrencyCode();
+        $data['currency'] = $this->order->getOrderCurrencyCode();
         $data['delivery_method'] = $this->getDeliveryMethod();
         $data['gift'] = false;
-        $data['items'] = $this->items($this->_order);
+        $data['items'] = $this->items($this->order);
 
         if (count($data['items']) > 0) {
             $totals = Helper::totals($data);
@@ -200,7 +200,7 @@ class Report extends AbstractBuilder
     {
         $data = [];
         $data['items'] = [];
-        foreach ($this->_order->getAllVisibleItems() as $itemOb) {
+        foreach ($this->order->getAllVisibleItems() as $itemOb) {
             if (is_null($itemOb->getProductId())) {
                 continue;
             }
@@ -219,7 +219,7 @@ class Report extends AbstractBuilder
                 $item["total_without_tax"] = $item["total_with_tax"] = $item["price_without_tax"] = $item["price_with_tax"] = self::integerPrice(self::notNull($qty * $itemOb->getPriceInclTax()));
                 $item["tax_rate"] = 0;
             }
-            $product = $this->_productRepository->getById($itemOb->getProductId());
+            $product = $this->productRepository->getById($itemOb->getProductId());
             if ($item["quantity"] > 0) {
                 $data['items'][] = array_merge($item, $this->fillOptionalProductItemFields($product));
             }
@@ -242,16 +242,16 @@ class Report extends AbstractBuilder
 
     private function getBrokenOrders()
     {
-        $cleaned_orders = [];
-        $this->_brokenorders = [];
-        foreach ($this->_orders as $key => $order) {
+        $cleanedorders = [];
+        $this->brokenorders = [];
+        foreach ($this->orders as $key => $order) {
             if (!Helper::isConsistentCart($order['cart'])) {
-                $this->_brokenorders[] = $order;
+                $this->brokenorders[] = $order;
             } else {
-                $cleaned_orders[] = $order;
+                $cleanedorders[] = $order;
             }
         }
-        $this->_orders = $cleaned_orders;
+        $this->orders = $cleanedorders;
     }
 
     /**
@@ -260,7 +260,7 @@ class Report extends AbstractBuilder
     private function getStats()
     {
         $statsCollection = $this->getStatsCollection();
-        $this->_stats = [];
+        $this->stats = [];
         foreach ($statsCollection as $order) {
             $status = 'processing';
             if ($order->getData('sp_id')) {
@@ -371,7 +371,7 @@ class Report extends AbstractBuilder
                 $stat['raw_status'] = $order->getStatus();
             }
             if ('0' == $this->getConfigData('allowspecificstattypes') || count($stattypes) > 0) {
-                $this->_stats[] = $stat;
+                $this->stats[] = $stat;
             }
         }
     }
@@ -387,31 +387,31 @@ class Report extends AbstractBuilder
         $to = date('Y-m-d H:i:s', $time);
         $lastTime = $time - 604800; // 60*60*24*
         $from = date('Y-m-d H:i:s', $lastTime);
-        $criteria = $this->_searchCriteriaBuilder
-            ->addFilter('store_id', $this->_store_id)
+        $criteria = $this->searchCriteriaBuilder
+            ->addFilter('store_id', $this->store_id)
             ->addFilter('created_at', $from, 'gt')
             ->addFilter('created_at', $to, 'lt')
             ->create();
-        $orderResult = $this->_orderRepository->getList($criteria);
+        $orderResult = $this->orderRepository->getList($criteria);
         return $orderResult->getItems();
     }
 
     public function getBuiltData()
     {
-        return $this->_builtData;
+        return $this->builtData;
     }
 
     public function productItem()
     {
         $items = [];
-        foreach ($this->_order->getAllVisibleItems() as $itemOb) {
+        foreach ($this->order->getAllVisibleItems() as $itemOb) {
             if (is_null($itemOb->getProductId()) || $itemOb->getQtyShipped() <= 0) {
                 continue;
             }
             try {
-                $product = $this->_productRepository->getById($itemOb->getProductId());
+                $product = $this->productRepository->getById($itemOb->getProductId());
             } catch (Exception $e) {
-                $this->_logger->addError(
+                $this->logger->addError(
                     'Can not get product for id: ' .
                     $itemOb->getProductId() .
                     '  ' . $e->getMessage()
@@ -441,16 +441,16 @@ class Report extends AbstractBuilder
 
     public function getShippingInclTax()
     {
-        return $this->_order->getShippingInclTax();
+        return $this->order->getShippingInclTax();
     }
 
     public function getShippingMethod()
     {
-        return $this->_order->getShippingMethod();
+        return $this->order->getShippingMethod();
     }
 
     public function getObjWithCustomerData()
     {
-        return $this->_order->getBillingAddress();
+        return $this->order->getBillingAddress();
     }
 }
