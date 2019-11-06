@@ -8,6 +8,7 @@ namespace Sequra\Core\Model;
 
 use Exception;
 use Magento\Sales\Model\Order\Email\Sender\OrderSender;
+use Magento\Sales\Model\Order\OrderStateResolverInterface;
 
 /**
  * Sequra Instant Payment Notification processor model
@@ -92,6 +93,7 @@ class Ipn extends \Sequra\Core\Model\AbstractIpn implements IpnInterface
      * @param \Sequra\Core\Model\Api\BuilderFactory $builderFactory
      * @param \Magento\Checkout\Helper\Data $checkoutData
      * @param OrderSender $orderSender
+     * @param OrderStateResolverInterface $orderStateResolver
      * @param \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig
      * @param array $data
      */
@@ -106,6 +108,7 @@ class Ipn extends \Sequra\Core\Model\AbstractIpn implements IpnInterface
         \Magento\Checkout\Helper\Data $checkoutData,
         OrderSender $orderSender,
         \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
+        OrderStateResolverInterface $orderStateResolver,
         array $data = []
     ) {
         parent::__construct($logger, $data);
@@ -118,6 +121,7 @@ class Ipn extends \Sequra\Core\Model\AbstractIpn implements IpnInterface
         $this->_customerSession = $customerSession;
         $this->_checkoutData = $checkoutData;
         $this->_builderFactory = $builderFactory;
+        $this->orderStateResolver = $orderStateResolver;
         $this->builder = $this->_builderFactory->create('order');
     }
 
@@ -230,13 +234,20 @@ class Ipn extends \Sequra\Core\Model\AbstractIpn implements IpnInterface
             $this->_registerPaymentCapture();
             $sent_ref = $this->sendOrderRefToSequra();
             if ($sent_ref) {
-                $status_name = (bool) $this->getConfigData('autoinvoice')?
-                    'order_status':
-                    'new_order_status';
+                $status_name = 'new_order_status';
+                if ($this->getConfigData('autoinvoice')) {
+                    $status_name = 'order_status';
+                    //Invoice is genarated or not depending on the state change
+                    $this->_order->setState(
+                        $this->orderStateResolver->getStateForOrder(
+                            $this->_order,
+                            [OrderStateResolverInterface::IN_PROGRESS]
+                        )
+                    );
+                }
                 $status = $this->getConfigData($status_name);
-                $this->_order->setState($status);
                 $this->_order->addStatusHistoryComment(
-                    __('Order ref sent to SeQura: %1',$sent_ref),
+                    __('Order ref sent to SeQura: %1', $sent_ref),
                     $status
                 );
                 $this->_order->setData('sequra_order_send', 1);

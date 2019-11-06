@@ -35,18 +35,18 @@
                     <label>Mode</label>
                     <source_model>Sequra\Core\Model\Adminhtml\Source\Endpoint</source_model>
                 </field>
-                <field id="autoinvoice" translate="label" type="select" sortOrder="70" showInDefault="1" showInWebsite="1" showInStore="1" canRestore="1">
+                <field id="autoinvoice" translate="label" type="select" sortOrder="70" showInDefault="1" showInWebsite="1" showInStore="1">
                     <config_path>sequra/core/autoinvoice</config_path>
                     <label>Create invoice</label>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                 </field>
-                <field id="order_status" translate="label" type="select" sortOrder="80" showInDefault="1" showInWebsite="1" showInStore="1" canRestore="1">
+                <field id="order_status" translate="label" type="select" sortOrder="80" showInDefault="1" showInWebsite="1" showInStore="1">
                     <config_path>sequra/core/order_status</config_path>
                     <label>New Order Status</label>
                     <depends><field id="autoinvoice">1</field></depends>
                     <source_model>Magento\Sales\Model\Config\Source\Order\Status\Processing</source_model>
                 </field>
-                <field id="new_order_status" translate="label" type="select" sortOrder="80" showInDefault="1" showInWebsite="1" showInStore="1" canRestore="1">
+                <field id="new_order_status" translate="label" type="select" sortOrder="80" showInDefault="1" showInWebsite="1" showInStore="1">
                     <config_path>sequra/core/new_order_status</config_path>
                     <label>New Order Status</label>
                     <depends><field id="autoinvoice">0</field></depends>
