@@ -43,5 +43,8 @@
         </arguments>
     </virtualType>
 
-
+    <!-- CSRF -->
+    <type name="Magento\Framework\App\Request\CsrfValidator">
+        <plugin name="disable_form_key_validation" type="Sequra\Core\Plugin\Framework\App\Request\CsrfValidator" />
+    </type>
 </config>
