@@ -117,13 +117,13 @@ class Report extends AbstractBuilder
             'entity_id',//load minimun fields, anyway later, we need to populate all and load related objects.
             'increment_id'
         ])->addFieldToFilter(
-            'sequraorder_send',
+            'sequra_order_send',
             ['eq' => 1]
         );
         /* join with payment table */
         $collection->getSelect()
             ->join(
-                ["sop" => "salesorder_payment"],
+                ["sop" => "sales_order_payment"],
                 'main_table.entity_id = sop.parent_id',
                 ['method']
             )
@@ -242,16 +242,16 @@ class Report extends AbstractBuilder
 
     private function getBrokenOrders()
     {
-        $cleanedorders = [];
+        $cleaned_orders = [];
         $this->brokenorders = [];
         foreach ($this->orders as $key => $order) {
             if (!Helper::isConsistentCart($order['cart'])) {
                 $this->brokenorders[] = $order;
             } else {
-                $cleanedorders[] = $order;
+                $cleaned_orders[] = $order;
             }
         }
-        $this->orders = $cleanedorders;
+        $this->orders = $cleaned_orders;
     }
 
     /**
