@@ -93,7 +93,7 @@ class Order extends AbstractBuilder
         $data = [];
         $data['delivery_method'] = $this->getDeliveryMethod();
         $data['gift'] = false;
-        $data['currency'] = $this->order->getQuoteCurrencyCode();//$this->order->getOrderCurrencyCode();
+        $data['currency'] = $this->order->getQuoteCurrencyCode()?$this->order->getQuoteCurrencyCode():'EUR';
         $data['created_at'] = $this->order->getCreatedAt();
         $data['updated_at'] = $this->order->getUpdatedAt();
         $data['cart_ref'] = $this->order->getId();//$this->order->getQuoteId();

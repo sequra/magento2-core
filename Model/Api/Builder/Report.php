@@ -183,7 +183,7 @@ class Report extends AbstractBuilder
     public function shipmentCart()
     {
         $data = [];
-        $data['currency'] = $this->order->getOrderCurrencyCode();
+        $data['currency'] = $this->order->getOrderCurrencyCode()?$this->order->getOrderCurrencyCode():'EUR';
         $data['delivery_method'] = $this->getDeliveryMethod();
         $data['gift'] = false;
         $data['items'] = $this->items($this->order);
