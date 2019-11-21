@@ -15,7 +15,8 @@
                 <assets_key>ADc3ZdOLh4</assets_key>
                 <autoinvoice>1</autoinvoice>
                 <test_ip>127.0.0.1,168.80.44.114</test_ip>
-                <endpoint>1</endpoint>
+                <endpoint>https://sandbox.sequrapi.com/orders</endpoint>
+                <statsperiod>7</statsperiod>
                 <reporting>1</reporting>
                 <reportingtime>4</reportingtime>
                 <allowspecificstattypes>0</allowspecificstattypes>

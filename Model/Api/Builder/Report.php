@@ -22,7 +22,7 @@ class Report extends AbstractBuilder
     protected $orders = [];
     protected $currentshipment = null;
     protected $ids = [];
-    protected $brokenorders = [];
+    protected $broken_orders = [];
     protected $stats = [];
     protected $store_id = null;
 
@@ -74,7 +74,7 @@ class Report extends AbstractBuilder
     public function setOrdersAsSent()
     {
         foreach ($this->sequraOrders as $order) {
-            $order->setData('sequraorder_send', 0);
+            $order->setData('sequra_order_send', 0);
             $this->orderRepository->save($order);
         }
     }
@@ -87,7 +87,7 @@ class Report extends AbstractBuilder
         $this->builtData = [
             'merchant' => $this->merchant(),
             'orders' => $this->orders,
-            'brokenorders' => $this->brokenorders,
+            'broken_orders' => $this->broken_orders,
             'statistics' => ['orders' => $this->stats],
             'platform' => self::platform()
         ];
@@ -243,10 +243,10 @@ class Report extends AbstractBuilder
     private function getBrokenOrders()
     {
         $cleaned_orders = [];
-        $this->brokenorders = [];
+        $this->broken_orders = [];
         foreach ($this->orders as $key => $order) {
             if (!Helper::isConsistentCart($order['cart'])) {
-                $this->brokenorders[] = $order;
+                $this->broken_orders[] = $order;
             } else {
                 $cleaned_orders[] = $order;
             }
@@ -385,7 +385,7 @@ class Report extends AbstractBuilder
     {
         $time = time();
         $to = date('Y-m-d H:i:s', $time);
-        $lastTime = $time - 604800; // 60*60*24*
+        $lastTime = $time - $this->getConfigData('statsperiod') * 60 * 60 * 24;// 60*60*24*
         $from = date('Y-m-d H:i:s', $lastTime);
         $criteria = $this->searchCriteriaBuilder
             ->addFilter('store_id', $this->store_id)

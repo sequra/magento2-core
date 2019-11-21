@@ -67,13 +67,18 @@
                     <label>Time to send reports to SeQura</label>
                     <source_model>Sequra\Core\Model\Adminhtml\Source\Hour</source_model>
                 </field>
-                <field id="allowspecificstattypes" translate="label" type="select" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="0">
+                <field id="statsperiod" translate="label" type="select" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="0">
+                    <config_path>sequra/core/statsperiod</config_path>
+                    <label>Send stats of the last...</label>
+                    <source_model>Sequra\Core\Model\Adminhtml\Source\StatsPeriod</source_model>
+                </field>
+                <field id="allowspecificstattypes" translate="label" type="select" sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="0">
                     <config_path>sequra/core/allowspecificstattypes</config_path>
                     <comment><![CDATA[Help improve SeQura by sending anonymous usage statistics]]></comment>
                     <label>Allow sending statistics with the report</label>
                     <source_model>Sequra\Core\Model\Adminhtml\Source\Allowspecificstattypes</source_model>
                 </field>
-                <field id="specificstattypes" translate="label" type="multiselect" sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="0">
+                <field id="specificstattypes" translate="label" type="multiselect" sortOrder="50" showInDefault="1" showInWebsite="1" showInStore="0">
                     <config_path>sequra/core/specificstattypes</config_path>
                     <depends>
                         <field id="allowspecificstattypes">1</field>
