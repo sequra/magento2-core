@@ -285,12 +285,13 @@ class Ipn extends \Sequra\Core\Model\AbstractIpn implements IpnInterface
             );
         }
         // Create Order From Quote
-        $this->_order = $this->quoteManagement->submit($this->_quote);
-        $this->_order->setEmailSent(0);
-        if (!$this->_order->getEntityId()) { //@todo: test if this scenario works
+        try {
+            $this->_order = $this->quoteManagement->submit($this->_quote);
+            $this->_order->setEmailSent(0);
+        } catch (\Exception $e) {
             $log_msg = 'Could not create order for Transaction Id:' . $parentTransactionId;
+            $log_msg .= "\n".$e->getMessage();
             $this->logger->log(\Psr\Log\LogLevel::CRITICAL, $log_msg);
-            $this->cancelOrderInSequra();
             http_response_code(410);
             die($log_msg = '{"result": "Error", "message":"' . $log_msg . '"}"');
         }
@@ -381,6 +382,11 @@ class Ipn extends \Sequra\Core\Model\AbstractIpn implements IpnInterface
         $this->_quote->getBillingAddress()->setShouldIgnoreValidation(true);
         if (!$this->_quote->getIsVirtual()) {
             $this->_quote->getShippingAddress()->setShouldIgnoreValidation(true);
+            if (!$this->_config->getValue('requireBillingAddress')
+                && !$this->_quote->getBillingAddress()->getEmail()
+            ) {
+                $this->_quote->getBillingAddress()->setSameAsBilling(1);
+            }
         }
     }
 
