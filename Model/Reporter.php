@@ -13,24 +13,24 @@ class Reporter implements ReporterInterface
     /**
      * @var \Sequra\Core\Model\Config
      */
-    protected $_config;
+    protected $config;
 
     /**
      * @var \Psr\Log\LoggerInterface
      */
-    protected $_logger;
+    protected $logger;
 
     /**
      * @var \Sequra\Core\Model\Api\BuilderFactory
      */
-    protected $_builder;
+    protected $builder;
 
     /**
      * Store manager
      *
      * @var \Magento\Store\Model\StoreManagerInterface
      */
-    protected $_storeManager;
+    protected $storeManager;
 
 
     /**
@@ -47,10 +47,10 @@ class Reporter implements ReporterInterface
         \Sequra\Core\Model\Api\BuilderFactory $builderFactory,
         \Magento\Store\Model\StoreManagerInterface $storeManager
     ) {
-        $this->_config = $configFactory->create();
-        $this->_logger = $logger;
-        $this->_builder = $builderFactory->create('report');
-        $this->_storeManager = $storeManager;
+        $this->config = $configFactory->create();
+        $this->logger = $logger;
+        $this->builder = $builderFactory->create('report');
+        $this->storeManager = $storeManager;
     }
 
 
@@ -60,8 +60,7 @@ class Reporter implements ReporterInterface
     public function sendOrderWithShipment($codeKey = false)
     {
         $ret = array();
-        $stores = $this->_storeManager->getStores($withDefault = false);
-        $builder = $this->_builder;
+        $stores = $this->storeManager->getStores($withDefault = false);
         /* @todo: Understand why without the echo executing from console gives
         [Magento\Framework\Exception\SessionException]
         Area code not set: Area code must be set before starting a session.
@@ -74,21 +73,21 @@ class Reporter implements ReporterInterface
                 continue;
             }
             $client = new \Sequra\PhpClient\Client(
-                $this->_config->getCoreValue('user_name'),
-                $this->_config->getCoreValue('user_secret'),
-                $this->_config->getCoreValue('endpoint')
+                $this->config->getCoreValue('user_name'),
+                $this->config->getCoreValue('user_secret'),
+                $this->config->getCoreValue('endpoint')
             );
-            $builder->build($store->getId());
-            $this->_logger->info('SEQURA: ' . $builder->getOrderCount() . ' orders ready to be sent');
-            $client->sendDeliveryReport($builder->getBuiltData());
+            $this->builder->build($store->getId());
+            $this->logger->info('SEQURA: ' . $this->builder->getOrderCount() . ' orders ready to be sent');
+            $client->sendDeliveryReport($this->builder->getBuiltData());
             if ($client->getStatus() == 204) {
-                $builder->setOrdersAsSent();
-                $this->_logger->info('SEQURA: ' . $builder->getOrderCount() . ' orders sent successfully');
-                $ret[$store->getName()] = $builder->getOrderCount();
+                $this->builder->setOrdersAsSent();
+                $this->logger->info('SEQURA: ' . $this->builder->getOrderCount() . ' orders sent successfully');
+                $ret[$store->getName()] = $this->builder->getOrderCount();
             } elseif ($client->getStatus() >= 200 && $client->getStatus() <= 299 || $client->getStatus() == 409) {
                 $x = $client->getJson(); // return array, not object
-                $this->_logger->info('Delivery ERROR ' . $store->getName() . ' ' . $client->getStatus());
-                $this->_logger->info($x);
+                $this->logger->info('Delivery ERROR ' . $store->getName() . ' ' . $client->getStatus());
+                $this->logger->info($x);
             }
         }
         return count($ret) ? $ret : false;
