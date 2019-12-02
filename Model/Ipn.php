@@ -5,7 +5,6 @@
 
 namespace Sequra\Core\Model;
 
-
 use Exception;
 use Magento\Sales\Model\Order\Email\Sender\OrderSender;
 use Magento\Sales\Model\Order\OrderStateResolverInterface;
@@ -18,22 +17,22 @@ class Ipn extends \Sequra\Core\Model\AbstractIpn implements IpnInterface
     /**
      * @var \Magento\Sales\Model\Order
      */
-    protected $_order;
+    protected $order;
 
     /**
      * @var \Magento\Quote\Model\Quote
      */
-    protected $_quote;
+    protected $quote;
 
     /**
      * @var \Sequra\PhpClient\Client
      */
-    protected $_client;
+    protected $client;
 
     /**
      * @var \Magento\Quote\Api\CartRepositoryInterface
      */
-    protected $_quoteRepository;
+    protected $quoteRepository;
 
     /**
      * @var \Magento\Quote\Api\QuoteManagement
@@ -47,19 +46,19 @@ class Ipn extends \Sequra\Core\Model\AbstractIpn implements IpnInterface
     /**
      * @var \Magento\Checkout\Api\PaymentInformationManagementInterface
      */
-    protected $_paymentInformationManager;
+    protected $paymentInformationManager;
 
     /**
      * @var \Magento\Customer\Model\Session $customerSession
      */
-    protected $_customerSession;
+    protected $customerSession;
 
     /**
      * Checkout data
      *
      * @var \Magento\Checkout\Helper\Data
      */
-    protected $_checkoutData;
+    protected $checkoutData;
 
     /**
      * @var OrderSender
@@ -67,21 +66,16 @@ class Ipn extends \Sequra\Core\Model\AbstractIpn implements IpnInterface
     protected $orderSender;
 
     /**
-     * @var \Sequra\Core\Model\Api\BuilderFactory
-     */
-    protected $_builderFactory;
-
-    /**
      * @var \Sequra\Core\Model\Api\Builder\Order
      */
-    protected $builderFactory;
+    protected $builder;
 
     /**
      * Core store config
      *
      * @var \Magento\Framework\App\Config\ScopeConfigInterface
      */
-    protected $_scopeConfig;
+    protected $scopeConfig;
 
     /**
      * @param \Psr\Log\LoggerInterface $logger
@@ -112,17 +106,16 @@ class Ipn extends \Sequra\Core\Model\AbstractIpn implements IpnInterface
         array $data = []
     ) {
         parent::__construct($logger, $data);
-        $this->_quoteRepository = $quoteResotory;
+        $this->quoteRepository = $quoteResotory;
         $this->quoteManagement = $quoteManagement;
         $this->orderRepositoryInterface = $orderRepositoryInterface;
         $this->orderSender = $orderSender;
-        $this->_scopeConfig = $scopeConfig;
-        $this->_paymentInformationManager = $paymentInformationManager;
-        $this->_customerSession = $customerSession;
-        $this->_checkoutData = $checkoutData;
-        $this->_builderFactory = $builderFactory;
+        $this->scopeConfig = $scopeConfig;
+        $this->paymentInformationManager = $paymentInformationManager;
+        $this->customerSession = $customerSession;
+        $this->checkoutData = $checkoutData;
         $this->orderStateResolver = $orderStateResolver;
-        $this->builder = $this->_builderFactory->create('order');
+        $this->builder = $builderFactory->create('order');
     }
 
     /**
@@ -133,24 +126,23 @@ class Ipn extends \Sequra\Core\Model\AbstractIpn implements IpnInterface
      */
     public function processIpnRequest()
     {
-        $this->_addDebugData('ipn', $this->getRequestData());
+        $this->addDebugData('ipn', $this->getRequestData());
         $this->validateIPNRequest();
         try {
-            if (!$this->updateOrderInSequra()) {
+            if (!$this->approvedBySequra()) {
                 return;
             }
-            $this->_processOrder();
+            $this->processOrder();
         } catch (Exception $e) {
-            $this->_addDebugData('exception', $e->getMessage());
-            $this->_debug();
+            $this->addDebugData('exception', $e->getMessage());
+            $this->debug();
             throw $e;
         }
-        $this->_debug();
+        $this->debug();
     }
 
     protected function validateIPNRequest()
     {
-//        $this->_getConfig();
         if (!$this->isValidSignature()) {
             header($_SERVER['SERVER_PROTOCOL'] . ' 498 Not valid signature', true, 498);
             exit;
@@ -168,55 +160,57 @@ class Ipn extends \Sequra\Core\Model\AbstractIpn implements IpnInterface
     /**
      * @return bool
      */
-    private function updateOrderInSequra($sendRef = false)
+    private function updateOrderInSequra()
     {
-        $quote = $this->_getQuote();
-        $builder = $this->_builderFactory->create('order');
-        $this->order_data = $builder->setOrder($quote)->build($builder::STATE_CONFIRMED, $sendRef);
-        $this->getClient()->updateOrder($this->getRequestData('order_ref'), $this->order_data);
-        if ($this->_client->succeeded()) {
-            return $quote->getReservedOrderId();
+        $this->getClient()->updateOrder(
+            $this->getRequestData('order_ref'),
+            $this->builder->getData()
+        );
+        if ($this->client->succeeded()) {
+            return $this->quote->getReservedOrderId();
         }
-        if ($this->_client->cartHasChanged()) {
-            $log_msg = $_SERVER['SERVER_PROTOCOL'] . '410 Cart has changed';
-            header($log_msg, true, 410);
+        if ($this->client->cartHasChanged()) {
+            http_response_code(410);
             die(
-                json_encode($this->_client->getJson())
+                json_encode($this->client->getJson())
             );
         } else {
-            header($_SERVER['SERVER_PROTOCOL'] . ' Unknown error', true, 500);
-            die($this->_client->dump());
+            http_response_code(500);
+            die(
+                $_SERVER['SERVER_PROTOCOL'] . ' Unknown error' .
+                "\n" . $this->client->dump()
+            );
         }
 
         return false;
     }
 
-    protected function _getQuote()
+    protected function getQuote()
     {
-        if (is_null($this->_quote)) {
-            $this->_quote = $this->_quoteRepository->get($this->getRequestData('id'));
-            $this->_customerSession->setCustomerId($this->_quote->getCustomerId());
+        if (is_null($this->quote)) {
+            $this->quote = $this->quoteRepository->get($this->getRequestData('id'));
+            $this->customerSession->setCustomerId($this->quote->getCustomerId());
         }
-        return $this->_quote;
+        return $this->quote;
     }
 
     protected function getClient()
     {
-        if (!$this->_client) {
-            $this->_client = new \Sequra\PhpClient\Client(
+        if (!$this->client) {
+            $this->client = new \Sequra\PhpClient\Client(
                 $this->getConfigData('user_name'),
                 $this->getConfigData('user_secret'),
                 $this->getConfigData('endpoint')
             );
         }
-        return $this->_client;
+        return $this->client;
     }
 
     public function getConfigData($field, $storeId = null)
     {
         $path = 'sequra/core/' . $field;
 
-        return $this->_scopeConfig->getValue($path, \Magento\Store\Model\ScopeInterface::SCOPE_STORE, $storeId);
+        return $this->scopeConfig->getValue($path, \Magento\Store\Model\ScopeInterface::SCOPE_STORE, $storeId);
     }
 
     /**
@@ -227,35 +221,35 @@ class Ipn extends \Sequra\Core\Model\AbstractIpn implements IpnInterface
      * @return void
      * @throws \Magento\Framework\Exception\LocalizedException
      */
-    protected function _processOrder()
+    protected function processOrder()
     {
         try {
             // Handle payment_status
-            $this->_registerPaymentCapture();
+            $this->registerPaymentCapture();
             $sent_ref = $this->sendOrderRefToSequra();
             if ($sent_ref) {
-                $status_name = 'new_order_status';
+                $status_name = 'neworder_status';
                 if ($this->getConfigData('autoinvoice')) {
                     $status_name = 'order_status';
                     //Invoice is genarated or not depending on the state change
-                    $this->_order->setState(
+                    $this->order->setState(
                         $this->orderStateResolver->getStateForOrder(
-                            $this->_order,
+                            $this->order,
                             [OrderStateResolverInterface::IN_PROGRESS]
                         )
                     );
                 }
                 $status = $this->getConfigData($status_name);
-                $this->_order->addStatusHistoryComment(
+                $this->order->addStatusHistoryComment(
                     __('Order ref sent to SeQura: %1', $sent_ref),
                     $status
                 );
-                $this->_order->setData('sequra_order_send', 1);
-                $this->orderRepositoryInterface->save($this->_order);
+                $this->order->setData('sequra_order_send', 1);
+                $this->orderRepositoryInterface->save($this->order);
             }
         } catch (\Magento\Framework\Exception\LocalizedException $e) {
-            if ($this->_order) {
-                $comment = $this->_createIpnComment(__('Note: %1', $e->getMessage()), true);
+            if ($this->order) {
+                $comment = $this->createIpnComment(__('Note: %1', $e->getMessage()), true);
                 $comment->save();
             } else {
                 $this->logger->log(\Psr\Log\LogLevel::WARNING, $e->getMessage());
@@ -270,39 +264,39 @@ class Ipn extends \Sequra\Core\Model\AbstractIpn implements IpnInterface
      * @param bool $skipFraudDetection
      * @return void
      */
-    protected function _registerPaymentCapture($skipFraudDetection = false)
+    protected function registerPaymentCapture($skipFraudDetection = false)
     {
         $parentTransactionId = $this->getRequestData('order_ref');
-        $this->_getQuote();
+        $this->getQuote();
         if ($this->getCheckoutMethod() == \Magento\Checkout\Model\Type\Onepage::METHOD_GUEST) {
             $this->prepareGuestQuote();
         }
         $this->ignoreAddressValidation();
-        $this->_quote->collectTotals();
-        if (!$this->_quote->getPayment()->getMethod()) {//@todo: In some prod envs this is sometimes empty
-            $this->_quote->getPayment()->setMethod(
+        //$this->quote->collectTotals();
+        if (!$this->quote->getPayment()->getMethod()) {//@todo: In some prod envs this is sometimes empty
+            $this->quote->getPayment()->setMethod(
                 $this->getRequestData('method')
             );
         }
         // Create Order From Quote
         try {
-            $this->_order = $this->quoteManagement->submit($this->_quote);
-            $this->_order->setEmailSent(0);
+            $this->order = $this->quoteManagement->submit($this->quote);
+            $this->order->setEmailSent(0);
         } catch (\Exception $e) {
             $log_msg = 'Could not create order for Transaction Id:' . $parentTransactionId;
             $log_msg .= "\n".$e->getMessage();
             $this->logger->log(\Psr\Log\LogLevel::CRITICAL, $log_msg);
-            http_response_code(410);
-            die($log_msg = '{"result": "Error", "message":"' . $log_msg . '"}"');
+            http_response_code(410);//$this->cancelInSequra();
+            die('{"result": "Error", "message":"' . $e->getMessage() . '"}"');
         }
         if ((bool) $this->getConfigData('autoinvoice')) {//@todo: find where the invoice is created
-            $payment = $this->_order->getPayment();
+            $payment = $this->order->getPayment();
             $payment->setTransactionId(
                 $this->getRequestData('order_ref')
             );
             $payment->setCurrencyCode('EUR');
             $payment->setPreparedMessage(
-                $this->_createIpnComment('SEQURA notification received')
+                $this->createIpnComment('SEQURA notification received')
             );
             $payment->setParentTransactionId(
                 $parentTransactionId
@@ -313,14 +307,15 @@ class Ipn extends \Sequra\Core\Model\AbstractIpn implements IpnInterface
             $payment->setIsTransactionClosed(
                 0
             );
+            $order_data = $this->builder->getData();
             $payment->registerCaptureNotification(
-                $this->order_data['cart']['order_total_with_tax'] / 100,
+                $order_data['cart']['order_total_with_tax'] / 100,
                 $skipFraudDetection && $parentTransactionId
             );
 
             $invoice = $payment->getCreatedInvoice();
             if (!is_null($invoice)) {
-                $this->_order->addStatusHistoryComment(
+                $this->order->addStatusHistoryComment(
                     __('You notified customer about invoice #%1.', $invoice->getIncrementId())
                 );
             }
@@ -337,14 +332,14 @@ class Ipn extends \Sequra\Core\Model\AbstractIpn implements IpnInterface
         if ($this->getCustomerSession()->isLoggedIn()) {
             return \Magento\Checkout\Model\Type\Onepage::METHOD_CUSTOMER;
         }
-        if (!$this->_quote->getCheckoutMethod()) {
-            if ($this->_checkoutData->isAllowedGuestCheckout($this->_quote)) {
-                $this->_quote->setCheckoutMethod(\Magento\Checkout\Model\Type\Onepage::METHOD_GUEST);
+        if (!$this->quote->getCheckoutMethod()) {
+            if ($this->checkoutData->isAllowedGuestCheckout($this->quote)) {
+                $this->quote->setCheckoutMethod(\Magento\Checkout\Model\Type\Onepage::METHOD_GUEST);
             } else {
-                $this->_quote->setCheckoutMethod(\Magento\Checkout\Model\Type\Onepage::METHOD_REGISTER);
+                $this->quote->setCheckoutMethod(\Magento\Checkout\Model\Type\Onepage::METHOD_REGISTER);
             }
         }
-        return $this->_quote->getCheckoutMethod();
+        return $this->quote->getCheckoutMethod();
     }
 
     /**
@@ -354,7 +349,7 @@ class Ipn extends \Sequra\Core\Model\AbstractIpn implements IpnInterface
      */
     public function getCustomerSession()
     {
-        return $this->_customerSession;
+        return $this->customerSession;
     }
 
     /**
@@ -364,9 +359,8 @@ class Ipn extends \Sequra\Core\Model\AbstractIpn implements IpnInterface
      */
     protected function prepareGuestQuote()
     {
-        $quote = $this->_quote;
-        $quote->setCustomerId(null)
-            ->setCustomerEmail($quote->getBillingAddress()->getEmail())
+        $this->quote->setCustomerId(null)
+            ->setCustomerEmail($this->quote->getBillingAddress()->getEmail())
             ->setCustomerIsGuest(true)
             ->setCustomerGroupId(\Magento\Customer\Model\Group::NOT_LOGGED_IN_ID);
         return $this;
@@ -379,21 +373,10 @@ class Ipn extends \Sequra\Core\Model\AbstractIpn implements IpnInterface
      */
     private function ignoreAddressValidation()
     {
-        $this->_quote->getBillingAddress()->setShouldIgnoreValidation(true);
-        if (!$this->_quote->getIsVirtual()) {
-            $this->_quote->getShippingAddress()->setShouldIgnoreValidation(true);
-            if (!$this->_config->getValue('requireBillingAddress')
-                && !$this->_quote->getBillingAddress()->getEmail()
-            ) {
-                $this->_quote->getBillingAddress()->setSameAsBilling(1);
-            }
+        $this->quote->getBillingAddress()->setShouldIgnoreValidation(true);
+        if (!$this->quote->getIsVirtual()) {
+            $this->quote->getShippingAddress()->setShouldIgnoreValidation(true);
         }
-    }
-
-    private function cancelOrderInSequra()
-    {
-        $this->_client->orderUpdate($this->order_data);
-        return $this->_client->succeeded();
     }
 
     /**
@@ -404,14 +387,14 @@ class Ipn extends \Sequra\Core\Model\AbstractIpn implements IpnInterface
      * @param bool $addToHistory
      * @return string|\Magento\Sales\Model\Order\Status\History
      */
-    protected function _createIpnComment($comment = '', $addToHistory = false)
+    protected function createIpnComment($comment = '', $addToHistory = false)
     {
         $message = __('IPN "%1"', $this->getRequestData('order_ref'));
         if ($comment) {
             $message .= ' ' . $comment;
         }
         if ($addToHistory) {
-            $message = $this->_order->addStatusHistoryComment($message);
+            $message = $this->order->addStatusHistoryComment($message);
             $message->setIsCustomerNotified(null);
         }
         return $message;
@@ -420,16 +403,32 @@ class Ipn extends \Sequra\Core\Model\AbstractIpn implements IpnInterface
     /**
      * @return bool
      */
-    public function sendOrderRefToSequra()
+    private function sendOrderRefToSequra()
     {
-        return $this->updateOrderInSequra('confirmed');
+        $this->builder->setMerchantRefence(
+            $this->order->getIncrementId(),
+            $this->order->getId()
+        );
+        return $this->updateOrderInSequra();
     }
 
     /**
      * @return bool
      */
-    public function approvedBySequra()
+    private function approvedBySequra()
     {
-        return $this->updateOrderInSequra(true);
+        $this->builder->setOrder($this->getQuote());
+        $this->builder->build($this->builder::STATE_CONFIRMED);
+        return $this->updateOrderInSequra();
+    }
+
+    /**
+     * @return bool
+     */
+    private function cancelInSequra()
+    {
+        $this->builder->setOrder($this->getQuote());
+        $this->builder->setState($this->builder::STATE_CANCELLED);
+        return $this->updateOrderInSequra();
     }
 }

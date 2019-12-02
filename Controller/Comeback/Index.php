@@ -7,7 +7,6 @@ namespace Sequra\Core\Controller\Comeback;
 
 use Magento\Customer\Api\AccountManagementInterface;
 use Magento\Customer\Api\CustomerRepositoryInterface;
-use Magento\Framework\Session\SessionManagerInterface;
 use Magento\Framework\Stdlib\CookieManagerInterface;
 use Magento\Framework\Stdlib\Cookie\CookieMetadataFactory;
 
@@ -27,6 +26,16 @@ class Index extends \Magento\Checkout\Controller\Onepage
     protected $cookieMetadataFactory;
 
     /**
+     * @var \Magento\Sales\Model\OrderFactory
+     */
+    protected $orderFactory;
+
+    /**
+     * @var \Magento\Framework\Message\ManagerInterface
+     */
+    protected $messageManager;
+
+    /**
      * @param \Magento\Framework\App\Action\Context              $context
      * @param \Magento\Customer\Model\Session                    $customerSession
      * @param CustomerRepositoryInterface                        $customerRepository
@@ -41,6 +50,10 @@ class Index extends \Magento\Checkout\Controller\Onepage
      * @param \Magento\Framework\View\Result\LayoutFactory       $resultLayoutFactory
      * @param \Magento\Framework\Controller\Result\RawFactory    $resultRawFactory
      * @param \Magento\Framework\Controller\Result\JsonFactory   $resultJsonFactory
+     * @param \Magento\Sales\Model\OrderFactory                  $orderFactory
+     * @param CookieManagerInterface                             $cookieManager
+     * @param CookieMetadataFactory                              $cookieMetadataFactory
+     * @param \Magento\Framework\Message\ManagerInterface        $messageManager
      *
      * @codeCoverageIgnore
      * @SuppressWarnings(PHPMD.ExcessiveParameterList)
@@ -60,8 +73,10 @@ class Index extends \Magento\Checkout\Controller\Onepage
         \Magento\Framework\View\Result\LayoutFactory $resultLayoutFactory,
         \Magento\Framework\Controller\Result\RawFactory $resultRawFactory,
         \Magento\Framework\Controller\Result\JsonFactory $resultJsonFactory,
+        \Magento\Sales\Model\OrderFactory $orderFactory,
         CookieManagerInterface $cookieManager,
-        CookieMetadataFactory $cookieMetadataFactory
+        CookieMetadataFactory $cookieMetadataFactory,
+        \Magento\Framework\Message\ManagerInterface $messageManager
     ) {
         parent::__construct(
             $context,
@@ -81,6 +96,8 @@ class Index extends \Magento\Checkout\Controller\Onepage
         );
         $this->cookieMetadataFactory = $cookieMetadataFactory;
         $this->cookieManager = $cookieManager;
+        $this->orderFactory = $orderFactory;
+        $this->messageManager = $messageManager;
     }
     /**
      * Rebuild session and redirect to default success controller
@@ -93,9 +110,11 @@ class Index extends \Magento\Checkout\Controller\Onepage
         $quote = $this->quoteRepository->get(
             $this->getRequest()->getParam('quote_id')
         );
-        $order =
-            \Magento\Framework\App\ObjectManager::getInstance()->create('Magento\Sales\Model\Order')->loadByIncrementId($quote->getReservedOrderId());
-        if (!$order) {
+        $order = $this->orderFactory->create()->loadByIncrementId($quote->getReservedOrderId());
+        if (!$order->getId()) {
+            $this->messageManager->addWarningMessage(
+                __('Lo sentimos. No se ha podido procesar el pago con SeQura, por favor, inténtelo de nuevo o utilice otro método de pago')
+            );
             $this->resultRedirectFactory->create()->setPath('checkout/cart');
         }
         $session = $this->getOnepage()->getCheckout();

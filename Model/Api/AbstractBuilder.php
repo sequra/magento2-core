@@ -9,8 +9,10 @@ abstract class AbstractBuilder implements BuilderInterface
 {
     const STATE_CONFIRMED = 'confirmed';
     const STATE_APPROVED = 'approved';
+    const STATE_CANCELLED = 'cancelled';
     public static $centsPerWhole = 100;
     protected $merchant_id;
+    protected $data;
 
     /**
      * @var \Magento\Sales\Model\OrderFactory
@@ -465,5 +467,9 @@ abstract class AbstractBuilder implements BuilderInterface
         $order['cart']['items'][] = $item;
 
         return $order;
+    }
+
+    public function getData(){
+        return $this->data;
     }
 }

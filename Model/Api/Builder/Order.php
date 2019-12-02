@@ -51,7 +51,7 @@ class Order extends AbstractBuilder
 
     public function build($state = '', $sendRef = false)
     {
-        $order = [
+        $this->data = [
             'merchant' => $this->merchant(),
             'cart' => $this->cartWithItems(),
             'delivery_address' => $this->deliveryAddress(),
@@ -61,15 +61,28 @@ class Order extends AbstractBuilder
             'platform' => $this->platform(),
             'state' => $state
         ];
-        $order = $this->fixRoundingProblems($order);
+        $this->data = $this->fixRoundingProblems($this->data);
         if ($sendRef) {
-            $order['merchant_reference'] = [
+            $this->data['merchant_reference'] = [
                 'order_ref_1' => $this->order->getReservedOrderId(),
                 'order_ref_2' => $this->order->getId()
             ];
         }
 
-        return $order;
+        return $this->data;
+    }
+
+    public function setMerchantRefence($ref1, $ref2)
+    {
+        $this->data['merchant_reference'] = [
+            'order_ref_1' => $ref1,
+            'order_ref_2' => $ref2
+        ];
+    }
+
+    public function setState($state)
+    {
+        $this->data['state'] = $state;
     }
 
     public function merchant()
@@ -96,7 +109,7 @@ class Order extends AbstractBuilder
         $data['currency'] = $this->order->getQuoteCurrencyCode()?$this->order->getQuoteCurrencyCode():'EUR';
         $data['created_at'] = $this->order->getCreatedAt();
         $data['updated_at'] = $this->order->getUpdatedAt();
-        $data['cart_ref'] = $this->order->getId();//$this->order->getQuoteId();
+        $data['cart_ref'] = $this->order->getReservedOrderId();//$this->order->getQuoteId();
         $data['order_total_with_tax'] = self::integerPrice($this->order->getGrandTotal());
         $data['order_total_without_tax'] = $data['order_total_with_tax'];
         $data['items'] = $this->items($this->order);
