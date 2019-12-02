@@ -9,6 +9,7 @@ use Sequra\Core\Model\ConfigFactory;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 /**
@@ -25,6 +26,10 @@ class TriggerReport extends Command
      * Names of input arguments or options
      */
     const INPUT_KEY_SHOPCODES = 'shopcodes';
+    /**
+     * Names of input arguments or options
+     */
+    const INPUT_KEY_LIMIT = 'limit';
 
     /**
      * Configuration Object
@@ -41,17 +46,25 @@ class TriggerReport extends Command
     protected $reporter;
 
     /**
+     * @var \Magento\Framework\App\State
+     */
+    private $state;
+
+    /**
      * Constructor
      *
-     * @param ConfigFactory                      $configFactory   configFactory
+     * @param ConfigFactory $configFactory configFactory
      * @param \Sequra\Core\Model\ReporterFactory $reporterFactory reporteFactory
+     * @param \Magento\Framework\App\State $state
      */
     public function __construct(
         ConfigFactory $configFactory,
-        \Sequra\Core\Model\ReporterFactory $reporterFactory
+        \Sequra\Core\Model\ReporterFactory $reporterFactory,
+        \Magento\Framework\App\State $state
     ) {
         $this->config = $configFactory->create();
         $this->reporter = $reporterFactory->create();
+        $this->state = $state;
         parent::__construct();
     }
 
@@ -66,6 +79,12 @@ class TriggerReport extends Command
             self::INPUT_KEY_SHOPCODES,
             InputArgument::IS_ARRAY | InputArgument::OPTIONAL,
             'Shop code'
+        );
+        $this->addOption(
+            self::INPUT_KEY_LIMIT,
+            'l',
+            InputOption::VALUE_OPTIONAL,
+            'Limit number of orders in report'
         );
         $this->setName(self::NAME)
             ->setDescription('Send Delivery Report to SeQura');
@@ -84,7 +103,9 @@ class TriggerReport extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        $this->state->setAreaCode(\Magento\Framework\App\Area::AREA_GLOBAL);
         $codeKeys = $input->getArgument(self::INPUT_KEY_SHOPCODES);
+        $limit = $input->getOption(self::INPUT_KEY_LIMIT);
         $output->write('Trigger Delivery Report for ');
         if (count($codeKeys)<1) {
             $codeKeys[0] = false;
@@ -93,7 +114,7 @@ class TriggerReport extends Command
             $output->writeln(implode(',', $codeKeys));
         }
         foreach ($codeKeys as $codeKey) {
-            if ($results = $this->reporter->sendOrderWithShipment($codeKey)) {
+            if ($results = $this->reporter->sendOrderWithShipment($codeKey, $limit)) {
                 $output->writeln('Ok, report Sent!');
                 foreach ($results as $key => $value) {
                     $output->writeln($key . ' => ' . $value . ' orders sent');

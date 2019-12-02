@@ -13,7 +13,7 @@ class Index extends \Magento\Framework\App\Action\Action
     /**
      * @var \Sequra\Core\Cron\Reporter
      */
-    protected $_reporter;
+    protected $reporter;
 
     /**
      * @param \Sequra\Core\Cron\Reporter $reporter
@@ -22,7 +22,7 @@ class Index extends \Magento\Framework\App\Action\Action
         \Magento\Framework\App\Action\Context $context,
         \Sequra\Core\Model\ReporterFactory $reporterFactory
     ) {
-        $this->_reporter = $reporterFactory->create();
+        $this->reporter = $reporterFactory->create();
         parent::__construct($context);
     }
 
@@ -34,7 +34,8 @@ class Index extends \Magento\Framework\App\Action\Action
      */
     public function execute()
     {
-        if ($this->_reporter->sendOrderWithShipment()) {
+        $limit = $this->getRequest()->getParam('limit');
+        if ($this->reporter->sendOrderWithShipment(false, $limit)) {
             die('ok');
         }
         http_response_code(599);

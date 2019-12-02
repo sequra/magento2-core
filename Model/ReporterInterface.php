@@ -9,10 +9,11 @@ namespace Sequra\Core\Model;
 interface ReporterInterface
 {
     /**
-     * Get ipn data, send verification to PayPal, run corresponding handler
+     * Build and send the delivery report to SeQura
+     * @param int $codeKey shop code to build the report for
      *
-     * @return void
+     * @return int
      * @throws \Exception
      */
-    public function sendOrderWithShipment();
+    public function sendOrderWithShipment($codeKey = false, $limit = null);
 }

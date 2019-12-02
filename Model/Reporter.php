@@ -57,16 +57,10 @@ class Reporter implements ReporterInterface
     /*
      * @return: int orders sent
      */
-    public function sendOrderWithShipment($codeKey = false)
+    public function sendOrderWithShipment($codeKey = false, $limit = null)
     {
         $ret = array();
-        $stores = $this->storeManager->getStores($withDefault = false);
-        /* @todo: Understand why without the echo executing from console gives
-        [Magento\Framework\Exception\SessionException]
-        Area code not set: Area code must be set before starting a session.
-        */
-        echo " ";
-        //
+        $stores = $this->storeManager->getStores();
 
         foreach ($stores as $store) {
             if ($codeKey && $store->getCode()!==$codeKey) {
@@ -77,7 +71,7 @@ class Reporter implements ReporterInterface
                 $this->config->getCoreValue('user_secret'),
                 $this->config->getCoreValue('endpoint')
             );
-            $this->builder->build($store->getId());
+            $this->builder->build($store->getId(), $limit);
             $this->logger->info('SEQURA: ' . $this->builder->getOrderCount() . ' orders ready to be sent');
             $client->sendDeliveryReport($this->builder->getBuiltData());
             if ($client->getStatus() == 204) {

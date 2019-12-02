@@ -33,7 +33,7 @@ class InstallSchema implements InstallSchemaInterface
                 'type' => \Magento\Framework\DB\Ddl\Table::TYPE_BOOLEAN,
                 'nullable' => true,
                 'default' => 0,
-                'comment' => 'Has the shipping of this order been informed to SeQura?'
+                'comment' => 'Do we need to inform this order\'s shipments to SeQura?'
             ]
         );
 

@@ -79,10 +79,10 @@ class Report extends AbstractBuilder
         }
     }
 
-    public function build($store_id)
+    public function build($store_id, $limit = false)
     {
         $this->store_id = $store_id;
-        $this->getOrders();
+        $this->getOrders($limit);
         $this->getStats();
         $this->builtData = [
             'merchant' => $this->merchant(),
@@ -93,9 +93,9 @@ class Report extends AbstractBuilder
         ];
     }
 
-    protected function getOrders()
+    protected function getOrders($limit = false)
     {
-        $this->getSequraOrders();
+        $this->getSequraOrders($limit);
         $this->orders = [];
         foreach ($this->sequraOrders as $order) {
             $this->order = $this->orderRepository->get($order->getId());//needed to populate related objects e.g.: customer
@@ -111,7 +111,7 @@ class Report extends AbstractBuilder
      *
      * @return null
      */
-    protected function getSequraOrders()
+    protected function getSequraOrders($limit = false)
     {
         $collection = $this->orderCollectionFactory->create()->addFieldToSelect([
             'entity_id',//load minimun fields, anyway later, we need to populate all and load related objects.
@@ -134,6 +134,9 @@ class Report extends AbstractBuilder
             )
             ->where('sop.method like ?', 'sequra\_%')
             ->distinct(true);
+        if ($limit) {
+            $collection->getSelect()->limit($limit);
+        }
         $this->sequraOrders = $collection;
 
         return $this->sequraOrders;
