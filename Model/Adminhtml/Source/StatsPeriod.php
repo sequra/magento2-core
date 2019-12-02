@@ -18,6 +18,10 @@ class StatsPeriod implements \Magento\Framework\Option\ArrayInterface
     {
         return [
             [
+                'value' => 0,
+                'label' => __('None (no stats at all)')
+            ],
+            [
                 'value' => 1,
                 'label' => __('day')
             ],
