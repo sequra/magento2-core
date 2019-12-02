@@ -63,7 +63,15 @@ class Report extends AbstractBuilder
         $this->orderCollectionFactory = $orderCollectionFactory;
         $this->customerRepository = $customerRepository;
         $this->searchCriteriaBuilder = $searchCriteriaBuilder;
-        parent::__construct($orderFactory, $productRepository, $urlBuilder, $scopeConfig, $localeResolver, $moduleResource, $logger);
+        parent::__construct(
+            $orderFactory,
+            $productRepository,
+            $urlBuilder,
+            $scopeConfig,
+            $localeResolver,
+            $moduleResource,
+            $logger
+        );
     }
 
     public function getOrderCount()
@@ -98,10 +106,11 @@ class Report extends AbstractBuilder
         $this->getSequraOrders($limit);
         $this->orders = [];
         foreach ($this->sequraOrders as $order) {
-            $this->order = $this->orderRepository->get($order->getId());//needed to populate related objects e.g.: customer
+            //needed to populate related objects e.g.: customer
+            $this->order = $this->orderRepository->get($order->getId());
             $this->orders[] = $this->orderWithItems($this->order);
             $this->ids[] = $this->order->getId();
-            $order->addStatusHistoryComment('Envío informado a SeQura');
+            $order->addCommentToStatusHistory('Envío informado a SeQura');
         }
         $this->getBrokenOrders();
     }
@@ -115,7 +124,9 @@ class Report extends AbstractBuilder
     {
         $collection = $this->orderCollectionFactory->create()->addFieldToSelect([
             'entity_id',//load minimun fields, anyway later, we need to populate all and load related objects.
-            'increment_id'
+            'increment_id',
+            'state',
+            'status',
         ])->addFieldToFilter(
             'sequra_order_send',
             ['eq' => 1]
@@ -214,12 +225,16 @@ class Report extends AbstractBuilder
             $qty = $itemOb->getQtyOrdered() - $itemOb->getQtyShipped();
             if ((int)$qty == $qty) {
                 $item["quantity"] = $qty;
-                $item["price_without_tax"] = $item["price_with_tax"] = self::integerPrice(self::notNull($itemOb->getPriceInclTax()));
+                $item["price_without_tax"] =
+                $item["price_with_tax"] = self::integerPrice(self::notNull($itemOb->getPriceInclTax()));
                 $item["tax_rate"] = 0;
                 $item["total_without_tax"] = $item["total_with_tax"] = $item["quantity"] * $item["price_with_tax"];
             } else {
                 $item["quantity"] = 1;
-                $item["total_without_tax"] = $item["total_with_tax"] = $item["price_without_tax"] = $item["price_with_tax"] = self::integerPrice(self::notNull($qty * $itemOb->getPriceInclTax()));
+                $item["total_without_tax"] =
+                $item["total_with_tax"] =
+                $item["price_without_tax"] =
+                $item["price_with_tax"] = self::integerPrice(self::notNull($qty * $itemOb->getPriceInclTax()));
                 $item["tax_rate"] = 0;
             }
             $product = $this->productRepository->getById($itemOb->getProductId());
@@ -239,7 +254,7 @@ class Report extends AbstractBuilder
 
     public function orderMerchantReference($order)
     {
-        $data['order_ref_1'] = $order->getOriginalIncrementId() ? $order->getOriginalIncrementId() : $order->getIncrementId();
+        $data['order_ref_1'] = $order->getOriginalIncrementId()??$order->getIncrementId();
         return $data;
     }
 
@@ -270,9 +285,9 @@ class Report extends AbstractBuilder
                 $status = 'shipped';
             }
             switch ($order->getState()) {
-            case \Magento\Sales\Model\Order::STATE_CANCELED:
-                $status = 'cancelled';
-                break;
+                case \Magento\Sales\Model\Order::STATE_CANCELED:
+                    $status = 'cancelled';
+                    break;
             }
             $address = $order->getBillingAddress();
             if (!is_object($address)) {
@@ -337,7 +352,8 @@ class Report extends AbstractBuilder
             $stat = [
                 "completed_at" => $order->getData('created_at'),
                 "merchant_reference" => [
-                    "order_ref_1" => $order->getOriginalIncrementId() ? $order->getOriginalIncrementId() : $order->getRealOrderId(),
+                    "order_ref_1" =>
+                        $order->getOriginalIncrementId()??$order->getRealOrderId(),
                     "order_ref_2" => $order->getId(),
                 ]
             ];
@@ -429,12 +445,16 @@ class Report extends AbstractBuilder
             $qty = $itemOb->getQtyShipped();
             if ((int)$qty == $qty) {
                 $item["quantity"] = (int)$qty;
-                $item["price_without_tax"] = $item["price_with_tax"] = self::integerPrice(self::notNull($itemOb->getPriceInclTax()));
+                $item["price_without_tax"] =
+                $item["price_with_tax"] = self::integerPrice(self::notNull($itemOb->getPriceInclTax()));
                 $item["tax_rate"] = 0;
                 $item["total_without_tax"] = $item["total_with_tax"] = $item["quantity"] * $item["price_with_tax"];
             } else {//Fake qty and unit price
                 $item["quantity"] = 1;
-                $item["total_without_tax"] = $item["total_with_tax"] = $item["price_without_tax"] = $item["price_with_tax"] = self::integerPrice(self::notNull($qty * $itemOb->getPriceInclTax()));
+                $item["total_without_tax"] =
+                $item["total_with_tax"] =
+                $item["price_without_tax"] =
+                $item["price_with_tax"] = self::integerPrice(self::notNull($qty * $itemOb->getPriceInclTax()));
                 $item["tax_rate"] = 0;
             }
             $items[] = $item;
