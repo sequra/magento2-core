@@ -158,7 +158,7 @@ class Order extends AbstractBuilder
             $data['created_at'] = self::dateOrBlank($customer->getCreatedAt());
             $data['updated_at'] = self::dateOrBlank($customer->getUpdatedAt());
             $data['date_of_birth'] = self::dateOrBlank($customer->getDob());
-            $data['previousorders'] = self::getPreviousOrders($customer->getId());
+            $data['previous_orders'] = self::getPreviousOrders($customer->getId());
         }
 
         return $data;
