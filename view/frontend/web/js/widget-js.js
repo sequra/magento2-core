@@ -32,14 +32,14 @@ define([
 
         textToCents: function (text) {
             text = text.replace(/^\D*/, '').replace(/\D*$/, '');
-            if (text.indexOf(sequraConfigParams.decimalSeparator) < 0) {
-                text += sequraConfigParams.decimalSeparator + '00';
+            if (text.indexOf(window.SequraConfiguration.decimalSeparator) < 0) {
+                text += window.SequraConfiguration.decimalSeparator + '00';
             }
             return SequraHelper.floatToCents(
                 parseFloat(
                     text
-                        .replace(sequraConfigParams.thousandSeparator, '')
-                        .replace(sequraConfigParams.decimalSeparator, '.')
+                        .replace(window.SequraConfiguration.thousandSeparator, '')
+                        .replace(window.SequraConfiguration.decimalSeparator, '.')
                 )
             );
         },
