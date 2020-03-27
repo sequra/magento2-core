@@ -1,17 +1,7 @@
-.checkout-payment-method .payment-method-title label div.sequra_logo {
-    background:url(https://live.sequracdn.com/assets/images/logos/logo.svg) no-repeat;
+.checkout-payment-method .payment-method-title label img.sequra_logo {
     width:65px;
     height:42px;
     display: inline-block;
-    background-size: contain;
-}
-
-.checkout-payment-method .payment-method-title label div.sequra_logo.sequra_invoice {
-    background-image:url(https://live.sequracdn.com/assets/images/badges/invoicing.svg);
-}
-
-.checkout-payment-method .payment-method-title label div.sequra_logo.sequra_partpayments {
-    background-image:url(https://live.sequracdn.com/assets/images/badges/part_payment.svg);
 }
 
 .sequra-educational-popup {
