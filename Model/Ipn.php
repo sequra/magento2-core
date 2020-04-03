@@ -240,10 +240,17 @@ class Ipn extends \Sequra\Core\Model\AbstractIpn implements IpnInterface
                     );
                 }
                 $status = $this->getConfigData($status_name);
-                $this->order->addStatusHistoryComment(
-                    __('Order ref sent to SeQura: %1', $sent_ref),
-                    $status
-                );
+                if (method_exists($this->order, 'addCommentToStatusHistory')) {
+                    $this->order->addCommentToStatusHistory(
+                        __('Order ref sent to SeQura: %1', $sent_ref),
+                        $status
+                    );
+                } else {
+                    $this->order->addStatusHistoryComment(
+                        __('Order ref sent to SeQura: %1', $sent_ref),
+                        $status
+                    );
+                }
                 $this->order->setData('sequra_order_send', 1);
                 $this->orderRepositoryInterface->save($this->order);
             }
@@ -315,9 +322,15 @@ class Ipn extends \Sequra\Core\Model\AbstractIpn implements IpnInterface
 
             $invoice = $payment->getCreatedInvoice();
             if (!is_null($invoice)) {
-                $this->order->addStatusHistoryComment(
-                    __('You notified customer about invoice #%1.', $invoice->getIncrementId())
-                );
+                if (method_exists($this->order, 'addCommentToStatusHistory')) {
+                    $this->order->addCommentToStatusHistory(
+                        __('You notified customer about invoice #%1.', $invoice->getIncrementId())
+                    );
+                } else {
+                    $this->order->addStatusHistoryComment(
+                        __('You notified customer about invoice #%1.', $invoice->getIncrementId())
+                    );
+                }
             }
         }
     }
