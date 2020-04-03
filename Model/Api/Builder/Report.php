@@ -110,9 +110,9 @@ class Report extends AbstractBuilder
             $this->order = $this->orderRepository->get($order->getId());
             $this->orders[] = $this->orderWithItems($this->order);
             $this->ids[] = $this->order->getId();
-            if(method_exists($order,'addCommentToStatusHistory')){
+            if (method_exists($order, 'addCommentToStatusHistory')) {
                 $order->addCommentToStatusHistory('Envío informado a SeQura');
-            }else{
+            } else {
                 $order->addStatusHistoryComment('Envío informado a SeQura');
             }
         }
