@@ -31,11 +31,6 @@ class Index extends \Magento\Checkout\Controller\Onepage
     protected $orderFactory;
 
     /**
-     * @var \Magento\Framework\Message\ManagerInterface
-     */
-    protected $messageManager;
-
-    /**
      * @param \Magento\Framework\App\Action\Context              $context
      * @param \Magento\Customer\Model\Session                    $customerSession
      * @param CustomerRepositoryInterface                        $customerRepository
@@ -53,7 +48,6 @@ class Index extends \Magento\Checkout\Controller\Onepage
      * @param \Magento\Sales\Model\OrderFactory                  $orderFactory
      * @param CookieManagerInterface                             $cookieManager
      * @param CookieMetadataFactory                              $cookieMetadataFactory
-     * @param \Magento\Framework\Message\ManagerInterface        $messageManager
      *
      * @codeCoverageIgnore
      * @SuppressWarnings(PHPMD.ExcessiveParameterList)
@@ -75,8 +69,7 @@ class Index extends \Magento\Checkout\Controller\Onepage
         \Magento\Framework\Controller\Result\JsonFactory $resultJsonFactory,
         \Magento\Sales\Model\OrderFactory $orderFactory,
         CookieManagerInterface $cookieManager,
-        CookieMetadataFactory $cookieMetadataFactory,
-        \Magento\Framework\Message\ManagerInterface $messageManager
+        CookieMetadataFactory $cookieMetadataFactory
     ) {
         parent::__construct(
             $context,
@@ -97,7 +90,6 @@ class Index extends \Magento\Checkout\Controller\Onepage
         $this->cookieMetadataFactory = $cookieMetadataFactory;
         $this->cookieManager = $cookieManager;
         $this->orderFactory = $orderFactory;
-        $this->messageManager = $messageManager;
     }
     /**
      * Rebuild session and redirect to default success controller
@@ -112,7 +104,8 @@ class Index extends \Magento\Checkout\Controller\Onepage
         );
         $order = $this->orderFactory->create()->loadByIncrementId($quote->getReservedOrderId());
         if (!$order->getId()) {
-            $this->messageManager->addWarningMessage(
+            $messageManager = $this->_objectManager->get(\Magento\Framework\Message\ManagerInterface::class);
+            $messageManager->addWarningMessage(
                 __('Lo sentimos. No se ha podido procesar el pago con SeQura, por favor, inténtelo de nuevo o utilice otro método de pago')
             );
             $this->resultRedirectFactory->create()->setPath('checkout/cart');
