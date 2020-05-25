@@ -35,7 +35,7 @@ define([
             if (text.indexOf(window.SequraConfiguration.decimalSeparator) < 0) {
                 text += window.SequraConfiguration.decimalSeparator + '00';
             }
-            return SequraHelper.floatToCents(
+            return this.floatToCents(
                 parseFloat(
                     text
                         .replace(window.SequraConfiguration.thousandSeparator, '')
