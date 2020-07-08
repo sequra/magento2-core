@@ -38,7 +38,7 @@ class Reporter
         \Sequra\Core\Model\ReporterFactory $reporterFactory
     ) {
         $this->_config = $configFactory->create();
-        $this->_reporter = $reporterFactory->crete();
+        $this->_reporter = $reporterFactory->create();
         $this->_logger = $logger;
     }
 
