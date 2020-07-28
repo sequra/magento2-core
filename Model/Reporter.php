@@ -81,7 +81,6 @@ class Reporter implements ReporterInterface
             } elseif ($client->getStatus() >= 200 && $client->getStatus() <= 299 || $client->getStatus() == 409) {
                 $x = $client->getJson(); // return array, not object
                 $this->logger->info('Delivery ERROR ' . $store->getName() . ' ' . $client->getStatus());
-                $this->logger->info($x);
             }
         }
         return count($ret) ? $ret : false;
