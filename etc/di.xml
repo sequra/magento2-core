@@ -43,6 +43,11 @@
         </arguments>
     </virtualType>
 
+    <!-- Avoid sending order confirmation email if order isn't confirmed in SeQura -->
+    <!-- <type name="Magento\Sales\Model\Order\Email\Container\OrderIdentity">
+        <plugin name="change_is_enable_method" type="Sequra\Core\Plugin\Sales\Order\Email\Container\OrderIdentity"/>
+    </type> -->
+
     <!-- CSRF -->
     <type name="Magento\Framework\App\Request\CsrfValidator">
         <plugin name="sequra_disable_form_key_validation" type="Sequra\Core\Plugin\Framework\App\Request\CsrfValidator" />

@@ -90,14 +90,17 @@ class Order extends AbstractBuilder
         $ret = parent::merchant();
         $id = $this->order->getId();
         $ret['notify_url'] = $this->urlBuilder->getUrl('sequra/ipn');
-        $ret['notification_parameters'] = [
+        $urL_parameters = [
             'id' => $id,
             'method' => $this->order->getPayment()->getMethod(),
             'signature' => $this->sign($id)
         ];
+        $ret['notification_parameters'] = $urL_parameters;
         $ret['return_url'] = $this->urlBuilder->getUrl('sequra/comeback', ['quote_id' => $id]);
-        $ret['abort_url'] = $this->urlBuilder->getUrl('sequra/abort');
-
+        $ret['events_webhook'] = [
+            'url' => $this->urlBuilder->getUrl('sequra/webhook'),
+            'parameters' => $urL_parameters,
+        ];
         return $ret;
     }
 

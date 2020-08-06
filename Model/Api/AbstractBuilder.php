@@ -9,6 +9,8 @@ abstract class AbstractBuilder implements BuilderInterface
 {
     const STATE_CONFIRMED = 'confirmed';
     const STATE_APPROVED = 'approved';
+    const STATE_NEEDS_REVIEW = 'needs_review';
+    const STATE_ON_HOLD = 'on_hold';
     const STATE_CANCELLED = 'cancelled';
     public static $centsPerWhole = 100;
     protected $merchant_id;
