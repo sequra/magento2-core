@@ -91,7 +91,9 @@ class Report extends AbstractBuilder
     {
         $this->store_id = $store_id;
         $this->getOrders($limit);
-        $this->getStats();
+        if($this->getConfigData('reporting')){
+            $this->getStats();
+        }
         $this->builtData = [
             'merchant' => $this->merchant(),
             'orders' => $this->orders,
@@ -354,12 +356,13 @@ class Report extends AbstractBuilder
             }
 
             $stat = [
-                "completed_at" => $order->getData('created_at'),
-                "merchant_reference" => [
-                    "order_ref_1" =>
+                'completed_at' => $order->getData('created_at'),
+                'merchant_reference' => [
+                    'order_ref_1' =>
                         $order->getOriginalIncrementId()??$order->getRealOrderId(),
-                    "order_ref_2" => $order->getId(),
-                ]
+                    'order_ref_2' => $order->getId(),
+                ],
+                'currency' => $order->getOrderCurrencyCode(),
             ];
             $stattypes = explode(',', $this->getConfigData('specificstattypes'));
             if ('0' == $this->getConfigData('allowspecificstattypes') || in_array(
@@ -367,7 +370,6 @@ class Report extends AbstractBuilder
                 $stattypes
             )
             ) {
-                $stat['currency'] = $order->getOrderCurrencyCode();
                 $stat['amount'] = self::integerPrice($order->getGrandTotal());
             }
             if ('0' == $this->getConfigData('allowspecificstattypes') || in_array(
