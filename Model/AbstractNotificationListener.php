@@ -84,9 +84,9 @@ class AbstractNotificationListener
     protected $checkoutData;
 
     /**
-     * @var \Magento\Sales\Model\Order\Email\Sender\OrderSender
+     * @var \Magento\Sales\Model\Order\Email\Sender\InvoiceSender
      */
-    protected $orderSender;
+    protected $invoiceSender;
 
     /**
      * @var \Sequra\Core\Model\Api\Builder\Order
@@ -118,7 +118,7 @@ class AbstractNotificationListener
      * @param \Magento\Customer\Model\Session $customerSession ,
      * @param \Sequra\Core\Model\Api\BuilderFactory $builderFactory
      * @param \Magento\Checkout\Helper\Data $checkoutData
-     * @param \Magento\Sales\Model\Order\Email\Sender\OrderSender $orderSender
+     * @param \Magento\Sales\Model\Order\Email\Sender\InvoiceSender $invoiceSender
      * @param \Magento\Sales\Model\Order\OrderStateResolverInterface $orderStateResolver
      * @param \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig
      * @param array $data
@@ -134,7 +134,7 @@ class AbstractNotificationListener
         \Magento\Customer\Model\Session $customerSession,
         \Sequra\Core\Model\Api\BuilderFactory $builderFactory,
         \Magento\Checkout\Helper\Data $checkoutData,
-        \Magento\Sales\Model\Order\Email\Sender\OrderSender $orderSender,
+        \Magento\Sales\Model\Order\Email\Sender\InvoiceSender $invoiceSender,
         \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
         \Magento\Sales\Model\Order\OrderStateResolverInterface $orderStateResolver,
         array $data = []
@@ -146,7 +146,7 @@ class AbstractNotificationListener
         $this->orderRepository = $orderRepository;
         $this->orderManagement = $orderManagement;
         $this->searchCriteriaBuilder = $searchCriteriaBuilder;
-        $this->orderSender = $orderSender;
+        $this->invoiceSender = $invoiceSender;
         $this->scopeConfig = $scopeConfig;
         $this->paymentInformationManager = $paymentInformationManager;
         $this->customerSession = $customerSession;

@@ -117,7 +117,6 @@ class Ipn extends \Sequra\Core\Model\AbstractNotificationListener implements Ipn
         // Create Order From Quote
         try {
             $this->order = $this->quoteManagement->submit($this->quote);
-            $this->order->setEmailSent(0);
         } catch (\Exception $e) {
             $log_msg = 'Could not create order for Transaction Id:' . $this->getRequestData('order_ref');
             $log_msg .= "\n".$e->getMessage();
@@ -167,7 +166,7 @@ class Ipn extends \Sequra\Core\Model\AbstractNotificationListener implements Ipn
 
             $invoice = $payment->getCreatedInvoice();
             if (!is_null($invoice)) {
-                $this->orderSender->send($this->order);
+                $this->invoiceSender->send($invoice);
                 $this->addCommentToStatusHistory(
                     __('You notified customer about invoice #%1.', $invoice->getIncrementId())
                 );
