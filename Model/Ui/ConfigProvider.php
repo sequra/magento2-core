@@ -54,7 +54,7 @@ class ConfigProvider implements ConfigProviderInterface
                 'sequra_configuration' => [
                     'merchant' => $this->config->getMerchantRef(),
                     'assetKey' => $this->config->getAssetsKey(),
-                    'products' => ['i1','pp3','pp5'],
+                    'products' => ['i1','pp3','pp5','pp6','pp9'],
                     'scriptUri' => $this->config->getScriptUri(),
                     'decimalSeparator' => $this->getDecimalSeparator(),
                     'thousandSeparator' => $this->getThousandsSeparator(),
