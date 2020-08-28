@@ -6,9 +6,16 @@
 -->
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file.xsd">
     <system>
-        <section id="payment" translate="label" type="text" sortOrder="400" showInDefault="1" showInWebsite="1" showInStore="1">
-            <group id="sequra" translate="label" type="text" sortOrder="9" showInDefault="1" showInWebsite="1" showInStore="1">
-                <label>SeQura Payment Solutions</label>
+        <section id="payment">
+            <group id="sequra" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
+                <comment>
+                <![CDATA[<div class="sequra-payment-logo"></div><div class="sequra-payment-text">
+                Ofrezca más formas de pagar con SeQura.<br/>
+                Es la forma más sencilla de impulsar las ventas y aumentar el valor medio de su carrito.<br/>
+                Obtenga más clientes que compran más y con más frecuencia. SeQura siempre le paga el total de los pedidos por adelantado, mientras que sus clientes pagan en una fecha posterior.</div>]]>
+                </comment>
+                <fieldset_css>complex sequra-section</fieldset_css>
+                <frontend_model>Magento\Paypal\Block\Adminhtml\System\Config\Fieldset\Payment</frontend_model>
                 <field id="merchant_ref" translate="label" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
                     <config_path>sequra/core/merchant_ref</config_path>
                     <label>Merchant Ref</label>
