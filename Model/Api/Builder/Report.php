@@ -140,12 +140,12 @@ class Report extends AbstractBuilder
         /* join with payment table */
         $collection->getSelect()
             ->join(
-                ["sop" => "sales_order_payment"],
+                ["sop" => $collection->getTable('sales_order_payment')],
                 'main_table.entity_id = sop.parent_id',
                 ['method']
             )
             ->join(
-                ['sp' => "sales_shipment"],
+                ['sp' => $collection->getTable('sales_shipment')],
                 'main_table.entity_id = sp.order_id and main_table.store_id = sp.store_id',
                 ''
             )
