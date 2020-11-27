@@ -228,7 +228,7 @@ class Report extends AbstractBuilder
             $item["reference"] = self::notNull($itemOb->getSku());
             $item["name"] = self::notNull($itemOb->getName());
             $item["downloadable"] = ($itemOb->getIsVirtual() ? true : false);
-            $qty = $itemOb->getQtyOrdered() - $itemOb->getQtyShipped();
+            $qty = $itemOb->getQtyOrdered() - $itemOb->getQtyShipped() - $itemOb->getQtyRefunded();
             if ((int)$qty == $qty) {
                 $item["quantity"] = $qty;
                 $item["price_without_tax"] =
