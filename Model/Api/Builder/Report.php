@@ -74,6 +74,10 @@ class Report extends AbstractBuilder
         );
     }
 
+    public function setMerchantId($merchant_id){
+        $this->merchant_id = $merchant_id;
+    }
+
     public function getOrderCount()
     {
         return count($this->ids);

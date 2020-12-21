@@ -172,7 +172,7 @@ abstract class AbstractConfig implements ConfigInterface
                     $value = $this->_scopeConfig->getValue(
                         $path,
                         ScopeInterface::SCOPE_STORE,
-                        $this->_storeId
+                        $storeId??$this->_storeId
                     );
                     return $value;
                 }

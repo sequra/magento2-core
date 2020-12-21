@@ -23,7 +23,7 @@ class Reporter implements ReporterInterface
     /**
      * @var \Sequra\Core\Model\Api\BuilderFactory
      */
-    protected $builder;
+    protected $builderFactory;
 
     /**
      * Store manager
@@ -49,7 +49,7 @@ class Reporter implements ReporterInterface
     ) {
         $this->config = $configFactory->create();
         $this->logger = $logger;
-        $this->builder = $builderFactory->create('report');
+        $this->builderFactory = $builderFactory;
         $this->storeManager = $storeManager;
     }
 
@@ -67,21 +67,26 @@ class Reporter implements ReporterInterface
                 continue;
             }
             $client = new \Sequra\PhpClient\Client(
-                $this->config->getCoreValue('user_name'),
-                $this->config->getCoreValue('user_secret'),
-                $this->config->getCoreValue('endpoint')
+                $this->config->getCoreValue('user_name',$store->getId()),
+                $this->config->getCoreValue('user_secret',$store->getId()),
+                $this->config->getCoreValue('endpoint',$store->getId())
             );
-            $this->builder->build($store->getId(), $limit);
-            $this->logger->info('SEQURA: ' . $this->builder->getOrderCount() . ' orders ready to be sent');
-            $client->sendDeliveryReport($this->builder->getBuiltData());
+            $builder = $this->builderFactory->create('report');
+            $builder->setMerchantId(
+                $this->config->getCoreValue('merchant_ref',$store->getId())
+            );
+            $builder->build($store->getId(), $limit);
+            $this->logger->info('SEQURA: ' . $builder->getOrderCount() . ' orders ready to be sent');
+            $client->sendDeliveryReport($builder->getBuiltData());
             if ($client->getStatus() == 204) {
-                $this->builder->setOrdersAsSent();
-                $this->logger->info('SEQURA: ' . $this->builder->getOrderCount() . ' orders sent successfully');
-                $ret[$store->getName()] = $this->builder->getOrderCount();
+                $builder->setOrdersAsSent();
+                $this->logger->info('SEQURA: ' . $builder->getOrderCount() . ' orders sent successfully');
+                $ret[$store->getName()] = $builder->getOrderCount();
             } elseif ($client->getStatus() >= 200 && $client->getStatus() <= 299 || $client->getStatus() == 409) {
                 $x = $client->getJson(); // return array, not object
                 $this->logger->info('Delivery ERROR ' . $store->getName() . ' ' . $client->getStatus());
             }
+            var_dump( $client);
         }
         return count($ret) ? $ret : false;
     }
