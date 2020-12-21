@@ -86,7 +86,6 @@ class Reporter implements ReporterInterface
                 $x = $client->getJson(); // return array, not object
                 $this->logger->info('Delivery ERROR ' . $store->getName() . ' ' . $client->getStatus());
             }
-            var_dump( $client);
         }
         return count($ret) ? $ret : false;
     }
