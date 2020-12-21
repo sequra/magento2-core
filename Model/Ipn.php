@@ -167,6 +167,7 @@ class Ipn extends \Sequra\Core\Model\AbstractNotificationListener implements Ipn
             $invoice = $payment->getCreatedInvoice();
             if (!is_null($invoice)) {
                 $this->invoiceSender->send($invoice);
+                $invoice->save();
                 $this->addCommentToStatusHistory(
                     __('You notified customer about invoice #%1.', $invoice->getIncrementId())
                 );
