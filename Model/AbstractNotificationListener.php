@@ -262,13 +262,23 @@ class AbstractNotificationListener
         return $this->quote;
     }
 
+    protected function getStoreId(){
+        if($this->order){
+            return $this->order->getStoreId();
+        }
+        if($this->quote){
+            return $this->quote->getStoreId();
+        }
+    }
+
     protected function getClient()
     {
         if (!$this->client) {
+            $storeId = $this->getStoreId();
             $this->client = new \Sequra\PhpClient\Client(
-                $this->getConfigData('user_name'),
-                $this->getConfigData('user_secret'),
-                $this->getConfigData('endpoint')
+                $this->getConfigData('user_name',$storeId),
+                $this->getConfigData('user_secret',$storeId),
+                $this->getConfigData('endpoint',$storeId)
             );
         }
         return $this->client;

@@ -43,7 +43,7 @@ class Order extends AbstractBuilder
         $this->customerSession = $customerSession;
     }
 
-    public function setOrder(\Magento\Framework\Model\AbstractModel $order)
+    public function setOrder($order)
     {
         $this->order = $order;
         return $this;
@@ -115,7 +115,7 @@ class Order extends AbstractBuilder
         $data['cart_ref'] = $this->order->getReservedOrderId();//$this->order->getQuoteId();
         $data['order_total_with_tax'] = self::integerPrice($this->order->getGrandTotal());
         $data['order_total_without_tax'] = $data['order_total_with_tax'];
-        $data['items'] = $this->items($this->order);
+        $data['items'] = $this->items();
 
         return $data;
     }
@@ -185,6 +185,19 @@ class Order extends AbstractBuilder
         }
 
         return $orders;
+    }
+
+    public function getDiscountInclTax()
+    {
+        $discount_with_tax = 0;
+        foreach ($this->order->getAllItems() as $item) {
+            $discount = $item->getDiscountAmount();
+            if (!$this->getGlobalConfigData(\Magento\Tax\Model\Config::CONFIG_XML_PATH_PRICE_INCLUDES_TAX)) {
+                $discount *= ( 1 + $item->getTaxPercent() / 100 );
+            }
+            $discount_with_tax += self::integerPrice($discount);
+        }
+        return -1*$discount_with_tax;
     }
 
     public function getShippingInclTax()

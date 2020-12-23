@@ -75,7 +75,6 @@ abstract class AbstractBuilder implements BuilderInterface
         $this->scopeConfig = $scopeConfig;
         $this->localeResolver = $localeResolver;
         $this->moduleResource = $moduleResource;
-        $this->merchant_id = $this->getConfigData('merchant_ref');
         $this->logger = $logger;
     }
 
@@ -93,53 +92,55 @@ abstract class AbstractBuilder implements BuilderInterface
 
     public function merchant()
     {
+        if(!$this->merchant_id){
+            $this->merchant_id = $this->getConfigData('merchant_ref',$this->getStoreId());
+        }
         return [
             'id' => $this->merchant_id,
         ];
     }
-
+    protected function getStoreId(){
+        if($this->order){
+            return $this->order->getStoreId();
+        }
+        if($this->quote){
+            return $this->quote->getStoreId();
+        }
+    }
     abstract public function deliveryAddress();
 
     abstract public function invoiceAddress();
 
-    public function items($order)
+    public function items()
     {
         return array_merge(
             $this->productItem(),
-            $this->extraItems($order),
+            $this->extraItems(),
             $this->handlingItems()
         );
     }
 
     abstract public function productItem();
 
-    public function extraItems($order)
+    public function extraItems()
     {
         $items = [];
-        $discount_with_tax = 0;
-        foreach ($order->getAllItems() as $item) {
-            $dto = $item->getDiscountAmount();
-            if (!$this->getGlobalConfigData(\Magento\Tax\Model\Config::CONFIG_XML_PATH_PRICE_INCLUDES_TAX)) {
-                $dto *= ( 1 + $item->getTaxPercent() / 100 );
-            }
-            $discount_with_tax += $dto * 100;
-        }
-
         //order discounts
-        if ($discount_with_tax > 0) {
+        $discount_with_tax = $this->getDiscountInclTax();
+        if ($discount_with_tax < 0) {
             $item = [];
             $item["type"] = "discount";
-            $item["reference"] = self::notNull($order->getCouponCode());
+            $item["reference"] = self::notNull($this->order->getCouponCode());
             $item["name"] = 'Descuento';
-            $item["total_without_tax"] = $item["total_with_tax"] = -1 * (int)$discount_with_tax;
+            $item["total_without_tax"] = $item["total_with_tax"] = $discount_with_tax;
             $items[] = $item;
         }
         //add Customer fee (without tax)
-        if ($order->getSequraSequrapayment() > 0) {
+        if ($this->order->getSequraSequrapayment() > 0) {
             $item = [];
             $item["type"] = "invoice_fee";
             $item["tax_rate"] = 0;
-            $item["total_without_tax"] = $item["total_with_tax"] = self::integerPrice($order->getSequraSequrapayment());
+            $item["total_without_tax"] = $item["total_with_tax"] = self::integerPrice($this->order->getSequraSequrapayment());
 
             $items[] = $item;
         }
@@ -198,6 +199,8 @@ abstract class AbstractBuilder implements BuilderInterface
     abstract public function getShippingMethod();
 
     abstract public function getShippingInclTax();
+
+    abstract public function getDiscountInclTax();
 
     public function address($address)
     {
@@ -444,7 +447,8 @@ abstract class AbstractBuilder implements BuilderInterface
 
     public function sign($value)
     {
-        return hash_hmac('sha256', $value, $this->getConfigData('user_secret'));
+        $storeId = $this->order?$this->order->getStoreId():null;
+        return hash_hmac('sha256', $value, $this->getConfigData('user_secret',$storeId));
     }
 
     protected function fixRoundingProblems($order)

@@ -22,9 +22,9 @@ class Report extends AbstractBuilder
     protected $orders = [];
     protected $currentshipment = null;
     protected $ids = [];
-    protected $broken_orders = [];
+    protected $brokenOrders = [];
     protected $stats = [];
-    protected $store_id = null;
+    protected $storeId = null;
 
     /**
      * @var \Magento\Sales\Api\OrderRepositoryInterface
@@ -91,17 +91,17 @@ class Report extends AbstractBuilder
         }
     }
 
-    public function build($store_id, $limit = false)
+    public function build($storeId, $limit = false)
     {
-        $this->store_id = $store_id;
+        $this->storeId = $storeId;
         $this->getOrders($limit);
-        if($this->getConfigData('reporting')){
+        if(!$limit || $this->getConfigData('reporting')){
             $this->getStats();
         }
         $this->builtData = [
             'merchant' => $this->merchant(),
             'orders' => $this->orders,
-            'broken_orders' => $this->broken_orders,
+            'broken_orders' => $this->brokenOrders,
             'statistics' => ['orders' => $this->stats],
             'platform' => self::platform()
         ];
@@ -140,6 +140,9 @@ class Report extends AbstractBuilder
         ])->addFieldToFilter(
             'sequra_order_send',
             ['eq' => 1]
+        )->addFieldToFilter(
+            'main_table.store_id',
+            ['eq' => $this->storeId]
         );
         /* join with payment table */
         $collection->getSelect()
@@ -173,10 +176,7 @@ class Report extends AbstractBuilder
         $aux['invoice_address'] = $this->invoiceAddress();
         $aux['customer'] = $this->customer();
         $aux['cart'] = $this->shipmentCart();
-        $remainingCart = $this->orderRemainingCart();
-        if (!is_null($remainingCart)) {
-            $aux['remaining_cart'] = $remainingCart;
-        }
+        $aux['remaining_cart'] = $this->orderRemainingCart();
         $aux['merchant_reference'] = $this->orderMerchantReference($order);
 
         return $this->fixRoundingProblems($aux);
@@ -210,7 +210,7 @@ class Report extends AbstractBuilder
         $data['currency'] = $this->order->getOrderCurrencyCode()?$this->order->getOrderCurrencyCode():'EUR';
         $data['delivery_method'] = $this->getDeliveryMethod();
         $data['gift'] = false;
-        $data['items'] = $this->items($this->order);
+        $data['items'] = $this->items();
 
         if (count($data['items']) > 0) {
             $totals = Helper::totals($data);
@@ -224,6 +224,7 @@ class Report extends AbstractBuilder
     {
         $data = [];
         $data['items'] = [];
+        $remaining_discount = 0;
         foreach ($this->order->getAllVisibleItems() as $itemOb) {
             if (is_null($itemOb->getProductId())) {
                 continue;
@@ -251,15 +252,24 @@ class Report extends AbstractBuilder
             if ($item["quantity"] > 0) {
                 $data['items'][] = array_merge($item, $this->fillOptionalProductItemFields($product));
             }
+            $discount = $itemOb->getDiscountAmount()*$qty/$itemOb->getQtyOrdered();
+            if (!$this->getGlobalConfigData(\Magento\Tax\Model\Config::CONFIG_XML_PATH_PRICE_INCLUDES_TAX)) {
+                $discount *= ( 1 + $itemOb->getTaxPercent() / 100 );
+            }
+            $remaining_discount -=$discount;
         }
-
-        if (count($data['items']) > 0) {
-            $totals = Helper::totals($data);
-            $data['order_total_without_tax'] = $totals['without_tax'];
-            $data['order_total_with_tax'] = $totals['with_tax'];
-            return $data;
+        if ($remaining_discount < 0) {
+            $item = [];
+            $item["type"] = "discount";
+            $item["reference"] = self::notNull($this->order->getCouponCode());
+            $item["name"] = 'Descuento pendiente';
+            $item["total_without_tax"] = $item["total_with_tax"] = self::integerPrice($remaining_discount);
+            $data['items'][] = $item;
         }
-        return null;
+        $totals = Helper::totals($data);
+        $data['order_total_without_tax'] = $totals['without_tax'];
+        $data['order_total_with_tax'] = $totals['with_tax'];
+        return $data;
     }
 
     public function orderMerchantReference($order)
@@ -271,10 +281,10 @@ class Report extends AbstractBuilder
     private function getBrokenOrders()
     {
         $cleaned_orders = [];
-        $this->broken_orders = [];
+        $this->brokenOrders = [];
         foreach ($this->orders as $key => $order) {
             if (!Helper::isConsistentCart($order['cart'])) {
-                $this->broken_orders[] = $order;
+                $this->brokenOrders[] = $order;
             } else {
                 $cleaned_orders[] = $order;
             }
@@ -417,7 +427,7 @@ class Report extends AbstractBuilder
         $lastTime = $time - $this->getConfigData('statsperiod') * 60 * 60 * 24;// 60*60*24*
         $from = date('Y-m-d H:i:s', $lastTime);
         $criteria = $this->searchCriteriaBuilder
-            ->addFilter('store_id', $this->store_id)
+            ->addFilter('store_id', $this->storeId)
             ->addFilter('created_at', $from, 'gt')
             ->addFilter('created_at', $to, 'lt')
             ->create();
@@ -472,9 +482,22 @@ class Report extends AbstractBuilder
         return $items;
     }
 
+    public function getDiscountInclTax()
+    {
+        $discount_with_tax = 0;
+        foreach ($this->order->getAllItems() as $item) {
+            $discount = $item->getDiscountAmount()*$item->getQtyShipped()/$item->getQtyOrdered();            ;
+            if (!$this->getGlobalConfigData(\Magento\Tax\Model\Config::CONFIG_XML_PATH_PRICE_INCLUDES_TAX)) {
+                $discount *= ( 1 + $item->getTaxPercent() / 100 );
+            }
+            $discount_with_tax += self::integerPrice($discount);
+        }
+        return -1*$discount_with_tax;
+    }
+
     public function getShippingInclTax()
     {
-        return $this->order->getShippingInclTax();
+        return $this->order->getShippingInclTax() - $this->order->getShippingRefunded() - $this->order->getShippingTaxRefunded();
     }
 
     public function getShippingMethod()

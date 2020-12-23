@@ -21,8 +21,8 @@ class Ipn extends \Sequra\Core\Model\AbstractNotificationListener implements Ipn
     public function processIpnRequest()
     {
         $this->addDebugData('ipn', $this->getRequestData());
+        $this->builder->setOrder($this->getQuote());
         $this->validateNotificationRequest();
-        $this->getQuote();
         try {
             switch ($this->getRequestData('sq_state')) {
                 case 'needs_review':
@@ -289,7 +289,6 @@ class Ipn extends \Sequra\Core\Model\AbstractNotificationListener implements Ipn
      */
     private function setStateInSequra(string $state)
     {
-        $this->builder->setOrder($this->getQuote());
         $this->builder->build($state);
         return $this->updateOrderInSequra();
     }
