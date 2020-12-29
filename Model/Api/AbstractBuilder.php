@@ -155,6 +155,9 @@ abstract class AbstractBuilder implements BuilderInterface
 
     public static function integerPrice($price)
     {
+        if(!is_numeric($price)){
+            return 0;
+        }
         return intval(round(self::$centsPerWhole * $price));
     }
 
