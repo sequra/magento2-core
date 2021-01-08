@@ -6,6 +6,7 @@
 namespace Sequra\Core\Model\Api\Builder;
 
 use Sequra\Core\Model\Api\AbstractBuilder;
+use Sequra\Core\Model\Api\BuilderInterface;
 
 class Order extends AbstractBuilder
 {
@@ -43,13 +44,7 @@ class Order extends AbstractBuilder
         $this->customerSession = $customerSession;
     }
 
-    public function setOrder($order)
-    {
-        $this->order = $order;
-        return $this;
-    }
-
-    public function build($state = '', $sendRef = false)
+    public function build():BuilderInterface
     {
         $this->data = [
             'merchant' => $this->merchant(),
@@ -59,30 +54,10 @@ class Order extends AbstractBuilder
             'customer' => $this->customer(),
             'gui' => $this->gui(),
             'platform' => $this->platform(),
-            'state' => $state
+            'state' => ''
         ];
         $this->data = $this->fixRoundingProblems($this->data);
-        if ($sendRef) {
-            $this->data['merchant_reference'] = [
-                'order_ref_1' => $this->order->getReservedOrderId(),
-                'order_ref_2' => $this->order->getId()
-            ];
-        }
-
-        return $this->data;
-    }
-
-    public function setMerchantRefence($ref1, $ref2)
-    {
-        $this->data['merchant_reference'] = [
-            'order_ref_1' => $ref1,
-            'order_ref_2' => $ref2
-        ];
-    }
-
-    public function setState($state)
-    {
-        $this->data['state'] = $state;
+        return $this;
     }
 
     public function merchant()

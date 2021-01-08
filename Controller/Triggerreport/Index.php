@@ -11,7 +11,7 @@ namespace Sequra\Core\Controller\Triggerreport;
 class Index extends \Magento\Framework\App\Action\Action
 {
     /**
-     * @var \Sequra\Core\Cron\Reporter
+     * @var \Sequra\Core\Model\ReporterInterface
      */
     protected $reporter;
 
@@ -35,7 +35,7 @@ class Index extends \Magento\Framework\App\Action\Action
     public function execute()
     {
         $limit = $this->getRequest()->getParam('limit');
-        if ($this->reporter->sendOrderWithShipment(false, $limit)) {
+        if ($this->reporter->sendOrderWithShipment(null, $limit)) {
             die('ok');
         }
         http_response_code(599);

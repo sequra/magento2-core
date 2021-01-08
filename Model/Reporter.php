@@ -53,11 +53,7 @@ class Reporter implements ReporterInterface
         $this->storeManager = $storeManager;
     }
 
-
-    /*
-     * @return: int orders sent
-     */
-    public function sendOrderWithShipment($codeKey = false, $limit = null)
+    public function sendOrderWithShipment(int $codeKey = null, int $limit = null):array
     {
         $ret = array();
         $stores = $this->storeManager->getStores();
@@ -71,11 +67,13 @@ class Reporter implements ReporterInterface
                 $this->config->getCoreValue('user_secret',$store->getId()),
                 $this->config->getCoreValue('endpoint',$store->getId())
             );
-            $builder = $this->builderFactory->create('report');
-            $builder->setMerchantId(
-                $this->config->getCoreValue('merchant_ref',$store->getId())
-            );
-            $builder->build($store->getId(), $limit);
+            $builder = $this->builderFactory->create('report')
+                ->setMerchantId(
+                    $this->config->getCoreValue('merchant_ref',$store->getId())
+                )
+                ->setStoreId($store->getId())
+                ->setLimit($limit)
+                ->build();
             $this->logger->info('SEQURA: ' . $builder->getOrderCount() . ' orders ready to be sent');
             $client->sendDeliveryReport($builder->getBuiltData());
             if ($client->getStatus() == 204) {
@@ -87,6 +85,6 @@ class Reporter implements ReporterInterface
                 $this->logger->info('Delivery ERROR ' . $store->getName() . ' ' . $client->getStatus());
             }
         }
-        return count($ret) ? $ret : false;
+        return $ret;
     }
 }

@@ -29,11 +29,12 @@
 
     <preference for="Sequra\Core\Api\SubmissionInterface" type="Sequra\Core\Model\Service\SubmissionService"/>
 
-    <!-- Commandline option to triggerrerport -->
+    <!-- Commandline option to triggerrerport and update orders-->
     <type name="Magento\Framework\Console\CommandList">
        <arguments>
            <argument name="commands" xsi:type="array">
-               <item name="triggerReport" xsi:type="object">Sequra\Core\Console\TriggerReport</item>
+                <item name="triggerReport" xsi:type="object">Sequra\Core\Console\TriggerReport</item>
+                <item name="updateOrdersInSeQura" xsi:type="object">Sequra\Core\Console\UpdateOrdersInSeQura</item>
            </argument>
        </arguments>
     </type>

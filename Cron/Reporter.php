@@ -20,7 +20,7 @@ class Reporter
     protected $logger;
 
     /**
-     * @var \Sequra\Core\Model\ReporterFactory
+     * @var \Sequra\Core\Model\ReporterInterface
      */
     protected $reporter;
 
@@ -52,7 +52,6 @@ class Reporter
         if (!$this->config->getCoreValue('reporting')) {
             return;
         }
-
         if ($this->config->getCoreValue('reportingtime') == date('H')) {
             $this->reporter->sendOrderWithShipment();
             $this->logger->info("SEQURA: report sent");

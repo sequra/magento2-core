@@ -6,6 +6,7 @@
 namespace Sequra\Core\Model\Api\Builder;
 
 use Sequra\Core\Model\Api\AbstractBuilder;
+use Sequra\Core\Model\Api\BuilderInterface;
 use Sequra\PhpClient\Helper;
 
 class Report extends AbstractBuilder
@@ -74,10 +75,6 @@ class Report extends AbstractBuilder
         );
     }
 
-    public function setMerchantId($merchant_id){
-        $this->merchant_id = $merchant_id;
-    }
-
     public function getOrderCount()
     {
         return count($this->ids);
@@ -91,11 +88,10 @@ class Report extends AbstractBuilder
         }
     }
 
-    public function build($storeId, $limit = false)
+    public function build():BuilderInterface
     {
-        $this->storeId = $storeId;
-        $this->getOrders($limit);
-        if(!$limit || $this->getConfigData('reporting')){
+        $this->getOrders();
+        if(!$this->limit || $this->getConfigData('reporting')){
             $this->getStats();
         }
         $this->builtData = [
@@ -105,11 +101,12 @@ class Report extends AbstractBuilder
             'statistics' => ['orders' => $this->stats],
             'platform' => self::platform()
         ];
+        return $this;
     }
 
-    protected function getOrders($limit = false)
+    protected function getOrders()
     {
-        $this->getSequraOrders($limit);
+        $this->getSequraOrders();
         $this->orders = [];
         foreach ($this->sequraOrders as $order) {
             //needed to populate related objects e.g.: customer
@@ -130,7 +127,7 @@ class Report extends AbstractBuilder
      *
      * @return null
      */
-    protected function getSequraOrders($limit = false)
+    protected function getSequraOrders()
     {
         $collection = $this->orderCollectionFactory->create()->addFieldToSelect([
             'entity_id',//load minimun fields, anyway later, we need to populate all and load related objects.
@@ -158,8 +155,8 @@ class Report extends AbstractBuilder
             )
             ->where('sop.method like ?', 'sequra\_%')
             ->distinct(true);
-        if ($limit) {
-            $collection->getSelect()->limit($limit);
+        if ($this->limit) {
+            $collection->getSelect()->limit($this->limit);
         }
         $this->sequraOrders = $collection;
 
@@ -223,6 +220,7 @@ class Report extends AbstractBuilder
     public function orderRemainingCart()
     {
         $data = [];
+        $data['currency'] = $this->order->getOrderCurrencyCode()?$this->order->getOrderCurrencyCode():'EUR';
         $data['items'] = [];
         $remaining_discount = 0;
         foreach ($this->order->getAllVisibleItems() as $itemOb) {
@@ -275,6 +273,7 @@ class Report extends AbstractBuilder
     public function orderMerchantReference($order)
     {
         $data['order_ref_1'] = $order->getOriginalIncrementId()??$order->getIncrementId();
+        $data['order_ref_2'] = $order->getId();
         return $data;
     }
 
@@ -334,6 +333,7 @@ class Report extends AbstractBuilder
                     case 'ruralvia':
                     case 'cuatrob':
                     case 'paytpvcom':
+                    case 'paycomet':
                     case 'cc':
                     case 'ccsave':
                         $payment_method_enum = 'CC';
@@ -347,6 +347,7 @@ class Report extends AbstractBuilder
                     case \Magento\Paypal\Model\Config::METHOD_WPP_DIRECT:
                     case \Magento\Paypal\Model\Config::METHOD_WPP_PE_EXPRESS:
                     case \Magento\Paypal\Model\Config::METHOD_WPP_BML:
+                    case (preg_match('/.*paypal.*/', $payment_method_raw) ? true : false):
                         $payment_method_enum = 'PP';
                         break;
                     case 'checkmo':
@@ -359,9 +360,7 @@ class Report extends AbstractBuilder
                     case 'i4seur_cashondelivery':
                         $payment_method_enum = 'COD';
                         break;
-                    case 'sequra_invoice':
-                    case 'sequra_partpayments':
-                    case 'sequra_campaign':
+                    case (preg_match('/sequra.*/', $payment_method_raw) ? true : false):
                         $payment_method_enum = 'SQ';
                         break;
                     default:

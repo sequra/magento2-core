@@ -41,9 +41,14 @@ class BuilderFactory
      */
     public function create($type = 'order')
     {
-        $instanceType = $type == 'report' ?
-            'Sequra\Core\Model\Api\Builder\Report' : 'Sequra\Core\Model\Api\Builder\Order';
+        switch($type){
+            case 'report':
+                return $this->_objectManager->create('Sequra\Core\Model\Api\Builder\Report');
+            case 'order-update':
+                return $this->_objectManager->create('Sequra\Core\Model\Api\Builder\OrderUpdate');
+            default:
+                return $this->_objectManager->create('Sequra\Core\Model\Api\Builder\Order');
+        }
 
-        return $this->_objectManager->create($instanceType);
     }
 }

@@ -23,8 +23,8 @@ class Webhook extends \Sequra\Core\Model\AbstractNotificationListener implements
     public function processWebhookRequest()
     {
         $this->addDebugData('Webhook', $this->getRequestData());
+        $this->builder->setQuoteAsOrder($this->getQuote());
         $this->validateNotificationRequest();
-        $this->getQuote();
         if (!$this->orderAlreadyExists()) {
             http_response_code(404);
             die();

@@ -15,21 +15,25 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * Console command to trigger DR report
  */
-class TriggerReport extends Command
+class UpdateOrdersInSeQura extends Command
 {
     /**
      *  Command name
      */
-    const NAME = 'sequra:triggerreport';
+    const NAME = 'sequra:updateorders';
 
     /**
      * Names of input arguments or options
      */
-    const INPUT_KEY_SHOPCODES = 'shopcodes';
+    const INPUT_KEY_ORDER = 'order';
     /**
      * Names of input arguments or options
      */
     const INPUT_KEY_LIMIT = 'limit';
+    /**
+     * Names of input arguments or options
+     */
+    protected $sequraOrders = null;
 
     /**
      * Configuration Object
@@ -39,11 +43,11 @@ class TriggerReport extends Command
     protected $config;
 
     /**
-     * Reporter
+     * OrderUpdater
      *
-     * @var \Sequra\Core\Model\ReporterInterface
+     * @var \Sequra\Core\Model\OrderUpdaterFactory
      */
-    protected $reporter;
+    protected $orderUpdater;
 
     /**
      * @var \Magento\Framework\App\State
@@ -54,16 +58,16 @@ class TriggerReport extends Command
      * Constructor
      *
      * @param ConfigFactory $configFactory configFactory
-     * @param \Sequra\Core\Model\ReporterFactory $reporterFactory reporteFactory
+     * @param \Sequra\Core\Model\OrderUpdaterFactory $orderUpdaterFactory reporteFactory
      * @param \Magento\Framework\App\State $state
      */
     public function __construct(
         ConfigFactory $configFactory,
-        \Sequra\Core\Model\ReporterFactory $reporterFactory,
+        \Sequra\Core\Model\OrderUpdaterFactory $orderUpdaterFactory,
         \Magento\Framework\App\State $state
     ) {
         $this->config = $configFactory->create();
-        $this->reporter = $reporterFactory->create();
+        $this->orderUpdater = $orderUpdaterFactory->create();
         $this->state = $state;
         parent::__construct();
     }
@@ -76,18 +80,18 @@ class TriggerReport extends Command
     protected function configure()
     {
         $this->addArgument(
-            self::INPUT_KEY_SHOPCODES,
-            InputArgument::IS_ARRAY | InputArgument::OPTIONAL,
-            'Shop code'
+            self::INPUT_KEY_ORDER,
+            InputArgument::OPTIONAL,
+            'First order Increment Id to update'
         );
         $this->addOption(
             self::INPUT_KEY_LIMIT,
             'l',
             InputOption::VALUE_OPTIONAL,
-            'Limit number of orders in report'
+            'Limit number of orders to update'
         );
         $this->setName(self::NAME)
-            ->setDescription('Send Delivery Report to SeQura');
+            ->setDescription('Send orders update to SeQura');
 
         parent::configure();
     }
@@ -104,25 +108,11 @@ class TriggerReport extends Command
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $this->state->setAreaCode(\Magento\Framework\App\Area::AREA_GLOBAL);
-        $codeKeys = $input->getArgument(self::INPUT_KEY_SHOPCODES);
+        $firstIncrementId = $input->getArgument(self::INPUT_KEY_ORDER)??0;
         $limit = $input->getOption(self::INPUT_KEY_LIMIT);
-        $output->write('Trigger Delivery Report for ');
-        if (count($codeKeys)<1) {
-            $codeKeys[0] = false;
-            $output->writeln('all shops');
-        } else {
-            $output->writeln(implode(',', $codeKeys));
-        }
-        foreach ($codeKeys as $codeKey) {
-            $results = $this->reporter->sendOrderWithShipment($codeKey, $limit);
-            if(count($results)) {
-                $output->writeln('Ok, report Sent!');
-                foreach ($results as $key => $value) {
-                    $output->writeln($key . ' => ' . $value . ' orders sent');
-                }
-                return;
-            }
-            $output->writeln('Ko, report was not sent!');
-        }
+
+        $output->writeln('Updating orders from '.$firstIncrementId);
+        $orderUpdated = $this->orderUpdater->sendOrderUpdates($firstIncrementId, $limit);
+        $output->writeln($orderUpdated . ' Orders updated!');
     }
 }

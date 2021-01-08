@@ -61,8 +61,10 @@ class SubmissionService implements SubmissionInterface
         $quote->reserveOrderId();
         $this->quoteRepository->save($quote);
 
-        $builder = $this->_builderFactory->create('order');
-        $data = $builder->setOrder($quote)->build();
+        $data = $this->_builderFactory->create('order')
+            ->setQuoteAsOrder($quote)
+            ->build()
+            ->getData();
         $client = new \Sequra\PhpClient\Client(
             $this->getConfigData('user_name'),
             $this->getConfigData('user_secret'),

@@ -13,8 +13,21 @@ abstract class AbstractBuilder implements BuilderInterface
     const STATE_ON_HOLD = 'on_hold';
     const STATE_CANCELLED = 'cancelled';
     public static $centsPerWhole = 100;
+    /**
+     * Merchant Id in SeQura
+     * @var string
+     */
     protected $merchant_id;
+    /**
+     * Built data container
+     * @var array
+     */
     protected $data;
+    /**
+     * Limit for DR
+     * @var int
+     */
+    protected $limit = null;
 
     /**
      * @var \Magento\Sales\Model\OrderFactory
@@ -76,6 +89,49 @@ abstract class AbstractBuilder implements BuilderInterface
         $this->localeResolver = $localeResolver;
         $this->moduleResource = $moduleResource;
         $this->logger = $logger;
+    }
+    
+    public function setStoreId(int $storeId):BuilderInterface {
+        $this->storeId = $storeId;
+        return $this;
+    }
+
+    public function setLimit(?int $limit):BuilderInterface {
+        $this->limit = $limit;
+        return $this;
+    }
+
+    public function setMerchantId(string $merchant_id):BuilderInterface {
+        $this->merchant_id = $merchant_id;
+        return $this;
+    }
+
+    public function addMerchantReferences(bool $both = true ):BuilderInterface
+    {
+        unset($this->data['merchant_reference']);
+        $this->data['merchant_reference']['order_ref_1'] = $this->order->getIncrementId();
+        if($both) {
+            $this->data['merchant_reference']['order_ref_2'] = $this->order->getId();
+        }
+        return $this;
+    }
+
+    public function setState($state):BuilderInterface
+    {
+        $this->data['state'] = $state;
+        return $this;
+    }
+
+    public function setQuoteAsOrder(\Magento\Quote\Api\Data\CartInterface $quote):BuilderInterface
+    {
+        $this->order = $quote;
+        return $this;
+    }
+
+    public function setOrder(\Magento\Sales\Api\Data\OrderInterface $order):BuilderInterface
+    {
+        $this->order = $order;
+        return $this;
     }
 
     protected function getConfigData($field, $storeId = null)
@@ -454,31 +510,29 @@ abstract class AbstractBuilder implements BuilderInterface
         return hash_hmac('sha256', $value, $this->getConfigData('user_secret',$storeId));
     }
 
-    protected function fixRoundingProblems($order)
+    protected function fixRoundingProblems($order, $cart_name = 'cart')
     {
-        $totals = \Sequra\PhpClient\Helper::totals($order['cart']);
-        $diff_with_tax = $order['cart']['order_total_with_tax'] - $totals['with_tax'];
-        $diff_without_tax = $order['cart']['order_total_without_tax'] - $totals['without_tax'];
+        $totals = \Sequra\PhpClient\Helper::totals($order[$cart_name]);
+        $diff_with_tax = $order[$cart_name]['order_total_with_tax'] - $totals['with_tax'];
         /*Don't correct error bigger than 1 cent per line*/
-        if (($diff_with_tax == 0 && $diff_without_tax == 0) || count($order['cart']['items']) < abs($diff_with_tax)) {
+        if (($diff_with_tax == 0) || count($order[$cart_name]['items']) < abs($diff_with_tax)) {
             return $order;
         }
 
         $item['type'] = 'discount';
         $item['reference'] = 'Ajuste';
         $item['name'] = 'Ajuste';
-        $item['total_without_tax'] = $diff_without_tax;
         $item['total_with_tax'] = $diff_with_tax;
         if ($diff_with_tax > 0) {
             $item['type'] = 'handling';
-            $item['tax_rate'] = $diff_without_tax ? round(abs(($diff_with_tax * $diff_without_tax)) - 1) * 100 : 0;
         }
-        $order['cart']['items'][] = $item;
+        $order[$cart_name]['items'][] = $item;
 
         return $order;
     }
 
-    public function getData(){
+    abstract public function build():BuilderInterface;
+    public function getData():array{
         return $this->data;
     }
 }
