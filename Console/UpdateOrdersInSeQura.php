@@ -25,7 +25,7 @@ class UpdateOrdersInSeQura extends Command
     /**
      * Names of input arguments or options
      */
-    const INPUT_KEY_ORDER = 'order';
+    const INPUT_KEY_UPDATED = 'updated';
     /**
      * Names of input arguments or options
      */
@@ -80,9 +80,9 @@ class UpdateOrdersInSeQura extends Command
     protected function configure()
     {
         $this->addArgument(
-            self::INPUT_KEY_ORDER,
-            InputArgument::OPTIONAL,
-            'First order Increment Id to update'
+            self::INPUT_KEY_UPDATED,
+            InputArgument::REQUIRED,
+            'Update orders with updated date greater than this date. Date format should be Y-m-d'
         );
         $this->addOption(
             self::INPUT_KEY_LIMIT,
@@ -108,11 +108,20 @@ class UpdateOrdersInSeQura extends Command
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $this->state->setAreaCode(\Magento\Framework\App\Area::AREA_GLOBAL);
-        $firstIncrementId = $input->getArgument(self::INPUT_KEY_ORDER)??0;
+        $updatedDate = $input->getArgument(self::INPUT_KEY_UPDATED);
+        if(!$this->validateDate($updatedDate)){
+            throw new \Exception('Not a valid updated date, please use Y-m-d format instead of '.$updatedDate.'');
+        }
         $limit = $input->getOption(self::INPUT_KEY_LIMIT);
 
-        $output->writeln('Updating orders from '.$firstIncrementId);
-        $orderUpdated = $this->orderUpdater->sendOrderUpdates($firstIncrementId, $limit);
+        $output->writeln('Updating orders from '.$updatedDate);
+        $orderUpdated = $this->orderUpdater->sendOrderUpdates($updatedDate, $limit);
         $output->writeln($orderUpdated . ' Orders updated!');
+    }
+
+    private function validateDate($date, $format = 'Y-m-d')
+    {
+        $d = \DateTime::createFromFormat($format, $date);
+        return $d && $d->format($format) === $date;
     }
 }

@@ -67,17 +67,17 @@ class OrderUpdater implements OrderUpdaterInterface
     }
 
     /**
-     * Send to SeQura teh current states oo orders paid with sequra from $firstIncrementId on,
+     * Send to SeQura teh current states oo orders paid with sequra from $updatedDate on,
      * limited to $limit
      * 
-     * @param int|bool $firstIncrementId 
+     * @param int|bool $updatedDate 
      * @param int $limit 
      * @return int 
      */
-    public function sendOrderUpdates($firstIncrementId = false, $limit = 1): int
+    public function sendOrderUpdates($updatedDate = false, $limit = false): int
     {
         $ret = 0;
-        $this->getOrders($firstIncrementId, $limit);
+        $this->getOrders($updatedDate, $limit);
         foreach ($this->sequraOrders as $order) {
             $client = new \Sequra\PhpClient\Client(
                 $this->config->getCoreValue('user_name',$order->getStoreId()),
@@ -124,14 +124,14 @@ class OrderUpdater implements OrderUpdaterInterface
     }
 
     /**
-     * Loads orders paid with sequra from firstIncrementId on limted to limit
+     * Loads orders paid with sequra from updatedDate on limted to limit
      * 
-     * @param int $firstIncrementId
+     * @param int $updatedDate
      * @param int $limit
      *
      * @return Collection
      */
-    protected function getOrders($firstIncrementId, $limit = false): OrderCollection
+    protected function getOrders($updatedDate, $limit = false): OrderCollection
     {
         $collection = $this->orderCollectionFactory->create()
         ->addFieldToSelect([
@@ -139,8 +139,8 @@ class OrderUpdater implements OrderUpdaterInterface
             'store_id'
         ])
         ->addFieldToFilter(
-            'main_table.increment_id',
-            ['gteq' => $firstIncrementId]
+            'main_table.updated_at',
+            ['gteq' => $updatedDate]
         );
         /* join with payment table */
         $collection->getSelect()
