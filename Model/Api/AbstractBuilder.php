@@ -116,7 +116,7 @@ abstract class AbstractBuilder implements BuilderInterface
         return $this;
     }
 
-    public function setState($state):BuilderInterface
+    public function setState(string $state):BuilderInterface
     {
         $this->data['state'] = $state;
         return $this;
