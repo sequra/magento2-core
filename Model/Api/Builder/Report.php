@@ -473,7 +473,7 @@ class Report extends AbstractBuilder
                 $item["total_without_tax"] =
                 $item["total_with_tax"] =
                 $item["price_without_tax"] =
-                $item["price_with_tax"] = self::integerPrice(self::notNull($qty * $itemOb->getPriceInclTax()));
+                $item["price_with_tax"] = self::integerPrice(self::notNull($itemOb->getPriceInclTax()));
                 $item["tax_rate"] = 0;
             }
             $items[] = $item;
