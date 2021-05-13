@@ -23,6 +23,7 @@
                 <order_status>processing</order_status>
                 <new_order_status>pending</new_order_status>
                 <currency>EUR</currency>
+                <allow_remotesales>0</allow_remotesales>
             </core>
         </sequra>
     </default>

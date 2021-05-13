@@ -122,12 +122,14 @@ class Index extends \Magento\Checkout\Controller\Onepage
             ->createPublicCookieMetadata()
             ->setPath('/');
         $sectiondata = json_decode($this->cookieManager->getCookie('section_data_ids'));
-        $sectiondata->cart += 1000;
-        $this->cookieManager->setPublicCookie(
-            'section_data_ids',
-            json_encode($sectiondata),
-            $metadata
-        );
+        if($sectiondata){
+            $sectiondata->cart += 1000;
+            $this->cookieManager->setPublicCookie(
+                'section_data_ids',
+                json_encode($sectiondata),
+                $metadata
+            );
+        }
         return $this->resultRedirectFactory->create()->setPath('checkout/onepage/success');
     }
 }

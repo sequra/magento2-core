@@ -76,6 +76,13 @@ class Order extends AbstractBuilder
             'url' => $this->urlBuilder->getUrl('sequra/webhook'),
             'parameters' => $urL_parameters,
         ];
+        if($this->order->getSequraRemoteSale()){
+            $ret['store_ref'] = 'WEB_REMOTE';
+            $ret['operator_ref'] = $this->order->getSequraOperatorRef();
+        } else if($this->getConfigData('allow_remotesales',$this->getStoreId())) {
+            $ret['store_ref'] = 'WEB';
+            $ret['operator_ref'] = 'WEB';
+        }
         return $ret;
     }
 

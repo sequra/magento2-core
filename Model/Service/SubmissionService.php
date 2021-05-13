@@ -21,47 +21,60 @@ class SubmissionService implements SubmissionInterface
     /**
      * @var \Magento\Checkout\Model\Session
      */
-    protected $_checkoutSession;
+    protected $checkoutSession;
 
     /**
      * @var \Magento\Framework\App\Action\Context
      */
-    protected $_context;
+    protected $context;
 
     /**
      * @var \Sequra\Core\Model\Api\BuilderFactory
      */
-    protected $_builderFactory;
+    protected $builderFactory;
+
+    /**
+     * @var \Magento\Framework\Stdlib\CookieManagerInterface
+     */
+    protected $cookieManager;
 
     /**
      * Core store config
      *
      * @var \Magento\Framework\App\Config\ScopeConfigInterface
      */
-    protected $_scopeConfig;
+    protected $scopeConfig;
 
     public function __construct(
         \Magento\Quote\Api\CartRepositoryInterface $quoteRepository,
         \Magento\Checkout\Model\Session $checkoutSession,
         \Magento\Framework\App\Action\Context $context,
         \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
-        \Sequra\Core\Model\Api\BuilderFactory $builderFactory
+        \Sequra\Core\Model\Api\BuilderFactory $builderFactory,
+        \Magento\Framework\Stdlib\CookieManagerInterface $cookieManager
     ) {
 
         $this->quoteRepository = $quoteRepository;
-        $this->_checkoutSession = $checkoutSession;
-        $this->_scopeConfig = $scopeConfig;
-        $this->_builderFactory = $builderFactory;
-        $this->_context = $context;
+        $this->cookieManager = $cookieManager;
+        $this->checkoutSession = $checkoutSession;
+        $this->scopeConfig = $scopeConfig;
+        $this->builderFactory = $builderFactory;
+        $this->context = $context;
     }
 
     public function getForm()
     {
-        $quote = $this->_checkoutSession->getQuote();
+        $quote = $this->checkoutSession->getQuote();
         $quote->reserveOrderId();
+        if($this->getConfigData('allow_remotesales')) {
+            $quote->setSequraRemoteSale($this->isRemoteSale());
+            $quote->setSequraOperatorRef(
+                $this->cookieManager->getCookie('SEQURA_OPERATOR_REF')?:'-'
+            );
+        }
         $this->quoteRepository->save($quote);
 
-        $data = $this->_builderFactory->create('order')
+        $data = $this->builderFactory->create('order')
             ->setQuoteAsOrder($quote)
             ->build()
             ->getData();
@@ -82,20 +95,52 @@ class SubmissionService implements SubmissionInterface
             'product' => $this->getPaymentConfigData($payment_code, 'product'),
             'campaign' => $this->getPaymentConfigData($payment_code, 'campaign')
         );
+        if($this->isRemoteSale()){
+            $client->sendIdentificationForm($url, $options);
+            //@ Todo move html out of here
+            if($client->succeeded()){
+                return '<div id="sequra-remotesales" style="display:none">
+                    <div>
+                        <h2>SMS Enviado</h2>
+                    </div>
+                    <div>
+                        <p>SMS enviado al comprador.<br/>
+                        Por favor, no modifique el carrito.</p>
+                    </div>
+                </div>
+                ';
+            }else{
+                return '<div id="sequra-remotesales" style="display:none">
+                    <div>
+                        <h2>No se ha podido enviar el SMS</h2>
+                    </div>
+                    <div>
+                        <p>Está limitado el número máximo de SMS que se pueden enviar cada cierto tiempo.<br/>
+                        Por favor, espera y vuelve a intentarlo más tarde.</p>
+                    </div>
+                </div>
+                ';
+            }
+        }
         return $client->getIdentificationForm($url, $options);
+    }
+
+    private function isRemoteSale(){
+        return $this->getConfigData('allow_remotesales') &&
+            !!$this->cookieManager->getCookie('SEQURA_OPERATOR_REF');
     }
 
     public function getConfigData($field, $storeId = null)
     {
         $path = 'sequra/core/' . $field;
 
-        return $this->_scopeConfig->getValue($path, \Magento\Store\Model\ScopeInterface::SCOPE_STORE, $storeId);
+        return $this->scopeConfig->getValue($path, \Magento\Store\Model\ScopeInterface::SCOPE_STORE, $storeId);
     }
 
     public function getPaymentConfigData($payment_code, $field, $storeId = null)
     {
         $path = 'payment/' . $payment_code . '/' . $field;
 
-        return $this->_scopeConfig->getValue($path, \Magento\Store\Model\ScopeInterface::SCOPE_STORE, $storeId);
+        return $this->scopeConfig->getValue($path, \Magento\Store\Model\ScopeInterface::SCOPE_STORE, $storeId);
     }
 }

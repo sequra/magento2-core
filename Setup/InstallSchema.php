@@ -25,9 +25,8 @@ class InstallSchema implements InstallSchemaInterface
         $setup->startSetup();
 
         //Add fields to order
-        $tableSalesOrder = $setup->getTable('sales_order');
         $setup->getConnection()->addColumn(
-            $tableSalesOrder,
+            $setup->getTable('sales_order'),
             'sequra_order_send',
             [
                 'type' => \Magento\Framework\DB\Ddl\Table::TYPE_BOOLEAN,
@@ -36,7 +35,26 @@ class InstallSchema implements InstallSchemaInterface
                 'comment' => 'Do we need to inform this order\'s shipments to SeQura?'
             ]
         );
-
+        $setup->getConnection()->addColumn(
+            $setup->getTable('quote'),
+            'sequra_is_remote_sale',
+            [
+                'type' => \Magento\Framework\DB\Ddl\Table::TYPE_BOOLEAN,
+                'nullable' => true,
+                'default' => 0,
+                'comment' => 'Is payment form sent by SMS?'
+            ]
+        );
+        $setup->getConnection()->addColumn(
+            $setup->getTable('quote'),
+            'sequra_operator_ref',
+            [
+                'type' => \Magento\Framework\DB\Ddl\Table::TYPE_TEXT,
+                'length' => 64,
+                'nullable' => true,
+                'comment' => 'Operator ref for SeQura?'
+            ]
+        );
         $data = [];
         $statuses = [
             'pending_sequra' => __('Pending Sequra'),
