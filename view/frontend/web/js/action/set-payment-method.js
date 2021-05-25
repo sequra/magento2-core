@@ -38,7 +38,7 @@ define(
                     storage.get(serviceUrl).done(
                         function (response) {
                             $('body').append(response);
-                            if($('#sequra-remotesales')) {
+                            if($('#sequra-remotesales').length>0) {
                                 var options = {
                                     type: 'popup',
                                     responsive: true,
