@@ -5,7 +5,10 @@ class CsrfValidator
 {
     public function aroundValidate($subject, $proceed, \Magento\Framework\App\RequestInterface $request, \Magento\Framework\App\ActionInterface $action)
     {
-        if ($action->getRequest()->getRouteName() == 'sequra') {
+        if (
+            $request instanceof \Magento\Framework\App\Request\Http &&
+            $request->getRouteName() == 'sequra'
+        ) {
             return true;
         }
 
