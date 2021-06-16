@@ -124,6 +124,32 @@ define([
             );
         },
 
+        waitForElememt: function (selector) {
+            return new Promise( function(resolve) {
+                if (document.querySelector(selector)) {
+                    return resolve();
+                }
+                const observer = new MutationObserver(function(mutations) {
+                    mutations.forEach(function(mutation) {
+                        if (!mutation.addedNodes)
+                            return;
+                        var found = false;
+                        mutation.addedNodes.forEach(function(node){
+                                found = found || document.querySelector(selector);
+                        });
+                        if(found) {
+                            resolve();
+                            observer.disconnect();
+                        }
+                    });
+                });
+                observer.observe(document.body, {
+                    childList: true,
+                    subtree: true
+                });
+            });
+        },
+
         _create: function () {
             //var decimalSymbol = priceUtils.globalPriceFormat.decimalSymbol;//@todo
             var decimalSymbol = ',';
@@ -150,7 +176,20 @@ define([
                 }
                 $(function () {
                     window.Sequra.onLoad(function () {
-                        self.drawPromotionWidget(self.options.css_price_selector, self.options.css_dest_selector, self.options.product, self.options.theme, 0, self.options.campaign);
+                        self.waitForElememt(self.options.css_dest_selector)
+                            .then(function () {
+                                self.waitForElememt(self.options.css_price_selector)
+                                    .then(function () {
+                                        self.drawPromotionWidget(
+                                            self.options.css_price_selector,
+                                            self.options.css_dest_selector,
+                                            self.options.product,
+                                            self.options.theme,
+                                            0,
+                                            self.options.campaign
+                                        );
+                                });
+                        });
                         window.Sequra.refreshComponents();
                     })
                 });
