@@ -101,11 +101,15 @@ class SubmissionService implements SubmissionInterface
             if($client->succeeded()){
                 return '<div id="sequra-remotesales" style="display:none">
                     <div>
-                        <h2>SMS Enviado</h2>
+                        <h2>SMS ENVIADO</h2>
                     </div>
                     <div>
-                        <p>SMS enviado al comprador.<br/>
-                        Por favor, no modifique el carrito.</p>
+                        <p>
+                        Hemos enviado SMS al cliente al número de teléfono del destinatario.<br/>
+                        No modifique el carrito mientras el cliente realiza el pago.<br/>
+                        El enlace enviado no tiene fecha de caducidad.<br/>
+                        Cierra esta pestaña y revisa desde el admin si el cliente pudo hacer el pago correctamente. <br/>
+                        </p>
                     </div>
                 </div>
                 ';
