@@ -24,6 +24,8 @@
                 <new_order_status>pending</new_order_status>
                 <currency>EUR</currency>
                 <allow_remotesales>0</allow_remotesales>
+                <allow_services>0</allow_services>
+                <default_service_end_date>P1Y</default_service_end_date>
             </core>
         </sequra>
     </default>

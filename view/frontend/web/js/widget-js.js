@@ -9,7 +9,9 @@ define([
             css_dest_selector: '',
             product: 'i1',
             theme: '',
-            campaign: ''
+            campaign: '',
+            silent: false,
+            locale: 'es-ES'
         },
         presets: {
             L: { "alignment": "left" },

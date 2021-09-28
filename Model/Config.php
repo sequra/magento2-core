@@ -20,62 +20,6 @@ class Config extends AbstractConfig
     const METHOD_PARTPAYMENTS = 'sequra_partpayments';
 
     /**
-     * Locale codes supported by misc images (marks, shortcuts etc)
-     *
-     * @var  string[]
-     * @link https://cms.paypal.com/us/cgi-bin/?cmd=_render-content&content_ID=developer/e_howto_api_ECButtonIntegration#id089QD0O0TX4__id08AH904I0YK
-     */
-    protected $_supportedImageLocales = [
-        'es_ES',
-    ];
-
-    /**
-     * Check whether method available for checkout or not
-     * Logic based on merchant country, methods dependence
-     *
-     * @param                                        string|null $methodCode
-     * @return                                       bool
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
-     */
-    /*
-    public function isMethodAvailable($methodCode = null)
-    {
-        $result = parent::isMethodAvailable($methodCode);
-
-        switch ($methodCode) {
-            case self::METHOD_INVOICE:
-                if ($this->isMethodActive(self::METHOD_INVOICE)) {
-                    $result = true;
-                }
-                break;
-            case self::METHOD_PARTPAYMENTS:
-                if (!$this->isMethodActive(self::METHOD_PARTPAYMENTS)) {
-                    $result = false;
-                }
-                break;
-        }
-        return $result;
-    }
-    */
-    /**
-     * Return merchant country code, use default country if it not specified in General settings
-     *
-     * @return string
-     */
-    public function getMerchantCountry()
-    {
-        $countryCode = $this->_scopeConfig->getValue(
-            $this->_mapGeneralFieldset('merchant_country'),
-            \Magento\Store\Model\ScopeInterface::SCOPE_STORE,
-            $this->_storeId
-        );
-        if (!$countryCode) {
-            $countryCode = $this->directoryHelper->getDefaultCountry($this->_storeId);
-        }
-        return $countryCode;
-    }
-
-    /**
      * Check whether specified currency code is supported
      *
      * @param  string $code

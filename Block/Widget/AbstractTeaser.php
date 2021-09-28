@@ -130,4 +130,12 @@ class AbstractTeaser extends Template implements BlockInterface
     {
         return $this->config->getMerchantRef();
     }
+
+    public function getLocale(){
+        return str_replace('_','-',$this->localeResolver->getLocale());
+    }
+
+    public function getSilent(){
+        return $this->localeResolver->getLocale()=='es_ES'?'true':'false';
+    }
 }
