@@ -125,8 +125,10 @@ class Ipn extends \Sequra\Core\Model\AbstractNotificationListener implements Ipn
             die('{"result": "Error", "message":"' . $e->getMessage() . '"}"');
         }
     }
+    
     protected function orderAlreadyExists() {
         $searchCriteria = $this->searchCriteriaBuilder
+            ->addFilter('state', 'canceled', 'neq')
             ->addFilter('increment_id', $this->quote->getReservedOrderId(), 'eq')->create();
         $orderList = $this->orderRepository->getList($searchCriteria)->getItems();
         $this->order = array_pop($orderList);
@@ -288,6 +290,10 @@ class Ipn extends \Sequra\Core\Model\AbstractNotificationListener implements Ipn
      */
     private function setStateInSequra(string $state)
     {
+        if($this->orderAlreadyExists()){
+            //Use order in builder instead of quote
+            $this->builder->setOrder($this->order);
+        }
         $this->builder->build()->setState($state);
         return $this->updateOrderInSequra();
     }
