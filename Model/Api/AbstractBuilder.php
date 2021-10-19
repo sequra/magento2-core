@@ -188,19 +188,9 @@ abstract class AbstractBuilder implements BuilderInterface
             $item["type"] = "discount";
             $item["reference"] = self::notNull($this->order->getCouponCode());
             $item["name"] = 'Descuento';
-            $item["total_without_tax"] = $item["total_with_tax"] = $discount_with_tax;
+            $item["total_with_tax"] = $discount_with_tax;
             $items[] = $item;
         }
-        //add Customer fee (without tax)
-        if ($this->order->getSequraSequrapayment() > 0) {
-            $item = [];
-            $item["type"] = "invoice_fee";
-            $item["tax_rate"] = 0;
-            $item["total_without_tax"] = $item["total_with_tax"] = self::integerPrice($this->order->getSequraSequrapayment());
-
-            $items[] = $item;
-        }
-
         return $items;
     }
 
@@ -232,8 +222,6 @@ abstract class AbstractBuilder implements BuilderInterface
             'type' => 'handling',
             'reference' => $deliveryMethod['provider'],
             'name' => $deliveryMethod['name'],
-            'tax_rate' => 0,
-            'total_without_tax' => self::integerPrice($incl_tax),
             'total_with_tax' => self::integerPrice($incl_tax),
         ];
 

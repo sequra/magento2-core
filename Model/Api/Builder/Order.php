@@ -96,7 +96,6 @@ class Order extends AbstractBuilder
         $data['updated_at'] = $this->order->getUpdatedAt();
         $data['cart_ref'] = $this->order->getReservedOrderId();//$this->order->getQuoteId();
         $data['order_total_with_tax'] = self::integerPrice($this->order->getGrandTotal());
-        $data['order_total_without_tax'] = $data['order_total_with_tax'];
         $data['items'] = $this->items();
 
         return $data;
@@ -204,13 +203,11 @@ class Order extends AbstractBuilder
             $qty = $itemOb->getQty();
             if ((int)$qty == $qty) {
                 $item["quantity"] = (int)$qty;
-                $item["price_without_tax"] = $item["price_with_tax"] = self::integerPrice(self::notNull($itemOb->getPriceInclTax()));
-                $item["tax_rate"] = 0;
-                $item["total_without_tax"] = $item["total_with_tax"] = self::integerPrice(self::notNull($itemOb->getRowTotalInclTax()));
+                $item["price_with_tax"] = self::integerPrice(self::notNull($itemOb->getPriceInclTax()));
+                $item["total_with_tax"] = self::integerPrice(self::notNull($itemOb->getRowTotalInclTax()));
             } else { //Fake qty and unitary price
                 $item["quantity"] = 1;
-                $item["tax_rate"] = 0;
-                $item["price_without_tax"] = $item["price_with_tax"] = $item["total_without_tax"] = $item["total_with_tax"] = self::integerPrice(self::notNull($itemOb->getRowTotalInclTax()));
+                $item["price_with_tax"] = $item["total_with_tax"] = self::integerPrice(self::notNull($itemOb->getRowTotalInclTax()));
             }
 
             $product = $this->productRepository->getById($itemOb->getProductId());

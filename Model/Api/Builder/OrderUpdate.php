@@ -62,17 +62,14 @@ class OrderUpdate extends AbstractBuilder
             $qty = $itemOb->getQtyOrdered() - $itemOb->getQtyShipped() - $itemOb->getQtyRefunded();
             if ((int)$qty == $qty) {
                 $item["quantity"] = $qty;
-                $item["price_without_tax"] =
                 $item["price_with_tax"] = self::integerPrice(self::notNull($itemOb->getPriceInclTax()));
-                $item["tax_rate"] = 0;
-                $item["total_without_tax"] = $item["total_with_tax"] = $item["quantity"] * $item["price_with_tax"];
+                $item["total_with_tax"] = self::integerPrice(
+                    $item["quantity"] * self::notNull($itemOb->getPriceInclTax())
+                );
             } else {
                 $item["quantity"] = 1;
-                $item["total_without_tax"] =
                 $item["total_with_tax"] =
-                $item["price_without_tax"] =
                 $item["price_with_tax"] = self::integerPrice(self::notNull($qty * $itemOb->getPriceInclTax()));
-                $item["tax_rate"] = 0;
             }
             $product = $this->productRepository->getById($itemOb->getProductId());
             if ($item["quantity"] > 0) {
@@ -89,11 +86,10 @@ class OrderUpdate extends AbstractBuilder
             $item["type"] = "discount";
             $item["reference"] = self::notNull($this->order->getCouponCode());
             $item["name"] = 'Descuento pendiente';
-            $item["total_without_tax"] = $item["total_with_tax"] = self::integerPrice($unshipped_discount);
+            $item["total_with_tax"] = self::integerPrice($unshipped_discount);
             $data['items'][] = $item;
         }
         $totals = Helper::totals($data);
-        $data['order_total_without_tax'] = $totals['without_tax'];
         $data['order_total_with_tax'] = $totals['with_tax'];
         return $data;
     }
@@ -141,17 +137,14 @@ class OrderUpdate extends AbstractBuilder
             $qty = min($itemOb->getQtyShipped(), $itemOb->getQtyOrdered() - $itemOb->getQtyRefunded());
             if ((int)$qty == $qty) {
                 $item["quantity"] = (int)$qty;
-                $item["price_without_tax"] =
                 $item["price_with_tax"] = self::integerPrice(self::notNull($itemOb->getPriceInclTax()));
-                $item["tax_rate"] = 0;
-                $item["total_without_tax"] = $item["total_with_tax"] = $item["quantity"] * $item["price_with_tax"];
+                $item["total_with_tax"] = self::integerPrice(
+                    $item["quantity"] * self::notNull($itemOb->getPriceInclTax())
+                );
             } else {//Fake qty and unit price
                 $item["quantity"] = 1;
-                $item["total_without_tax"] =
                 $item["total_with_tax"] =
-                $item["price_without_tax"] =
                 $item["price_with_tax"] = self::integerPrice(self::notNull($qty * $itemOb->getPriceInclTax()));
-                $item["tax_rate"] = 0;
             }
             $items[] = $item;
         }
