@@ -232,24 +232,25 @@ class Report extends AbstractBuilder
             $item["name"] = self::notNull($itemOb->getName());
             $item["downloadable"] = ($itemOb->getIsVirtual() ? true : false);
             $qty = $itemOb->getQtyOrdered() - $itemOb->getQtyShipped() - $itemOb->getQtyRefunded();
+            $ratio = $qty / $itemOb->getQtyOrdered(); 
             if ((int)$qty == $qty) {
                 $item["quantity"] = $qty;
                 $item["price_with_tax"] = self::integerPrice(self::notNull($itemOb->getPriceInclTax()));
                 $item["tax_rate"] = 0;
                 $item["total_with_tax"] = self::integerPrice(
-                    $item["quantity"] * self::notNull($itemOb->getPriceInclTax())
+                    $ratio * self::notNull($itemOb->getRowTotalInclTax())
                 );
             } else {
                 $item["quantity"] = 1;
                 $item["total_with_tax"] =
-                $item["price_with_tax"] = self::integerPrice(self::notNull($qty * $itemOb->getPriceInclTax()));
+                $item["price_with_tax"] = self::integerPrice(self::notNull($itemOb->getRowTotalInclTax()));
                 $item["tax_rate"] = 0;
             }
             $product = $this->productRepository->getById($itemOb->getProductId());
             if ($item["quantity"] > 0) {
                 $data['items'][] = array_merge($item, $this->fillOptionalProductItemFields($product));
             }
-            $discount = $itemOb->getDiscountAmount()*$qty/$itemOb->getQtyOrdered();
+            $discount = $ratio * $itemOb->getDiscountAmount();
             if (!$this->getGlobalConfigData(\Magento\Tax\Model\Config::CONFIG_XML_PATH_PRICE_INCLUDES_TAX)) {
                 $discount *= ( 1 + $itemOb->getTaxPercent() / 100 );
             }
@@ -460,16 +461,17 @@ class Report extends AbstractBuilder
             $item["name"] = $itemOb->getName() ? self::notNull($itemOb->getName()) : self::notNull($itemOb->getSku());
             $item["downloadable"] = ($itemOb->getIsVirtual() ? true : false);
             $qty = $itemOb->getQtyShipped();
+            $ratio = $qty / $itemOb->getQtyOrdered(); 
             if ((int)$qty == $qty) {
                 $item["quantity"] = (int)$qty;
                 $item["price_with_tax"] = self::integerPrice(self::notNull($itemOb->getPriceInclTax()));
                 $item["total_with_tax"] = self::integerPrice(
-                    $item["quantity"] * self::notNull($itemOb->getPriceInclTax())
+                    $ratio * self::notNull($itemOb->getRowTotalInclTax())
                 );
             } else {//Fake qty and unit price
                 $item["quantity"] = 1;
                 $item["total_with_tax"] =
-                $item["price_with_tax"] = self::integerPrice(self::notNull($itemOb->getPriceInclTax()));
+                $item["price_with_tax"] = self::integerPrice(self::notNull($itemOb->getRowTotalInclTax()));
                 $item["tax_rate"] = 0;
             }
             $items[] = $item;
