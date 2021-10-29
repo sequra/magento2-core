@@ -136,6 +136,6 @@ class AbstractTeaser extends Template implements BlockInterface
     }
 
     public function getSilent(){
-        return $this->localeResolver->getLocale()=='es_ES'?'true':'false';
+        return $this->getLocale()=='es-ES'?'false':'true';
     }
 }
