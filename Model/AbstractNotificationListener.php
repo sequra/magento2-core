@@ -227,12 +227,13 @@ class AbstractNotificationListener
     /**
      * @return bool
      */
-    protected function updateOrderInSequra()
+    protected function updateOrderInSequra($partial = false)
     {
         $data = $this->builder->getData();
         $this->getClient()->updateOrder(
             $this->getRequestData('order_ref'),
-            $data
+            $data,
+            $partial?'PATCH':'PUT'
         );
         if ($this->client->succeeded()) {
             return $this->quote->getReservedOrderId();

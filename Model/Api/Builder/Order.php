@@ -60,6 +60,16 @@ class Order extends AbstractBuilder
         return $this;
     }
 
+    public function build_partial():BuilderInterface
+    {
+        $this->data = [
+            'merchant' => $this->merchant(),
+            'gui' => $this->gui(),
+            'platform' => $this->platform(),
+        ];
+        return $this;
+    }
+
     public function merchant()
     {
         $ret = parent::merchant();
@@ -68,7 +78,8 @@ class Order extends AbstractBuilder
         $urL_parameters = [
             'id' => $id,
             'method' => $this->order->getPayment()->getMethod(),
-            'signature' => $this->sign($id)
+            'signature' => $this->sign($id),
+            'order_amount' => "".self::integerPrice($this->order->getGrandTotal()),
         ];
         $ret['notification_parameters'] = $urL_parameters;
         $ret['return_url'] = $this->urlBuilder->getUrl('sequra/comeback', ['quote_id' => $id]);

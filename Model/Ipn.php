@@ -162,7 +162,7 @@ class Ipn extends \Sequra\Core\Model\AbstractNotificationListener implements Ipn
             );
             $order_data = $this->builder->getData();
             $payment->registerCaptureNotification(
-                $order_data['cart']['order_total_with_tax'] / 100,
+                intval($this->getRequestData('order_amount'))/100,
                 $skipFraudDetection && $this->getRequestData('order_ref')
             );
 
@@ -290,12 +290,16 @@ class Ipn extends \Sequra\Core\Model\AbstractNotificationListener implements Ipn
      */
     private function setStateInSequra(string $state)
     {
-        if($this->orderAlreadyExists()){
+        $partial_update = $this->orderAlreadyExists();
+        if($partial_update){
             //Use order in builder instead of quote
             $this->builder->setOrder($this->order);
+            $this->builder->build_partial();
+        } else {
+            $this->builder->build();
         }
-        $this->builder->build()->setState($state);
-        return $this->updateOrderInSequra();
+        $this->builder->setState($state);
+        return $this->updateOrderInSequra($partial_update);
     }
 
     private function addCommentToStatusHistory($msg, $status = false) {

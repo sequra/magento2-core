@@ -122,6 +122,12 @@ abstract class AbstractBuilder implements BuilderInterface
         return $this;
     }
 
+    public function unsetCart():BuilderInterface
+    {
+        unset($this->data['cart']);
+        return $this;
+    }
+
     public function setQuoteAsOrder(\Magento\Quote\Api\Data\CartInterface $quote):BuilderInterface
     {
         $this->order = $quote;

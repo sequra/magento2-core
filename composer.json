@@ -17,7 +17,7 @@
     ],
     "minimum-stability": "stable",
     "require": {
-        "sequra/php-client": "*"
+        "sequra/php-client": "^0.3.0"
     },
     "autoload": {
         "files": [
