@@ -6,6 +6,7 @@
 namespace Sequra\Core\Model\Service;
 
 use Sequra\Core\Api\SubmissionInterface;
+use Sequra\Core\Model\Adminhtml\Source\Endpoint;
 
 /**
  * Class SubmissionService
@@ -66,7 +67,7 @@ class SubmissionService implements SubmissionInterface
     {
         $quote = $this->checkoutSession->getQuote();
         $quote->reserveOrderId();
-        if($this->getConfigData('allow_remotesales')) {
+        if ($this->getConfigData('allow_remotesales')) {
             $quote->setSequraRemoteSale($this->isRemoteSale());
             $quote->setSequraOperatorRef(
                 $this->cookieManager->getCookie('SEQURA_OPERATOR_REF')?:'-'
@@ -81,7 +82,8 @@ class SubmissionService implements SubmissionInterface
         $client = new \Sequra\PhpClient\Client(
             $this->getConfigData('user_name'),
             $this->getConfigData('user_secret'),
-            $this->getConfigData('endpoint')
+            $this->getConfigData('endpoint'),
+            $this->getConfigData('endpoint')!=Endpoint::LIVE
         );
         $client->startSolicitation($data);
         $url = $client->getOrderUri();
@@ -95,10 +97,10 @@ class SubmissionService implements SubmissionInterface
             'product' => $this->getPaymentConfigData($payment_code, 'product'),
             'campaign' => $this->getPaymentConfigData($payment_code, 'campaign')
         );
-        if($this->isRemoteSale()){
+        if ($this->isRemoteSale()) {
             $client->sendIdentificationForm($url, $options);
             //@ Todo move html out of here
-            if($client->succeeded()){
+            if ($client->succeeded()) {
                 return '<div id="sequra-remotesales" style="display:none">
                     <div>
                         <h2>SMS ENVIADO</h2>

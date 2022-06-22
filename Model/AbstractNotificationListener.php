@@ -1,9 +1,12 @@
 <?php
+
 /**
  * Copyright © 2017 SeQura Engineering. All rights reserved.
  */
 
 namespace Sequra\Core\Model;
+
+use Sequra\Core\Model\Adminhtml\Source\Endpoint;
 
 class AbstractNotificationListener
 {
@@ -26,7 +29,7 @@ class AbstractNotificationListener
      */
     protected $debugData = [];
 
-       /**
+    /**
      * @var \Magento\Sales\Model\Order
      */
     protected $order;
@@ -166,7 +169,7 @@ class AbstractNotificationListener
         if (null === $key) {
             return $this->request;
         }
-        return $this->request[$key]??($this->request['m_'.$key]??$default);
+        return $this->request[$key] ?? ($this->request['m_' . $key] ?? $default);
     }
 
     /**
@@ -216,7 +219,8 @@ class AbstractNotificationListener
         return $this->scopeConfig->getValue($path, \Magento\Store\Model\ScopeInterface::SCOPE_STORE, $storeId);
     }
 
-    protected function orderAlreadyExists() {
+    protected function orderAlreadyExists()
+    {
         $searchCriteria = $this->searchCriteriaBuilder
             ->addFilter('increment_id', $this->quote->getReservedOrderId(), 'eq')->create();
         $orderList = $this->orderRepository->getList($searchCriteria)->getItems();
@@ -233,22 +237,18 @@ class AbstractNotificationListener
         $this->getClient()->updateOrder(
             $this->getRequestData('order_ref'),
             $data,
-            $partial?'PATCH':'PUT'
+            $partial ? 'PATCH' : 'PUT'
         );
         if ($this->client->succeeded()) {
             return $this->quote->getReservedOrderId();
         }
         if ($this->client->cartHasChanged()) {
             http_response_code(410);
-            die(
-                json_encode($this->client->getJson())
-            );
+            die(json_encode($this->client->getJson()));
         } else {
             http_response_code(500);
-            die(
-                $_SERVER['SERVER_PROTOCOL'] . ' Unknown error' .
-                "\n" . $this->client->dump()
-            );
+            die($_SERVER['SERVER_PROTOCOL'] . ' Unknown error' .
+                "\n" . $this->client->dump());
         }
 
         return false;
@@ -263,11 +263,12 @@ class AbstractNotificationListener
         return $this->quote;
     }
 
-    protected function getStoreId(){
-        if($this->order){
+    protected function getStoreId()
+    {
+        if ($this->order) {
             return $this->order->getStoreId();
         }
-        if($this->quote){
+        if ($this->quote) {
             return $this->quote->getStoreId();
         }
     }
@@ -277,9 +278,10 @@ class AbstractNotificationListener
         if (!$this->client) {
             $storeId = $this->getStoreId();
             $this->client = new \Sequra\PhpClient\Client(
-                $this->getConfigData('user_name',$storeId),
-                $this->getConfigData('user_secret',$storeId),
-                $this->getConfigData('endpoint',$storeId)
+                $this->getConfigData('user_name', $storeId),
+                $this->getConfigData('user_secret', $storeId),
+                $this->getConfigData('endpoint', $storeId),
+                $this->getConfigData('endpoint') != Endpoint::LIVE
             );
         }
         return $this->client;

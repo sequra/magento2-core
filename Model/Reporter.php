@@ -1,8 +1,12 @@
 <?php
+
 /**
  * Copyright © 2017 SeQura Engineering. All rights reserved.
  */
+
 namespace Sequra\Core\Model;
+
+use Sequra\Core\Model\Adminhtml\Source\Endpoint;
 
 /**
  * Sequra Instant Payment Notification processor model
@@ -53,23 +57,25 @@ class Reporter implements ReporterInterface
         $this->storeManager = $storeManager;
     }
 
-    public function sendOrderWithShipment(int $codeKey = null, int $limit = null):array
+    public function sendOrderWithShipment(int $codeKey = null, int $limit = null): array
     {
         $ret = array();
         $stores = $this->storeManager->getStores();
 
         foreach ($stores as $store) {
-            if ($codeKey && $store->getCode()!==$codeKey) {
+            if ($codeKey && $store->getCode() !== $codeKey) {
                 continue;
             }
+            $endpoint = $this->config->getCoreValue('endpoint', $store->getId());
             $client = new \Sequra\PhpClient\Client(
-                $this->config->getCoreValue('user_name',$store->getId()),
-                $this->config->getCoreValue('user_secret',$store->getId()),
-                $this->config->getCoreValue('endpoint',$store->getId())
+                $this->config->getCoreValue('user_name', $store->getId()),
+                $this->config->getCoreValue('user_secret', $store->getId()),
+                $endpoint,
+                $endpoint != Endpoint::LIVE
             );
             $builder = $this->builderFactory->create('report')
                 ->setMerchantId(
-                    $this->config->getCoreValue('merchant_ref',$store->getId())
+                    $this->config->getCoreValue('merchant_ref', $store->getId())
                 )
                 ->setStoreId($store->getId())
                 ->setLimit($limit)

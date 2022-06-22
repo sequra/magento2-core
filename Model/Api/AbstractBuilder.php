@@ -4,6 +4,7 @@
  */
 
 namespace Sequra\Core\Model\Api;
+use Magento\Payment\Gateway\Request\BuilderInterface;
 
 abstract class AbstractBuilder implements BuilderInterface
 {

@@ -5,8 +5,8 @@
 
 namespace Sequra\Core\Model\Api\Builder;
 
+use Magento\Payment\Gateway\Request\BuilderInterface;
 use Sequra\Core\Model\Api\AbstractBuilder;
-use Sequra\Core\Model\Api\BuilderInterface;
 use Sequra\PhpClient\Helper;
 
 class OrderUpdate extends AbstractBuilder
