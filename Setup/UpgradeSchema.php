@@ -40,6 +40,18 @@ class UpgradeSchema implements  UpgradeSchemaInterface
                 );
             }
         }
+        if (version_compare($context->getVersion(), '2.4.1.0') < 0) {
+            $data = [];
+            $statuses = [
+                'partially_refunded_sequra' => __('Partially refunded with SeQura'),
+                'refunded_sequra' => __('Refunded with SeQura'),
+            ];
+            foreach ($statuses as $code => $info) {
+                $data[] = ['status' => $code, 'label' => $info];
+            }
+            $setup->getConnection()
+                ->insertOnDuplicate($setup->getTable('sales_order_status'), $data, ['status', 'label']);
+        }
         $setup->endSetup();
     }
 }

@@ -88,7 +88,7 @@ class Report extends AbstractBuilder
         }
     }
 
-    public function build():BuilderInterface
+    public function build(array $buildSubject = [])
     {
         $this->getOrders();
         if(!$this->limit || $this->getConfigData('reporting')){

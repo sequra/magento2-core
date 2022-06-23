@@ -58,13 +58,15 @@ class InstallSchema implements InstallSchemaInterface
         $data = [];
         $statuses = [
             'pending_sequra' => __('Pending Sequra'),
-            'approved_sequra' => __('Approved in Sequra')
+            'approved_sequra' => __('Approved in Sequra'),
+            'partially_refunded_sequra' => __('Partially refunded with SeQura'),
+            'refunded_sequra' => __('Refunded with SeQura'),
         ];
         foreach ($statuses as $code => $info) {
             $data[] = ['status' => $code, 'label' => $info];
         }
         $setup->getConnection()
-            ->insertArray($setup->getTable('sales_order_status'), ['status', 'label'], $data);
+            ->insertOnDuplicate($setup->getTable('sales_order_status'), $data, ['status', 'label']);
         $setup->endSetup();
     }
 }

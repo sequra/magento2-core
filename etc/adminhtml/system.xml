@@ -33,7 +33,7 @@
                     <config_path>sequra/core/assets_key</config_path>
                     <label>Assets key</label>
                 </field>
-                <field id="allow_sevices" translate="label" type="select" sortOrder="50" showInDefault="1" showInWebsite="1" showInStore="1" canRestore="1">
+                <!-- <field id="allow_sevices" translate="label" type="select" sortOrder="50" showInDefault="1" showInWebsite="1" showInStore="1" canRestore="1">
                     <config_path>sequra/core/allow_sevices</config_path>
                     <label>Allow selling services</label>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
@@ -47,7 +47,7 @@
                     <config_path>sequra/core/allow_remotesales</config_path>
                     <label>Allow remote sales</label>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
-                </field>
+                </field> -->
                 <field id="test_ip" translate="label" type="text" sortOrder="80" showInDefault="1" showInWebsite="1" showInStore="1" canRestore="1">
                     <config_path>sequra/core/test_ip</config_path>
                     <label>Test IP addrs.</label>

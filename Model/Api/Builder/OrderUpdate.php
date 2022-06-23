@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright © 2017 SeQura Engineering. All rights reserved.
  */
@@ -13,8 +14,14 @@ class OrderUpdate extends AbstractBuilder
 {
     protected $shippingAddress;
 
-    public function build():BuilderInterface
+    public function build(array $buildSubject = [])
     {
+        if (isset($buildSubject['payment'])) {
+            $paymentDO = $buildSubject['payment'];
+            /** @var Payment $payment */
+            $payment = $paymentDO->getPayment();
+            $this->setOrder($payment->getOrder());
+        }
         $this->data = [
             'merchant' => $this->merchant(),
             'shipped_cart' => $this->shippedCart(),
@@ -24,13 +31,16 @@ class OrderUpdate extends AbstractBuilder
             'customer' => $this->customer(),
             'platform' => $this->platform(),
         ];
+        if (isset($buildSubject['payment'])) {
+            return $this->addMerchantReferences(false)->getData();
+        }
         return $this;
     }
 
     public function shippedCart()
     {
         $data = [];
-        $data['currency'] = $this->order->getOrderCurrencyCode()?$this->order->getOrderCurrencyCode():'EUR';
+        $data['currency'] = $this->order->getOrderCurrencyCode() ? $this->order->getOrderCurrencyCode() : 'EUR';
         $data['delivery_method'] = $this->getDeliveryMethod();
         $data['gift'] = false;
         $data['items'] = $this->items();
@@ -48,7 +58,7 @@ class OrderUpdate extends AbstractBuilder
     public function unshippedCart()
     {
         $data = [];
-        $data['currency'] = $this->order->getOrderCurrencyCode()?$this->order->getOrderCurrencyCode():'EUR';
+        $data['currency'] = $this->order->getOrderCurrencyCode() ? $this->order->getOrderCurrencyCode() : 'EUR';
         $data['items'] = [];
         $unshipped_discount = 0;
         foreach ($this->order->getAllVisibleItems() as $itemOb) {
@@ -69,17 +79,17 @@ class OrderUpdate extends AbstractBuilder
             } else {
                 $item["quantity"] = 1;
                 $item["total_with_tax"] =
-                $item["price_with_tax"] = self::integerPrice(self::notNull($qty * $itemOb->getPriceInclTax()));
+                    $item["price_with_tax"] = self::integerPrice(self::notNull($qty * $itemOb->getPriceInclTax()));
             }
             $product = $this->productRepository->getById($itemOb->getProductId());
             if ($item["quantity"] > 0) {
                 $data['items'][] = array_merge($item, $this->fillOptionalProductItemFields($product));
             }
-            $discount = $itemOb->getDiscountAmount()*$qty/$itemOb->getQtyOrdered();
+            $discount = $itemOb->getDiscountAmount() * $qty / $itemOb->getQtyOrdered();
             if (!$this->getGlobalConfigData(\Magento\Tax\Model\Config::CONFIG_XML_PATH_PRICE_INCLUDES_TAX)) {
-                $discount *= ( 1 + $itemOb->getTaxPercent() / 100 );
+                $discount *= (1 + $itemOb->getTaxPercent() / 100);
             }
-            $unshipped_discount -=$discount;
+            $unshipped_discount -= $discount;
         }
         if ($unshipped_discount < 0) {
             $item = [];
@@ -123,8 +133,8 @@ class OrderUpdate extends AbstractBuilder
             } catch (Exception $e) {
                 $this->logger->addError(
                     'Can not get product for id: ' .
-                    $itemOb->getProductId() .
-                    '  ' . $e->getMessage()
+                        $itemOb->getProductId() .
+                        '  ' . $e->getMessage()
                 );
                 continue;
             }
@@ -141,10 +151,10 @@ class OrderUpdate extends AbstractBuilder
                 $item["total_with_tax"] = self::integerPrice(
                     $item["quantity"] * self::notNull($itemOb->getPriceInclTax())
                 );
-            } else {//Fake qty and unit price
+            } else { //Fake qty and unit price
                 $item["quantity"] = 1;
                 $item["total_with_tax"] =
-                $item["price_with_tax"] = self::integerPrice(self::notNull($qty * $itemOb->getPriceInclTax()));
+                    $item["price_with_tax"] = self::integerPrice(self::notNull($qty * $itemOb->getPriceInclTax()));
             }
             $items[] = $item;
         }
@@ -155,13 +165,13 @@ class OrderUpdate extends AbstractBuilder
     {
         $discount_with_tax = 0;
         foreach ($this->order->getAllItems() as $item) {
-            $discount = $item->getDiscountAmount()*$item->getQtyShipped()/$item->getQtyOrdered();            ;
+            $discount = $item->getDiscountAmount() * $item->getQtyShipped() / $item->getQtyOrdered();;
             if (!$this->getGlobalConfigData(\Magento\Tax\Model\Config::CONFIG_XML_PATH_PRICE_INCLUDES_TAX)) {
-                $discount *= ( 1 + $item->getTaxPercent() / 100 );
+                $discount *= (1 + $item->getTaxPercent() / 100);
             }
             $discount_with_tax += self::integerPrice($discount);
         }
-        return -1*$discount_with_tax;
+        return -1 * $discount_with_tax;
     }
 
     public function getShippingInclTax()

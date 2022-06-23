@@ -526,7 +526,7 @@ abstract class AbstractBuilder implements BuilderInterface
         return $order;
     }
 
-    abstract public function build():BuilderInterface;
+    abstract public function build(array $buildSubject);
     public function getData():array{
         return $this->data;
     }

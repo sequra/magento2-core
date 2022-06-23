@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright © 2020 ZhenIT Software. All rights reserved.
  */
@@ -8,6 +9,7 @@ namespace Sequra\Core\Gateway\Http\Client;
 use Magento\Payment\Gateway\Http\ClientInterface;
 use Magento\Payment\Model\Method\Logger;
 use Magento\Framework\HTTP\Client\Curl;
+use Sequra\Core\Model\Adminhtml\Source\Endpoint;
 
 /**
  * Class TransactionSale
@@ -27,8 +29,8 @@ class OrderUpdateTransaction implements ClientInterface
         \Magento\Payment\Gateway\Config\Config $config
     ) {
         $this->config = $config;
-        $this->config->setPathPattern('zhenit_redsys/%s/%s');
-        $this->config->setMethodCode('api');
+        $this->config->setPathPattern('sequra/%s/%s');
+        $this->config->setMethodCode('core');
     }
 
     /**
@@ -37,12 +39,16 @@ class OrderUpdateTransaction implements ClientInterface
      */
     public function placeRequest(\Magento\Payment\Gateway\Http\TransferInterface $transferObject)
     {
-        $client = new Curl();
-        $client->post(
-            $this->config->getValue('test')?Constants::SANDBOX_ENDPOINT:Constants::PRODUCTION_ENDPOINT,
-            $transferObject->getBody()
+        $client = new \Sequra\PhpClient\Client(
+            $this->config->getValue('user_name'),
+            $this->config->getValue('user_secret'),
+            $this->config->getValue('endpoint'),
+            $this->config->getValue('endpoint')!=Endpoint::LIVE
         );
-        $data = $client->getBody();
-        return json_decode($data, true);
+        $client->orderUpdate($transferObject->getBody());
+        return [
+            "success" => $client->succeeded(),
+            "data" => $transferObject->getBody()
+        ];
     }
 }

@@ -44,7 +44,7 @@ class Order extends AbstractBuilder
         $this->customerSession = $customerSession;
     }
 
-    public function build():BuilderInterface
+    public function build(array $buildSubject = [])
     {
         $this->data = [
             'merchant' => $this->merchant(),
