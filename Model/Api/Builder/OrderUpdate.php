@@ -32,19 +32,31 @@ class OrderUpdate extends AbstractBuilder
             'platform' => $this->platform(),
         ];
         if (isset($buildSubject['payment'])) {
-            return $this->addMerchantReferences(false)->getData();
+            return $this->addMerchantReferences()->getData();
         }
         return $this;
     }
 
+    protected function orderHasShipments()
+    {
+        return 0 < $this->order->getShipmentsCollection()->getSize();
+    }
+
+    protected function emptyCart()
+    {
+        return [
+            'currency' => $this->order->getOrderCurrencyCode() ? $this->order->getOrderCurrencyCode() : 'EUR',
+            'items' => [],
+        ];
+    }
+
     public function shippedCart()
     {
-        $data = [];
-        $data['currency'] = $this->order->getOrderCurrencyCode() ? $this->order->getOrderCurrencyCode() : 'EUR';
-        $data['delivery_method'] = $this->getDeliveryMethod();
-        $data['gift'] = false;
-        $data['items'] = $this->items();
-
+        $data = $this->emptyCart();
+        if (!$this->orderHasShipments()) {
+            $data['items'] = $this->items();
+        }
+        $data['items'] = count($this->productItem()) ? $this->items() : [];
         if (count($data['items']) > 0) {
             $totals = Helper::totals($data);
             $data['order_total_with_tax'] = $totals['with_tax'];
@@ -57,9 +69,7 @@ class OrderUpdate extends AbstractBuilder
 
     public function unshippedCart()
     {
-        $data = [];
-        $data['currency'] = $this->order->getOrderCurrencyCode() ? $this->order->getOrderCurrencyCode() : 'EUR';
-        $data['items'] = [];
+        $data = $this->emptyCart();
         $unshipped_discount = 0;
         foreach ($this->order->getAllVisibleItems() as $itemOb) {
             if (is_null($itemOb->getProductId())) {
@@ -69,7 +79,7 @@ class OrderUpdate extends AbstractBuilder
             $item["reference"] = self::notNull($itemOb->getSku());
             $item["name"] = self::notNull($itemOb->getName());
             $item["downloadable"] = ($itemOb->getIsVirtual() ? true : false);
-            $qty = $itemOb->getQtyOrdered() - $itemOb->getQtyShipped() - $itemOb->getQtyRefunded();
+            $qty = ($itemOb->getQtyOrdered() ?: 0) - ($itemOb->getQtyShipped() ?: 0) - ($itemOb->getQtyRefunded() ?: 0);
             if ((int)$qty == $qty) {
                 $item["quantity"] = $qty;
                 $item["price_with_tax"] = self::integerPrice(self::notNull($itemOb->getPriceInclTax()));
@@ -98,6 +108,11 @@ class OrderUpdate extends AbstractBuilder
             $item["name"] = 'Descuento pendiente';
             $item["total_with_tax"] = self::integerPrice($unshipped_discount);
             $data['items'][] = $item;
+        }
+
+        // If no product items sent don't ship handling or extra
+        if ($this->order->getShipmentsCollection()->getSize() == 0) {
+            $data['items'] = array_merge($data['items'], $this->handlingItems());
         }
         $totals = Helper::totals($data);
         $data['order_total_with_tax'] = $totals['with_tax'];
@@ -144,7 +159,7 @@ class OrderUpdate extends AbstractBuilder
             $item["name"] = $itemOb->getName() ? self::notNull($itemOb->getName()) : self::notNull($itemOb->getSku());
             $item["downloadable"] = ($itemOb->getIsVirtual() ? true : false);
             //Just in case any shipped itme has been returned
-            $qty = min($itemOb->getQtyShipped(), $itemOb->getQtyOrdered() - $itemOb->getQtyRefunded());
+            $qty = min($itemOb->getQtyShipped() ?: 0, ($itemOb->getQtyOrdered() ?: 0) - ($itemOb->getQtyRefunded() ?: 0));
             if ((int)$qty == $qty) {
                 $item["quantity"] = (int)$qty;
                 $item["price_with_tax"] = self::integerPrice(self::notNull($itemOb->getPriceInclTax()));
@@ -165,7 +180,8 @@ class OrderUpdate extends AbstractBuilder
     {
         $discount_with_tax = 0;
         foreach ($this->order->getAllItems() as $item) {
-            $discount = $item->getDiscountAmount() * $item->getQtyShipped() / $item->getQtyOrdered();;
+            $net_qty = $item->getQtyShipped() - $item->getQtyRefunded();
+            $discount = $item->getDiscountAmount() * $net_qty / $item->getQtyOrdered();
             if (!$this->getGlobalConfigData(\Magento\Tax\Model\Config::CONFIG_XML_PATH_PRICE_INCLUDES_TAX)) {
                 $discount *= (1 + $item->getTaxPercent() / 100);
             }
