@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright © 2017 SeQura Engineering. All rights reserved.
  */
@@ -60,7 +61,7 @@ class Order extends AbstractBuilder
         return $this;
     }
 
-    public function build_partial():BuilderInterface
+    public function build_partial(): BuilderInterface
     {
         $this->data = [
             'merchant' => $this->merchant(),
@@ -79,7 +80,7 @@ class Order extends AbstractBuilder
             'id' => $id,
             'method' => $this->order->getPayment()->getMethod(),
             'signature' => $this->sign($id),
-            'order_amount' => "".self::integerPrice($this->order->getGrandTotal()),
+            'order_amount' => "" . self::integerPrice($this->order->getGrandTotal()),
         ];
         $ret['notification_parameters'] = $urL_parameters;
         $ret['return_url'] = $this->urlBuilder->getUrl('sequra/comeback', ['quote_id' => $id]);
@@ -87,10 +88,10 @@ class Order extends AbstractBuilder
             'url' => $this->urlBuilder->getUrl('sequra/webhook'),
             'parameters' => $urL_parameters,
         ];
-        if($this->order->getSequraRemoteSale()){
+        if ($this->order->getSequraRemoteSale()) {
             $ret['store_ref'] = 'WEB_REMOTE';
             $ret['operator_ref'] = $this->order->getSequraOperatorRef();
-        } else if($this->getConfigData('allow_remotesales',$this->getStoreId())) {
+        } elseif ($this->getConfigData('allow_remotesales', $this->getStoreId())) {
             $ret['store_ref'] = 'WEB';
             $ret['operator_ref'] = 'WEB';
         }
@@ -100,12 +101,12 @@ class Order extends AbstractBuilder
     public function cartWithItems()
     {
         $data = [];
+        $data['currency'] = $this->order->getQuoteCurrencyCode() ? $this->order->getQuoteCurrencyCode() : 'EUR';
         $data['delivery_method'] = $this->getDeliveryMethod();
         $data['gift'] = false;
-        $data['currency'] = $this->order->getQuoteCurrencyCode()?$this->order->getQuoteCurrencyCode():'EUR';
         $data['created_at'] = $this->order->getCreatedAt();
         $data['updated_at'] = $this->order->getUpdatedAt();
-        $data['cart_ref'] = $this->order->getReservedOrderId();//$this->order->getQuoteId();
+        $data['cart_ref'] = $this->order->getReservedOrderId(); //$this->order->getQuoteId();
         $data['order_total_with_tax'] = self::integerPrice($this->order->getGrandTotal());
         $data['items'] = $this->items();
 
@@ -185,11 +186,11 @@ class Order extends AbstractBuilder
         foreach ($this->order->getAllItems() as $item) {
             $discount = $item->getDiscountAmount();
             if (!$this->getGlobalConfigData(\Magento\Tax\Model\Config::CONFIG_XML_PATH_PRICE_INCLUDES_TAX)) {
-                $discount *= ( 1 + $item->getTaxPercent() / 100 );
+                $discount *= (1 + $item->getTaxPercent() / 100);
             }
             $discount_with_tax += self::integerPrice($discount);
         }
-        return -1*$discount_with_tax;
+        return -1 * $discount_with_tax;
     }
 
     public function getShippingInclTax()

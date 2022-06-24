@@ -1,9 +1,11 @@
 <?php
+
 /**
  * Copyright © 2017 SeQura Engineering. All rights reserved.
  */
 
 namespace Sequra\Core\Model\Api;
+
 use Magento\Payment\Gateway\Request\BuilderInterface;
 
 abstract class AbstractBuilder implements BuilderInterface
@@ -91,51 +93,54 @@ abstract class AbstractBuilder implements BuilderInterface
         $this->moduleResource = $moduleResource;
         $this->logger = $logger;
     }
-    
-    public function setStoreId(int $storeId):BuilderInterface {
+
+    public function setStoreId(int $storeId): BuilderInterface
+    {
         $this->storeId = $storeId;
         return $this;
     }
 
-    public function setLimit(?int $limit):BuilderInterface {
+    public function setLimit(?int $limit): BuilderInterface
+    {
         $this->limit = $limit;
         return $this;
     }
 
-    public function setMerchantId(string $merchant_id):BuilderInterface {
+    public function setMerchantId(string $merchant_id): BuilderInterface
+    {
         $this->merchant_id = $merchant_id;
         return $this;
     }
 
-    public function addMerchantReferences(bool $both = true ):BuilderInterface
+    public function addMerchantReferences(bool $both = true): BuilderInterface
     {
         unset($this->data['merchant_reference']);
         $this->data['merchant_reference']['order_ref_1'] = $this->order->getIncrementId();
-        if($both) {
+        if ($both) {
             $this->data['merchant_reference']['order_ref_2'] = $this->order->getId();
         }
         return $this;
     }
 
-    public function setState(string $state):BuilderInterface
+    public function setState(string $state): BuilderInterface
     {
         $this->data['state'] = $state;
         return $this;
     }
 
-    public function unsetCart():BuilderInterface
+    public function unsetCart(): BuilderInterface
     {
         unset($this->data['cart']);
         return $this;
     }
 
-    public function setQuoteAsOrder(\Magento\Quote\Api\Data\CartInterface $quote):BuilderInterface
+    public function setQuoteAsOrder(\Magento\Quote\Api\Data\CartInterface $quote): BuilderInterface
     {
         $this->order = $quote;
         return $this;
     }
 
-    public function setOrder(\Magento\Sales\Api\Data\OrderInterface $order):BuilderInterface
+    public function setOrder(\Magento\Sales\Api\Data\OrderInterface $order): BuilderInterface
     {
         $this->order = $order;
         return $this;
@@ -155,18 +160,19 @@ abstract class AbstractBuilder implements BuilderInterface
 
     public function merchant()
     {
-        if(!$this->merchant_id){
-            $this->merchant_id = $this->getConfigData('merchant_ref',$this->getStoreId());
+        if (!$this->merchant_id) {
+            $this->merchant_id = $this->getConfigData('merchant_ref', $this->getStoreId());
         }
         return [
             'id' => $this->merchant_id,
         ];
     }
-    protected function getStoreId(){
-        if($this->order){
+    protected function getStoreId()
+    {
+        if ($this->order) {
             return $this->order->getStoreId();
         }
-        if($this->quote){
+        if ($this->quote) {
             return $this->quote->getStoreId();
         }
     }
@@ -208,7 +214,7 @@ abstract class AbstractBuilder implements BuilderInterface
 
     public static function integerPrice($price)
     {
-        if(!is_numeric($price)){
+        if (!is_numeric($price)) {
             return 0;
         }
         return intval(round(self::$centsPerWhole * $price));
@@ -224,16 +230,13 @@ abstract class AbstractBuilder implements BuilderInterface
         }
 
         $incl_tax = $this->getShippingInclTax();
-
         $handling = [
             'type' => 'handling',
             'reference' => $deliveryMethod['provider'],
             'name' => $deliveryMethod['name'],
             'total_with_tax' => self::integerPrice($incl_tax),
         ];
-
         $items[] = $handling;
-
         return $items;
     }
 
@@ -373,9 +376,11 @@ abstract class AbstractBuilder implements BuilderInterface
             return true;
         }
 
-        if (strpos(strtolower($_SERVER['HTTP_ACCEPT']), 'application/vnd.wap.xhtml+xml') > 0 or
+        if (
+            strpos(strtolower($_SERVER['HTTP_ACCEPT']), 'application/vnd.wap.xhtml+xml') > 0 or
             isset($_SERVER['HTTP_X_WAP_PROFILE']) or
-            isset($_SERVER['HTTP_PROFILE'])) {
+            isset($_SERVER['HTTP_PROFILE'])
+        ) {
             return true;
         }
 
@@ -492,8 +497,8 @@ abstract class AbstractBuilder implements BuilderInterface
             'php_version' => phpversion(),
             'php_os' => PHP_OS,
             'uname' => php_uname(),
-            'db_name' => 'mysql',//@todo
-            'db_version' => '5.7.x or later'//@todo
+            'db_name' => 'mysql', //@todo
+            'db_version' => '5.7.x or later' //@todo
         ];
 
         return $data;
@@ -501,8 +506,8 @@ abstract class AbstractBuilder implements BuilderInterface
 
     public function sign($value)
     {
-        $storeId = $this->order?$this->order->getStoreId():null;
-        return hash_hmac('sha256', $value, $this->getConfigData('user_secret',$storeId));
+        $storeId = $this->order ? $this->order->getStoreId() : null;
+        return hash_hmac('sha256', $value, $this->getConfigData('user_secret', $storeId));
     }
 
     protected function fixRoundingProblems($order, $cart_name = 'cart')
@@ -527,7 +532,8 @@ abstract class AbstractBuilder implements BuilderInterface
     }
 
     abstract public function build(array $buildSubject);
-    public function getData():array{
+    public function getData(): array
+    {
         return $this->data;
     }
 }
