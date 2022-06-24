@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright © 2017 SeQura Engineering. All rights reserved.
  */
@@ -91,7 +92,7 @@ class Report extends AbstractBuilder
     public function build(array $buildSubject = [])
     {
         $this->getOrders();
-        if(!$this->limit || $this->getConfigData('reporting')){
+        if (!$this->limit || $this->getConfigData('reporting')) {
             $this->getStats();
         }
         $this->builtData = [
@@ -130,7 +131,7 @@ class Report extends AbstractBuilder
     protected function getSequraOrders()
     {
         $collection = $this->orderCollectionFactory->create()->addFieldToSelect([
-            'entity_id',//load minimun fields, anyway later, we need to populate all and load related objects.
+            'entity_id', //load minimun fields, anyway later, we need to populate all and load related objects.
             'increment_id',
             'state',
             'status',
@@ -204,7 +205,7 @@ class Report extends AbstractBuilder
     public function shipmentCart()
     {
         $data = [];
-        $data['currency'] = $this->order->getOrderCurrencyCode()?$this->order->getOrderCurrencyCode():'EUR';
+        $data['currency'] = $this->order->getOrderCurrencyCode() ? $this->order->getOrderCurrencyCode() : 'EUR';
         $data['delivery_method'] = $this->getDeliveryMethod();
         $data['gift'] = false;
         $data['items'] = $this->items();
@@ -220,7 +221,7 @@ class Report extends AbstractBuilder
     public function orderRemainingCart()
     {
         $data = [];
-        $data['currency'] = $this->order->getOrderCurrencyCode()?$this->order->getOrderCurrencyCode():'EUR';
+        $data['currency'] = $this->order->getOrderCurrencyCode() ? $this->order->getOrderCurrencyCode() : 'EUR';
         $data['items'] = [];
         $remaining_discount = 0;
         foreach ($this->order->getAllVisibleItems() as $itemOb) {
@@ -232,7 +233,7 @@ class Report extends AbstractBuilder
             $item["name"] = self::notNull($itemOb->getName());
             $item["downloadable"] = ($itemOb->getIsVirtual() ? true : false);
             $qty = $itemOb->getQtyOrdered() - $itemOb->getQtyShipped() - $itemOb->getQtyRefunded();
-            $ratio = $qty / $itemOb->getQtyOrdered(); 
+            $ratio = $qty / $itemOb->getQtyOrdered();
             if ((int)$qty == $qty) {
                 $item["quantity"] = $qty;
                 $item["price_with_tax"] = self::integerPrice(self::notNull($itemOb->getPriceInclTax()));
@@ -243,7 +244,7 @@ class Report extends AbstractBuilder
             } else {
                 $item["quantity"] = 1;
                 $item["total_with_tax"] =
-                $item["price_with_tax"] = self::integerPrice(self::notNull($itemOb->getRowTotalInclTax()));
+                    $item["price_with_tax"] = self::integerPrice(self::notNull($itemOb->getRowTotalInclTax()));
                 $item["tax_rate"] = 0;
             }
             $product = $this->productRepository->getById($itemOb->getProductId());
@@ -252,9 +253,9 @@ class Report extends AbstractBuilder
             }
             $discount = $ratio * $itemOb->getDiscountAmount();
             if (!$this->getGlobalConfigData(\Magento\Tax\Model\Config::CONFIG_XML_PATH_PRICE_INCLUDES_TAX)) {
-                $discount *= ( 1 + $itemOb->getTaxPercent() / 100 );
+                $discount *= (1 + $itemOb->getTaxPercent() / 100);
             }
-            $remaining_discount -=$discount;
+            $remaining_discount -= $discount;
         }
         if ($remaining_discount < 0) {
             $item = [];
@@ -271,7 +272,7 @@ class Report extends AbstractBuilder
 
     public function orderMerchantReference($order)
     {
-        $data['order_ref_1'] = $order->getOriginalIncrementId()??$order->getIncrementId();
+        $data['order_ref_1'] = $order->getOriginalIncrementId() ?? $order->getIncrementId();
         $data['order_ref_2'] = $order->getId();
         return $data;
     }
@@ -371,38 +372,42 @@ class Report extends AbstractBuilder
                 'completed_at' => $order->getData('created_at'),
                 'merchant_reference' => [
                     'order_ref_1' =>
-                        $order->getOriginalIncrementId()??$order->getRealOrderId(),
+                    $order->getOriginalIncrementId() ?? $order->getRealOrderId(),
                     'order_ref_2' => $order->getId(),
                 ],
                 'currency' => $order->getOrderCurrencyCode(),
             ];
             $stattypes = explode(',', $this->getConfigData('specificstattypes'));
-            if ('0' == $this->getConfigData('allowspecificstattypes') || in_array(
-                \Sequra\Core\Model\Adminhtml\Source\Specificstattypes::STAT_AMOUNT,
-                $stattypes
-            )
+            if (
+                '0' == $this->getConfigData('allowspecificstattypes') || in_array(
+                    \Sequra\Core\Model\Adminhtml\Source\Specificstattypes::STAT_AMOUNT,
+                    $stattypes
+                )
             ) {
                 $stat['amount'] = self::integerPrice($order->getGrandTotal());
             }
-            if ('0' == $this->getConfigData('allowspecificstattypes') || in_array(
-                \Sequra\Core\Model\Adminhtml\Source\Specificstattypes::STAT_COUNTRY,
-                $stattypes
-            )
+            if (
+                '0' == $this->getConfigData('allowspecificstattypes') || in_array(
+                    \Sequra\Core\Model\Adminhtml\Source\Specificstattypes::STAT_COUNTRY,
+                    $stattypes
+                )
             ) {
                 $stat['country'] = $address->getCountryId();
             }
-            if ('0' == $this->getConfigData('allowspecificstattypes') || in_array(
-                \Sequra\Core\Model\Adminhtml\Source\Specificstattypes::STAT_PAYMENT,
-                $stattypes
-            )
+            if (
+                '0' == $this->getConfigData('allowspecificstattypes') || in_array(
+                    \Sequra\Core\Model\Adminhtml\Source\Specificstattypes::STAT_PAYMENT,
+                    $stattypes
+                )
             ) {
                 $stat['payment_method'] = $payment_method_enum;
                 $stat['payment_method_raw'] = $payment_method_raw;
             }
-            if ('0' == $this->getConfigData('allowspecificstattypes') || in_array(
-                \Sequra\Core\Model\Adminhtml\Source\Specificstattypes::STAT_STATUS,
-                $stattypes
-            )
+            if (
+                '0' == $this->getConfigData('allowspecificstattypes') || in_array(
+                    \Sequra\Core\Model\Adminhtml\Source\Specificstattypes::STAT_STATUS,
+                    $stattypes
+                )
             ) {
                 $stat['status'] = $status;
                 $stat['raw_status'] = $order->getStatus();
@@ -422,7 +427,7 @@ class Report extends AbstractBuilder
     {
         $time = time();
         $to = date('Y-m-d H:i:s', $time);
-        $lastTime = $time - $this->getConfigData('statsperiod') * 60 * 60 * 24;// 60*60*24*
+        $lastTime = $time - $this->getConfigData('statsperiod') * 60 * 60 * 24; // 60*60*24*
         $from = date('Y-m-d H:i:s', $lastTime);
         $criteria = $this->searchCriteriaBuilder
             ->addFilter('store_id', $this->storeId)
@@ -450,8 +455,8 @@ class Report extends AbstractBuilder
             } catch (Exception $e) {
                 $this->logger->addError(
                     'Can not get product for id: ' .
-                    $itemOb->getProductId() .
-                    '  ' . $e->getMessage()
+                        $itemOb->getProductId() .
+                        '  ' . $e->getMessage()
                 );
                 continue;
             }
@@ -461,17 +466,17 @@ class Report extends AbstractBuilder
             $item["name"] = $itemOb->getName() ? self::notNull($itemOb->getName()) : self::notNull($itemOb->getSku());
             $item["downloadable"] = ($itemOb->getIsVirtual() ? true : false);
             $qty = $itemOb->getQtyShipped();
-            $ratio = $qty / $itemOb->getQtyOrdered(); 
+            $ratio = $qty / $itemOb->getQtyOrdered();
             if ((int)$qty == $qty) {
                 $item["quantity"] = (int)$qty;
                 $item["price_with_tax"] = self::integerPrice(self::notNull($itemOb->getPriceInclTax()));
                 $item["total_with_tax"] = self::integerPrice(
                     $ratio * self::notNull($itemOb->getRowTotalInclTax())
                 );
-            } else {//Fake qty and unit price
+            } else { //Fake qty and unit price
                 $item["quantity"] = 1;
                 $item["total_with_tax"] =
-                $item["price_with_tax"] = self::integerPrice(self::notNull($itemOb->getRowTotalInclTax()));
+                    $item["price_with_tax"] = self::integerPrice(self::notNull($itemOb->getRowTotalInclTax()));
                 $item["tax_rate"] = 0;
             }
             $items[] = $item;
@@ -483,13 +488,13 @@ class Report extends AbstractBuilder
     {
         $discount_with_tax = 0;
         foreach ($this->order->getAllItems() as $item) {
-            $discount = $item->getDiscountAmount()*$item->getQtyShipped()/$item->getQtyOrdered();            ;
+            $discount = $item->getDiscountAmount() * $item->getQtyShipped() / $item->getQtyOrdered();;
             if (!$this->getGlobalConfigData(\Magento\Tax\Model\Config::CONFIG_XML_PATH_PRICE_INCLUDES_TAX)) {
-                $discount *= ( 1 + $item->getTaxPercent() / 100 );
+                $discount *= (1 + $item->getTaxPercent() / 100);
             }
             $discount_with_tax += self::integerPrice($discount);
         }
-        return -1*$discount_with_tax;
+        return -1 * $discount_with_tax;
     }
 
     public function getShippingInclTax()
