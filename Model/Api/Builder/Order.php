@@ -7,7 +7,7 @@
 namespace Sequra\Core\Model\Api\Builder;
 
 use Sequra\Core\Model\Api\AbstractBuilder;
-use Sequra\Core\Model\Api\BuilderInterface;
+use Magento\Payment\Gateway\Request\BuilderInterface;
 
 class Order extends AbstractBuilder
 {

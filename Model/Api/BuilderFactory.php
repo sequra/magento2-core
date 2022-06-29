@@ -37,7 +37,7 @@ class BuilderFactory
      * @param string $type
      * @param string $merchant_ref
      *
-     * @return \Sequra\Core\Model\Api\BuilderInterface
+     * @return \Magento\Payment\Gateway\Request\BuilderInterface
      */
     public function create($type = 'order')
     {
