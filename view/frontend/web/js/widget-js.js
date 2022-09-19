@@ -10,7 +10,6 @@ define([
             product: 'i1',
             theme: '',
             campaign: '',
-            silent: false,
             locale: 'es-ES'
         },
         presets: {
