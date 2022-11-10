@@ -58,7 +58,7 @@ class ConfigProvider implements ConfigProviderInterface
                     'scriptUri' => $this->config->getScriptUri(),
                     'decimalSeparator' => $this->getDecimalSeparator(),
                     'thousandSeparator' => $this->getThousandsSeparator(),
-                    'rebranding' => true
+                    'locale': str_replace('_','-',$this->localeResolver->getLocale());
                 ]
             ]
         ];
