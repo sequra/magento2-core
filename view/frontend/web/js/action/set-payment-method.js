@@ -32,7 +32,7 @@ define(
                     fullScreenLoader.stopLoader();
                 };
 
-            return setPaymentInformation(messageContainer, quote.paymentMethod()).done(
+            return setPaymentInformation(messageContainer, quote.paymentMethod()).always(
                 function () {
                     serviceUrl = urlBuilder.createUrl('/sequra_core/Submission', {});
                     storage.get(serviceUrl).done(
