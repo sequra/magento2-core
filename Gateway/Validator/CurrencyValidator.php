@@ -41,7 +41,7 @@ class CurrencyValidator extends \Magento\Payment\Gateway\Validator\AbstractValid
         if (!!$this->config->getCoreValue('currency', $storeId)) {
             $availableCurrencies = explode(
                 ',',
-                $this->config->getCoreValue('currency', $storeId)
+                $this->config->getCoreValue('currency', $storeId)?:""
             );
 
             if (!in_array($validationSubject['currency'], $availableCurrencies)) {

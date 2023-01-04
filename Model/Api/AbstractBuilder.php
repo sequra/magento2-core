@@ -242,7 +242,7 @@ abstract class AbstractBuilder implements BuilderInterface
 
     public function getDeliveryMethod()
     {
-        $shippingMethod = $this->getShippingMethod();
+        $shippingMethod = $this->getShippingMethod()?:"";
         $carrier = explode('_', $shippingMethod, 2);
         $title = $this->scopeConfig->getValue('carriers/' . $carrier[0] . '/title');
 

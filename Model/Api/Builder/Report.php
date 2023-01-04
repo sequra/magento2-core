@@ -377,7 +377,7 @@ class Report extends AbstractBuilder
                 ],
                 'currency' => $order->getOrderCurrencyCode(),
             ];
-            $stattypes = explode(',', $this->getConfigData('specificstattypes'));
+            $stattypes = explode(',', $this->getConfigData('specificstattypes')?:"");
             if (
                 '0' == $this->getConfigData('allowspecificstattypes') || in_array(
                     \Sequra\Core\Model\Adminhtml\Source\Specificstattypes::STAT_AMOUNT,

@@ -35,7 +35,7 @@ class IpAddressValidator extends \Magento\Payment\Gateway\Validator\AbstractVali
         if (!!$this->config->getCoreValue('test_ip', $storeId)) {
             $availableIps = explode(
                 ',',
-                $this->config->getCoreValue('test_ip', $storeId)
+                $this->config->getCoreValue('test_ip', $storeId)?:""
             );
 
             if (!in_array($_SERVER['REMOTE_ADDR'], $availableIps)) {

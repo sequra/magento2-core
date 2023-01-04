@@ -31,7 +31,7 @@ class Config extends AbstractConfig
         if (!!$this->config->getCoreValue('country', $storeId)) {
             $availableCountries = explode(
                 ',',
-                $this->config->getValue('country', $storeId)
+                $this->config->getValue('country', $storeId)?:""
             );
 
             if (!in_array($code, $availableCountries)) {
