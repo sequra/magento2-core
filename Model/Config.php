@@ -28,10 +28,10 @@ class Config extends AbstractConfig
     public function isCurrencyCodeSupported($code)
     {
         $isValid = true;
-        if (!!$this->config->getCoreValue('country', $storeId)) {
+        if (!!$this->getCoreValue('country', $this->storeId)) {
             $availableCountries = explode(
                 ',',
-                $this->config->getValue('country', $storeId)?:""
+                $this->getValue('country', $this->storeId)?:""
             );
 
             if (!in_array($code, $availableCountries)) {
