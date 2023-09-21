@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Backend:etc/menu.xsd">
+    <menu>
+        <add id="Sequra_Core::menu"
+             title="SeQura"
+             module="Sequra_Core"
+             parent="Magento_Sales::sales_operation"
+             sortOrder="70"
+             resource="Magento_Sales::sales_operation"
+             action="sequra/configuration/index"
+        />
+    </menu>
+</config>

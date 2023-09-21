@@ -17,14 +17,29 @@
     ],
     "minimum-stability": "stable",
     "require": {
-        "sequra/php-client": "^0.3.1"
+        "php": ">=7.2",
+        "sequra/integration-core": "dev-dev",
+        "ext-json": "*"
     },
+    "repositories": [
+        {
+            "type": "vcs",
+            "no-api": true,
+            "url": "git@github.com:sequra/integration-core.git"
+        }
+    ],
     "autoload": {
         "files": [
             "registration.php"
         ],
         "psr-4": {
             "Sequra\\Core\\": ""
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "SeQura\\Core\\Tests\\Infrastructure\\": "vendor/sequra/integration-core/tests/Infrastructure",
+            "SeQura\\Core\\Tests\\BusinessLogic\\": "vendor/sequra/integration-core/tests/BusinessLogic"
         }
     }
 }

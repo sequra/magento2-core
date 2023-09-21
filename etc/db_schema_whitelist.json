@@ -1,0 +1,64 @@
+{
+  "sequra_entity": {
+    "column": {
+      "id": true,
+      "type": true,
+      "index_1": true,
+      "index_2": true,
+      "index_3": true,
+      "index_4": true,
+      "index_5": true,
+      "index_6": true,
+      "index_7": true,
+      "index_8": true,
+      "index_9": true,
+      "data": true
+    },
+    "constraint": {
+      "PRIMARY": true
+    }
+  },
+  "sequra_queue": {
+    "column": {
+      "id": true,
+      "type": true,
+      "index_1": true,
+      "index_2": true,
+      "index_3": true,
+      "index_4": true,
+      "index_5": true,
+      "index_6": true,
+      "index_7": true,
+      "index_8": true,
+      "index_9": true,
+      "data": true
+    },
+    "index": {
+      "SEQURA_QUEUE_TYPE_INDEX_1": true,
+      "SEQURA_QUEUE_TYPE_INDEX_2": true,
+      "SEQURA_QUEUE_TYPE_INDEX_3": true,
+      "SEQURA_QUEUE_TYPE_INDEX_4": true
+    },
+    "constraint": {
+      "PRIMARY": true
+    }
+  },
+  "sequra_events": {
+    "column": {
+      "id": true,
+      "type": true,
+      "data": true,
+      "context": true,
+      "index_1": true,
+      "index_2": true
+    },
+    "index": {
+      "SEQURA_EVENTS_TYPE_INDEX_1": true,
+      "SEQURA_EVENTS_TYPE_INDEX_2": true,
+      "SEQURA_EVENTS_TYPE_INDEX_3": true
+    },
+    "constraint": {
+      "PRIMARY": true
+    }
+  }
+}

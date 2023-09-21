@@ -1,15 +1,39 @@
 <?xml version="1.0"?>
-<!--
-/**
- * Copyright © 2017 SeQura Engineering. All rights reserved.
- */
--->
 <routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Webapi:etc/webapi.xsd">
-    <route url="/V1/sequra_core/Submission" method="GET">
-        <service class="Sequra\Core\Api\SubmissionInterface" method="getForm"/>
+
+    <route url="/V1/sequra_core/guest-carts/:cartId/retrieve-sequra_payment-methods" method="POST">
+        <service class="Sequra\Core\Api\GuestSequraPaymentMethodsInterface" method="getAvailablePaymentMethods"/>
         <resources>
             <resource ref="anonymous"/>
         </resources>
     </route>
+
+    <route url="/V1/sequra_core/carts/mine/retrieve-sequra_payment-methods" method="POST">
+        <service class="Sequra\Core\Api\SequraPaymentMethodsInterface" method="getAvailablePaymentMethods"/>
+        <resources>
+            <resource ref="anonymous"/>
+        </resources>
+        <data>
+            <parameter name="cartId" force="true">%cart_id%</parameter>
+        </data>
+    </route>
+
+    <route url="/V1/sequra_core/guest-carts/:cartId/fetch-sequra_payment-form" method="POST">
+        <service class="Sequra\Core\Api\GuestSequraPaymentMethodsInterface" method="getForm"/>
+        <resources>
+            <resource ref="anonymous"/>
+        </resources>
+    </route>
+
+    <route url="/V1/sequra_core/carts/mine/fetch-sequra_payment-form" method="POST">
+        <service class="Sequra\Core\Api\SequraPaymentMethodsInterface" method="getForm"/>
+        <resources>
+            <resource ref="anonymous"/>
+        </resources>
+        <data>
+            <parameter name="cartId" force="true">%cart_id%</parameter>
+        </data>
+    </route>
+
 </routes>

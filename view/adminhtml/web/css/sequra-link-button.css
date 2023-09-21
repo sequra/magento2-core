@@ -1,0 +1,30 @@
+.sequra-link {
+    text-decoration: none;
+}
+
+.sequra-link:hover {
+    text-decoration: none;
+}
+
+.sequra-logo {
+    max-height: 40px;
+    padding: 6px 12px 6px 0;
+}
+
+.sequra-preview {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: white;
+    box-shadow: none;
+    border: 1px solid darkgray;
+    padding-right: 16px;
+    padding-left: 5px;
+    max-height: 40px;
+    width: 155px;
+    font-size: smaller;
+}
+
+.sequra-preview:hover {
+    background-color: #f5f5f5;
+}

@@ -1,0 +1,12 @@
+<?php
+/** @var \Sequra\Core\Block\WidgetInitializer $block */
+?>
+<script type="text/x-magento-init">
+    {
+        "*": {
+            "Sequra_Core/js/widget-initializer": {
+                "config": <?= /* @noEscape */ $block->getWidgetConfig(); ?>
+    }
+}
+}
+</script>

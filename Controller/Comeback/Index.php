@@ -1,57 +1,37 @@
 <?php
-/**
- * Copyright © 2017 SeQura Engineering. All rights reserved.
- */
 
 namespace Sequra\Core\Controller\Comeback;
 
+use Magento\Checkout\Controller\Onepage;
 use Magento\Customer\Api\AccountManagementInterface;
 use Magento\Customer\Api\CustomerRepositoryInterface;
 use Magento\Framework\Stdlib\CookieManagerInterface;
 use Magento\Framework\Stdlib\Cookie\CookieMetadataFactory;
 
 /**
- * Comeback controller
+ * Class Index
+ *
+ * @package Sequra\Core\Controller\Comeback
  */
-class Index extends \Magento\Checkout\Controller\Onepage
+class Index extends Onepage
 {
     /**
-     * @var \Magento\Framework\Session\SessionManagerInterface
+     * @var \Magento\Framework\Message\ManagerInterface
      */
-    protected $cookieManager;
-
-    /**
-     * @var \Magento\Framework\Stdlib\Cookie\CookieMetadataFactory
-     */
-    protected $cookieMetadataFactory;
-
+    private $manager;
     /**
      * @var \Magento\Sales\Model\OrderFactory
      */
-    protected $orderFactory;
-
+    private $orderFactory;
     /**
-     * @param \Magento\Framework\App\Action\Context              $context
-     * @param \Magento\Customer\Model\Session                    $customerSession
-     * @param CustomerRepositoryInterface                        $customerRepository
-     * @param AccountManagementInterface                         $accountManagement
-     * @param \Magento\Framework\Registry                        $coreRegistry
-     * @param \Magento\Framework\Translate\InlineInterface       $translateInline
-     * @param \Magento\Framework\Data\Form\FormKey\Validator     $formKeyValidator
-     * @param \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig
-     * @param \Magento\Framework\View\LayoutFactory              $layoutFactory
-     * @param \Magento\Quote\Api\CartRepositoryInterface         $quoteRepository
-     * @param \Magento\Framework\View\Result\PageFactory         $resultPageFactory
-     * @param \Magento\Framework\View\Result\LayoutFactory       $resultLayoutFactory
-     * @param \Magento\Framework\Controller\Result\RawFactory    $resultRawFactory
-     * @param \Magento\Framework\Controller\Result\JsonFactory   $resultJsonFactory
-     * @param \Magento\Sales\Model\OrderFactory                  $orderFactory
-     * @param CookieManagerInterface                             $cookieManager
-     * @param CookieMetadataFactory                              $cookieMetadataFactory
-     *
-     * @codeCoverageIgnore
-     * @SuppressWarnings(PHPMD.ExcessiveParameterList)
+     * @var CookieManagerInterface
      */
+    private $cookieManager;
+    /**
+     * @var CookieMetadataFactory
+     */
+    private $cookieMetadataFactory;
+
     public function __construct(
         \Magento\Framework\App\Action\Context $context,
         \Magento\Customer\Model\Session $customerSession,
@@ -67,6 +47,7 @@ class Index extends \Magento\Checkout\Controller\Onepage
         \Magento\Framework\View\Result\LayoutFactory $resultLayoutFactory,
         \Magento\Framework\Controller\Result\RawFactory $resultRawFactory,
         \Magento\Framework\Controller\Result\JsonFactory $resultJsonFactory,
+        \Magento\Framework\Message\ManagerInterface $manager,
         \Magento\Sales\Model\OrderFactory $orderFactory,
         CookieManagerInterface $cookieManager,
         CookieMetadataFactory $cookieMetadataFactory
@@ -87,29 +68,25 @@ class Index extends \Magento\Checkout\Controller\Onepage
             $resultRawFactory,
             $resultJsonFactory
         );
-        $this->cookieMetadataFactory = $cookieMetadataFactory;
-        $this->cookieManager = $cookieManager;
+        $this->manager = $manager;
         $this->orderFactory = $orderFactory;
+        $this->cookieManager = $cookieManager;
+        $this->cookieMetadataFactory = $cookieMetadataFactory;
     }
-    /**
-     * Rebuild session and redirect to default success controller
-     *
-     * @return                                 void
-     * @SuppressWarnings(PHPMD.ExitExpression)
-     */
+
     public function execute()
     {
         $quote = $this->quoteRepository->get(
-            $this->getRequest()->getParam('quote_id')
+            $this->getRequest()->getParam('cartId')
         );
         $order = $this->orderFactory->create()->loadByIncrementId($quote->getReservedOrderId());
         if (!$order->getId()) {
-            $messageManager = $this->_objectManager->get(\Magento\Framework\Message\ManagerInterface::class);
-            $messageManager->addWarningMessage(
-                __('Lo sentimos. No se ha podido procesar el pago con SeQura, por favor, inténtelo de nuevo o utilice otro método de pago')
+            $this->manager->addWarningMessage(
+                __('Something went wrong. Please try to place the order again.')
             );
             $this->resultRedirectFactory->create()->setPath('checkout/cart');
         }
+
         $session = $this->getOnepage()->getCheckout();
         // prepare session to success or cancellation page
         $session->clearHelperData();
@@ -130,6 +107,7 @@ class Index extends \Magento\Checkout\Controller\Onepage
                 $metadata
             );
         }
+
         return $this->resultRedirectFactory->create()->setPath('checkout/onepage/success');
     }
 }

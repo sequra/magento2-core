@@ -1,73 +1,55 @@
 <?xml version="1.0"?>
-<!--
-/**
- * Copyright © 2017 SeQura Engineering. All rights reserved.
- */
--->
-
-<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
-    <!-- Configuration reader -->
-    <virtualType name="SequraGatewayConfig" type="Sequra\Core\Model\Config">
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <!-- Payment Method Facade configuration -->
+    <virtualType name="SequraPaymentGatewayFacade" type="Magento\Payment\Model\Method\Adapter">
         <arguments>
-            <argument name="methodCode" xsi:type="const">\Sequra\Core\Model\Ui\ConfigProvider::CODE</argument>
+            <argument name="code" xsi:type="const">Sequra\Core\Model\Ui\ConfigProvider::CODE</argument>
+            <argument name="formBlockType" xsi:type="string">Magento\Payment\Block\Form</argument>
+            <argument name="infoBlockType" xsi:type="string">Magento\Payment\Block\ConfigurableInfo</argument>
+            <argument name="valueHandlerPool" xsi:type="object">SequraPaymentGatewayValueHandlerPool</argument>
+<!--            <argument name="validatorPool" xsi:type="object">SequraPaymentGatewayValidatorPool</argument>-->
+<!--            <argument name="commandPool" xsi:type="object">SequraPaymentGatewayCommandPool</argument>-->
         </arguments>
     </virtualType>
 
-    <type name="Sequra\Core\Model\Ui\ConfigProvider">
-       <arguments>
-           <argument name="config" xsi:type="object">SequraGatewayConfig</argument>
-       </arguments>
-    </type>
-
-    <!-- Logger, initialized with SequraGatewayConfig -->
-    <virtualType name="SequraGatewayLogger" type="Magento\Payment\Model\Method\Logger">
+    <!-- Payment Method Value handlers configuration -->
+    <virtualType name="SequraPaymentGatewayValueHandlerPool" type="Magento\Payment\Gateway\Config\ValueHandlerPool">
         <arguments>
-            <argument name="config" xsi:type="object">SequraGatewayConfig</argument>
-        </arguments>
-    </virtualType>
-
-    <preference for="Sequra\Core\Api\SubmissionInterface" type="Sequra\Core\Model\Service\SubmissionService"/>
-
-    <!-- SequraCommandPool - a command pool for the Sequra payments provider -->
-    <virtualType name="SequraGatewayCommandPool" type="Magento\Payment\Gateway\Command\CommandPool">
-        <arguments>
-            <argument name="commands" xsi:type="array">
-                <item name="refund" xsi:type="string">SequraRefundCommand</item>
+            <argument name="handlers" xsi:type="array">
+                <item name="default" xsi:type="string">SequraPaymentGatewayConfigValueHandler</item>
             </argument>
         </arguments>
     </virtualType>
-    <!-- Refund Command -->
-    <virtualType name="SequraRefundCommand" type="Magento\Payment\Gateway\Command\GatewayCommand">
+
+    <virtualType name="SequraPaymentGatewayConfigValueHandler" type="Magento\Payment\Gateway\Config\ConfigValueHandler">
         <arguments>
-            <argument name="client" xsi:type="object">Sequra\Core\Gateway\Http\Client\OrderUpdateTransaction</argument>
-            <argument name="requestBuilder" xsi:type="object">Sequra\Core\Model\Api\Builder\OrderUpdate</argument>
-            <argument name="validator" xsi:type="object">Sequra\Core\Gateway\Validator\GeneralResponseValidator</argument>
-            <argument name="handler" xsi:type="object">Sequra\Core\Gateway\Response\RefundHandler</argument>
-            <argument name="transferFactory" xsi:type="object">Sequra\Core\Gateway\Http\TransferFactory</argument>
+            <argument name="configInterface" xsi:type="object">SequraPaymentGatewayConfig</argument>
         </arguments>
     </virtualType>
-    <!-- END Refund Command -->
 
-    <!-- Commandline option to triggerrerport and update orders-->
-    <type name="Magento\Framework\Console\CommandList">
-       <arguments>
-           <argument name="commands" xsi:type="array">
-                <item name="triggerReport" xsi:type="object">Sequra\Core\Console\TriggerReport</item>
-                <item name="updateOrdersInSeQura" xsi:type="object">Sequra\Core\Console\UpdateOrdersInSeQura</item>
-           </argument>
-       </arguments>
+    <virtualType name="SequraPaymentGatewayConfig" type="Magento\Payment\Gateway\Config\Config">
+        <arguments>
+            <argument name="methodCode" xsi:type="const">Sequra\Core\Model\Ui\ConfigProvider::CODE</argument>
+        </arguments>
+    </virtualType>
+
+    <preference for="Sequra\Core\Api\GuestSequraPaymentMethodsInterface"
+                type="Sequra\Core\Model\Api\GuestSequraPaymentMethodsService"/>
+    <preference for="Sequra\Core\Api\SequraPaymentMethodsInterface"
+                type="Sequra\Core\Model\Api\SequraPaymentMethodsService"/>
+    <type name="Magento\PageBuilder\Model\WidgetInitializerConfig">
+        <arguments>
+            <argument name="config" xsi:type="array">
+                <item name="Sequra_Core" xsi:type="array">
+                    <!-- Name is the appearance name -->
+                    <item name="default" xsi:type="array">
+                        <!--required argument-->
+                        <item name="component" xsi:type="string">Sequra_Core/js/content-type/sequra-core/appearance/default/widget</item>
+                    </item>
+                </item>
+            </argument>
+        </arguments>
     </type>
-    <virtualType name="SequraGatewayCurrencyValidator" type="Sequra\Core\Gateway\Validator\CurrencyValidator">
-        <arguments>
-            <argument name="config" xsi:type="object">SequraGatewayConfig</argument>
-        </arguments>
-    </virtualType>
-
-    <!-- Avoid sending order confirmation email if order isn't confirmed in SeQura -->
-    <!-- <type name="Magento\Sales\Model\Order\Email\Container\OrderIdentity">
-        <plugin name="change_is_enable_method" type="Sequra\Core\Plugin\Sales\Order\Email\Container\OrderIdentity"/>
-    </type> -->
 
     <!-- CSRF -->
     <type name="Magento\Framework\App\Request\CsrfValidator">

@@ -1,0 +1,75 @@
+<?php
+/** @var Sequra\Core\Block\Adminhtml\Configuration\Index $block */
+?>
+
+<div id="sequra-page">
+    <main id="sq-page-wrapper"></main>
+    <div class="sq-page-loader sqs--hidden" id="sq-spinner">
+        <div class="sq-loader sqt--large">
+            <span class="sqp-spinner"></span>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const baseApiUrl = 'https://38cd2bd72289.ngrok.app';
+
+        SequraFE.translations = {
+            default: <?php echo $block->getTranslations()['default']; ?>,
+            current: <?php echo $block->getTranslations()['current']; ?>
+        };
+
+        SequraFE.utilities.showLoader();
+
+        const onboardingPageConfig = {
+            validateConnectionDataUrl: "<?php echo $block->getControllerUrl('Onboarding', '{storeId}','validateConnectionData'); ?>",
+            getConnectionDataUrl: "<?php echo $block->getControllerUrl('Onboarding', '{storeId}','getConnectionData'); ?>",
+            saveConnectionDataUrl: "<?php echo $block->getControllerUrl('Onboarding', '{storeId}','setConnectionData'); ?>",
+            getSellingCountriesUrl: "<?php echo $block->getControllerUrl('CountrySettings', '{storeId}','getSellingCountries'); ?>",
+            getCountrySettingsUrl: "<?php echo $block->getControllerUrl('CountrySettings', '{storeId}','getCountrySettings'); ?>",
+            saveCountrySettingsUrl: "<?php echo $block->getControllerUrl('CountrySettings', '{storeId}','setCountrySettings'); ?>",
+            getWidgetSettingsUrl: "<?php echo $block->getControllerUrl('WidgetSettings', '{storeId}', 'getWidgetSettings'); ?>",
+            saveWidgetSettingsUrl: "<?php echo $block->getControllerUrl('WidgetSettings', '{storeId}', 'setWidgetSettings'); ?>",
+            getWidgetConfiguratorUrl: baseApiUrl + '/widget-configurator',
+            getPaymentMethodsUrl: "<?php echo $block->getControllerUrl('PaymentMethods','{storeId}', 'getPaymentMethods', '{merchantId}'); ?>",
+        }
+
+        const pageConfiguration = {
+            onboarding: onboardingPageConfig,
+            settings: {
+                ...onboardingPageConfig,
+                getShopCategoriesUrl: "<?php echo $block->getControllerUrl('GeneralSettings','{storeId}', 'getShopCategories'); ?>",
+                getGeneralSettingsUrl: "<?php echo $block->getControllerUrl('GeneralSettings','{storeId}', 'getGeneralSettings'); ?>",
+                saveGeneralSettingsUrl: "<?php echo $block->getControllerUrl('GeneralSettings','{storeId}', 'setGeneralSettings'); ?>",
+                disconnectUrl: "<?php echo $block->getControllerUrl('Disconnect','{storeId}', 'disconnect'); ?>"
+            },
+            payment: {
+                getPaymentMethodsUrl: "<?php echo $block->getControllerUrl('PaymentMethods','{storeId}', 'getPaymentMethods', '{merchantId}'); ?>",
+                getSellingCountriesUrl: "<?php echo $block->getControllerUrl('CountrySettings','{storeId}', 'getSellingCountries'); ?>",
+                getCountrySettingsUrl: "<?php echo $block->getControllerUrl('CountrySettings','{storeId}', 'getCountrySettings'); ?>",
+                getConnectionDataUrl: "<?php echo $block->getControllerUrl('Onboarding','{storeId}', 'getConnectionData'); ?>"
+            }
+        };
+
+        SequraFE.state = new SequraFE.StateController({
+            storesUrl: "<?php echo $block->getControllerUrl('Stores', '{storeId}','getStores'); ?>",
+            currentStoreUrl: "<?php echo $block->getControllerUrl('Stores', '{storeId}','getCurrentStore'); ?>",
+            stateUrl: "<?php echo $block->getControllerUrl('Integration', '{storeId}','getState'); ?>",
+            versionUrl: "<?php echo $block->getControllerUrl('Integration', '{storeId}','getVersion'); ?>",
+            shopNameUrl: "<?php echo $block->getControllerUrl('Integration', '{storeId}','getShopName'); ?>",
+            pageConfiguration: pageConfiguration
+        });
+
+        SequraFE.pages = {
+            onboarding: ['connect','countries', 'widgets'],
+            settings: ['general','connection','widget'],
+            payment: ['methods']
+        }
+
+        SequraFE.isPromotional = !SequraFE.pages.payment || SequraFE.pages.payment.length === 0;
+
+        SequraFE.state.display();
+        SequraFE.utilities.hideLoader();
+    });
+</script>

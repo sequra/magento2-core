@@ -9,3 +9,8 @@
     color: #009C5C;
     cursor: pointer;
 }
+
+.sequra_partpayment_description {
+    padding: 0 20px 20px;
+    color: gray;
+}

@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <head>
+        <meta charset="UTF-8"/>
+        <meta name="viewport"
+              content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"
+        />
+        <meta http-equiv="X-UA-Compatible" content="ie=edge"/>
+        <title>SeQura</title>
+
+        <css src="Sequra_Core::css/sequra-core.css"/>
+        <link src="Sequra_Core::js/ImagesProvider.js"/>
+        <link src="Sequra_Core::js/AjaxService.js"/>
+        <link src="Sequra_Core::js/TranslationService.js"/>
+        <link src="Sequra_Core::js/TemplateService.js"/>
+        <link src="Sequra_Core::js/UtilityService.js"/>
+        <link src="Sequra_Core::js/ValidationService.js"/>
+        <link src="Sequra_Core::js/ResponseService.js"/>
+        <link src="Sequra_Core::js/PageControllerFactory.js"/>
+        <link src="Sequra_Core::js/FormFactory.js"/>
+        <link src="Sequra_Core::js/StateUUIDService.js"/>
+        <link src="Sequra_Core::js/ElementGenerator.js"/>
+        <link src="Sequra_Core::js/ModalComponent.js"/>
+        <link src="Sequra_Core::js/DropdownComponent.js"/>
+        <link src="Sequra_Core::js/MultiItemSelectorComponent.js"/>
+        <link src="Sequra_Core::js/DataTableComponent.js"/>
+        <link src="Sequra_Core::js/PageHeaderComponent.js"/>
+        <link src="Sequra_Core::js/ConnectionSettingsForm.js"/>
+        <link src="Sequra_Core::js/WidgetSettingsForm.js"/>
+        <link src="Sequra_Core::js/GeneralSettingsForm.js"/>
+        <link src="Sequra_Core::js/OrderStatusMappingSettingsForm.js"/>
+        <link src="Sequra_Core::js/StateController.js"/>
+        <link src="Sequra_Core::js/OnboardingController.js"/>
+        <link src="Sequra_Core::js/PaymentController.js"/>
+        <link src="Sequra_Core::js/SettingsController.js"/>
+    </head>
+    <body>
+        <referenceContainer name="page.messages">
+            <block class="Magento\Framework\View\Element\Messages" name="messages" as="messages"/>
+        </referenceContainer>
+        <referenceContainer name="content">
+            <block class="Sequra\Core\Block\Adminhtml\Configuration\Index" name="adminhtml.sequra.index"
+                   template="Sequra_Core::configuration/index.phtml"/>
+        </referenceContainer>
+    </body>
+</page>

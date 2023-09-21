@@ -1,0 +1,50 @@
+.sequra-table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 35px 0 40px 0;
+}
+
+.sequra-table th, td {
+    max-width: 150px;
+    padding: 12px 10px 12px 0;
+    text-align: left;
+    vertical-align: top;
+}
+
+.sequra-table th {
+    font-weight: bold;
+    border-bottom: 1px solid #ccc;
+}
+
+.sequra-info-field {
+    margin-bottom: 15px;
+}
+
+.sequra-title {
+    font-weight: bold;
+}
+
+.sequra-link {
+    text-decoration: none;
+}
+
+.sequra-link:hover {
+    text-decoration: none;
+}
+
+.sequra-preview {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #f1f1f1;
+    box-shadow: none;
+    border: 1px solid #ccc;
+    height: 35px;
+    width: 150px;
+    font-size: small;
+}
+
+.sequra-preview:hover {
+    background-color: white;
+    cursor: pointer;
+}

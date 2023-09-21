@@ -1,0 +1,311 @@
+{
+  "general": {
+    "save": "1",
+    "saveChanges": "2",
+    "cancel": "3",
+    "disconnect": "4",
+    "confirm": "5",
+    "continue": "6",
+    "search": "7",
+    "selectStore": "8",
+    "selectStorePlaceholder": "9",
+    "switchStore": "10",
+    "downloadNewVersion": "11",
+    "merchant": "12",
+    "settings": "13",
+    "paymentMethods": "14",
+    "changesSaved": "15",
+    "noItemsAvailable": "16",
+    "errors": {
+      "InvalidOperationException": "17",
+      "unknown": "18",
+      "saveEntityFailed": "19",
+      "getEntityFailed": "20",
+      "failedToRetrieveStores": "21",
+      "failedToRetrieveOrderStatuses": "22",
+      "stores": {
+        "invalidIdAndStatus": "23"
+      },
+      "connection": {
+        "invalidUsernameOrPassword": "24",
+        "invalidMerchantId": "25",
+        "emptyStoreId": "26",
+        "invalidMode": "27",
+        "emptyData": "28",
+        "settingsNotFound": "29",
+        "invalidRoles": "30",
+        "invalidSettings": "31",
+        "credentialsDoNotExist": "32",
+        "testKeyChanged": "33",
+        "liveKeyChanged": "34",
+        "testMerchantIdChanged": "35",
+        "liveMerchantIdChanged": "36",
+        "companyLevelKey": "37",
+        "invalidKey": "38",
+        "originFailed": "39",
+        "clientKeyGenerationFailed": "40"
+      },
+      "countries": {
+        "noCountries": "41"
+      },
+      "payments": {
+        "requiredFieldsError": "42",
+        "notConfigured": "43",
+        "emptyDataError": "44",
+        "failedToRetrieveMethods": "45",
+        "saveFailed": "46",
+        "updateFailed": "47",
+        "deleteFailed": "48",
+        "failedToRetrieveMethodssequra": "49"
+      },
+      "generalSettings": {
+        "captureDelayError": "50",
+        "retentionPeriodError": "51"
+      },
+      "webhooks": {
+        "merchantError": "52",
+        "failedToRegisterWebhook": "53",
+        "hmacError": "54"
+      }
+    }
+  },
+  "sidebar": {
+    "generalSettings": "55",
+    "connectionSettings": "56",
+    "orderStatusSettings": "57",
+    "widgetSettings": "58",
+    "stepOneLabel": "59",
+    "stepOneDescription": "60",
+    "stepTwoLabel": "61",
+    "stepThreeLabel": "62",
+    "stepFourLabel": "63",
+    "stepFiveLabel": "64"
+  },
+  "validation": {
+    "requiredField": "65",
+    "invalidField": "66",
+    "invalidEmail": "67",
+    "maxLength": "68",
+    "numeric": "69",
+    "greaterThanZero": "70",
+    "nonNegative": "71",
+    "numberOfDecimalPlaces": "72",
+    "integer": "73",
+    "invalidUrl": "74",
+    "invalidFieldValue": "75",
+    "invalidMaxValue": "76",
+    "invalidImageType": "77",
+    "invalidImageSize": "78"
+  },
+  "payments": {
+    "title": "79",
+    "description": "80",
+    "countries": {
+      "label": "81",
+      "description": "82"
+    },
+    "paymentMethods": "83",
+    "minimumAmount": "84",
+    "maximumAmount": "85",
+    "availableFrom": "86",
+    "availableTo": "87"
+  },
+  "connection": {
+    "title": {
+      "onboarding": "88",
+      "settings": "89"
+    },
+    "description": {
+      "onboarding": "90",
+      "settings": "91",
+      "endLink": "92"
+    },
+    "environment": {
+      "label": "93",
+      "options": {
+        "live": "94",
+        "sandbox": "95"
+      }
+    },
+    "username": {
+      "label": "96",
+      "description": "97"
+    },
+    "password": {
+      "label": "98",
+      "description": "99"
+    },
+    "sendStatisticalData": {
+      "description": {
+        "text": "100",
+        "endLink": "101"
+      }
+    }
+  },
+  "countries": {
+    "title": "102",
+    "description": "103",
+    "selector": {
+      "label": "104",
+      "description": "105"
+    },
+    "ES": {
+      "label": "106",
+      "description": "107"
+    },
+    "FR": {
+      "label": "108",
+      "description": "109"
+    },
+    "CO": {
+      "label": "110",
+      "description": "111"
+    },
+    "IT": {
+      "label": "112",
+      "description": "113"
+    },
+    "PT": {
+      "label": "114",
+      "description": "115"
+    },
+    "PE": {
+      "label": "116",
+      "description": "117"
+    }
+  },
+  "widgets": {
+    "title": {
+      "onboarding": "118",
+      "settings": "119"
+    },
+    "description": "120",
+    "usePromotionalComponents": {
+      "label": "121",
+      "options": {
+        "yes": "122",
+        "no": "123"
+      }
+    },
+    "assetKey": {
+      "label": "124",
+      "description": "125"
+    },
+    "displayOnProductPage": {
+      "label": "126",
+      "description": "127"
+    },
+    "configurator": {
+      "buttonLabel": "128",
+      "modal": {
+        "title": "129"
+      }
+    },
+    "showInProductListing": {
+      "label": "130",
+      "description": "131"
+    },
+    "showInCartPage": {
+      "label": "132",
+      "description": "133"
+    },
+    "configureTexts": "134"
+  },
+  "orderStatusSettings": {
+    "title": "135",
+    "description": "136",
+    "orderStatusMap": "137",
+    "newOrder": {
+      "label": "138",
+      "description": "139"
+    },
+    "paymentFailed": {
+      "label": "140",
+      "description": "141"
+    },
+    "paymentAwaiting": {
+      "label": "142",
+      "description": "143"
+    },
+    "paymentSuccess": {
+      "label": "144",
+      "description": "145"
+    },
+    "shipped": {
+      "label": "146",
+      "description": "147"
+    },
+    "complete": {
+      "label": "148",
+      "description": "149"
+    },
+    "cancelled": {
+      "label": "150",
+      "description": "151"
+    },
+    "refunded": {
+      "label": "152",
+      "description": "153"
+    }
+  },
+  "generalSettings": {
+    "title": "154",
+    "description": "155",
+    "captureDelay": {
+      "label": "156",
+      "description": "157"
+    },
+    "showPromotionalWidget": {
+      "label": "158",
+      "description": "159"
+    },
+    "captureMethod": {
+      "label": "160",
+      "description": "161",
+      "options": {
+        "direct": "162",
+        "manual": "163"
+      }
+    },
+    "enablePartialRefunds": {
+      "label": "164",
+      "description": "165"
+    },
+    "logEnabled": {
+      "label": "166",
+      "description": "167"
+    },
+    "retentionPeriod": {
+      "label": "168",
+      "description": "169"
+    },
+    "promotionalWidget": {
+      "label": "170",
+      "description": "171"
+    },
+    "sendStatisticalData": {
+      "label": "172",
+      "description": "173"
+    },
+    "enablePartialCapture": {
+      "label": "174",
+      "description": "175"
+    },
+    "autoRefund": {
+      "label": "176",
+      "description": "177"
+    },
+    "tokenization": {
+      "label": "178",
+      "description": "179"
+    },
+    "customerData": {
+      "label": "180",
+      "description": "181"
+    },
+    "excludedProducts": {
+      "label": "182",
+      "description": "183"
+    }
+  }
+}
