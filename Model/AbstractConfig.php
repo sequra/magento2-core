@@ -170,7 +170,7 @@ abstract class AbstractConfig implements ConfigInterface
                 $underscored = strtolower(preg_replace('/(.)([A-Z])/', "$1_$2", $key));
                 $path = $this->_getSpecificConfigPath($underscored);
                 if ($path !== null) {
-                    $value = $this->_scopeConfig->getValue(
+                    $value = $this->scopeConfig->getValue(
                         $path,
                         ScopeInterface::SCOPE_STORE,
                         $storeId??$this->storeId
