@@ -55,8 +55,13 @@ if (!window.SequraFE) {
          * @param {boolean} disable
          */
         this.disableFooter = (disable) => {
-            document.querySelector('.sq-page-footer .sqp-actions .sqp-save').disabled = disable;
-            document.querySelector('.sq-page-footer .sqp-actions .sqp-cancel').disabled = disable;
+            const saveButton = document.querySelector('.sq-page-footer .sqp-actions .sqp-save');
+            const cancelButton = document.querySelector('.sq-page-footer .sqp-actions .sqp-cancel');
+
+            if(saveButton && cancelButton){
+                saveButton.disabled = disable;
+                cancelButton.disabled = disable;
+            }
         };
         /**
          * Creates deep clone of an object with object's properties.

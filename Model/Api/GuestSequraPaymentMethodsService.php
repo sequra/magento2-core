@@ -2,14 +2,6 @@
 
 namespace Sequra\Core\Model\Api;
 
-use Magento\Checkout\Model\Type\Onepage;
-use Magento\Framework\App\Request\Http;
-use Magento\Framework\Data\Form\FormKey\Validator;
-use Magento\Framework\Exception\NoSuchEntityException;
-use Magento\Framework\Serialize\Serializer\Json;
-use Magento\Quote\Api\CartRepositoryInterface;
-use Magento\Quote\Api\GuestCartRepositoryInterface;
-use Magento\Quote\Model\Quote;
 use Sequra\Core\Api\GuestSequraPaymentMethodsInterface;
 
 /**
@@ -17,61 +9,29 @@ use Sequra\Core\Api\GuestSequraPaymentMethodsInterface;
  *
  * @package Sequra\Core\Model\Api
  */
-class GuestSequraPaymentMethodsService extends AbstractrSequraPaymentMethodsService implements GuestSequraPaymentMethodsInterface
+class GuestSequraPaymentMethodsService implements GuestSequraPaymentMethodsInterface
 {
     /**
-     * @var Http
+     * @var FormValidationSequraPaymentMethodsService
      */
-    protected $request;
+    private $paymentMethodsService;
 
     /**
-     * @var Validator
+     * GuestSequraPaymentMethodsService constructor.
+     * @param FormValidationSequraPaymentMethodsService $paymentMethodsService
      */
-    protected $formKeyValidator;
-    /**
-     * @var GuestCartRepositoryInterface
-     */
-    private $guestCartRepository;
-    /**
-     * @var CartRepositoryInterface
-     */
-    private $cartRepository;
-
-    /**
-     * AbstractInternalApiController constructor.
-     * @param Http $request
-     * @param Validator $formKeyValidator
-     * @param GuestCartRepositoryInterface $quoteResotory
-     * @param \Sequra\Core\Model\Api\Builders\CreateOrderRequestBuilderFactory $createOrderRequestBuilderFactory
-     */
-    public function __construct(
-        Http $request,
-        Json $jsonSerializer,
-        Validator $formKeyValidator,
-        GuestCartRepositoryInterface $guestCartRepository,
-        CartRepositoryInterface $cartRepository,
-        \Sequra\Core\Model\Api\Builders\CreateOrderRequestBuilderFactory $createOrderRequestBuilderFactory
-    ) {
-        parent::__construct($request, $jsonSerializer, $formKeyValidator, $createOrderRequestBuilderFactory);
-
-        $this->guestCartRepository = $guestCartRepository;
-        $this->cartRepository = $cartRepository;
+    public function __construct(FormValidationSequraPaymentMethodsService $paymentMethodsService)
+    {
+        $this->paymentMethodsService = $paymentMethodsService;
     }
 
-    protected function getQuote(string $cartId): Quote
+    public function getAvailablePaymentMethods(string $cartId, string $formKey): array
     {
-        /** @var Quote $quote */
-        $quote = $this->guestCartRepository->get($cartId);
-        if (!$quote->getIsActive()) {
-            throw NoSuchEntityException::singleField('cartId', $cartId);
-        }
+        return $this->paymentMethodsService->getAvailablePaymentMethods($cartId, $formKey);
+    }
 
-        if ($quote->getCheckoutMethod() !== Onepage::METHOD_GUEST) {
-            $quote->setCheckoutMethod(Onepage::METHOD_GUEST);
-            $quote->setCustomerIsGuest(true);
-            $this->cartRepository->save($quote);
-        }
-
-        return $quote;
+    public function getForm(string $cartId, string $formKey): string
+    {
+        return $this->paymentMethodsService->getForm($cartId, $formKey);
     }
 }

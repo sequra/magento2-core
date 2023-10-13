@@ -22,6 +22,7 @@ if (!window.SequraFE) {
      * getSellingCountriesUrl: string,
      * getCountrySettingsUrl: string,
      * getConnectionDataUrl: string
+     * validateConnectionDataUrl: string
      * }} configuration
      * @constructor
      */
@@ -33,10 +34,6 @@ if (!window.SequraFE) {
         let currentStoreId = '';
         /** @type Version */
         let version;
-        /** @type string */
-        let merchantId = '';
-        /** @type string */
-        let env = '';
         /** @type Store[] */
         let stores;
         /** @type SellingCountry[] */
@@ -45,6 +42,8 @@ if (!window.SequraFE) {
         let paymentMethods;
         /** @type CountrySettings[] */
         let countryConfiguration;
+        /** @type ConnectionSettings */
+        let connectionSettings;
 
         /**
          * Displays page content.
@@ -52,38 +51,39 @@ if (!window.SequraFE) {
          * @param {{ state?: string, storeId: string }} config
          */
         this.display = ({storeId}) => {
-            utilities.showLoader();
             currentStoreId = storeId;
             templateService.clearMainPage();
 
-            Promise.all([
-                SequraFE.state.getStores(),
-                SequraFE.state.getVersion(),
-                api.get(configuration.getConnectionDataUrl),
-                api.get(configuration.getSellingCountriesUrl),
-                api.get(configuration.getCountrySettingsUrl)
-            ])
-                .then(([
-                           storesData,
-                           versionData,
-                           connectionData,
-                           sellingCountriesData,
-                           countryConfigurationData,
-                       ]) => {
-                    stores = storesData;
-                    version = versionData;
-                    merchantId = connectionData.merchantId;
-                    env = connectionData.environment;
-                    sellingCountries = sellingCountriesData;
-                    countryConfiguration = countryConfigurationData;
+            stores = SequraFE.state.getData('stores');
+            version = SequraFE.state.getData('version');
+            connectionSettings = SequraFE.state.getData('connectionSettings');
+            countryConfiguration = SequraFE.state.getData('countrySettings');
+            sellingCountries = SequraFE.state.getData('sellingCountries');
+            paymentMethods = SequraFE.state.getData('paymentMethods');
 
-                    return api.get(configuration.getPaymentMethodsUrl.replace(encodeURIComponent('{merchantId}'), countryConfiguration[0].merchantId));
-                })
-                .then((methods) => paymentMethods = methods)
-                .finally(() => {
-                    initializePage();
-                    utilities.hideLoader();
-                });
+            if (paymentMethods && sellingCountries) {
+                initializePage();
+                utilities.hideLoader();
+
+                return;
+            }
+
+            Promise.all([
+                sellingCountries ? [] : api.get(configuration.getSellingCountriesUrl),
+                paymentMethods ? [] : api.get(configuration.getPaymentMethodsUrl.replace(encodeURIComponent('{merchantId}'), countryConfiguration[0].merchantId)),
+            ]).then(([sellingCountriesRes, paymentMethodsRes]) => {
+                if (sellingCountriesRes.length !== 0) {
+                    sellingCountries = sellingCountriesRes;
+                    SequraFE.state.setData('sellingCountries', sellingCountriesRes)
+                }
+
+                if (paymentMethodsRes.length !== 0) {
+                    paymentMethods = paymentMethodsRes;
+                    SequraFE.state.setData('paymentMethods', paymentMethodsRes)
+                }
+
+                initializePage();
+            }).finally(() => utilities.hideLoader());
         };
 
         /**
@@ -101,8 +101,7 @@ if (!window.SequraFE) {
                                 versionLabel: version.new,
                                 versionUrl: version.downloadNewVersionUrl
                             },
-                            mode: env === 'live' ? env : 'test',
-                            merchantName: merchantId,
+                            mode: connectionSettings.environment === 'live' ? connectionSettings.environment : 'test',
                             activeStore: currentStoreId,
                             stores: stores.map((store) => ({label: store.storeName, value: store.storeId})),
                             onChange: (storeId) => {
@@ -215,7 +214,7 @@ if (!window.SequraFE) {
                 .then((methods) => {
                     paymentMethods = [...methods];
                     document.querySelector('.sq-table-container').remove();
-                    document.querySelector('.sq-content-inner').append(
+                    document.querySelector('.sq-content-inner')?.append(
                         components.DataTable.create(getTableHeaders(), getTableRows())
                     )
                 })

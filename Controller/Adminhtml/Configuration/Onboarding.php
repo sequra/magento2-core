@@ -37,6 +37,7 @@ class Onboarding extends BaseConfigurationController
     protected function getConnectionData(): Json
     {
         $data = AdminAPI::get()->connection($this->storeId)->getOnboardingData();
+        $this->addResponseCode($data);
 
         return $this->result->setData($data->toArray());
     }

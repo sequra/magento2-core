@@ -36,6 +36,7 @@ class GeneralSettings extends BaseConfigurationController
     protected function getShopCategories(): Json
     {
         $data = AdminAPI::get()->generalSettings($this->storeId)->getShopCategories();
+        $this->addResponseCode($data);
 
         return $this->result->setData($data->toArray());
     }
@@ -48,6 +49,7 @@ class GeneralSettings extends BaseConfigurationController
     protected function getGeneralSettings(): Json
     {
         $data = AdminAPI::get()->generalSettings($this->storeId)->getGeneralSettings();
+        $this->addResponseCode($data);
 
         return $this->result->setData($data->toArray());
     }

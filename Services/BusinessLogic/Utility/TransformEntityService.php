@@ -19,13 +19,26 @@ use SeQura\Core\BusinessLogic\Domain\Order\Models\OrderRequest\Item\ProductItem;
 class TransformEntityService
 {
     /**
+     * @var SeQuraTranslationProvider
+     */
+    private $translationProvider;
+
+    /**
+     * @param SeQuraTranslationProvider $translationProvider
+     */
+    public function __construct(SeQuraTranslationProvider $translationProvider)
+    {
+        $this->translationProvider = $translationProvider;
+    }
+
+    /**
      * Creates a seQura order address from the magento order data.
      *
      * @param OrderAddressInterface|MagentoAddress $address
      *
      * @return SeQuraAddress
      */
-    public static function transformAddressToSeQuraOrderAddress($address): SeQuraAddress
+    public function transformAddressToSeQuraOrderAddress($address): SeQuraAddress
     {
         return new SeQuraAddress(
             $address->getCompany() ?? '',
@@ -56,12 +69,12 @@ class TransformEntityService
      * @throws InvalidQuantityException
      * @throws LocalizedException
      */
-    public static function transformOrderCartToSeQuraCart(MagentoOrder $orderData, bool $isShipped): SeQuraCart
+    public function transformOrderCartToSeQuraCart(MagentoOrder $orderData, bool $isShipped): SeQuraCart
     {
         return new SeQuraCart(
             $orderData->getOrderCurrencyCode(),
             false,
-            self::transformOrderItemsToSeQuraCartItems($orderData, $isShipped)
+            $this->transformOrderItemsToSeQuraCartItems($orderData, $isShipped)
         );
     }
 
@@ -76,17 +89,19 @@ class TransformEntityService
      * @throws InvalidQuantityException
      * @throws LocalizedException
      */
-    public static function transformOrderItemsToSeQuraCartItems(MagentoOrder $orderData, bool $isShipped): array
+    public function transformOrderItemsToSeQuraCartItems(MagentoOrder $orderData, bool $isShipped): array
     {
         $items = [];
+        $orderItemsTotal = 0;
         $isUnshippedOrFullyShipped = true;
         /** @var MagentoOrder\Item $orderItem */
         foreach ($orderData->getAllVisibleItems() as $orderItem) {
+            $orderItemsTotal += self::transformPrice($orderItem->getRowTotalInclTax());
             $orderedQty = $orderItem->getQtyOrdered() ? (int)$orderItem->getQtyOrdered() : 0;
             $shippedQty = $orderItem->getQtyShipped() ? (int)$orderItem->getQtyShipped() : 0;
             $refundedQty = $orderItem->getQtyRefunded() ? (int)$orderItem->getQtyRefunded() : 0;
             if (($shippedQty + $refundedQty) > $orderedQty) {
-                throw new LocalizedException(__('Invalid quantity to ship/refund. You cannot ship or refund items that have already been either shipped or refunded.'));
+                throw new LocalizedException($this->translationProvider->translate('sequra.error.invalidShipRefundQuantity'));
             }
 
             $quantity = $isShipped ? $shippedQty : $orderedQty - $shippedQty - $refundedQty;
@@ -115,24 +130,56 @@ class TransformEntityService
             ]);
         }
 
-        $shippingAmount = $orderData->getShippingAmount();
-        if ($isUnshippedOrFullyShipped && $shippingAmount && $shippingAmount > 0 && !self::isCartEmpty($items)) {
+        $refundedShippingAmount = $orderData->getShippingRefunded() ? self::transformPrice($orderData->getShippingRefunded()) : 0;
+        $shippingAmount = $orderData->getShippingInclTax() ? self::transformPrice($orderData->getShippingInclTax()) : 0;
+        $totalShipmentCost = $shippingAmount - $refundedShippingAmount;
+        $orderItemsTotal += $shippingAmount;
+        if ($isUnshippedOrFullyShipped && $totalShipmentCost > 0 && !self::isCartEmpty($items)) {
             $items[] = HandlingItem::fromArray([
                 'type' => ItemType::TYPE_HANDLING,
                 'reference' => 'shipping cost',
                 'name' => 'Shipping cost',
-                'total_with_tax' => self::transformPrice($orderData->getShippingInclTax()),
+                'total_with_tax' => $totalShipmentCost,
             ]);
         }
 
-        $discountAmount = $orderData->getDiscountAmount();
-        if ($isUnshippedOrFullyShipped && $discountAmount && $discountAmount < 0 && !self::isCartEmpty($items)) {
+        $refundedDiscountAmount = $orderData->getDiscountRefunded() ? self::getTotalDiscountAmount($orderData, true) : 0;
+        $discountAmount = $orderData->getDiscountAmount() ? self::getTotalDiscountAmount($orderData) : 0;
+        $totalDiscount = $discountAmount - $refundedDiscountAmount;
+        $orderItemsTotal += $discountAmount;
+        if ($isUnshippedOrFullyShipped && $totalDiscount < 0 && !self::isCartEmpty($items)) {
             $items[] = DiscountItem::fromArray([
                 'type' => ItemType::TYPE_DISCOUNT,
                 'reference' => 'discount',
                 'name' => 'Discount',
-                'total_with_tax' => self::transformPrice($orderData->getDiscountAmount()),
+                'total_with_tax' => $totalDiscount,
             ]);
+        }
+
+        if ($orderData->getAdjustmentPositive()) {
+            $orderItemsTotal += self::transformPrice($orderData->getAdjustmentPositive());
+        }
+
+        if ($orderData->getAdjustmentNegative()) {
+            $orderItemsTotal += self::transformPrice(-$orderData->getAdjustmentNegative());
+        }
+
+        $diff = self::transformPrice($orderData->getGrandTotal()) - $orderItemsTotal;
+
+        if ($diff < 0 && $isUnshippedOrFullyShipped && !self::isCartEmpty($items)) {
+            $items[] = new DiscountItem('additional_discount', 'discount', $diff);
+        }
+
+        if ($diff > 0 && $isUnshippedOrFullyShipped && !self::isCartEmpty($items)) {
+            $items[] = new HandlingItem('additional_handling', 'surcharge', $diff);
+        }
+
+        $cartTotal = array_reduce($items, static function ($sum, $item) {
+            return $sum + $item->getTotalWithTax();
+        }, 0);
+
+        if ($cartTotal < 0) {
+            throw new LocalizedException($this->translationProvider->translate('sequra.error.invalidRefundAmount'));
         }
 
         return $items;
@@ -147,7 +194,69 @@ class TransformEntityService
      */
     public static function transformPrice($price): int
     {
-        return (int)($price * 100);
+        return (int)round($price * 100);
+    }
+
+    /**
+     * Get the valid total discount amount for SeQura.
+     *
+     * @param MagentoOrder $orderData
+     * @param bool $isRefunded
+     *
+     * @return int
+     */
+    private static function getTotalDiscountAmount(MagentoOrder $orderData, bool $isRefunded = false): int
+    {
+        $totalDiscount = 0;
+
+        /** @var MagentoOrder\Item $item */
+        foreach ($orderData->getAllVisibleItems() as $item) {
+            $discount = $isRefunded ? $item->getDiscountRefunded() : $item->getDiscountAmount();
+
+            // Needed because of tax difference on SeQura and Magento
+            if (self::isTaxedAfterDiscount($item) && !self::doesPriceIncludeTax($orderData)) {
+                $discount *= (1 + $item->getTaxPercent() / 100);
+            }
+
+            $totalDiscount += self::transformPrice($discount);
+        }
+
+        return -1 * $totalDiscount;
+    }
+
+    /**
+     * Returns true if the order tax was applied after the discount.
+     *
+     * @param MagentoOrder\Item $orderItem
+     *
+     * @return bool
+     */
+    private static function isTaxedAfterDiscount(MagentoOrder\Item $orderItem): bool
+    {
+        if (
+            !$orderItem->getTaxAmount() || !$orderItem->getTaxPercent() ||
+            self::transformPrice($orderItem->getTaxAmount()) === 0 ||
+            self::transformPrice($orderItem->getTaxPercent()) === 0
+        ) {
+            return false;
+        }
+
+        return self::transformPrice($orderItem->getRowTotalInclTax()) !== (self::transformPrice($orderItem->getTaxAmount()) * 100) / $orderItem->getTaxPercent();
+    }
+
+    /**
+     * Returns true if catalog prices include tax.
+     *
+     * @param MagentoOrder $order
+     *
+     * @return bool
+     */
+    private static function doesPriceIncludeTax(MagentoOrder $order): bool
+    {
+        return self::transformPrice($order->getGrandTotal()) -
+            self::transformPrice($order->getSubtotalInclTax()) -
+            self::transformPrice($order->getShippingInclTax()) -
+            self::transformPrice($order->getDiscountAmount()) === 0;
     }
 
     /**

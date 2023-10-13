@@ -36,7 +36,7 @@ if (!window.SequraFE) {
                     return response.json();
                 }
 
-                if (response.status === 401) {
+                if (response.status === 401 || response.status === 403) {
                     return response.json().then(SequraFE.responseService.unauthorizedHandler);
                 }
 

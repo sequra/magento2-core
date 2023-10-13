@@ -3,11 +3,15 @@
 namespace Sequra\Core\Services\BusinessLogic;
 
 use Exception;
+use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\ScopeResolverInterface;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Locale\ResolverInterface;
+use Magento\Store\Api\Data\StoreConfigInterface;
 use Magento\Store\Api\StoreConfigManagerInterface;
+use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
+use SeQura\Core\BusinessLogic\DataAccess\PromotionalWidgets\Entities\WidgetSettings as WidgetSettingsEntity;
 use SeQura\Core\BusinessLogic\Domain\Connection\Models\ConnectionData;
 use SeQura\Core\BusinessLogic\Domain\Connection\Services\ConnectionService;
 use SeQura\Core\BusinessLogic\Domain\CountryConfiguration\Models\CountryConfiguration;
@@ -20,6 +24,8 @@ use SeQura\Core\BusinessLogic\Domain\PromotionalWidgets\Services\WidgetSettingsS
 use SeQura\Core\BusinessLogic\Domain\Stores\Models\Store;
 use SeQura\Core\BusinessLogic\SeQuraAPI\BaseProxy;
 use SeQura\Core\Infrastructure\Http\Exceptions\HttpRequestException;
+use SeQura\Core\Infrastructure\ORM\Exceptions\RepositoryNotRegisteredException;
+use SeQura\Core\Infrastructure\ORM\RepositoryRegistry;
 use SeQura\Core\Infrastructure\ServiceRegister;
 
 /**
@@ -53,18 +59,24 @@ class WidgetConfigService
      * @var StoreConfigManagerInterface
      */
     private $storeConfigManager;
+    /**
+     * @var ScopeConfigInterface
+     */
+    private $scopeConfig;
 
     /**
      * @param StoreManagerInterface $storeManager
      * @param ScopeResolverInterface $scopeResolver
      * @param ResolverInterface $localeResolver
      * @param StoreConfigManagerInterface $storeConfigManager
+     * @param ScopeConfigInterface $scopeConfig
      */
     public function __construct(
         StoreManagerInterface                         $storeManager,
         \Magento\Framework\App\ScopeResolverInterface $scopeResolver,
         \Magento\Framework\Locale\ResolverInterface   $localeResolver,
-        StoreConfigManagerInterface $storeConfigManager
+        StoreConfigManagerInterface $storeConfigManager,
+        ScopeConfigInterface $scopeConfig
     )
     {
         $this->storeManager = $storeManager;
@@ -72,6 +84,7 @@ class WidgetConfigService
         $this->localeResolver = $localeResolver;
         $this->formatter = $this->getFormatter();
         $this->storeConfigManager = $storeConfigManager;
+        $this->scopeConfig = $scopeConfig;
     }
 
     /**
@@ -118,10 +131,11 @@ class WidgetConfigService
         $widgetSettings = $this->getWidgetSettings();
         $store = $this->storeManager->getStore(StoreContext::getInstance()->getStoreId());
         $storeConfig = $this->storeConfigManager->getStoreConfigs([$store->getCode()])[0];
-        $code = substr($storeConfig->getLocale(), 3);
+
+        $code = $this->getCountry($storeConfig);
         $merchantId = $this->getMerchantId($code, $isPreview);
 
-        if (!$widgetSettings || !$merchantId) {
+        if (!$widgetSettings || !$merchantId || !$widgetSettings->isEnabled()) {
             return [];
         }
 
@@ -136,7 +150,7 @@ class WidgetConfigService
             'decimalSeparator' => $this->formatter->getSymbol(\NumberFormatter::DECIMAL_SEPARATOR_SYMBOL),
             'thousandSeparator' => $this->formatter->getSymbol(\NumberFormatter::GROUPING_SEPARATOR_SYMBOL),
             'locale' => str_replace('_', '-', $this->localeResolver->getLocale()),
-            'currency' => $store->getDefaultCurrencyCode(),
+            'currency' => 'EUR',
             'isProductListingEnabled' => $widgetSettings->isShowInstallmentsInProductListing(),
             'isProductEnabled' => $widgetSettings->isDisplayOnProductPage(),
             'widgetConfig' => [
@@ -160,15 +174,19 @@ class WidgetConfigService
     }
 
     /**
-     * @param string $code
+     * @param string|null $code
      * @param bool $isPreview
      *
      * @return string
      */
-    private function getMerchantId(string $code, bool $isPreview): string
+    private function getMerchantId(?string $code, bool $isPreview): string
     {
         $merchantId = '';
         $countryConfig = $this->getCountryConfiguration();
+
+        if (empty($countryConfig) || !$code) {
+            return $merchantId;
+        }
 
         if ($isPreview && isset($countryConfig[0])) {
             return $countryConfig[0]->getMerchantId();
@@ -181,6 +199,15 @@ class WidgetConfigService
         }
 
         return $merchantId;
+    }
+
+    private function getCountry(StoreConfigInterface $storeConfig)
+    {
+        return $this->scopeConfig->getValue(
+            'general/country/default',
+            ScopeInterface::SCOPE_STORE,
+            $storeConfig->getId()
+        );
     }
 
     /**
@@ -233,10 +260,22 @@ class WidgetConfigService
 
     /**
      * @return Store|null
+     *
+     * @throws RepositoryNotRegisteredException
      */
     private function getDefaultStore(): ?Store
     {
-        return $this->getStoreService()->getDefaultStore();
+        $repository = RepositoryRegistry::getRepository(WidgetSettingsEntity::class);
+        $settings = $repository->select();
+
+        /** @var WidgetSettingsEntity $entity */
+        foreach ($settings as $entity) {
+            if ($entity->getWidgetSettings()->isEnabled()) {
+                return $this->getStoreService()->getStoreById($entity->getStoreId());
+            }
+        }
+
+        return null;
     }
 
     /**

@@ -15,13 +15,14 @@ use SeQura\Core\BusinessLogic\Domain\Order\Models\PaymentMethod;
 use SeQura\Core\BusinessLogic\Domain\Order\Models\SeQuraOrder;
 use SeQura\Core\BusinessLogic\Domain\Order\OrderRequestStatusMapping;
 use SeQura\Core\BusinessLogic\Domain\Order\RepositoryContracts\SeQuraOrderRepositoryInterface;
-use SeQura\Core\BusinessLogic\Domain\PaymentMethod\Services\PaymentMethodsService;
 use SeQura\Core\BusinessLogic\Domain\Webhook\Models\Webhook;
 use SeQura\Core\BusinessLogic\Webhook\Exceptions\OrderNotFoundException;
 use SeQura\Core\BusinessLogic\Webhook\Services\ShopOrderService;
 use Magento\Sales\Model\Order;
 use SeQura\Core\Infrastructure\Http\Exceptions\HttpRequestException;
 use SeQura\Core\Infrastructure\ServiceRegister;
+use SeQura\Core\BusinessLogic\Domain\Order\Service\OrderService as SeQuraOrderService;
+use Sequra\Core\Services\BusinessLogic\Utility\SeQuraTranslationProvider;
 
 /**
  * Class OrderService
@@ -30,6 +31,11 @@ use SeQura\Core\Infrastructure\ServiceRegister;
  */
 class OrderService implements ShopOrderService
 {
+    /**
+     * Product codes for installment payments category.
+     */
+    private const INSTALLMENT_METHOD_CODES = ['pp3', 'pp6', 'pp9'];
+
     /**
      * @var SeQuraOrderRepositoryInterface
      */
@@ -50,13 +56,18 @@ class OrderService implements ShopOrderService
      * @var CartManagementInterface
      */
     private $cartManagement;
+    /**
+     * @var SeQuraTranslationProvider
+     */
+    private $translationProvider;
 
     public function __construct(
         SearchCriteriaBuilder          $searchOrderCriteriaBuilder,
         OrderRepositoryInterface       $shopOrderRepository,
         OrderManagementInterface       $orderManagement,
         CartManagementInterface        $cartManagement,
-        SeQuraOrderRepositoryInterface $seQuraOrderRepository
+        SeQuraOrderRepositoryInterface $seQuraOrderRepository,
+        SeQuraTranslationProvider      $translationProvider
     )
     {
         $this->searchOrderCriteriaBuilder = $searchOrderCriteriaBuilder;
@@ -64,6 +75,7 @@ class OrderService implements ShopOrderService
         $this->orderManagement = $orderManagement;
         $this->cartManagement = $cartManagement;
         $this->seQuraOrderRepository = $seQuraOrderRepository;
+        $this->translationProvider = $translationProvider;
     }
 
     /**
@@ -130,7 +142,7 @@ class OrderService implements ShopOrderService
     {
         $order = $this->getOrder($webhook);
         $order ? $this->updateSeQuraOrderStatus($webhook) : $order = $this->createOrder($webhook);
-        $order->addCommentToStatusHistory(__('Order ref sent to SeQura: %1', $order->getIncrementId()), $status);
+        $order->addCommentToStatusHistory($this->translationProvider->translate('sequra.orderRefSent', $order->getIncrementId()), $status);
         $this->shopOrderRepository->save($order);
     }
 
@@ -195,7 +207,7 @@ class OrderService implements ShopOrderService
         ))->toSequraOrderInstance($webhook->getOrderRef());
 
         $updatedSeQuraOrder->setPaymentMethod(
-            $this->getOrderPaymentMethodInfo($updatedSeQuraOrder->getMerchant()->getId(), $webhook->getProductCode())
+            $this->getOrderPaymentMethodInfo($updatedSeQuraOrder->getReference(), $webhook->getProductCode())
         );
 
         // Update order with merchant order references so that core can update order state with all required data
@@ -221,9 +233,24 @@ class OrderService implements ShopOrderService
         $this->seQuraOrderRepository->setSeQuraOrder($seQuraOrder);
     }
 
+    /**
+     * Gets the magento order.
+     *
+     * @param Webhook $webhook
+     *
+     * @return Order|null
+     *
+     * @throws OrderNotFoundException
+     */
     private function getOrder(Webhook $webhook): ?Order
     {
-        if (empty($webhook->getOrderRef1())) {
+        $orderIncrementId = $webhook->getOrderRef1();
+        if (empty($orderIncrementId)) {
+            $seQuraOrder = $this->getSeQuraOrder($webhook->getOrderRef());
+            $orderIncrementId = $seQuraOrder->getMerchantReference()->getOrderRef1();
+        }
+
+        if (empty($orderIncrementId)) {
             return null;
         }
 
@@ -278,20 +305,25 @@ class OrderService implements ShopOrderService
     /**
      * Returns PaymentMethod information for SeQura order.
      *
-     * @param string $merchantId
+     * @param string $orderReference
      * @param string $paymentMethodId
      *
      * @return PaymentMethod|null
      *
      * @throws HttpRequestException
      */
-    private function getOrderPaymentMethodInfo(string $merchantId, string $paymentMethodId): ?PaymentMethod
+    private function getOrderPaymentMethodInfo(string $orderReference, string $paymentMethodId): ?PaymentMethod
     {
-        $paymentMethods = $this->getPaymentMethodsService()->getMerchantsPaymentMethods($merchantId);
+        $methodCategories = $this->getSeQuraOrderService()->getAvailablePaymentMethodsInCategories($orderReference);
+        foreach ($methodCategories as $category) {
+            foreach ($category->getMethods() as $method) {
+                if ($method->getProduct() === $paymentMethodId) {
+                    $name = in_array($paymentMethodId, self::INSTALLMENT_METHOD_CODES) ?
+                        $category->getTitle() :
+                        $method->getTitle();
 
-        foreach ($paymentMethods as $method) {
-            if ($method->getProduct() === $paymentMethodId) {
-                return new PaymentMethod($paymentMethodId, $method->getTitle(), $method->getIcon());
+                    return new PaymentMethod($paymentMethodId, $name, $method->getIcon());
+                }
             }
         }
 
@@ -299,16 +331,16 @@ class OrderService implements ShopOrderService
     }
 
     /**
-     * Gets an instance of PaymentMethodsService.
+     * Returns an instance of Order service.
      *
-     * @return PaymentMethodsService
+     * @return SeQuraOrderService
      */
-    private function getPaymentMethodsService(): PaymentMethodsService
+    private function getSeQuraOrderService(): SeQuraOrderService
     {
-        if (!isset($this->paymentMethodsService)) {
-            $this->paymentMethodsService = ServiceRegister::getService(PaymentMethodsService::class);
+        if (!isset($this->sequraOrderService)) {
+            $this->sequraOrderService = ServiceRegister::getService(SeQuraOrderService::class);
         }
 
-        return $this->paymentMethodsService;
+        return $this->sequraOrderService;
     }
 }

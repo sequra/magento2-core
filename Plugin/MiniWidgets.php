@@ -4,12 +4,15 @@ namespace Sequra\Core\Plugin;
 
 use Exception;
 use Magento\Catalog\Model\ProductRepository;
+use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\Pricing\PriceCurrencyInterface;
 use Magento\Framework\Pricing\Render\Amount;
 use Magento\Framework\Pricing\SaleableInterface;
 use Magento\Store\Api\Data\StoreConfigInterface;
 use Magento\Store\Api\Data\StoreInterface;
 use Magento\Store\Api\StoreConfigManagerInterface;
+use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
 use SeQura\Core\BusinessLogic\Domain\CountryConfiguration\Models\CountryConfiguration;
 use SeQura\Core\BusinessLogic\Domain\CountryConfiguration\Services\CountryConfigurationService;
@@ -49,24 +52,38 @@ class MiniWidgets
      * @var ProductService
      */
     private $productService;
+    /**
+     * @var ScopeConfigInterface
+     */
+    private $scopeConfig;
+    /**
+     * @var PriceCurrencyInterface
+     */
+    private $priceCurrency;
 
     /**
      * @param StoreManagerInterface $storeManager
      * @param StoreConfigManagerInterface $storeConfigManager
      * @param ProductRepository $productRepository
      * @param ProductService $productService
+     * @param ScopeConfigInterface $scopeConfig
+     * @param PriceCurrencyInterface $priceCurrency
      */
     public function __construct(
         StoreManagerInterface       $storeManager,
         StoreConfigManagerInterface $storeConfigManager,
         ProductRepository           $productRepository,
-        ProductService              $productService
+        ProductService              $productService,
+        ScopeConfigInterface        $scopeConfig,
+        PriceCurrencyInterface      $priceCurrency
     )
     {
         $this->storeManager = $storeManager;
         $this->storeConfigManager = $storeConfigManager;
         $this->productRepository = $productRepository;
         $this->productService = $productService;
+        $this->scopeConfig = $scopeConfig;
+        $this->priceCurrency = $priceCurrency;
     }
 
     /**
@@ -80,7 +97,7 @@ class MiniWidgets
      */
     public function afterToHtml(Amount $subject, $result): string
     {
-        if ($subject->getData('zone') !== 'item_list') {
+        if ($subject->getData('zone') !== 'item_list' || $subject->getData('price_type') !== 'finalPrice') {
             return $result;
         }
         $store = $this->storeManager->getStore();
@@ -110,16 +127,22 @@ class MiniWidgets
 
         $storeConfig = $this->storeConfigManager->getStoreConfigs([$store->getCode()])[0];
 
-        if ($storeConfig->getBaseCurrencyCode() !== 'EUR') {
+        if ($this->priceCurrency->getCurrency()->getCurrencyCode() !== 'EUR') {
             return $result;
         }
 
-        $code = substr($storeConfig->getLocale(), 3);
+        $code = $this->getCountry($storeConfig);
+
         $widgetConfig = $this->getWidgetSettingsService()->getWidgetSettings();
         $merchantId = $this->getMerchantId($code);
+        $generalSettings = $this->getGeneralSettings();
 
-        if (empty($merchantId) || empty($widgetConfig) || !$widgetConfig->isShowInstallmentsInProductListing()
-            || !$this->isWidgetEnabledForProduct($product)) {
+        if (empty($merchantId) || empty($widgetConfig) || !$widgetConfig->isEnabled()
+            || ($generalSettings && !empty($generalSettings->getAllowedIPAddresses())
+                && !empty($ipAddress = $this->getCustomerIpAddress()) &&
+                !in_array($ipAddress, $generalSettings->getAllowedIPAddresses(), true))
+            || !$widgetConfig->isShowInstallmentsInProductListing()
+            || !$this->isWidgetEnabledForProduct($product, $generalSettings)) {
             return $result;
         }
 
@@ -136,27 +159,31 @@ class MiniWidgets
         return $result;
     }
 
+    private function getCountry(StoreConfigInterface $storeConfig)
+    {
+        return $this->scopeConfig->getValue(
+            'general/country/default',
+            ScopeInterface::SCOPE_STORE,
+            $storeConfig->getId()
+        );
+    }
+
     /**
      * @param SaleableInterface $saleable
-     *
+     * @param GeneralSettings|null $generalSettings
      * @return bool
      *
      * @throws NoSuchEntityException
      */
-    private function isWidgetEnabledForProduct(SaleableInterface $saleable): bool
+    private function isWidgetEnabledForProduct(SaleableInterface $saleable, ?GeneralSettings $generalSettings): bool
     {
-        $generalSettings = $this->getGeneralSettings();
-
-        if (empty($generalSettings)) {
-            return true;
-        }
-
         $product = $this->productRepository->getById($saleable->getId());
         $categoryIds = $product->getCategoryIds();
         $trail = $this->productService->getAllProductCategories($categoryIds);
 
-        return !in_array($product->getSku(), $generalSettings->getExcludedProducts())
-            && empty(array_intersect($trail, $generalSettings->getExcludedCategories()));
+        return !in_array($product->getData('sku'), $generalSettings ? $generalSettings->getExcludedProducts() : [])
+            && empty(array_intersect($trail, $generalSettings ? $generalSettings->getExcludedCategories() : []))
+            && !$product->isVirtual() && $product->getTypeId() !== 'grouped';
     }
 
     /**
@@ -174,34 +201,26 @@ class MiniWidgets
         int                  $amount
     ): string
     {
-        $label = $widgetConfig->getWidgetLabels()->getMessages()[$storeConfig->getLocale()] ?? '';
-        if ($paymentMethod->getMinAmount() > $amount) {
-            $label = $widgetConfig->getWidgetLabels()->getMessagesBelowLimit()[$storeConfig->getLocale()] ?? '';
-        }
-
         $message = $widgetConfig->getWidgetLabels()->getMessages()[$storeConfig->getLocale()] ?? '';
-        $formattedMessage = sprintf($message, $amount);
         $belowLimit = $widgetConfig->getWidgetLabels()->getMessagesBelowLimit()[$storeConfig->getLocale()] ?? '';
-        $formattedBelowLimit = sprintf($belowLimit, $amount);
 
-        return "<div class=\"sequra-educational-popup\" data-content-type='Sequra_Core' data-amount=\""
+        return "<div class=\"sequra-educational-popup\" data-content-type=\"Sequra_Core\" data-amount=\""
             . $amount . "\" data-product=\"" . $paymentMethod->getProduct() . "\"
-                data-min-amount='" . $paymentMethod->getMinAmount() . "' data-label='" . $formattedMessage . "'
-                data-below-limit='" . $formattedBelowLimit . "'>"
-            . sprintf($label, $amount) . "</div>";
+                data-min-amount='" . $paymentMethod->getMinAmount() . "' data-label='" . $message . "'
+                data-below-limit='" . $belowLimit . "'></div>";
     }
 
     /**
-     * @param string $code
+     * @param string|null $code
      *
      * @return string
      */
-    private function getMerchantId(string $code): string
+    private function getMerchantId(?string $code): string
     {
         $merchantId = '';
         $countryConfig = $this->getCountryConfiguration();
 
-        if (empty($countryConfig)) {
+        if (empty($countryConfig) || !$code) {
             return $merchantId;
         }
 
@@ -212,6 +231,19 @@ class MiniWidgets
         }
 
         return $merchantId;
+    }
+
+    private function getCustomerIpAddress(): string
+    {
+        if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
+            return $_SERVER['HTTP_CLIENT_IP'];
+        }
+
+        if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+            return $_SERVER['HTTP_X_FORWARDED_FOR'];
+        }
+
+        return $_SERVER['REMOTE_ADDR'];
     }
 
     /**

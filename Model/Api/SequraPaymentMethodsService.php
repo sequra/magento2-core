@@ -2,56 +2,32 @@
 
 namespace Sequra\Core\Model\Api;
 
-use Magento\Checkout\Model\Type\Onepage;
-use Magento\Framework\Serialize\Serializer\Json;
-use Magento\Quote\Api\CartRepositoryInterface;
-use Magento\Quote\Model\Quote;
 use Sequra\Core\Api\SequraPaymentMethodsInterface;
-use Magento\Framework\App\Request\Http;
-use Magento\Framework\Data\Form\FormKey\Validator;
 
 /**
  * Class SequraPaymentMethodsService
  *
  * @package Sequra\Core\Model\Api
  */
-class SequraPaymentMethodsService extends AbstractrSequraPaymentMethodsService implements SequraPaymentMethodsInterface
+class SequraPaymentMethodsService implements SequraPaymentMethodsInterface
 {
-    /**
-     * @var CartRepositoryInterface
-     */
-    private $quoteResotory;
 
     /**
-     * AbstractInternalApiController constructor.
-     * @param Http $request
-     * @param Validator $formKeyValidator
-     * @param CartRepositoryInterface $quoteResotory
-     * @param \Sequra\Core\Model\Api\Builders\CreateOrderRequestBuilderFactory $createOrderRequestBuilderFactory
+     * SequraPaymentMethodsService constructor.
+     * @param FormValidationSequraPaymentMethodsService $paymentMethodsService
      */
-    public function __construct(
-        Http $request,
-        Json $jsonSerializer,
-        Validator $formKeyValidator,
-        CartRepositoryInterface $quoteResotory,
-        \Sequra\Core\Model\Api\Builders\CreateOrderRequestBuilderFactory $createOrderRequestBuilderFactory
-    ) {
-        parent::__construct($request, $jsonSerializer, $formKeyValidator, $createOrderRequestBuilderFactory);
-
-        $this->quoteResotory = $quoteResotory;
+    public function __construct(FormValidationSequraPaymentMethodsService $paymentMethodsService)
+    {
+        $this->paymentMethodsService = $paymentMethodsService;
     }
 
-    protected function getQuote(string $cartId): Quote
+    public function getAvailablePaymentMethods(string $cartId, string $formKey): array
     {
-        /** @var Quote $quote */
-        $quote = $this->quoteResotory->getActive($cartId);
+        return $this->paymentMethodsService->getAvailablePaymentMethods($cartId, $formKey);
+    }
 
-        if ($quote->getCheckoutMethod()) {
-            $quote->setCheckoutMethod('');
-            $quote->setCustomerIsGuest(false);
-            $this->quoteResotory->save($quote);
-        }
-
-        return $quote;
+    public function getForm(string $cartId, string $formKey): string
+    {
+        return $this->paymentMethodsService->getForm($cartId, $formKey);
     }
 }

@@ -11,7 +11,8 @@
     </head>
     <body>
         <referenceBlock name="head.components">
-            <block class="Sequra\Core\Block\WidgetInitializer" name="sequra.widget.initializer" template="Sequra_Core::widget_initializer.phtml" />
+            <block class="Sequra\Core\Block\WidgetInitializer" name="sequra.widget.initializer"
+                   template="Sequra_Core::widget_initializer.phtml"  cacheable="false"/>
         </referenceBlock>
     </body>
 </page>

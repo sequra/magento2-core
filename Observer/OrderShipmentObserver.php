@@ -13,6 +13,7 @@ use SeQura\Core\BusinessLogic\Domain\Order\Models\OrderUpdateData;
 use SeQura\Core\BusinessLogic\Domain\Order\Service\OrderService;
 use SeQura\Core\Infrastructure\Logger\Logger;
 use SeQura\Core\Infrastructure\ServiceRegister;
+use Sequra\Core\Services\BusinessLogic\Utility\SeQuraTranslationProvider;
 use Sequra\Core\Services\BusinessLogic\Utility\TransformEntityService;
 
 /**
@@ -22,6 +23,26 @@ use Sequra\Core\Services\BusinessLogic\Utility\TransformEntityService;
  */
 class OrderShipmentObserver implements ObserverInterface
 {
+    /**
+     * @var SeQuraTranslationProvider
+     */
+    private $translationProvider;
+
+    /**
+     * @var TransformEntityService
+     */
+    private $transformService;
+
+    /**
+     * @param SeQuraTranslationProvider $translationProvider
+     * @param TransformEntityService $transformService
+     */
+    public function __construct(SeQuraTranslationProvider $translationProvider, TransformEntityService $transformService)
+    {
+        $this->translationProvider = $translationProvider;
+        $this->transformService = $transformService;
+    }
+
     /**
      * @inheritDoc
      *
@@ -52,11 +73,11 @@ class OrderShipmentObserver implements ObserverInterface
         $orderData = $shipmentData->getOrder();
 
         if ($orderData->getStatus() === Order::STATE_PAYMENT_REVIEW) {
-            throw new LocalizedException(__('Order with "payment review" status cannot be shipped.'));
+            throw new LocalizedException($this->translationProvider->translate('sequra.error.cannotShip'));
         }
 
-        $unshippedCart = TransformEntityService::transformOrderCartToSeQuraCart($orderData, false);
-        $shippedCart = TransformEntityService::transformOrderCartToSeQuraCart($orderData, true);
+        $unshippedCart = $this->transformService->transformOrderCartToSeQuraCart($orderData, false);
+        $shippedCart = $this->transformService->transformOrderCartToSeQuraCart($orderData, true);
 
         StoreContext::doWithStore($orderData->getStoreId(), [$this->getOrderService(), 'updateOrder'], [
             new OrderUpdateData(

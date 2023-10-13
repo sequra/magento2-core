@@ -10,7 +10,7 @@ define([
     'Magento_Checkout/js/checkout-data',
     'Magento_Checkout/js/model/full-screen-loader',
     'Sequra_Core/js/model/sequra-payment-service',
-    'Magento_Checkout/js/model/payment/additional-validators',
+    'Magento_Checkout/js/model/payment/additional-validators'
 ], function (
     Component,
     ko,
@@ -162,6 +162,21 @@ define([
                 checkoutData.setSelectedPaymentMethod('sequra_payment'),
                 setPaymentInformationAction(self.messageContainer, data)
             ).done(function () {
+                if (window.checkoutConfig.payment.sequra_payment.showSeQuraCheckoutAsHostedPage) {
+                    const hppPageUrl = new URL(
+                      window.checkoutConfig.payment.sequra_payment.sequraCheckoutHostedPage
+                    );
+
+                    hppPageUrl.searchParams.append("ssequra_product", data.additional_data.ssequra_product);
+                    hppPageUrl.searchParams.append(
+                      "sequra_campaign", data.additional_data.sequra_campaign || ''
+                    );
+
+                    window.location.replace(hppPageUrl.href);
+
+                    return;
+                }
+
                 sequraPaymentService.fetchIdentificationForm(data.additional_data).done(function (response) {
                     fullScreenLoader.stopLoader();
                     self.showIdentificationForm(response);

@@ -36,4 +36,38 @@
         </data>
     </route>
 
+    <route url="/V1/sequra_core/checkout/guest-carts/:cartId/retrieve-sequra_payment-methods" method="POST">
+        <service class="Sequra\Core\Api\Checkout\GuestSequraPaymentMethodsInterface" method="getAvailablePaymentMethods"/>
+        <resources>
+            <resource ref="Sequra_Core::getGuestAvailablePaymentMethods"/>
+        </resources>
+    </route>
+
+    <route url="/V1/sequra_core/checkout/carts/mine/retrieve-sequra_payment-methods" method="POST">
+        <service class="Sequra\Core\Api\Checkout\SequraPaymentMethodsInterface" method="getAvailablePaymentMethods"/>
+        <resources>
+            <resource ref="Sequra_Core::getAvailablePaymentMethods"/>
+        </resources>
+        <data>
+            <parameter name="cartId" force="true">%cart_id%</parameter>
+        </data>
+    </route>
+
+    <route url="/V1/sequra_core/checkout/guest-carts/:cartId/fetch-sequra_payment-form" method="POST">
+        <service class="Sequra\Core\Api\Checkout\GuestSequraPaymentMethodsInterface" method="getForm"/>
+        <resources>
+            <resource ref="Sequra_Core::getGuestForm"/>
+        </resources>
+    </route>
+
+    <route url="/V1/sequra_core/checkout/carts/mine/fetch-sequra_payment-form" method="POST">
+        <service class="Sequra\Core\Api\Checkout\SequraPaymentMethodsInterface" method="getForm"/>
+        <resources>
+            <resource ref="Sequra_Core::getForm"/>
+        </resources>
+        <data>
+            <parameter name="cartId" force="true">%cart_id%</parameter>
+        </data>
+    </route>
+
 </routes>

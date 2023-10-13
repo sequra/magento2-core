@@ -2,8 +2,6 @@
 
 namespace Sequra\Core\Setup;
 
-use Magento\Framework\Setup\ModuleDataSetupInterface;
-
 /**
  * Class DatabaseHandler
  *
@@ -15,20 +13,14 @@ class DatabaseHandler
     public const SEQURA_QUEUE_TABLE = 'sequra_queue';
     public const SEQURA_ORDER_TABLE = 'sequra_order';
 
-    /**
-     * @var ModuleDataSetupInterface
-     */
     private $installer;
 
-    public function __construct(ModuleDataSetupInterface $installer)
+    public function __construct($installer)
     {
         $this->installer = $installer;
     }
 
-    /**
-     * @return ModuleDataSetupInterface
-     */
-    public function getInstaller(): ModuleDataSetupInterface
+    public function getInstaller()
     {
         return $this->installer;
     }

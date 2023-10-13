@@ -191,6 +191,8 @@ class Initializer implements DataPatchInterface
     )
     {
         $storeId = StoreContext::getInstance()->getStoreId();
+        $store = $this->storeManager->getStore($storeId);
+        $websiteId = $store->getWebsiteId();
 
         $username = $this->scopeConfig->getValue(
             'sequra/core/user_name',
@@ -226,6 +228,40 @@ class Initializer implements DataPatchInterface
 
         if (empty($username) || empty($password) || empty($merchantId) ||
             empty($assetsKey) || empty($endpoint)) {
+            $username = $this->scopeConfig->getValue(
+                'sequra/core/user_name',
+                ScopeInterface::SCOPE_WEBSITES,
+                $websiteId
+            );
+            $password = $this->getEncryptor()->decrypt($this->scopeConfig->getValue(
+                'sequra/core/user_secret',
+                ScopeInterface::SCOPE_WEBSITES,
+                $websiteId
+            ) ?? '');
+            $merchantId = $this->scopeConfig->getValue(
+                'sequra/core/merchant_ref',
+                ScopeInterface::SCOPE_WEBSITES,
+                $websiteId
+            );
+            $assetsKey = $this->scopeConfig->getValue(
+                'sequra/core/assets_key',
+                ScopeInterface::SCOPE_WEBSITES,
+                $websiteId
+            );
+            $testIps = $this->scopeConfig->getValue(
+                'sequra/core/test_ip',
+                ScopeInterface::SCOPE_WEBSITES,
+                $websiteId
+            );
+            $endpoint = $this->scopeConfig->getValue(
+                'sequra/core/endpoint',
+                ScopeInterface::SCOPE_WEBSITES,
+                $websiteId
+            );
+        }
+
+        if (empty($username) || empty($password) || empty($merchantId) ||
+            empty($assetsKey) || empty($endpoint)) {
             $username = $defaultUsername;
             $password = $defaultPassword;
             $merchantId = $defaultMerchantId;
@@ -235,7 +271,7 @@ class Initializer implements DataPatchInterface
         }
 
         if (empty($username) || empty($password) || empty($merchantId) ||
-            empty($assetsKey) || empty($endpoint)) {
+            empty($endpoint)) {
             return;
         }
 
@@ -248,10 +284,18 @@ class Initializer implements DataPatchInterface
 
         $this->saveCountriesConfig($sellingCountries, $merchantId);
 
+        $ipAddresses = $testIps ? explode(',', $testIps) : [];
+
+        foreach ($ipAddresses as $key => $address) {
+            if (!filter_var($address, FILTER_VALIDATE_IP)) {
+                unset($ipAddresses[$key]);
+            }
+        }
+
         $generalSettings = new GeneralSettings(
             false,
             true,
-            $testIps ? explode(',', $testIps) : [],
+            $ipAddresses,
             [],
             []
         );
@@ -386,11 +430,7 @@ class Initializer implements DataPatchInterface
      */
     private function getWidgetSettingsService(): WidgetSettingsService
     {
-        if ($this->widgetSettingsService === null) {
-            $this->widgetSettingsService = ServiceRegister::getService(WidgetSettingsService::class);
-        }
-
-        return $this->widgetSettingsService;
+        return ServiceRegister::getService(WidgetSettingsService::class);
     }
 
     /**

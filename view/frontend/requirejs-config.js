@@ -8,6 +8,9 @@ var config = {
             },
             'Magento_Catalog/js/price-box': {
                 'Sequra_Core/js/pricebox-widget-mixin': true
+            },
+            'Magento_Swatches/js/swatch-renderer': {
+                'Sequra_Core/js/model/skuswitch': true
             }
         }
     }

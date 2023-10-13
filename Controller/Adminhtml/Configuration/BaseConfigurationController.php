@@ -106,6 +106,6 @@ class BaseConfigurationController extends Action
      */
     protected function addResponseCode(Response $response): void
     {
-        $this->result->setHttpResponseCode($response->isSuccessful() ? 200 : $response->toArray()['errorCode']);
+        $this->result->setHttpResponseCode($response->isSuccessful() ? 200 : $response->toArray()['statusCode']);
     }
 }

@@ -80,7 +80,10 @@ class Index extends Action
             return;
         }
 
-        $this->getResponse()->setHttpResponseCode(500);
+        $error = $response->toArray();
+        $code = (isset($error['errorCode']) && $error['errorCode'] === 409) ? 409 : 410;
+
+        $this->getResponse()->setHttpResponseCode($code);
         $this->getResponse()->setBody($response->toArray()['errorMessage']);
         $this->getResponse()->sendResponse();
     }
@@ -128,10 +131,16 @@ class Index extends Action
         try {
             $order = $this->getMagentoOrder($sequraOrder->getOrderRef1());
 
+            $payment = $order->getPayment();
+            $payment->setTransactionId($sequraOrder->getReference());
+            $payment->setParentTransactionId($sequraOrder->getReference());
+            $payment->setShouldCloseParentTransaction(true);
+            $payment->setIsTransactionClosed(0);
+
             $transaction = $this->transactionFactory->create();
 
             $invoice = $this->invoiceService->prepareInvoice($order);
-            $invoice->setRequestedCaptureCase(Invoice::CAPTURE_OFFLINE);
+            $invoice->setRequestedCaptureCase(Invoice::CAPTURE_ONLINE);
             $invoice->register();
 
             $transaction->addObject($invoice);

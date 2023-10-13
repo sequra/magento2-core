@@ -16,7 +16,7 @@ if (!window.SequraFE) {
          * @returns {Promise<void>}
          */
         this.errorHandler = (response) => {
-            const { utilities, templateService, elementGenerator } = SequraFE;
+            const {utilities, templateService, elementGenerator} = SequraFE;
             let container = document.querySelector('.sqp-flash-message-wrapper');
             if (!container) {
                 container = elementGenerator.createElement('div', 'sqp-flash-message-wrapper');
@@ -25,10 +25,10 @@ if (!window.SequraFE) {
 
             templateService.clearComponent(container);
 
-            if (response.errorMessage) {
+            if (response.errorCode) {
+                container.prepend(utilities.createFlashMessage(response.errorCode, 'error'));
+            } else if (response.errorMessage) {
                 container.prepend(utilities.createFlashMessage(response.errorMessage, 'error'));
-            } else if (response.errorCode) {
-                container.prepend(utilities.createFlashMessage('general.errors.' + response.errorCode, 'error'));
             } else {
                 container.prepend(utilities.createFlashMessage('general.errors.unknown', 'error'));
             }
@@ -37,13 +37,15 @@ if (!window.SequraFE) {
         };
 
         /**
-         * Handles 401 response.
+         * Handles unauthorized response.
          *
-         * @param {{errorMessage?: string, errorCode?: string}} response
+         * @param {{errorMessage?: string, errorCode?: string, statusCode?: number}} response
          * @returns {Promise<void>}
          */
         this.unauthorizedHandler = (response) => {
-            SequraFE.state.goToState(SequraFE.appStates.ONBOARDING);
+            let page = response.statusCode === 403 ? SequraFE.appPages.ONBOARDING.COUNTRIES : SequraFE.appPages.ONBOARDING.CONNECT;
+            SequraFE.state.setCredentialsChanged();
+            SequraFE.state.goToState(SequraFE.appStates.ONBOARDING + '-' + page);
             SequraFE.utilities.hideLoader();
 
             return this.errorHandler(response);

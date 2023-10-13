@@ -12,7 +12,7 @@ if (!window.SequraFE.components) {
      * @property {string?} currentVersion
      * @property {{versionLabel?: string, versionUrl?: string}?} newVersion
      * @property {'live' | 'test'} mode
-     * @property {string} merchantName
+     * @property {string?} merchantName
      * @property {Option[]?} stores
      * @property {{label: string, href: string, isActive?: boolean}[]} menuItems
      * @property {string} activeStore
@@ -69,11 +69,16 @@ if (!window.SequraFE.components) {
         }
 
         const merchant = generator.createElement('div', 'sqp-header-merchant', '', null, [
-            generator.createElement('div', 'sqp-merchant', '', null, [
+            merchantName ? generator.createElement('div', 'sqp-merchant', '', null, [
                 generator.createElement('span', 'sqp-merchant-label', 'general.merchant'),
                 generator.createElement('span', 'sqp-merchant-name', merchantName)
-            ]),
-            generator.createElement('span', 'sq-mode-badge' + (mode ? ' sqt--' + mode : ''), mode + ' mode', null)
+            ]) : [],
+            generator.createElement(
+                'span',
+                'sq-mode-badge' + (mode ? ' sqt--' + mode : ''),
+                'general.mode.' + mode.toLowerCase(),
+                null
+            )
         ]);
 
         const storeSwitcher = stores.length <= 1 ? [] : generator.createStoreSwitcher({

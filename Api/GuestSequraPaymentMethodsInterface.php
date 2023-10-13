@@ -10,16 +10,17 @@ namespace Sequra\Core\Api;
 interface GuestSequraPaymentMethodsInterface
 {
     /**
-     * Fetches Sequra payment methods for logged in customers
+     * Fetches Sequra payment methods for guest customers
      *
+     * @api
      * @param string $cartId
      * @param string $formKey
-     * @return array
+     * @return mixed[]
      */
     public function getAvailablePaymentMethods(string $cartId, string $formKey): array;
 
     /**
-     * Fetches Sequra payment identification form for logged in customers
+     * Fetches Sequra payment identification form for guest customers
      *
      * @param string $cartId
      * @param string $formKey

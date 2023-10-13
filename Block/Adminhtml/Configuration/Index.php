@@ -4,9 +4,8 @@ namespace Sequra\Core\Block\Adminhtml\Configuration;
 
 use Magento\Backend\Block\Template;
 use Magento\Backend\Block\Template\Context;
+use Magento\Backend\Model\Auth\Session;
 use Magento\Framework\Exception\LocalizedException;
-use Magento\Framework\Locale\Resolver;
-use Magento\Framework\View\Asset\Repository;
 use Sequra\Core\Helper\UrlHelper;
 
 /**
@@ -19,39 +18,29 @@ class Index extends Template
      * @var UrlHelper
      */
     private $urlHelper;
-
     /**
-     * @var Resolver
+     * @var Session
      */
-    private $localeResolver;
-
-    /**
-     * @var Repository
-     */
-    private $assetRepository;
+    private $authSession;
 
     /**
      * Content constructor.
      *
      * @param Context $context
      * @param UrlHelper $urlHelper
-     * @param Resolver $localeResolver
-     * @param Repository $assetRepository
+     * @param Session $authSession
      * @param array $data
      */
     public function __construct(
-        Context    $context,
-        UrlHelper  $urlHelper,
-        Resolver   $localeResolver,
-        Repository $assetRepository,
-        array      $data = []
-    )
-    {
+        Context $context,
+        UrlHelper $urlHelper,
+        Session $authSession,
+        array $data = []
+    ) {
         parent::__construct($context, $data);
 
         $this->urlHelper = $urlHelper;
-        $this->localeResolver = $localeResolver;
-        $this->assetRepository = $assetRepository;
+        $this->authSession = $authSession;
     }
 
     /**
@@ -90,13 +79,13 @@ class Index extends Template
      */
     public function getTranslations(): array
     {
-        $currentLocale = substr($this->localeResolver->getLocale(), 0, 2);
-        $default = json_decode(file_get_contents($this->assetRepository->getUrl('Sequra_Core::lang/en.json')), false);
+        $currentLocale = substr($this->authSession->getUser()->getInterfaceLocale(), 0, 2);
+        $default = json_decode(file_get_contents(__DIR__ . '/../../../view/adminhtml/web/lang/en.json'), false);
         $current = [];
 
-        if (file_exists($this->assetRepository->getUrl('Sequra_Core::lang/' . $currentLocale . '.json'))) {
+        if (file_exists(__DIR__ . '/../../../view/adminhtml/web/lang/' . $currentLocale . '.json')) {
             $current = json_decode(
-                file_get_contents($this->assetRepository->getUrl('Sequra_Core::lang/' . $currentLocale . '.json')),
+                file_get_contents(__DIR__ . '/../../../view/adminhtml/web/lang/' . $currentLocale . '.json'),
                 false
             );
         }
@@ -105,5 +94,10 @@ class Index extends Template
             'default' => str_replace("'", "\\'", json_encode($default)),
             'current' => str_replace("'", "\\'", json_encode($current)),
         ];
+    }
+
+    public function getAdminLanguage(): string
+    {
+        return strtoupper(substr($this->authSession->getUser()->getInterfaceLocale(), 0, 2));
     }
 }

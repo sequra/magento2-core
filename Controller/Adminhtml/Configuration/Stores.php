@@ -35,6 +35,7 @@ class Stores extends BaseConfigurationController
     protected function getStores(): Json
     {
         $data = AdminAPI::get()->store($this->storeId)->getStores();
+        $this->addResponseCode($data);
 
         return $this->result->setData($data->toArray());
     }
@@ -47,6 +48,7 @@ class Stores extends BaseConfigurationController
     protected function getCurrentStore(): Json
     {
         $data = AdminAPI::get()->store($this->storeId)->getCurrentStore();
+        $this->addResponseCode($data);
 
         return $this->result->setData($data->toArray());
     }

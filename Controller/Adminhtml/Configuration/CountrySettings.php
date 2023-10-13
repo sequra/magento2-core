@@ -36,6 +36,7 @@ class CountrySettings extends BaseConfigurationController
     protected function getSellingCountries(): Json
     {
         $data = AdminAPI::get()->countryConfiguration($this->storeId)->getSellingCountries();
+        $this->addResponseCode($data);
 
         return $this->result->setData($data->toArray());
     }
@@ -48,6 +49,7 @@ class CountrySettings extends BaseConfigurationController
     protected function getCountrySettings(): Json
     {
         $data = AdminAPI::get()->countryConfiguration($this->storeId)->getCountryConfigurations();
+        $this->addResponseCode($data);
 
         return $this->result->setData($data->toArray());
     }

@@ -2,11 +2,6 @@
 <page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
     <head>
-        <meta charset="UTF-8"/>
-        <meta name="viewport"
-              content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0"
-        />
-        <meta http-equiv="X-UA-Compatible" content="ie=edge"/>
         <title>SeQura</title>
 
         <css src="Sequra_Core::css/sequra-core.css"/>

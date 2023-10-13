@@ -90,26 +90,26 @@ if (!window.SequraFE) {
      *     className?: string, [key: string]: any, onClick?: () => void}} props
      * @return {HTMLButtonElement}
      */
-    const createButton = ({ type, size, className, onClick, label, ...properties }) => {
+    const createButton = ({type, size, className, onClick, label, ...properties}) => {
         const cssClass = ['sq-button'];
         type && cssClass.push('sqt--' + type);
         size && cssClass.push('sqm--' + size);
         className && cssClass.push(className);
 
-        const button = createElement('button', cssClass.join(' '), '', { type: 'button', ...properties }, [
+        const button = createElement('button', cssClass.join(' '), '', {type: 'button', ...properties}, [
             createElement('span', '', label)
         ]);
 
         onClick &&
-            button.addEventListener(
-                'click',
-                (event) => {
-                    event.stopPropagation();
-                    event.preventDefault();
-                    onClick();
-                },
-                false
-            );
+        button.addEventListener(
+            'click',
+            (event) => {
+                event.stopPropagation();
+                event.preventDefault();
+                onClick();
+            },
+            false
+        );
 
         return button;
     };
@@ -131,7 +131,7 @@ if (!window.SequraFE) {
      *     string, [key: string]: any }} props
      * @return {HTMLElement}
      */
-    const createLoader = ({ type, variation }) => {
+    const createLoader = ({type, variation}) => {
         const cssClass = ['sq-loader'];
         type && cssClass.push('sqt--' + type);
         variation && cssClass.push('sqm--' + variation);
@@ -142,11 +142,14 @@ if (!window.SequraFE) {
     /**
      * Creates a link that looks like a button.
      *
-     * @param {{text?: string, className?: string, href: string, downloadFile?: string}} props
+     * @param {{text?: string, className?: string, href: string, downloadFile?: string, openInNewTab?: boolean}} props
      * @return {HTMLLinkElement}
      */
-    const createButtonLink = ({ text, className = '', href, downloadFile }) => {
-        const link = createElement('a', className, '', { href: href }, [createElement('span', '', text)]);
+    const createButtonLink = ({text, className = '', href, downloadFile, openInNewTab}) => {
+        const link = createElement('a', className, '', {
+            href: href,
+            target: openInNewTab ? "_blank" : ""
+        }, [createElement('span', '', text)]);
         if (downloadFile) {
             link.setAttribute('download', downloadFile);
         }
@@ -213,7 +216,7 @@ if (!window.SequraFE) {
      * @param {ElementProps & DropdownComponentModel} props The properties.
      * @return {HTMLDivElement}
      */
-    const createDropdownField = ({ className = '', label, description, variation, error, ...dropdownProps }) => {
+    const createDropdownField = ({className = '', label, description, variation, error, ...dropdownProps}) => {
         return createFieldWrapper(
             SequraFE.components.Dropdown.create(dropdownProps),
             label,
@@ -230,9 +233,9 @@ if (!window.SequraFE) {
      * @param {ElementProps} props The properties.
      * @return {HTMLElement}
      */
-    const createPasswordField = ({ className = '', label, description, variation, error, onChange, ...rest }) => {
+    const createPasswordField = ({className = '', label, description, variation, error, onChange, ...rest}) => {
         const wrapper = createElement('div', `sq-password ${className}`);
-        const input = createElement('input', 'sqp-field-component', '', { type: 'password', ...rest });
+        const input = createElement('input', 'sqp-field-component', '', {type: 'password', ...rest});
         const span = createElement('span');
         span.addEventListener('click', () => {
             if (input.type === 'password') {
@@ -254,12 +257,26 @@ if (!window.SequraFE) {
      * @param {ElementProps & { type?: 'text' | 'number', variation?: 'label-left' }} props The properties.
      * @return {HTMLElement}
      */
-    const createTextField = ({ className = '', label, description, variation, error, onChange, ...rest }) => {
+    const createTextField = ({className = '', label, description, variation, error, onChange, ...rest}) => {
         /** @type HTMLInputElement */
-        const input = createElement('input', `sqp-field-component ${className}`, '', { type: 'text', ...rest });
+        const input = createElement('input', `sqp-field-component ${className}`, '', {type: 'text', ...rest});
         onChange && input.addEventListener('change', (event) => onChange(event.currentTarget?.value));
 
         return createFieldWrapper(input, label, description, variation, error, '');
+    };
+
+    /**
+     * Creates a text area field.
+     *
+     * @param {ElementProps & { type?: 'text' | 'number', variation?: 'label-left' }} props The properties.
+     * @return {HTMLElement}
+     */
+    const createTextArea = ({className = '', label, description, variation, error, onChange, ...rest}) => {
+        /** @type HTMLInputElement */
+        const textArea = createElement('textarea', `sqp-field-component ${className}`, '', {...rest});
+        onChange && textArea.addEventListener('change', (event) => onChange(event.currentTarget?.value));
+
+        return createFieldWrapper(textArea, label, description, variation, error, 'sqp-textarea-field');
     };
 
     /**
@@ -269,7 +286,7 @@ if (!window.SequraFE) {
      * @param {(value: string) => void?} onChange
      * @return {HTMLElement}
      */
-    const createCountryField = ({ countryCode, merchantId, onChange }) => {
+    const createCountryField = ({countryCode, merchantId, onChange}) => {
         const code = countryCode.toUpperCase();
         return createElement('div', 'sq-country-field-wrapper', '', null, [
             createElementFromHTML(SequraFE.imagesProvider.flags[code] || ''),
@@ -291,7 +308,7 @@ if (!window.SequraFE) {
      * @return {HTMLElement}
      */
     const createNumberField = (props) => {
-        return createTextField({ type: 'number', step: '0.01', ...props });
+        return createTextField({type: 'number', step: '0.01', ...props});
     };
 
     /**
@@ -300,11 +317,11 @@ if (!window.SequraFE) {
      * @param {ElementProps} props The properties.
      * @return {HTMLElement}
      */
-    const createRadioGroupField = ({ name, value, className, options, label, description, error, onChange }) => {
+    const createRadioGroupField = ({name, value, className, options, label, description, error, onChange}) => {
         const wrapper = createElement('div', 'sq-radio-input-group');
         options.forEach((option) => {
             const label = createElement('label', 'sq-radio-input');
-            const props = { type: 'radio', value: option.value, name };
+            const props = {type: 'radio', value: option.value, name};
             if (value === option.value) {
                 props.checked = 'checked';
             }
@@ -323,9 +340,9 @@ if (!window.SequraFE) {
      * @param {ElementProps} props The properties.
      * @return {HTMLElement}
      */
-    const createToggleField = ({ className = '', label, description, error, onChange, value, ...rest }) => {
+    const createToggleField = ({className = '', label, description, error, onChange, value, ...rest}) => {
         /** @type HTMLInputElement */
-        const checkbox = createElement('input', 'sqp-toggle-input', '', { type: 'checkbox', checked: value, ...rest });
+        const checkbox = createElement('input', 'sqp-toggle-input', '', {type: 'checkbox', checked: value, ...rest});
         onChange && checkbox.addEventListener('change', () => onChange(checkbox.checked));
 
         const field = createElement('div', className + ' sq-field-wrapper sqt--toggle', '', null, [
@@ -351,14 +368,14 @@ if (!window.SequraFE) {
      * @param {ElementProps} props The properties.
      * @return {HTMLElement}
      */
-    const createCheckboxField = ({ className = '', label, description, error, onChange, value, ...rest }) => {
+    const createCheckboxField = ({className = '', label, description, error, onChange, value, ...rest}) => {
         /** @type HTMLInputElement */
-        const checkbox = createElement('input', 'sqp-checkbox-input', '', { type: 'checkbox', checked: value, ...rest });
+        const checkbox = createElement('input', 'sqp-checkbox-input', '', {type: 'checkbox', checked: value, ...rest});
         onChange && checkbox.addEventListener('change', () => onChange(checkbox.checked));
 
         const field = createElement('div', className + ' sq-field-wrapper sqt--checkbox');
 
-        if(label) {
+        if (label) {
             field.appendChild(createElement('h3', 'sqp-field-title', label));
         }
 
@@ -383,16 +400,18 @@ if (!window.SequraFE) {
      *     buttonLabel?: string, className?: string}} props The properties.
      * @return {HTMLElement}
      */
-    const createButtonField = ({
-        label,
-        description,
-        className,
-        buttonType,
-        buttonSize,
-        buttonLabel,
-        onClick,
-        error
-    }) => {
+    const createButtonField = (
+        {
+            label,
+            description,
+            className,
+            buttonType,
+            buttonSize,
+            buttonLabel,
+            onClick,
+            error
+        }
+    ) => {
         const button = createButton({
             type: buttonType,
             size: buttonSize,
@@ -409,7 +428,7 @@ if (!window.SequraFE) {
      *
      * @param {ElementProps & {text: string, href: string}} props
      */
-    const createButtonLinkField = ({ label, text, description, href, error }) => {
+    const createButtonLinkField = ({label, text, description, href, error}) => {
         const buttonLink = createButtonLink({
             text: translationService.translate(text),
             className: '',
@@ -425,7 +444,7 @@ if (!window.SequraFE) {
      * @param {ElementProps & MultiItemSelectorComponentModel} props The properties.
      * @return {HTMLDivElement}
      */
-    const createMultiItemSelectorField = ({ label, description, variation, error, ...config }) => {
+    const createMultiItemSelectorField = ({label, description, variation, error, ...config}) => {
         return createFieldWrapper(
             SequraFE.components.MultiItemSelector.create(config),
             label,
@@ -462,7 +481,7 @@ if (!window.SequraFE) {
             messageBlock = createElement('span', 'sqp-alert-title', messageKey);
         }
 
-        const button = createButton({ onClick: hideHandler });
+        const button = createButton({onClick: hideHandler});
 
         if (clearAfter) {
             setTimeout(hideHandler, clearAfter);
@@ -500,7 +519,7 @@ if (!window.SequraFE) {
      * @param {() => void} onCancel
      * @returns HTMLElement
      */
-    const createPageFooter = ({ onSave, onCancel }) => {
+    const createPageFooter = ({onSave, onCancel}) => {
         return createElement('div', 'sq-page-footer', '', null, [
             createElement('div', 'sqp-actions', '', null, [
                 createButton({
@@ -512,7 +531,7 @@ if (!window.SequraFE) {
                 }),
                 createButton({
                     className: 'sqp-save',
-                    type: 'secondary',
+                    type: 'primary',
                     size: 'medium',
                     label: 'general.saveChanges',
                     onClick: onSave
@@ -529,13 +548,13 @@ if (!window.SequraFE) {
     const createFormFields = (fields) => {
         /** @type HTMLElement[] */
         const result = [];
-        fields.forEach(({ type, ...rest }) => {
+        fields.forEach(({type, ...rest}) => {
             switch (type) {
                 case 'text':
-                    result.push(createTextField({ ...rest, className: 'sq-text-input' }));
+                    result.push(createTextField({...rest, className: 'sq-text-input'}));
                     break;
                 case 'number':
-                    result.push(createNumberField({ ...rest, className: 'sq-text-input' }));
+                    result.push(createNumberField({...rest, className: 'sq-text-input'}));
                     break;
                 case 'dropdown':
                     result.push(createDropdownField(rest));
@@ -566,7 +585,7 @@ if (!window.SequraFE) {
      * @param {{title?: string, text?: string}} params
      * @returns {HTMLElement}
      */
-    const createPageHeading = ({ title, text }) => {
+    const createPageHeading = ({title, text}) => {
         return createElement('div', 'sqp-page-heading', '', null, [
             createElement('h3', 'sqp-page-title', title),
             createElement('span', 'sqp-description', text)
@@ -579,7 +598,7 @@ if (!window.SequraFE) {
      * @param {{label: string, description?: string, href: string, isActive?: boolean, isCompleted?: boolean}[]} steps
      * @returns {HTMLElement}
      */
-    const createWizardSidebar = ({ steps }) => {
+    const createWizardSidebar = ({steps}) => {
         const wrapper = createElement('div', 'sq-wizard-sidebar');
 
         wrapper.append(
@@ -608,7 +627,7 @@ if (!window.SequraFE) {
      * @param {{label: string, icon: string, href: string, isActive?: boolean}[]} links
      * @returns {HTMLElement}
      */
-    const createSettingsSidebar = ({ links }) => {
+    const createSettingsSidebar = ({links}) => {
         const wrapper = createElement('ul', 'sq-settings-sidebar');
 
         wrapper.append(
@@ -638,6 +657,7 @@ if (!window.SequraFE) {
         createDropdownField,
         createPasswordField,
         createTextField,
+        createTextArea,
         createNumberField,
         createToggleField,
         createCheckboxField,

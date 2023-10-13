@@ -12,12 +12,12 @@
             "source": {
                 "type": "git",
                 "url": "git@github.com:sequra/integration-core.git",
-                "reference": "ad1e7bed642c515de2bc77a188a62742d974a867"
+                "reference": "8d977adcaa3a93e831f363fc460feb566d0c04bd"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sequra/integration-core/zipball/ad1e7bed642c515de2bc77a188a62742d974a867",
-                "reference": "ad1e7bed642c515de2bc77a188a62742d974a867",
+                "url": "https://api.github.com/repos/sequra/integration-core/zipball/8d977adcaa3a93e831f363fc460feb566d0c04bd",
+                "reference": "8d977adcaa3a93e831f363fc460feb566d0c04bd",
                 "shasum": ""
             },
             "require": {
@@ -47,7 +47,7 @@
                 "proprietary"
             ],
             "description": "Core SeQura integration library",
-            "time": "2023-09-12T11:57:54+00:00"
+            "time": "2023-10-09T13:47:17+00:00"
         }
     ],
     "packages-dev": [],
@@ -63,5 +63,5 @@
         "ext-json": "*"
     },
     "platform-dev": [],
-    "plugin-api-version": "2.2.0"
+    "plugin-api-version": "2.3.0"
 }

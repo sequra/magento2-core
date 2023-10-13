@@ -35,6 +35,7 @@ class Disconnect extends BaseConfigurationController
     protected function disconnect(): Json
     {
         $data = AdminAPI::get()->disconnect($this->storeId)->disconnect();
+        $this->addResponseCode($data);
 
         return $this->result->setData($data->toArray());
     }

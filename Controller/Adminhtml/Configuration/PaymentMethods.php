@@ -35,6 +35,7 @@ class PaymentMethods extends BaseConfigurationController
     protected function getPaymentMethods(): Json
     {
         $data = AdminAPI::get()->paymentMethods($this->storeId)->getPaymentMethods($this->identifier);
+        $this->addResponseCode($data);
 
         return $this->result->setData($data->toArray());
     }

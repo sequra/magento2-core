@@ -19,9 +19,6 @@
     <event name="sales_order_shipment_save_before">
         <observer name="sequra_order_shipment_update" instance="Sequra\Core\Observer\OrderShipmentObserver"/>
     </event>
-    <event name="sales_order_creditmemo_save_before">
-        <observer name="sequra_order_return" instance="Sequra\Core\Observer\OrderRefundObserver"/>
-    </event>
     <event name="sales_order_save_before">
         <observer name="sequra_order_cancellation" instance="Sequra\Core\Observer\OrderCancellationObserver"/>
     </event>

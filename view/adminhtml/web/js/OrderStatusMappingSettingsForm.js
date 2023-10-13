@@ -86,8 +86,9 @@ if (!window.SequraFE) {
          */
         const initForm = () => {
             const pageContent = document.querySelector('.sq-content');
-            pageContent.append(
+            pageContent?.append(
                 generator.createElement('div', 'sq-content-inner', '', null, [
+                    generator.createElement('div', 'sqp-flash-message-wrapper'),
                     generator.createPageHeading({
                         title: 'orderStatusSettings.title',
                         text: 'orderStatusSettings.description'
@@ -134,8 +135,8 @@ if (!window.SequraFE) {
                 generator.createPageFooter({
                     onCancel: () => {
                         const pageContent = document.querySelector('.sq-content');
-                        while (pageContent.firstChild) {
-                            pageContent.removeChild(pageContent.firstChild);
+                        while (pageContent?.firstChild) {
+                            pageContent?.removeChild(pageContent.firstChild);
                         }
 
                         this.render();

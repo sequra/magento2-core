@@ -27,7 +27,7 @@ define(
             paymentMethods: ko.observable({}),
 
             /**
-             * Retrieve the list of available payment methods from Adyen
+             * Retrieve the list of available payment methods from SeQura
              */
             retrievePaymentMethods: function() {
                 // url for guest users

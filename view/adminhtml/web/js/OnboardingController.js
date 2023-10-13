@@ -15,7 +15,7 @@ if (!window.SequraFE) {
      * saveCountrySettingsUrl: string,
      * getWidgetSettingsUrl: string,
      * saveWidgetSettingsUrl: string,
-     * getWidgetConfiguratorUrl: string,
+     * getPaymentMethodsUrl: string,
      * page: string}} configuration
      * @constructor
      */
@@ -35,26 +35,30 @@ if (!window.SequraFE) {
         let version;
         /** @type Store[] */
         let stores;
+        /** @type CountrySettings[] **/
+        let countrySettings;
+        /** @type ConnectionSettings **/
+        let connectionSettings;
+        /** @type WidgetSettings **/
+        let widgetSettings;
 
         /**
          * Displays page content.
          *
          * @param {{ state?: string, storeId: string }} config
          */
-        this.display = ({ storeId }) => {
+        this.display = ({storeId}) => {
             utilities.showLoader();
             currentStoreId = storeId;
             templateService.clearMainPage();
+            stores = SequraFE.state.getData('stores');
+            version = SequraFE.state.getData('version');
+            connectionSettings = SequraFE.state.getData('connectionSettings');
+            countrySettings = SequraFE.state.getData('countrySettings');
+            widgetSettings = SequraFE.state.getData('widgetSettings');
 
-            Promise.all([SequraFE.state.getStores(), SequraFE.state.getVersion()])
-                .then(([res1, res2]) => {
-                    stores = res1;
-                    version = res2;
-                }).finally(() => {
-                initializePage();
-                renderPage();
-                utilities.hideLoader();
-            });
+            initializePage();
+            renderPage();
         };
 
         /**
@@ -62,89 +66,83 @@ if (!window.SequraFE) {
          */
         const renderPage = () => {
             utilities.showLoader();
-            let page = configuration.page;
+            let page = SequraFE.state.getPage();
             let renderer;
             let promises;
-
-            if (!SequraFE.pages.onboarding.includes(page)) {
-                page = SequraFE.pages.onboarding[0];
-            }
 
             switch (page) {
                 case SequraFE.appPages.ONBOARDING.COUNTRIES:
                     renderer = renderCountrySettingsForm;
                     promises = Promise.all([
-                        api.get(configuration.getCountrySettingsUrl),
-                        api.get(configuration.getSellingCountriesUrl),
-                        api.get(configuration.getConnectionDataUrl)
+                        SequraFE.state.getData('sellingCountries') ?? api.get(configuration.getSellingCountriesUrl)
                     ])
                     break;
                 case SequraFE.appPages.ONBOARDING.WIDGETS:
                     renderer = renderWidgetSettingsForm;
                     promises = Promise.all([
-                        api.get(configuration.getWidgetSettingsUrl),
-                        api.get(configuration.getConnectionDataUrl),
-                        api.get(configuration.getCountrySettingsUrl)
+                        SequraFE.state.getData('paymentMethods') ?? api.get(configuration.getPaymentMethodsUrl.replace(encodeURIComponent('{merchantId}'), countrySettings[0].merchantId)),
                     ])
                     break;
                 default:
                     renderer = renderConnectionSettingsForm;
-                    promises = Promise.all([api.get(configuration.getConnectionDataUrl)])
+                    promises = Promise.all([])
             }
 
             promises
                 .then((array) => renderer(...array))
-                .catch(renderer)
+                .catch(() => {})
                 .finally(() => utilities.hideLoader());
         };
 
         /**
          * Renders the country settings form.
          *
-         * @param countrySettings
          * @param sellingCountries
-         * @param connectionSettings
          */
-        const renderCountrySettingsForm = (countrySettings, sellingCountries, connectionSettings) => {
+        const renderCountrySettingsForm = (sellingCountries) => {
+            if (!SequraFE.state.getData('sellingCountries')) {
+                SequraFE.state.setData('sellingCountries', sellingCountries)
+            }
+
             const form = formFactory.getInstance(
                 'generalSettings',
-                { countrySettings, sellingCountries, connectionSettings },
-                { ...configuration, appState: SequraFE.appStates.ONBOARDING }
+                {countrySettings, sellingCountries, connectionSettings},
+                {...configuration, appState: SequraFE.appStates.ONBOARDING}
             );
 
-            form && form.render();
+            form?.render();
         }
 
         /**
          * Renders the widgets settings form.
          *
-         * @param widgetSettings
-         * @param connectionSettings
-         * @param countrySettings
+         * @param paymentMethods
          */
-        const renderWidgetSettingsForm = (widgetSettings, connectionSettings, countrySettings) => {
+        const renderWidgetSettingsForm = (paymentMethods) => {
+            if (!SequraFE.state.getData('paymentMethods')) {
+                SequraFE.state.setData('paymentMethods', paymentMethods)
+            }
+
             const form = formFactory.getInstance(
                 'widgetSettings',
-                { widgetSettings, connectionSettings, countrySettings },
-                { ...configuration, appState: SequraFE.appStates.ONBOARDING }
+                {widgetSettings, connectionSettings, countrySettings, paymentMethods},
+                {...configuration, appState: SequraFE.appStates.ONBOARDING}
             );
 
-            form && form.render();
+            form?.render();
         }
 
         /**
          * Renders the connection settings form.
-         *
-         * @param connectionSettings
          */
-        const renderConnectionSettingsForm = (connectionSettings) => {
+        const renderConnectionSettingsForm = () => {
             const form = formFactory.getInstance(
                 'connectionSettings',
-                { connectionSettings },
-                { ...configuration, appState: SequraFE.appStates.ONBOARDING }
+                {connectionSettings},
+                {...configuration, appState: SequraFE.appStates.ONBOARDING}
             );
 
-            form && form.render();
+            form?.render();
         }
 
         /**
@@ -166,14 +164,14 @@ if (!window.SequraFE) {
             }
 
             const pageSteps = SequraFE.pages.onboarding.map((page) => {
-                const activePage = configuration.page ?? SequraFE.pages.settings[0];
+                const activePage = SequraFE.state.getPage() ?? SequraFE.pages.settings[0];
 
                 switch (page) {
                     case SequraFE.appPages.ONBOARDING.CONNECT:
                         return {
                             label: 'sidebar.stepTwoLabel',
                             href: '#onboarding-connect',
-                            isCompleted: SequraFE.pages.onboarding.indexOf(configuration.page) >
+                            isCompleted: SequraFE.pages.onboarding.indexOf(SequraFE.state.getPage()) >
                                 SequraFE.pages.onboarding.indexOf(SequraFE.appPages.ONBOARDING.CONNECT),
                             isActive: activePage === SequraFE.appPages.ONBOARDING.CONNECT
                         }
@@ -181,7 +179,7 @@ if (!window.SequraFE) {
                         return {
                             label: 'sidebar.stepThreeLabel',
                             href: '#onboarding-countries',
-                            isCompleted: SequraFE.pages.onboarding.indexOf(configuration.page) >
+                            isCompleted: SequraFE.pages.onboarding.indexOf(SequraFE.state.getPage()) >
                                 SequraFE.pages.onboarding.indexOf(SequraFE.appPages.ONBOARDING.COUNTRIES),
                             isActive: activePage === SequraFE.appPages.ONBOARDING.COUNTRIES
                         }
@@ -189,7 +187,7 @@ if (!window.SequraFE) {
                         return {
                             label: 'sidebar.stepFourLabel',
                             href: '#onboarding-widgets',
-                            isCompleted: SequraFE.pages.onboarding.indexOf(configuration.page) >
+                            isCompleted: SequraFE.pages.onboarding.indexOf(SequraFE.state.getPage()) >
                                 SequraFE.pages.onboarding.indexOf(SequraFE.appPages.ONBOARDING.WIDGETS),
                             isActive: activePage === SequraFE.appPages.ONBOARDING.WIDGETS
                         }
@@ -211,49 +209,44 @@ if (!window.SequraFE) {
                         version?.current ? generator.createElement('div', 'sq-version-header', '', null, [
                             generator.createVersionBadge(version.current)
                         ]) : [],
-                        generator.createElement(
-                            'div',
-                            `sq-content-row ${version?.current ? '' : 'sqs--no-version'}`,
-                            '',
-                            null,
-                            [
-                                generator.createWizardSidebar({
-                                    steps: getStepConfiguration()
-                                }),
-                                generator.createElement('main', 'sq-content', '', null, [
-                                    generator.createElement('div', 'sqp-content-header', '', null, [
-                                        generator.createElementFromHTML(SequraFE.imagesProvider.logo || ''),
-                                        stores.length <= 1 ? [] : generator.createStoreSwitcher({
-                                            label: 'general.selectStore',
-                                            value: currentStoreId,
-                                            options: stores.map((store) => ({
-                                                label: store.storeName,
-                                                value: store.storeId
-                                            })),
-                                            onChange: (storeId) => {
-                                                if (storeId !== SequraFE.state.getStoreId()) {
-                                                    SequraFE.state.setStoreId(storeId);
-                                                    window.location.hash = '';
-                                                    SequraFE.state.display();
-                                                }
-                                            }
-                                        })
-                                    ])
-                                ])
-                            ]
-                        )
+                        getSetupWizardRow()
                     ]),
                 ])
             )
         }
 
-        /**
-         * Sets a number in local storage that indicates which step has been successfully completed.
-         *
-         * @param step
-         */
-        this.setDoneStep = (step) => {
-            localStorage.setItem('sq-done-step', step);
+        const getSetupWizardRow = () => {
+            return generator.createElement(
+                'div',
+                `sq-content-row ${version?.current ? '' : 'sqs--no-version'}`,
+                '',
+                null,
+                [
+                    generator.createWizardSidebar({
+                        steps: getStepConfiguration()
+                    }),
+                    generator.createElement('main', 'sq-content', '', null, [
+                        generator.createElement('div', 'sqp-content-header', '', null, [
+                            generator.createElementFromHTML(SequraFE.imagesProvider.logo || ''),
+                            stores.length <= 1 ? [] : generator.createStoreSwitcher({
+                                label: 'general.selectStore',
+                                value: currentStoreId,
+                                options: stores.map((store) => ({
+                                    label: store.storeName,
+                                    value: store.storeId
+                                })),
+                                onChange: (storeId) => {
+                                    if (storeId !== SequraFE.state.getStoreId()) {
+                                        SequraFE.state.setStoreId(storeId);
+                                        window.location.hash = '';
+                                        SequraFE.state.display();
+                                    }
+                                }
+                            })
+                        ])
+                    ])
+                ]
+            )
         }
     }
 

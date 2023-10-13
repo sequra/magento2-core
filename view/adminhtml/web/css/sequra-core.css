@@ -176,9 +176,7 @@ table tr th {
 }
 
 #sq-page-wrapper {
-  display: flex;
   min-height: 100vh;
-  justify-content: flex-end;
   padding: 30px 20px 60px 30px;
   background: #f3f6f9;
 }
@@ -189,12 +187,7 @@ table tr th {
 #sq-page-wrapper .sq-page-content-wrapper .sq-version-header {
   position: relative;
   height: 25px;
-  margin-bottom: 126px;
-}
-@media (max-width: 1023.98px) {
-  #sq-page-wrapper .sq-page-content-wrapper .sq-version-header {
-    margin-bottom: 40px;
-  }
+  margin-bottom: 40px;
 }
 #sq-page-wrapper .sq-page-content-wrapper .sq-content-row {
   display: flex;
@@ -287,10 +280,15 @@ table tr th {
   }
 }
 
-.sqv--connect .sq-link-button {
+.sq-link-button {
   color: #00C2A3;
   text-decoration: underline;
 }
+
+.sq-link-button:hover {
+  color: #00C2A3;
+}
+
 .sqv--connect .sq-info-button {
   color: #00C2A3;
 }
@@ -321,6 +319,11 @@ table tr th {
   align-items: center;
   column-gap: 8px;
 }
+
+.sq-table-container .sqp-payment-method-header-cell {
+  width: 50%;
+}
+
 .sq-table-container .sqp-payment-method-cell {
   display: flex;
   align-items: center;
@@ -562,7 +565,9 @@ table tr th {
   color: #a5afbd;
   pointer-events: none;
 }
-
+.sq-store-switcher .sqp-store-switcher-dropdown .sqp-dropdown-list {
+  z-index: 12;
+}
 .sq-store-switcher .sq-field-wrapper {
   display: flex;
   column-gap: 16px;
@@ -674,30 +679,32 @@ table tr th {
 .sq-page-header .sqp-menu-items {
   display: flex;
   align-items: center;
-  column-gap: 16px;
-  padding: 12px;
-  border: 1px solid #F3F2F2;
-  border-radius: 12px;
+  column-gap: 1px;
+  padding: 0;
+  border-radius: 50px;
+  overflow: hidden;
+  background-color: #f4f4f4;
+  max-width: 300px;
+  width: 100%;
 }
-@media (max-width: 1023.98px) {
-  .sq-page-header .sqp-menu-items {
-    width: max-content;
-  }
-}
+
 .sq-page-header .sqp-menu-items a {
-  color: #394962;
+  display: flex;
+  justify-content: center;
+  flex: 1;
+  color: #656566;
   font-size: 14px;
   padding: 8px;
-  border-radius: 6px;
   transition: all 0.2s;
 }
 .sq-page-header .sqp-menu-items a:hover, .sq-page-header .sqp-menu-items a:focus {
-  color: #01C2A3;
-  background: rgba(1, 194, 163, 0.09);
+  color: #ffffff;
+  background: #1c1c1c;
+  text-decoration: none;
 }
 .sq-page-header .sqp-menu-items a.sqs--active {
-  color: #01C2A3;
-  background: rgba(1, 194, 163, 0.09);
+  color: #ffffff;
+  background: #1c1c1c;
   pointer-events: none;
 }
 .sq-page-header .sq-mode-badge {
@@ -1079,6 +1086,10 @@ table tr th {
 .sq-multi-item-selector .sqp-selected-item .sqp-remove-button:hover {
   background-color: #00C2A3;
   color: #fff;
+}
+
+.sq-text-area {
+  resize: vertical;
 }
 
 .sq-text-input {
@@ -1730,6 +1741,9 @@ table tr th {
   transition: color 0.2s;
   padding: 10px 20px;
   width: 100%;
+  display: flex;
+  align-items: center;
+  text-decoration: none;
 }
 .sq-settings-sidebar .sq-sidebar-item .sq-sidebar-link:before {
   position: relative;
@@ -1749,28 +1763,28 @@ table tr th {
   content: "\e903";
   line-height: 1;
   font-weight: 500;
-  font-size: 16px;
+  font-size: 20px;
 }
 .sq-settings-sidebar .sq-sidebar-item .sq-sidebar-link.sqm--connection:before {
   font-family: "sq-icons";
   content: "\e902";
   line-height: 1;
   font-weight: 500;
-  font-size: 16px;
+  font-size: 20px;
 }
 .sq-settings-sidebar .sq-sidebar-item .sq-sidebar-link.sqm--order:before {
   font-family: "sq-icons";
   content: "\e900";
   line-height: 1;
   font-weight: 500;
-  font-size: 16px;
+  font-size: 20px;
 }
 .sq-settings-sidebar .sq-sidebar-item .sq-sidebar-link.sqm--widget:before {
   font-family: "sq-icons";
   content: "\e901";
   line-height: 1;
   font-weight: 500;
-  font-size: 16px;
+  font-size: 20px;
 }
 
 * + .sqp-flash-message-wrapper, .sqp-flash-message-wrapper + * {

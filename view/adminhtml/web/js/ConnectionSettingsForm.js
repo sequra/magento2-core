@@ -35,10 +35,10 @@ if (!window.SequraFE) {
             elementGenerator: generator,
             validationService: validator,
             utilities,
-            pageControllerFactory,
             components
         } = SequraFE;
 
+        let navigateToOnboarding = false;
         /** @type ConnectionSettings */
         let activeSettings;
         /** @type ConnectionSettings */
@@ -55,8 +55,6 @@ if (!window.SequraFE) {
          * Handles form rendering.
          */
         this.render = () => {
-            utilities.showLoader();
-
             if (!activeSettings) {
                 activeSettings = utilities.cloneObject(defaultFormData);
                 for (let key in activeSettings) {
@@ -76,7 +74,7 @@ if (!window.SequraFE) {
          */
         const initForm = () => {
             const pageContent = document.querySelector('.sq-content');
-            pageContent.append(
+            pageContent?.append(
                 generator.createElement('div', 'sq-content-inner sqv--connect', '', null, [
                     generator.createElement('div', 'sqp-flash-message-wrapper'),
                     generator.createPageHeading({
@@ -87,8 +85,8 @@ if (!window.SequraFE) {
                         value: changedSettings.environment,
                         label: 'connection.environment.label',
                         options: [
-                            { label: 'connection.environment.options.live', value: 'live' },
-                            { label: 'connection.environment.options.sandbox', value: 'sandbox' }
+                            {label: 'connection.environment.options.live', value: 'live'},
+                            {label: 'connection.environment.options.sandbox', value: 'sandbox'}
                         ],
                         onChange: (value) => handleChange('environment', value)
                     }),
@@ -115,7 +113,8 @@ if (!window.SequraFE) {
                 generator.createButtonLink({
                     className: 'sq-link-button',
                     text: 'connection.description.endLink',
-                    href: 'https://www.google.com/'
+                    href: 'https://en.sequra.com/',
+                    openInNewTab: true
                 })
             )
 
@@ -130,7 +129,7 @@ if (!window.SequraFE) {
             const pageInnerContent = document.querySelector('.sq-content-inner');
 
             if (configuration.appState === SequraFE.appStates.ONBOARDING) {
-                pageInnerContent.append(
+                pageInnerContent?.append(
                     SequraFE.isPromotional ? [] : generator.createCheckboxField({
                         className: 'sq-statistics',
                         value: changedSettings.sendStatisticalData,
@@ -149,14 +148,15 @@ if (!window.SequraFE) {
                     generator.createButtonLink({
                         className: 'sq-info-button',
                         text: 'connection.sendStatisticalData.description.endLink',
-                        href: 'https://www.google.com/'
+                        href: 'https://en.sequra.com/',
+                        openInNewTab: true
                     })
                 )
 
                 return;
             }
 
-            pageInnerContent.append(
+            pageInnerContent?.append(
                 generator.createButtonField({
                     className: 'sqm--block',
                     buttonType: 'danger',
@@ -166,12 +166,12 @@ if (!window.SequraFE) {
                 })
             );
 
-            pageContent.append(
+            pageContent?.append(
                 generator.createPageFooter({
                     onCancel: () => {
                         const pageContent = document.querySelector('.sq-content');
-                        while (pageContent.firstChild) {
-                            pageContent.removeChild(pageContent.firstChild);
+                        while (pageContent?.firstChild) {
+                            pageContent?.removeChild(pageContent.firstChild);
                         }
 
                         this.render();
@@ -243,17 +243,15 @@ if (!window.SequraFE) {
                     utilities.showLoader();
 
                     const merchantId = configuration.appState === SequraFE.appStates.ONBOARDING ? 'test' : data.countrySettings[0]?.merchantId;
-                    api.post(configuration.validateConnectionDataUrl, { ...changedSettings, merchantId: merchantId })
+                    api.post(configuration.validateConnectionDataUrl, {...changedSettings, merchantId: merchantId})
                         .then((result) => areCredentialsValid(result) ? saveChangedData() : handleValidationError())
-                        .finally(utilities.hideLoader);
                 })
             } else {
                 utilities.showLoader();
 
                 const merchantId = configuration.appState === SequraFE.appStates.ONBOARDING ? 'test' : data.countrySettings[0]?.merchantId;
-                api.post(configuration.validateConnectionDataUrl, { ...changedSettings, merchantId: merchantId })
-                    .then((result) => areCredentialsValid(result) ? saveChangedData() : handleValidationError())
-                    .finally(utilities.hideLoader);
+                api.post(configuration.validateConnectionDataUrl, {...changedSettings, merchantId: merchantId})
+                    .then((result) => areCredentialsValid(result) ? saveChangedData() : handleValidationError());
             }
         }
 
@@ -270,6 +268,10 @@ if (!window.SequraFE) {
          * @param {{isValid: boolean, reason: string|null}} result
          */
         const areCredentialsValid = (result) => {
+            if (!result.isValid && result.reason.includes('merchantId')) {
+                navigateToOnboarding = true;
+            }
+
             return result.isValid || result.reason.includes('merchantId');
         }
 
@@ -277,7 +279,10 @@ if (!window.SequraFE) {
          * Handle connection validation error.
          */
         const handleValidationError = () => {
-            SequraFE.responseService.errorHandler({ errorCode: 'connection.invalidUsernameOrPassword' }).catch(() => {});
+            SequraFE.responseService.errorHandler({errorCode: 'general.errors.connection.invalidUsernameOrPassword'}).catch(() => {
+            });
+
+            utilities.hideLoader();
         }
 
         const saveChangedData = () => {
@@ -285,33 +290,44 @@ if (!window.SequraFE) {
             api.post(configuration.saveConnectionDataUrl, changedSettings)
                 .then(() => {
                     if (configuration.appState === SequraFE.appStates.ONBOARDING) {
-                        const index = SequraFE.pages.onboarding.indexOf('connect')
-                        pageControllerFactory.getInstance(SequraFE.appStates.ONBOARDING).setDoneStep(index + 1);
+                        if (activeSettings.username.length !== 0) {
+                            SequraFE.state.setCredentialsChanged();
+                        }
 
+                        const index = SequraFE.pages.onboarding.indexOf(SequraFE.appPages.ONBOARDING.CONNECT)
                         SequraFE.pages.onboarding.length > index + 1 ?
                             window.location.hash = configuration.appState + '-' + SequraFE.pages.onboarding[index + 1] :
-                            SequraFE.state.display();
+                            window.location.hash = SequraFE.appStates.PAYMENT + '-' + SequraFE.appPages.PAYMENT.METHODS;
                     }
 
                     activeSettings = utilities.cloneObject(changedSettings);
+                    SequraFE.state.setData('connectionSettings', activeSettings);
+
                     disableFooter(true);
 
-                    if (configuration.appState === SequraFE.appStates.SETTINGS) {
-                        localStorage.setItem('sq-password-changed', '1');
-                        window.location.hash = SequraFE.appStates.SETTINGS + '-' + SequraFE.pages.settings[0]
+                    if (configuration.appState === SequraFE.appStates.SETTINGS && navigateToOnboarding) {
+                        SequraFE.state.setCredentialsChanged();
+                        SequraFE.state.goToState(SequraFE.appStates.ONBOARDING);
+                    } else {
+                        utilities.hideLoader();
                     }
-                })
-                .finally(utilities.hideLoader);
+                });
         }
 
         /**
          * Handles the disconnect button click.
          */
         const handleDisconnect = () => {
-            utilities.showLoader();
-            api.post(configuration.disconnectUrl, null)
-                .then(() => SequraFE.state.display())
-                .finally(utilities.hideLoader);
+            showDisconnectModal().then((confirmed) => {
+                if (!confirmed) {
+                    return;
+                }
+
+                utilities.showLoader();
+                api.post(configuration.disconnectUrl, null)
+                    .then(() => SequraFE.state.display())
+                    .finally(utilities.hideLoader);
+            })
         }
 
         /**
@@ -323,6 +339,42 @@ if (!window.SequraFE) {
             if (configuration.appState !== SequraFE.appStates.ONBOARDING) {
                 utilities.disableFooter(disable);
             }
+        }
+
+        /**
+         * Shows the disconnect modal dialog.
+         *
+         * @returns {Promise}
+         */
+        const showDisconnectModal = () => {
+            return new Promise((resolve) => {
+                const modal = components.Modal.create({
+                    title: `connection.disconnect.title`,
+                    className: `sq-modal sqv--connection-modal`,
+                    content: [generator.createElement('p', '', `connection.disconnect.message`)],
+                    footer: true,
+                    buttons: [
+                        {
+                            type: 'secondary',
+                            label: 'general.cancel',
+                            onClick: () => {
+                                modal.close();
+                                resolve(false);
+                            }
+                        },
+                        {
+                            type: 'primary',
+                            label: 'general.confirm',
+                            onClick: () => {
+                                modal.close();
+                                resolve(true);
+                            }
+                        }
+                    ]
+                });
+
+                modal.open();
+            });
         }
 
         /**

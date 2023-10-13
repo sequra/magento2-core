@@ -12,12 +12,17 @@ use Magento\Framework\UrlInterface;
 use Magento\Quote\Api\CartRepositoryInterface;
 use Magento\Quote\Model\Quote as QuoteEntity;
 use Magento\Quote\Model\Quote\Address;
+use Magento\Sales\Model\Order;
+use Magento\Sales\Model\OrderFactory;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Tax\Model\Config;
 use SeQura\Core\BusinessLogic\AdminAPI\AdminAPI;
 use SeQura\Core\BusinessLogic\AdminAPI\GeneralSettings\Responses\GeneralSettingsResponse;
+use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
 use SeQura\Core\BusinessLogic\Domain\Order\Models\OrderRequest\CreateOrderRequest;
 use SeQura\Core\BusinessLogic\Domain\Order\Models\OrderRequest\Item\ItemType;
+use SeQura\Core\BusinessLogic\Domain\UIState\Services\UIStateService;
+use SeQura\Core\Infrastructure\ServiceRegister;
 use Sequra\Core\Services\BusinessLogic\ProductService;
 
 /**
@@ -71,19 +76,25 @@ class CreateOrderRequestBuilder implements \SeQura\Core\BusinessLogic\Domain\Ord
      * @var ProductService
      */
     private $productService;
+    /**
+     * @var OrderFactory
+     */
+    private $orderFactory;
 
     public function __construct(
-        CartRepositoryInterface $quoteRepository,
+        CartRepositoryInterface  $quoteRepository,
         ProductMetadataInterface $productMetadata,
-        ResourceInterface $moduleResource,
-        DeploymentConfig $deploymentConfig,
-        SqlVersionProvider $sqlVersionProvider,
-        ScopeConfigInterface $scopeConfig,
-        UrlInterface $urlBuilder,
-        string $cartId,
-        string $storeId,
-        ProductService $productService
-    ) {
+        ResourceInterface        $moduleResource,
+        DeploymentConfig         $deploymentConfig,
+        SqlVersionProvider       $sqlVersionProvider,
+        ScopeConfigInterface     $scopeConfig,
+        UrlInterface             $urlBuilder,
+        string                   $cartId,
+        string                   $storeId,
+        ProductService           $productService,
+        OrderFactory             $orderFactory
+    )
+    {
         $this->quoteRepository = $quoteRepository;
         $this->productMetadata = $productMetadata;
         $this->moduleResource = $moduleResource;
@@ -94,6 +105,7 @@ class CreateOrderRequestBuilder implements \SeQura\Core\BusinessLogic\Domain\Ord
         $this->cartId = $cartId;
         $this->storeId = $storeId;
         $this->productService = $productService;
+        $this->orderFactory = $orderFactory;
     }
 
     public function build(): CreateOrderRequest
@@ -106,6 +118,13 @@ class CreateOrderRequestBuilder implements \SeQura\Core\BusinessLogic\Domain\Ord
     public function isAllowedFor(GeneralSettingsResponse $generalSettingsResponse): bool
     {
         $generalSettings = $generalSettingsResponse->toArray();
+        $stateService = ServiceRegister::getService(UIStateService::class);
+        $isOnboarding = StoreContext::doWithStore($this->storeId, [$stateService, 'isOnboardingState']);
+
+        if ($isOnboarding) {
+            return false;
+        }
+
         if (
             !empty($generalSettings['allowedIPAddresses']) &&
             !empty($ipAddress = $this->getCustomerIpAddress()) &&
@@ -126,7 +145,8 @@ class CreateOrderRequestBuilder implements \SeQura\Core\BusinessLogic\Domain\Ord
             if (
                 !empty($generalSettings['excludedProducts']) &&
                 !empty($item->getSku()) &&
-                in_array($item->getSku(), $generalSettings['excludedProducts'], true)
+                (in_array($item->getProduct()->getData('sku'), $generalSettings['excludedProducts'], true) ||
+                    in_array($item->getProduct()->getSku(), $generalSettings['excludedProducts'], true))
             ) {
                 return false;
             }
@@ -249,7 +269,7 @@ class CreateOrderRequestBuilder implements \SeQura\Core\BusinessLogic\Domain\Ord
             ];
         }
 
-        $discount = $this->getDiscountInclTax();
+        $discount = $this->getTotalDiscountAmount();
         if ($discount < 0) {
             $items[] = [
                 'type' => 'discount',
@@ -262,10 +282,17 @@ class CreateOrderRequestBuilder implements \SeQura\Core\BusinessLogic\Domain\Ord
         return $items;
     }
 
-    private function getDiscountInclTax(): int
+    private function getTotalDiscountAmount(): int
     {
-        $discountWithTax = 0;
-        $priceIncludesTax = $this->scopeConfig->getValue(
+        $totalDiscount = 0;
+
+        $taxAfterDiscount = $this->scopeConfig->getValue(
+            Config::CONFIG_XML_PATH_APPLY_AFTER_DISCOUNT,
+            ScopeInterface::SCOPE_STORE,
+            $this->storeId
+        );
+
+        $pricesIncludeTax = $this->scopeConfig->getValue(
             Config::CONFIG_XML_PATH_PRICE_INCLUDES_TAX,
             ScopeInterface::SCOPE_STORE,
             $this->storeId
@@ -274,14 +301,16 @@ class CreateOrderRequestBuilder implements \SeQura\Core\BusinessLogic\Domain\Ord
         /** @var QuoteEntity\Item $item */
         foreach ($this->quote->getAllItems() as $item) {
             $discount = $item->getDiscountAmount();
-            if (!$priceIncludesTax) {
+
+            // Needed because of tax difference on SeQura and Magento
+            if ($taxAfterDiscount && !$pricesIncludeTax) {
                 $discount *= (1 + $item->getTaxPercent() / 100);
             }
 
-            $discountWithTax += (int)round(100 * $discount);
+            $totalDiscount += (int)round(100 * $discount);
         }
 
-        return -1 * $discountWithTax;
+        return -1 * $totalDiscount;
     }
 
     private function getAddress(Address $address): array
@@ -323,7 +352,102 @@ class CreateOrderRequestBuilder implements \SeQura\Core\BusinessLogic\Domain\Ord
             'vat_number' => $this->quote->getBillingAddress()->getVatId(),
             'created_at' => $this->quote->getCustomer()->getCreatedAt(),
             'updated_at' => $this->quote->getCustomer()->getUpdatedAt(),
+            'previous_orders' => $this->getPreviousOrders($this->quote->getCustomer()->getId()),
         ];
+    }
+
+    /**
+     * @param $customerId
+     *
+     * @return array
+     */
+    private function getPreviousOrders($customerId): array
+    {
+        $orderModel = $this->orderFactory->create();
+        $orderCollection = $orderModel->getCollection()->addFieldToFilter('customer_id', ['eq' => $customerId]);
+        $orders = [];
+
+        if (!$orderCollection) {
+            return $orders;
+        }
+
+        foreach ($orderCollection as $orderRow) {
+            $order = [];
+            $order['amount'] = $this->formatPrice($orderRow->getData('grand_total'));
+            $order['currency'] = $orderRow->getData('order_currency_code');
+            $order['created_at'] = str_replace(' ', 'T', $orderRow->getData('created_at'));
+            $order['raw_status'] = $orderRow->getData('status');
+            $order['postal_code'] = $orderRow->getBillingAddress()->getPostCode();
+            $order['country_code'] = $orderRow->getBillingAddress()->getCountryId();
+            $order['status'] = $this->mapOrderStatus($orderRow->getData('status'));
+            $order['payment_method_raw'] = $orderRow->getPayment()->getAdditionalInformation()['method_title'] ?? '';
+            $order['payment_method'] = $this->mapPaymentName($orderRow->getPayment()->getMethod());
+
+            $orders[] = $order;
+        }
+
+        return $orders;
+    }
+
+    /**
+     * @param string $name
+     *
+     * @return string
+     */
+    private function mapPaymentName(string $name): string
+    {
+        if (str_contains($name, 'card')) {
+            return 'CC';
+        }
+
+        if (str_contains($name, 'paypal')) {
+            return 'PP';
+        }
+
+        if ($name === 'banktransfer') {
+            return 'TR';
+        }
+
+        if ($name === 'cashondelivery') {
+            return 'COD';
+        }
+
+        if (str_contains($name, 'sequra')) {
+            return 'SQ';
+        }
+
+        return 'O/' . $name;
+    }
+
+    /**
+     * @param string $magentoStatus
+     *
+     * @return string
+     */
+    private function mapOrderStatus(string $magentoStatus): string
+    {
+        switch ($magentoStatus) {
+            case Order::STATE_COMPLETE:
+                return 'shipped';
+            case Order::STATE_CANCELED:
+                return 'cancelled';
+        }
+
+        return 'processing';
+    }
+
+    /**
+     * @param $price
+     *
+     * @return int
+     */
+    private function formatPrice($price): int
+    {
+        if (!is_numeric($price)) {
+            return 0;
+        }
+
+        return intval(round(100 * $price));
     }
 
     private function getPlatform(): array

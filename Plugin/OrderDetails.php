@@ -10,6 +10,7 @@ use SeQura\Core\BusinessLogic\Domain\Order\Models\OrderRequest\OrderRequestState
 use SeQura\Core\BusinessLogic\Domain\Order\Models\SeQuraOrder;
 use SeQura\Core\BusinessLogic\Domain\Order\Service\OrderService;
 use SeQura\Core\Infrastructure\ServiceRegister;
+use Sequra\Core\Services\BusinessLogic\Utility\SeQuraTranslationProvider;
 use Sequra\Core\Ui\Component\Listing\Column\SequraOrderLink;
 
 /**
@@ -29,20 +30,27 @@ class OrderDetails
      */
     protected $currencyModel;
 
+    /**
+     * @var SeQuraTranslationProvider
+     */
+    protected $translation;
+
     private const statusMap = [
-        OrderRequestStates::CONFIRMED => 'paid',
-        OrderRequestStates::ON_HOLD => 'pending review',
-        OrderRequestStates::CANCELLED => 'cancelled',
+        OrderRequestStates::CONFIRMED => 'sequra.status.paid',
+        OrderRequestStates::ON_HOLD => 'sequra.status.pendingReview',
+        OrderRequestStates::CANCELLED => 'sequra.status.cancelled',
     ];
 
     /**
      * @param UrlInterface $urlBuilder
      * @param Currency $currencyModel
+     * @param SeQuraTranslationProvider $translation
      */
-    public function __construct(UrlInterface $urlBuilder, Currency $currencyModel)
+    public function __construct(UrlInterface $urlBuilder, Currency $currencyModel, SeQuraTranslationProvider $translation)
     {
         $this->urlBuilder = $urlBuilder;
         $this->currencyModel = $currencyModel;
+        $this->translation = $translation;
     }
 
     /**
@@ -86,7 +94,7 @@ class OrderDetails
         if ($order->getState() === OrderRequestStates::CONFIRMED) {
             $viewOnSeQuraButton = html_entity_decode('
                 <a class="sequra-link" href="' . $sequraLink . '" target="_blank">
-                  <button class="sequra-preview">View on SeQura</button>
+                  <button class="sequra-preview">' . $this->translation->translate("sequra.viewOnSequra") . '</button>
                 </a>
             ');
         }
@@ -94,9 +102,9 @@ class OrderDetails
         return html_entity_decode('
             <table class="sequra-table">
               <tr>
-                <th>Payment method logo</th>
-                <th>Payment method</th>
-                <th>Payment amount</th>
+                <th>' . $this->translation->translate("sequra.paymentMethodLogo") . '</th>
+                <th>' . $this->translation->translate("sequra.paymentMethod") . '</th>
+                <th>' . $this->translation->translate("sequra.paymentAmount") . '</th>
               </tr>
               <tr>
                 <td>' . $paymentMethodIcon . '</td>
@@ -106,17 +114,17 @@ class OrderDetails
             </table>
 
             <div class="sequra-info-field">
-              <div class="sequra-title">Status</div>
-              <div>Order ' . self::statusMap[$order->getState()] . '</div>
+              <div class="sequra-title">' . $this->translation->translate("sequra.status") . '</div>
+              <div>' . $this->translation->translate("sequra.order") . ' ' . $this->translation->translate(self::statusMap[$order->getState()]) . '</div>
             </div>
 
             <div class="sequra-info-field">
-              <div class="sequra-title">SeQura reference number</div>
+              <div class="sequra-title">' . $this->translation->translate("sequra.sequraReferenceNumber") . '</div>
               <div>' . $order->getReference() . '</div>
             </div>
 
             <div class="sequra-info-field">
-              <div class="sequra-title">Merchant ID</div>
+              <div class="sequra-title">' . $this->translation->translate("sequra.merchantId") . '</div>
               <div>' . $order->getMerchant()->getId() . '</div>
             </div>
         ') . $viewOnSeQuraButton;

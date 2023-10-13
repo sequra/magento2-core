@@ -15,6 +15,7 @@ use SeQura\Core\BusinessLogic\Domain\Order\Models\OrderUpdateData;
 use SeQura\Core\BusinessLogic\Domain\Order\Service\OrderService;
 use SeQura\Core\Infrastructure\Logger\Logger;
 use SeQura\Core\Infrastructure\ServiceRegister;
+use Sequra\Core\Services\BusinessLogic\Utility\SeQuraTranslationProvider;
 
 /**
  * Class OrderCancellationObserver
@@ -23,6 +24,19 @@ use SeQura\Core\Infrastructure\ServiceRegister;
  */
 class OrderCancellationObserver implements ObserverInterface
 {
+    /**
+     * @var SeQuraTranslationProvider
+     */
+    private $translationProvider;
+
+    /**
+     * @param SeQuraTranslationProvider $translationProvider
+     */
+    public function __construct(SeQuraTranslationProvider $translationProvider)
+    {
+        $this->translationProvider = $translationProvider;
+    }
+
     /**
      * @inheritDoc
      *
@@ -55,7 +69,7 @@ class OrderCancellationObserver implements ObserverInterface
     {
         $statusHistory = $orderData->getAllStatusHistory();
         if ($statusHistory && $statusHistory[count($statusHistory) - 2]->getStatus() === Order::STATE_PAYMENT_REVIEW) {
-            throw new LocalizedException(__('Order with "payment review" status cannot be cancelled.'));
+            throw new LocalizedException($this->translationProvider->translate('sequra.error.cannotCancel'));
         }
 
         StoreContext::doWithStore($orderData->getStoreId(), [$this->getOrderService(), 'updateOrder'], [

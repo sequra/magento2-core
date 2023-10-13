@@ -35,6 +35,7 @@ class Integration extends BaseConfigurationController
     protected function getVersion(): Json
     {
         $data = AdminAPI::get()->integration($this->storeId)->getVersion();
+        $this->addResponseCode($data);
 
         return $this->result->setData($data->toArray());
     }
@@ -47,6 +48,7 @@ class Integration extends BaseConfigurationController
     protected function getState(): Json
     {
         $data = AdminAPI::get()->integration($this->storeId)->getUIState();
+        $this->addResponseCode($data);
 
         return $this->result->setData($data->toArray());
     }
@@ -60,6 +62,7 @@ class Integration extends BaseConfigurationController
     protected function getShopName(): Json
     {
         $data = AdminAPI::get()->integration($this->storeId)->getShopName();
+        $this->addResponseCode($data);
 
         return $this->result->setData($data->toArray());
     }

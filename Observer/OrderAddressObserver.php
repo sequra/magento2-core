@@ -14,6 +14,7 @@ use SeQura\Core\BusinessLogic\Domain\Order\Service\OrderService;
 use Sequra\Core\Controller\Webhook\Index as WebhookController;
 use SeQura\Core\Infrastructure\Logger\Logger;
 use SeQura\Core\Infrastructure\ServiceRegister;
+use Sequra\Core\Services\BusinessLogic\Utility\SeQuraTranslationProvider;
 use Sequra\Core\Services\BusinessLogic\Utility\TransformEntityService;
 
 /**
@@ -24,13 +25,33 @@ use Sequra\Core\Services\BusinessLogic\Utility\TransformEntityService;
 class OrderAddressObserver implements ObserverInterface
 {
     /**
+     * @var SeQuraTranslationProvider
+     */
+    private $translationProvider;
+
+    /**
+     * @var TransformEntityService
+     */
+    private $transformService;
+
+    /**
+     * @param SeQuraTranslationProvider $translationProvider
+     * @param TransformEntityService $transformService
+     */
+    public function __construct(SeQuraTranslationProvider $translationProvider, TransformEntityService $transformService)
+    {
+        $this->translationProvider = $translationProvider;
+        $this->transformService = $transformService;
+    }
+
+    /**
      * @inheritDoc
      *
      * @throws LocalizedException
      */
     public function execute(Observer $observer): void
     {
-        if(WebhookController::isWebhookProcessing()) {
+        if (WebhookController::isWebhookProcessing()) {
             return;
         }
 
@@ -56,11 +77,11 @@ class OrderAddressObserver implements ObserverInterface
     {
         $magentoOrder = $magentoAddress->getOrder();
         if ($magentoOrder->getStatus() === Order::STATE_PAYMENT_REVIEW) {
-            throw new LocalizedException(__('Order with "payment review" status cannot be updated.'));
+            throw new LocalizedException($this->translationProvider->translate('sequra.error.cannotUpdate'));
         }
 
         $isShippingAddress = $magentoAddress->getAddressType() === 'shipping';
-        $address = TransformEntityService::transformAddressToSeQuraOrderAddress($magentoAddress);
+        $address = $this->transformService->transformAddressToSeQuraOrderAddress($magentoAddress);
 
         StoreContext::doWithStore($magentoOrder->getStoreId(), [$this->getOrderService(), 'updateOrder'], [
             new OrderUpdateData(

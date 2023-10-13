@@ -13,12 +13,12 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        const baseApiUrl = 'https://38cd2bd72289.ngrok.app';
-
         SequraFE.translations = {
             default: <?php echo $block->getTranslations()['default']; ?>,
             current: <?php echo $block->getTranslations()['current']; ?>
         };
+
+        SequraFE.adminLanguage = "<?php echo $block->getAdminLanguage(); ?>";
 
         SequraFE.utilities.showLoader();
 
@@ -31,7 +31,6 @@
             saveCountrySettingsUrl: "<?php echo $block->getControllerUrl('CountrySettings', '{storeId}','setCountrySettings'); ?>",
             getWidgetSettingsUrl: "<?php echo $block->getControllerUrl('WidgetSettings', '{storeId}', 'getWidgetSettings'); ?>",
             saveWidgetSettingsUrl: "<?php echo $block->getControllerUrl('WidgetSettings', '{storeId}', 'setWidgetSettings'); ?>",
-            getWidgetConfiguratorUrl: baseApiUrl + '/widget-configurator',
             getPaymentMethodsUrl: "<?php echo $block->getControllerUrl('PaymentMethods','{storeId}', 'getPaymentMethods', '{merchantId}'); ?>",
         }
 
@@ -48,7 +47,8 @@
                 getPaymentMethodsUrl: "<?php echo $block->getControllerUrl('PaymentMethods','{storeId}', 'getPaymentMethods', '{merchantId}'); ?>",
                 getSellingCountriesUrl: "<?php echo $block->getControllerUrl('CountrySettings','{storeId}', 'getSellingCountries'); ?>",
                 getCountrySettingsUrl: "<?php echo $block->getControllerUrl('CountrySettings','{storeId}', 'getCountrySettings'); ?>",
-                getConnectionDataUrl: "<?php echo $block->getControllerUrl('Onboarding','{storeId}', 'getConnectionData'); ?>"
+                getConnectionDataUrl: "<?php echo $block->getControllerUrl('Onboarding','{storeId}', 'getConnectionData'); ?>",
+                validateConnectionDataUrl: "<?php echo $block->getControllerUrl('Onboarding', '{storeId}','validateConnectionData'); ?>"
             }
         };
 

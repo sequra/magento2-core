@@ -58,13 +58,15 @@ class WidgetSettings extends BaseConfigurationController
             return $this->result->setData($result);
         }
 
-        $result['widgetLabels']['message'] = isset($result['widgetLabels']['messages']) ?
+        $result['widgetLabels']['message'] = !empty($result['widgetLabels']['messages']) ?
             reset($result['widgetLabels']['messages']): '';
-        $result['widgetLabels']['messageBelowLimit'] = isset($result['widgetLabels']['messagesBelowLimit']) ?
+        $result['widgetLabels']['messageBelowLimit'] = !empty($result['widgetLabels']['messagesBelowLimit']) ?
             reset($result['widgetLabels']['messagesBelowLimit']): '';
         $result['widgetStyles'] = json_encode($result['widgetConfiguration']);
         unset($result['widgetLabels']['messages'], $result['widgetLabels']['messagesBelowLimit']);
         unset($result['widgetConfiguration']);
+
+        $this->addResponseCode($data);
 
         return $this->result->setData($result);
     }

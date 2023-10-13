@@ -15,4 +15,14 @@
     <type name="Magento\Framework\Pricing\Render\Amount">
         <plugin name="sequra_mini_widgets" type="Sequra\Core\Plugin\MiniWidgets"/>
     </type>
+    <type name="Magento\ConfigurableProduct\Block\Product\View\Type\Configurable">
+        <plugin disabled="false" name="sequra_config_attributes" sortOrder="10"
+                type="Sequra\Core\Plugin\Magento\ConfigurableProduct\Block\Product\View\Type\Configurable"/>
+    </type>
+    <type name="Magento\Swatches\Block\Product\Renderer\Configurable">
+        <plugin disabled="false"
+                name="sequra_config_products"
+                sortOrder="10"
+                type="Sequra\Core\Plugin\Magento\ConfigurableProduct\Block\Product\View\Type\Configurable"/>
+    </type>
 </config>

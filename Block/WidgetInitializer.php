@@ -8,9 +8,10 @@ use Magento\Catalog\Model\ProductRepository;
 use Magento\Checkout\Block\Cart;
 use Magento\Framework\App\Request\Http;
 use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\Pricing\PriceCurrencyInterface;
 use Magento\Framework\View\Element\Template;
 use Magento\Framework\View\Element\Template\Context;
-use Magento\Store\Api\StoreConfigManagerInterface;
+use Magento\Quote\Model\Quote\Item;
 use SeQura\Core\BusinessLogic\Domain\GeneralSettings\Models\GeneralSettings;
 use SeQura\Core\BusinessLogic\Domain\GeneralSettings\Services\GeneralSettingsService;
 use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
@@ -44,21 +45,21 @@ class WidgetInitializer extends Template
      */
     private $cart;
     /**
-     * @var StoreConfigManagerInterface
-     */
-    private $storeConfigManager;
-    /**
      * @var ProductService
      */
     private $productService;
+    /**
+     * @var PriceCurrencyInterface
+     */
+    private $priceCurrency;
 
     /**
      * @param WidgetConfigService $widgetConfigService
      * @param Http $request
      * @param ProductRepository $productRepository
      * @param Cart $cart
-     * @param StoreConfigManagerInterface $storeConfigManager
      * @param ProductService $productService
+     * @param PriceCurrencyInterface $priceCurrency
      * @param Context $context
      * @param array $data
      */
@@ -67,8 +68,8 @@ class WidgetInitializer extends Template
         Http                        $request,
         ProductRepository           $productRepository,
         Cart                        $cart,
-        StoreConfigManagerInterface $storeConfigManager,
         ProductService              $productService,
+        PriceCurrencyInterface      $priceCurrency,
         Template\Context            $context,
         array                       $data = []
     )
@@ -79,8 +80,8 @@ class WidgetInitializer extends Template
         $this->request = $request;
         $this->productRepository = $productRepository;
         $this->cart = $cart;
-        $this->storeConfigManager = $storeConfigManager;
         $this->productService = $productService;
+        $this->priceCurrency = $priceCurrency;
     }
 
     /**
@@ -92,7 +93,10 @@ class WidgetInitializer extends Template
     {
         $actionName = $this->request->getFullActionName();
 
-        if (!in_array($actionName, ['catalog_product_view', 'checkout_cart_index', 'catalog_category_view'])) {
+        if (!in_array(
+            $actionName,
+            ['catalog_product_view', 'checkout_cart_index', 'catalog_category_view', 'cms_index_index', 'catalogsearch_result_index']
+        )) {
             return json_encode([]);
         }
 
@@ -121,18 +125,23 @@ class WidgetInitializer extends Template
     private function getConfig(string $actionName): array
     {
         $amount = 0;
-        $storeConfig = $this->storeConfigManager->getStoreConfigs([$this->_storeManager->getStore()->getCode()])[0];
         $widgetSettings = $this->getWidgetSettings();
+        $settings = $this->getGeneralSettings();
 
-        if (empty($widgetSettings)) {
+        if (empty($widgetSettings) || !$widgetSettings->isEnabled()) {
             return [];
         }
 
-        if ($storeConfig->getBaseCurrencyCode() !== 'EUR' ||
+        if ($this->priceCurrency->getCurrency()->getCurrencyCode() !== 'EUR' ||
+            ($settings && !empty($settings->getAllowedIPAddresses()) && !empty($ipAddress = $this->getCustomerIpAddress()) &&
+                !in_array($ipAddress, $settings->getAllowedIPAddresses(), true))
+            ||
             ($actionName === 'catalog_product_view' && !$widgetSettings->isDisplayOnProductPage()
                 && !$widgetSettings->isShowInstallmentsInProductListing()) ||
             ($actionName === 'checkout_cart_index' && !$widgetSettings->isShowInstallmentsInCartPage())
-            || ($actionName === 'catalog_category_view' && !$widgetSettings->isShowInstallmentsInProductListing())) {
+            || ($actionName === 'catalog_category_view' && !$widgetSettings->isShowInstallmentsInProductListing())
+            || (($actionName === 'cms_index_index' || $actionName === 'catalogsearch_result_index')
+                && !$widgetSettings->isShowInstallmentsInProductListing())) {
             return [];
         }
 
@@ -140,43 +149,51 @@ class WidgetInitializer extends Template
             $productId = $this->request->getParam('id');
             $product = $this->productRepository->getById($productId);
 
-            if (!$this->isWidgetEnabledForProduct($product)) {
+            if (!$this->isWidgetEnabledForProduct($product, $settings)) {
                 return [];
             }
 
-            $amount = $product->getFinalPrice() * 100;
+            $amount = ($product->getTypeId() === 'bundle' ?
+                    $product->getPriceInfo()->getPrice('regular_price')->getMinimalPrice()->getValue() :
+                    $product->getFinalPrice()) * 100;
         }
 
         if ($actionName === 'checkout_cart_index') {
+            $items = $this->cart->getItems();
+
+            /** @var Item $item */
+            foreach ($items as $item) {
+                if (!$this->isWidgetEnabledForProduct($item->getProduct(), $settings)) {
+                    return [];
+                }
+            }
+
             $totals = $this->cart->getTotals();
             $amount = $totals['grand_total']['value'] * 100;
         }
 
         $config = $this->widgetConfigService->getData($this->_storeManager->getStore()->getId());
 
-        return $config ? array_merge($config, ['amount' => $amount]) : [];
+        return $config ? array_merge($config, ['amount' => $amount, 'action_name' => $actionName]) : [];
     }
 
     /**
      * @param Product $product
+     * @param GeneralSettings|null $settings
      *
      * @return bool
      *
      * @throws NoSuchEntityException
      */
-    private function isWidgetEnabledForProduct(Product $product): bool
+    private function isWidgetEnabledForProduct(Product $product, ?GeneralSettings $settings): bool
     {
-        $settings = $this->getGeneralSettings();
-
-        if (!$settings) {
-            return true;
-        }
-
         $categoryIds = $product->getCategoryIds();
         $trail = $this->productService->getAllProductCategories($categoryIds);
 
-        return !in_array($product->getSku(), $settings->getExcludedProducts())
-            && empty(array_intersect($trail, $settings->getExcludedCategories()));
+        return !in_array($product->getData('sku'), $settings ? $settings->getExcludedProducts() : [])
+            && !in_array($product->getSku(), $settings ? $settings->getExcludedProducts() : [])
+            && empty(array_intersect($trail, $settings ? $settings->getExcludedCategories() : []))
+            && !$product->getIsVirtual() && $product->getTypeId() !== 'grouped';
     }
 
     /**
@@ -200,5 +217,18 @@ class WidgetInitializer extends Template
         $widgetService = ServiceRegister::getService(WidgetSettingsService::class);
 
         return $widgetService->getWidgetSettings();
+    }
+
+    private function getCustomerIpAddress(): string
+    {
+        if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
+            return $_SERVER['HTTP_CLIENT_IP'];
+        }
+
+        if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+            return $_SERVER['HTTP_X_FORWARDED_FOR'];
+        }
+
+        return $_SERVER['REMOTE_ADDR'];
     }
 }

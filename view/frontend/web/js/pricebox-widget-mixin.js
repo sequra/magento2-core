@@ -20,15 +20,8 @@ define(['jquery'], function ($) {
             });
 
             [...miniElements].forEach((el) => {
-                if (el.parentElement.parentElement.getAttribute('data-product-id') === productId) {
-                    el.setAttribute('data-amount', price);
-                    let minAmount = el.getAttribute('data-min-amount');
-
-                    if (price > minAmount) {
-                        el.innerText = el.getAttribute('data-label');
-                    } else {
-                        el.innerText = el.getAttribute('data-below-limit');
-                    }
+                if (typeof Sequra !== "undefined" && Sequra.computeCreditAgreements) {
+                    this.updateMiniWidgets(el, productId, price);
                 }
             });
 
@@ -37,6 +30,33 @@ define(['jquery'], function ($) {
             }
 
             return ret;
+        },
+
+        updateMiniWidgets: function (el, productId, price) {
+            if (el.parentElement.parentElement.getAttribute('data-product-id') === productId || el.innerText === '') {
+                let creditAgreement = Sequra.computeCreditAgreements({
+                    amount: price,
+                    product: el.getAttribute('data-product')
+                });
+
+                if (Object.keys(creditAgreement).length === 0) {
+                    return;
+                }
+
+                creditAgreement = creditAgreement[el.getAttribute('data-product')]
+                    .filter(function (item) {
+                        return item.default
+                    })[0];
+
+                el.setAttribute('data-amount', price);
+                let minAmount = el.getAttribute('data-min-amount');
+
+                if (parseInt(price) >= parseInt(minAmount)) {
+                    el.innerText = el.getAttribute('data-label').replace('%s', creditAgreement.instalment_total.string);
+                } else {
+                    el.innerText = el.getAttribute('data-below-limit').replace('%s', creditAgreement.min_amount.string);
+                }
+            }
         }
     };
 

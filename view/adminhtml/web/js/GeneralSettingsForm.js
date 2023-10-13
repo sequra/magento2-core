@@ -52,9 +52,8 @@ if (!window.SequraFE) {
     function GeneralSettingsForm(data, configuration) {
         const {
             elementGenerator: generator,
-            utilities,
             validationService: validator,
-            pageControllerFactory
+            utilities
         } = SequraFE;
         /** @type AjaxServiceType */
         const api = SequraFE.ajaxService;
@@ -73,8 +72,8 @@ if (!window.SequraFE) {
 
         /** @type GeneralSettings */
         const defaultGeneralSettingsData = {
-            showSeQuraCheckoutAsHostedPage: true,
-            sendOrderReportsPeriodicallyToSeQura: true,
+            showSeQuraCheckoutAsHostedPage: false,
+            sendOrderReportsPeriodicallyToSeQura: false,
             allowedIPAddresses: [],
             excludedCategories: [],
             excludedProducts: []
@@ -84,8 +83,6 @@ if (!window.SequraFE) {
          * Handles form rendering.
          */
         this.render = () => {
-            utilities.showLoader();
-
             if (!activeCountryConfiguration) {
                 activeCountryConfiguration = data?.countrySettings?.map((utilities.cloneObject))
             }
@@ -99,17 +96,16 @@ if (!window.SequraFE) {
 
             changedCountryConfiguration = activeCountryConfiguration?.map((utilities.cloneObject))
             changedGeneralSettings = utilities.cloneObject(activeGeneralSettings)
-
             initForm();
-            utilities.hideLoader();
 
-            if (localStorage.getItem('sq-password-changed')) {
+            if (SequraFE.state.getCredentialsChanged()) {
                 handleSave();
 
                 return;
             }
 
             disableFooter(true);
+            utilities.hideLoader();
         }
 
         /**
@@ -117,8 +113,9 @@ if (!window.SequraFE) {
          */
         const initForm = () => {
             const pageContent = document.querySelector('.sq-content');
-            pageContent.append(
+            pageContent?.append(
                 generator.createElement('div', 'sq-content-inner', '', null, [
+                    generator.createElement('div', 'sqp-flash-message-wrapper'),
                     generator.createPageHeading({
                         title: configuration.appState === SequraFE.appStates.ONBOARDING ?
                             'countries.title' : 'generalSettings.title',
@@ -131,24 +128,18 @@ if (!window.SequraFE) {
             const pageInnerContent = document.querySelector('.sq-content-inner');
 
             if (data.sellingCountries.length === 0) {
-                pageInnerContent.append(utilities.createFlashMessage('general.errors.countries.noCountries', "error"));
+                pageInnerContent?.append(utilities.createFlashMessage('general.errors.countries.noCountries', "error"));
 
                 return;
             }
 
             if (configuration.appState === SequraFE.appStates.SETTINGS && !SequraFE.isPromotional) {
-                pageInnerContent.append(
+                pageInnerContent?.append(
                     generator.createToggleField({
                         value: changedGeneralSettings.showSeQuraCheckoutAsHostedPage,
                         label: 'generalSettings.showCheckoutAsHostedPage.label',
                         description: 'generalSettings.showCheckoutAsHostedPage.description',
                         onChange: (value) => handleGeneralSettingsChange('showSeQuraCheckoutAsHostedPage', value)
-                    }),
-                    generator.createToggleField({
-                        value: changedGeneralSettings.sendOrderReportsPeriodicallyToSeQura,
-                        label: 'generalSettings.sendOrderReports.label',
-                        description: 'generalSettings.sendOrderReports.description',
-                        onChange: (value) => handleGeneralSettingsChange('sendOrderReportsPeriodicallyToSeQura', value)
                     }),
                     generator.createMultiItemSelectorField({
                         name: 'allowedIPAddresses-selector',
@@ -175,7 +166,7 @@ if (!window.SequraFE) {
                 )
             }
 
-            pageInnerContent.append(
+            pageInnerContent?.append(
                 generator.createMultiItemSelectorField({
                     name: 'countries-selector',
                     label: 'countries.selector.label',
@@ -195,7 +186,7 @@ if (!window.SequraFE) {
          */
         const renderCountries = () => {
             changedCountryConfiguration.map((countryConfig) => {
-                document.querySelector('.sq-content-inner').append(generator.createCountryField({
+                document.querySelector('.sq-content-inner')?.append(generator.createCountryField({
                     countryCode: countryConfig.countryCode,
                     merchantId: countryConfig.merchantId,
                     onChange: (value) => handleMerchantChange(countryConfig.countryCode, value)
@@ -208,7 +199,7 @@ if (!window.SequraFE) {
          */
         const renderControls = () => {
             configuration.appState === SequraFE.appStates.ONBOARDING ?
-                document.querySelector('.sq-content-inner').append(
+                document.querySelector('.sq-content-inner')?.append(
                     generator.createButtonField({
                         className: 'sq-continue sqm--block',
                         buttonType: 'primary',
@@ -216,13 +207,13 @@ if (!window.SequraFE) {
                         onClick: handleSave
                     })
                 ) :
-                document.querySelector('.sq-content').append(
+                document.querySelector('.sq-content')?.append(
                     generator.createPageFooter({
                         onSave: handleSave,
                         onCancel: () => {
                             const pageContent = document.querySelector('.sq-content');
-                            while (pageContent.firstChild) {
-                                pageContent.removeChild(pageContent.firstChild);
+                            while (pageContent?.firstChild) {
+                                pageContent?.removeChild(pageContent.firstChild);
                             }
 
                             this.render();
@@ -378,13 +369,12 @@ if (!window.SequraFE) {
 
             utilities.showLoader();
 
-            areIPAddressesValid
+            areIPAddressesValid()
             validateMerchantIds()
                 .then((results) => {
                     const hasError = results.some((result) => result.isValid === false);
                     hasError ? handleValidationError(results) : saveChangedData();
-                })
-                .finally(utilities.hideLoader);
+                });
         }
 
         /**
@@ -395,8 +385,11 @@ if (!window.SequraFE) {
         const handleValidationError = (results) => {
             if (results[0].reason && !results[0].reason.includes('merchantId')) {
                 SequraFE.responseService.errorHandler(
-                    {errorCode: 'connection.invalidUsernameOrPassword'}
-                );
+                    {errorCode: 'general.errors.connection.invalidUsernameOrPassword'}
+                ).catch(() => {
+                });
+
+                utilities.hideLoader();
 
                 return;
             }
@@ -407,7 +400,9 @@ if (!window.SequraFE) {
                     !result.isValid,
                     'validation.invalidField'
                 );
-            })
+            });
+
+            utilities.hideLoader();
         }
 
         /**
@@ -426,25 +421,39 @@ if (!window.SequraFE) {
 
             Promise.all(promises)
                 .then(() => {
-                    if (configuration.appState === SequraFE.appStates.ONBOARDING) {
-                        const index = SequraFE.pages.onboarding.indexOf(SequraFE.appPages.ONBOARDING.COUNTRIES)
-                        pageControllerFactory.getInstance(SequraFE.appStates.ONBOARDING).setDoneStep(index + 1);
-
-                        SequraFE.pages.onboarding.length > index + 1 ?
-                            window.location.hash = configuration.appState + '-' + SequraFE.pages.onboarding[index + 1] :
-                            SequraFE.state.display();
-                    }
-
-                    if (localStorage.getItem('sq-password-changed')) {
-                        localStorage.removeItem('sq-password-changed')
-                    }
-
                     disableFooter(true);
                     activeGeneralSettings = utilities.cloneObject(changedGeneralSettings);
                     activeCountryConfiguration = changedCountryConfiguration.map((utilities.cloneObject))
+
+                    configuration.appState === SequraFE.appStates.SETTINGS &&
+                    SequraFE.state.setData('generalSettings', activeGeneralSettings);
+                    SequraFE.state.setData('countrySettings', activeCountryConfiguration);
+
                     haveGeneralSettingsChanged = false;
                     hasCountryConfigurationChanged = false;
-                }).finally(utilities.hideLoader);
+
+                    let haveCredentialsChanges = SequraFE.state.getCredentialsChanged();
+                    if (configuration.appState === SequraFE.appStates.ONBOARDING) {
+                        if (haveCredentialsChanges) {
+                            SequraFE.state.removeCredentialsChanged();
+                            SequraFE.state.goToState(SequraFE.appStates.SETTINGS);
+
+                            return;
+                        }
+
+                        const index = SequraFE.pages.onboarding.indexOf(SequraFE.appPages.ONBOARDING.COUNTRIES)
+                        SequraFE.pages.onboarding.length > index + 1 ?
+                            window.location.hash = configuration.appState + '-' + SequraFE.pages.onboarding[index + 1] :
+                            window.location.hash = SequraFE.appStates.PAYMENT + '-' + SequraFE.appPages.PAYMENT.METHODS;
+                    }
+
+                    if (haveCredentialsChanges) {
+                        SequraFE.state.removeCredentialsChanged();
+                    }
+                })
+                .finally(() => {
+                    configuration.appState !== SequraFE.appStates.ONBOARDING && utilities.hideLoader();
+                });
         }
 
         /**

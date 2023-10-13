@@ -17,7 +17,7 @@ if (!window.SequraFE) {
      * @property {boolean} showInstallmentAmountInProductListing
      * @property {boolean} showInstallmentAmountInCartPage
      * @property {WidgetLabels|null} widgetLabels
-     * @property {string[]|null} widgetStyles
+     * @property {string|null} widgetStyles
      */
 
     /**
@@ -26,7 +26,8 @@ if (!window.SequraFE) {
      * @param {{
      * widgetSettings: WidgetSettings,
      * connectionSettings: ConnectionSettings,
-     * countrySettings: CountrySettings[]
+     * countrySettings: CountrySettings[],
+     * paymentMethods: PaymentMethod[]
      * }} data
      * @param {{
      * saveWidgetSettingsUrl: string,
@@ -43,9 +44,7 @@ if (!window.SequraFE) {
         const {
             elementGenerator: generator,
             validationService: validator,
-            utilities,
-            pageControllerFactory,
-            components
+            utilities
         } = SequraFE;
 
         /** @type WidgetSettings */
@@ -57,6 +56,20 @@ if (!window.SequraFE) {
         /** @type boolean */
         let isAssetKeyValid = false;
 
+        const miniWidgetLabels = {
+            messages: {
+                "ES": "Desde %s/mes",
+                "FR": "À partir de %s/mois",
+                "IT": "Da %s/mese",
+                "PT": "De %s/mês"
+            },
+            messagesBelowLimit: {
+                "ES": "Fracciona a partir de %s",
+                "FR": "Fraction de %s",
+                "IT": "Frazione da %s",
+                "PT": "Fração de %s"
+            }
+        }
 
         /** @type WidgetSettings */
         const defaultFormData = {
@@ -67,7 +80,7 @@ if (!window.SequraFE) {
                 message: '',
                 messageBelowLimit: ''
             },
-            widgetStyles: [],
+            widgetStyles: '{"alignment":"center","amount-font-bold":"true","amount-font-color":"#1C1C1C","amount-font-size":"15","background-color":"white","border-color":"#B1AEBA","border-radius":"","class":"","font-color":"#1C1C1C","link-font-color":"#1C1C1C","link-underline":"true","no-costs-claim":"","size":"M","starting-text":"only","type":"banner"}',
             showInstallmentAmountInProductListing: false,
             showInstallmentAmountInCartPage: false,
         };
@@ -76,8 +89,6 @@ if (!window.SequraFE) {
          * Handles form rendering.
          */
         this.render = () => {
-            utilities.showLoader();
-
             if (!activeSettings) {
                 activeSettings = utilities.cloneObject(defaultFormData);
                 for (let key in activeSettings) {
@@ -85,19 +96,13 @@ if (!window.SequraFE) {
                 }
             }
 
+            paymentMethodIds = data.paymentMethods?.map((paymentMethod) => paymentMethod.product);
             isAssetKeyValid = activeSettings.assetsKey && activeSettings.assetsKey.length !== 0;
             changedSettings = utilities.cloneObject(activeSettings)
+            initForm();
 
-            api.get(configuration.getPaymentMethodsUrl.replace(encodeURIComponent('{merchantId}'), data.countrySettings[0].merchantId), () => {
-            })
-                .then((res) => {
-                    paymentMethodIds = res.map((paymentMethod) => paymentMethod.product);
-                    initForm();
-                })
-                .finally(() => {
-                    disableFooter(true);
-                    utilities.hideLoader();
-                })
+            disableFooter(true);
+            utilities.hideLoader();
         }
 
         /**
@@ -105,8 +110,9 @@ if (!window.SequraFE) {
          */
         const initForm = () => {
             const pageContent = document.querySelector('.sq-content');
-            pageContent.append(
+            pageContent?.append(
                 generator.createElement('div', 'sq-content-inner', '', null, [
+                    generator.createElement('div', 'sqp-flash-message-wrapper'),
                     generator.createPageHeading({
                         title: `widgets.title.${configuration.appState}`,
                         text: 'widgets.description'
@@ -134,7 +140,7 @@ if (!window.SequraFE) {
         const renderAssetsKeyField = () => {
             const pageInnerContent = document.querySelector('.sq-content-inner');
             if (changedSettings.useWidgets) {
-                pageInnerContent.append(
+                pageInnerContent?.append(
                     generator.createTextField({
                         name: 'assets-key-input',
                         value: changedSettings.assetsKey,
@@ -144,6 +150,14 @@ if (!window.SequraFE) {
                         onChange: (value) => handleChange('assetsKey', value)
                     })
                 );
+
+                if (changedSettings.assetsKey?.length !== 0) {
+                    validator.validateField(
+                        document.querySelector('[name="assets-key-input"]'),
+                        !isAssetKeyValid,
+                        'validation.invalidField'
+                    );
+                }
             }
         }
 
@@ -156,70 +170,24 @@ if (!window.SequraFE) {
             }
 
             const pageInnerContent = document.querySelector('.sq-content-inner');
-            const modal = components.Modal.create({
-                title: 'widgets.configurator.modal.title',
-                className: `sq-confirm-modal`,
-                content: [
-                    generator.createPageHeading(
-                        {
-                            title: '',
-                            text: 'Please go to the following link to configure widget styles'
-                        }
-                    ),
-                    generator.createButtonLink(
-                        {
-                            text: 'SeQura widget configurator',
-                            className: 'sq-link-button',
-                            href: 'https://live.sequracdn.com/assets/static/simulator.html'
-                        }
-                    ),
-                    generator.createTextField(
-                        {
-                            className: 'sq-text-input',
-                            label: 'Widget configuration',
-                            description: '',
-                            value: changedSettings.widgetStyles,
-                            onChange: (value) => handleChange('widgetStyles', value)
-                        }
-                    )
-                ],
-                footer: true,
-                canClose: false,
-                buttons: [
-                    {
-                        label: 'general.cancel',
-                        type: 'cancel',
-                        size: 'medium',
-                        onClick: () => modal.close()
-                    },
-                    {
-                        label: 'general.confirm',
-                        type: 'secondary',
-                        size: 'medium',
-                        onClick: () => modal.close()
-                    }
-                ]
-            });
 
-            pageInnerContent.append(
+            pageInnerContent?.append(
+                generator.createTextArea(
+                    {
+                        name: 'widget-configurator-input',
+                        className: 'sq-text-input sq-text-area',
+                        label: 'widgets.configurator.label',
+                        description: 'widgets.configurator.description.start',
+                        value: changedSettings.widgetStyles,
+                        onChange: (value) => handleChange('widgetStyles', value),
+                        rows: 10
+                    }
+                ),
                 generator.createToggleField({
                     value: changedSettings.displayWidgetOnProductPage,
                     label: 'widgets.displayOnProductPage.label',
                     description: 'widgets.displayOnProductPage.description',
                     onChange: (value) => handleChange('displayWidgetOnProductPage', value)
-                }),
-                generator.createButtonField({
-                    className: 'sqm--block',
-                    buttonType: 'secondary',
-                    buttonLabel: 'widgets.configurator.buttonLabel',
-                    onClick: modal.open
-                }),
-
-                generator.createToggleField({
-                    value: changedSettings.showInstallmentAmountInProductListing,
-                    label: 'widgets.showInProductListing.label',
-                    description: 'widgets.showInProductListing.description',
-                    onChange: (value) => handleChange('showInstallmentAmountInProductListing', value)
                 }),
                 generator.createToggleField({
                     value: changedSettings.showInstallmentAmountInCartPage,
@@ -227,6 +195,45 @@ if (!window.SequraFE) {
                     description: 'widgets.showInCartPage.description',
                     onChange: (value) => handleChange('showInstallmentAmountInCartPage', value)
                 }),
+                generator.createToggleField({
+                    value: changedSettings.showInstallmentAmountInProductListing,
+                    label: 'widgets.showInProductListing.label',
+                    description: 'widgets.showInProductListing.description',
+                    onChange: (value) => handleChange('showInstallmentAmountInProductListing', value)
+                })
+            )
+
+            document.querySelector('.sqp-textarea-field .sqp-field-subtitle').append(
+                generator.createButtonLink({
+                    className: 'sq-link-button',
+                    text: 'widgets.configurator.description.link',
+                    href: 'https://live.sequracdn.com/assets/static/simulator.html',
+                    openInNewTab: true
+                }),
+                generator.createElement('span', '', 'widgets.configurator.description.end'),
+            )
+
+            renderLabelsConfiguration();
+        }
+
+        const renderLabelsConfiguration = () => {
+            if (!changedSettings.showInstallmentAmountInProductListing) {
+                return;
+            }
+
+            const pageInnerContent = document.querySelector('.sq-content-inner');
+
+            if (!changedSettings.widgetLabels.message) {
+                changedSettings.widgetLabels.message = miniWidgetLabels.messages.hasOwnProperty(SequraFE.adminLanguage) ?
+                    miniWidgetLabels.messages[SequraFE.adminLanguage] : miniWidgetLabels.messages['ES'];
+            }
+
+            if (!changedSettings.widgetLabels.messageBelowLimit) {
+                changedSettings.widgetLabels.messageBelowLimit = miniWidgetLabels.messagesBelowLimit.hasOwnProperty(SequraFE.adminLanguage) ?
+                    miniWidgetLabels.messagesBelowLimit[SequraFE.adminLanguage] : miniWidgetLabels.messagesBelowLimit['ES'];
+            }
+
+            pageInnerContent?.append(
                 generator.createTextField({
                     name: 'labels-message',
                     value: changedSettings.widgetLabels.message,
@@ -243,7 +250,7 @@ if (!window.SequraFE) {
                     description: 'widgets.messageBelowLimit.description',
                     onChange: (value) => handleLabelChange('messageBelowLimit', value)
                 })
-            )
+            );
         }
 
         /**
@@ -254,7 +261,7 @@ if (!window.SequraFE) {
             const pageInnerContent = document.querySelector('.sq-content-inner');
 
             if (configuration.appState === SequraFE.appStates.ONBOARDING) {
-                pageInnerContent.append(
+                pageInnerContent?.append(
                     generator.createButtonField({
                         className: 'sq-controls sqm--block',
                         buttonType: 'primary',
@@ -266,13 +273,14 @@ if (!window.SequraFE) {
                 return;
             }
 
-            pageContent.append(
+            pageContent?.append(
                 generator.createPageFooter({
                     onSave: handleSave,
                     onCancel: () => {
+                        utilities.showLoader();
                         const pageContent = document.querySelector('.sq-content');
-                        while (pageContent.firstChild) {
-                            pageContent.removeChild(pageContent.firstChild);
+                        while (pageContent?.firstChild) {
+                            pageContent?.removeChild(pageContent?.firstChild);
                         }
 
                         this.render();
@@ -291,7 +299,7 @@ if (!window.SequraFE) {
             changedSettings[name] = value;
             disableFooter(false);
 
-            if (name === 'useWidgets') {
+            if (name === 'useWidgets' || name === 'showInstallmentAmountInProductListing') {
                 refreshForm();
             }
 
@@ -320,7 +328,7 @@ if (!window.SequraFE) {
          * Re-renders the form.
          */
         const refreshForm = () => {
-            document.querySelector('.sq-content-inner').remove();
+            document.querySelector('.sq-content-inner')?.remove();
             configuration.appState !== SequraFE.appStates.ONBOARDING && document.querySelector('.sq-page-footer').remove();
             initForm();
         }
@@ -329,8 +337,43 @@ if (!window.SequraFE) {
          * Handles the saving of the form.
          */
         const handleSave = () => {
+            if (changedSettings.useWidgets && changedSettings.assetsKey?.length === 0) {
+                validator.validateRequiredField(
+                    document.querySelector('[name="assets-key-input"]'),
+                    'validation.requiredField'
+                )
+
+                return;
+            }
+
             if (changedSettings.useWidgets && !isAssetKeyValid) {
                 return;
+            }
+
+            if (changedSettings.useWidgets) {
+                let valid = isJSONValid(changedSettings.widgetStyles);
+
+                validator.validateField(
+                    document.querySelector(`[name="widget-configurator-input"]`),
+                    !valid,
+                    'validation.invalidJSON'
+                );
+
+                if (changedSettings.showInstallmentAmountInProductListing) {
+                    valid = validator.validateRequiredField(
+                        document.querySelector('[name="labels-message"]'),
+                        'validation.requiredField'
+                    ) && valid;
+
+                    valid = validator.validateRequiredField(
+                        document.querySelector('[name="labels-message-below-limit"]'),
+                        'validation.requiredField'
+                    ) && valid;
+                }
+
+                if (!valid) {
+                    return;
+                }
             }
 
             utilities.showLoader();
@@ -338,14 +381,14 @@ if (!window.SequraFE) {
                 .then(() => {
                     if (configuration.appState === SequraFE.appStates.ONBOARDING) {
                         const index = SequraFE.pages.onboarding.indexOf(SequraFE.appPages.ONBOARDING.WIDGETS)
-                        pageControllerFactory.getInstance(SequraFE.appStates.ONBOARDING).setDoneStep(index + 1);
-
                         SequraFE.pages.onboarding.length > index + 1 ?
                             window.location.hash = configuration.appState + '-' + SequraFE.pages.onboarding[index + 1] :
-                            SequraFE.state.display();
+                            window.location.hash = SequraFE.appStates.PAYMENT + '-' + SequraFE.appPages.PAYMENT.METHODS;
                     }
 
                     activeSettings = utilities.cloneObject(changedSettings);
+                    SequraFE.state.setData('widgetSettings', activeSettings);
+
                     disableFooter(true);
                 })
                 .finally(utilities.hideLoader);
@@ -359,6 +402,23 @@ if (!window.SequraFE) {
         const disableFooter = (disable) => {
             if (configuration.appState !== SequraFE.appStates.ONBOARDING) {
                 utilities.disableFooter(disable);
+            }
+        }
+
+        /**
+         * Validates JSON string.
+         *
+         * @param jsonString
+         *
+         * @returns {boolean}
+         */
+        const isJSONValid = (jsonString) => {
+            try {
+                JSON.parse(jsonString);
+
+                return true;
+            } catch (e) {
+                return false
             }
         }
 

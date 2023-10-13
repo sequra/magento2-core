@@ -11,6 +11,7 @@ use SeQura\Core\BusinessLogic\Domain\Order\Models\OrderRequest\OrderRequestState
 use SeQura\Core\BusinessLogic\Domain\Order\Models\SeQuraOrder;
 use SeQura\Core\BusinessLogic\Domain\Order\Service\OrderService;
 use SeQura\Core\Infrastructure\ServiceRegister;
+use Sequra\Core\Services\BusinessLogic\Utility\SeQuraTranslationProvider;
 
 /**
  * Class SequraOrderLink
@@ -21,6 +22,7 @@ class SequraOrderLink extends Column
 {
     protected $assetRepository;
     protected $urlBuilder;
+    protected $translationProvider;
     public const SEQURA_PORTAL_URL = 'https://simbox.sequrapi.com/orders/';
 
     /**
@@ -28,20 +30,23 @@ class SequraOrderLink extends Column
      * @param UiComponentFactory $uiComponentFactory
      * @param Repository $assetRepository
      * @param UrlInterface $urlBuilder
+     * @param SeQuraTranslationProvider $translationProvider
      * @param array $components
      * @param array $data
      */
     public function __construct(
-        ContextInterface   $context,
-        UiComponentFactory $uiComponentFactory,
-        Repository         $assetRepository,
-        UrlInterface       $urlBuilder,
-        array              $components = [],
-        array              $data = []
+        ContextInterface          $context,
+        UiComponentFactory        $uiComponentFactory,
+        Repository                $assetRepository,
+        UrlInterface              $urlBuilder,
+        SeQuraTranslationProvider $translationProvider,
+        array                     $components = [],
+        array                     $data = []
     )
     {
         $this->assetRepository = $assetRepository;
         $this->urlBuilder = $urlBuilder;
+        $this->translationProvider = $translationProvider;
         parent::__construct($context, $uiComponentFactory, $components, $data);
     }
 
@@ -113,7 +118,7 @@ class SequraOrderLink extends Column
             '<a class="sequra-link" href="' . $this->urlBuilder->getUrl(self::SEQURA_PORTAL_URL . $orderReference) . '" target="_blank" onclick="event.stopPropagation()">
                         <button class="sequra-preview">
                             <img class="sequra-logo" src=' . $imagePath . ' alt="sequra-logo">
-                                View on SeQura
+                                ' . $this->translationProvider->translate("sequra.viewOnSequra") . '
                         </button>
                    </a>');
     }

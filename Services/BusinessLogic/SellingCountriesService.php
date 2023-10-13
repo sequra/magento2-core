@@ -2,8 +2,9 @@
 
 namespace Sequra\Core\Services\BusinessLogic;
 
-use Magento\Directory\Model\ResourceModel\Country\CollectionFactory as CountryCollectionFactory;
+use Magento\Directory\Model\AllowedCountries;
 use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
 use SeQura\Core\BusinessLogic\Domain\Integration\SellingCountries\SellingCountriesServiceInterface;
 use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
@@ -16,18 +17,18 @@ use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
 class SellingCountriesService implements SellingCountriesServiceInterface
 {
     /**
-     * @var CountryCollectionFactory
+     * @var AllowedCountries
      */
-    private $collectionFactory;
+    private $country;
 
     /**
      * @var StoreManagerInterface
      */
     private $storeManager;
 
-    public function __construct(CountryCollectionFactory $collectionFactory, StoreManagerInterface $storeManager)
+    public function __construct(AllowedCountries $country, StoreManagerInterface $storeManager)
     {
-        $this->collectionFactory = $collectionFactory;
+        $this->country = $country;
         $this->storeManager = $storeManager;
     }
 
@@ -39,14 +40,7 @@ class SellingCountriesService implements SellingCountriesServiceInterface
     public function getSellingCountries(): array
     {
         $store = $this->storeManager->getStore(StoreContext::getInstance()->getStoreId());
-        $countryCollection = $this->collectionFactory->create();
-        $countryCollection->addFieldToFilter('country_id', ['in' => $store->getConfig('general/country/allow')] );
 
-        $configuredCountries = [];
-        foreach ($countryCollection as $country) {
-            $configuredCountries[] = $country->getCountryId();
-        }
-
-        return $configuredCountries;
+        return $this->country->getAllowedCountries(ScopeInterface::SCOPE_WEBSITES, [$store->getWebsiteId()]);
     }
 }

@@ -7,6 +7,7 @@ use Magento\Customer\Api\AccountManagementInterface;
 use Magento\Customer\Api\CustomerRepositoryInterface;
 use Magento\Framework\Stdlib\CookieManagerInterface;
 use Magento\Framework\Stdlib\Cookie\CookieMetadataFactory;
+use Sequra\Core\Services\BusinessLogic\Utility\SeQuraTranslationProvider;
 
 /**
  * Class Index
@@ -31,6 +32,10 @@ class Index extends Onepage
      * @var CookieMetadataFactory
      */
     private $cookieMetadataFactory;
+    /**
+     * @var SeQuraTranslationProvider
+     */
+    private $translationProvider;
 
     public function __construct(
         \Magento\Framework\App\Action\Context $context,
@@ -50,7 +55,8 @@ class Index extends Onepage
         \Magento\Framework\Message\ManagerInterface $manager,
         \Magento\Sales\Model\OrderFactory $orderFactory,
         CookieManagerInterface $cookieManager,
-        CookieMetadataFactory $cookieMetadataFactory
+        CookieMetadataFactory $cookieMetadataFactory,
+        SeQuraTranslationProvider $translationProvider
     ) {
         parent::__construct(
             $context,
@@ -72,6 +78,7 @@ class Index extends Onepage
         $this->orderFactory = $orderFactory;
         $this->cookieManager = $cookieManager;
         $this->cookieMetadataFactory = $cookieMetadataFactory;
+        $this->translationProvider = $translationProvider;
     }
 
     public function execute()
@@ -82,7 +89,7 @@ class Index extends Onepage
         $order = $this->orderFactory->create()->loadByIncrementId($quote->getReservedOrderId());
         if (!$order->getId()) {
             $this->manager->addWarningMessage(
-                __('Something went wrong. Please try to place the order again.')
+                $this->translationProvider->translate('sequra.error.somethingWentWrong')
             );
             $this->resultRedirectFactory->create()->setPath('checkout/cart');
         }

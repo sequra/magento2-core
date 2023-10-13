@@ -1,33 +1,29 @@
 <?php
 
-namespace Sequra\Core\Model\Api;
+namespace Sequra\Core\Model\Api\Checkout;
 
 use Magento\Framework\App\Request\Http;
-use Magento\Framework\Data\Form\FormKey\Validator;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Serialize\Serializer\Json;
-use Magento\Quote\Model\Quote as QuoteEntity;
 use SeQura\Core\BusinessLogic\AdminAPI\AdminAPI;
 use SeQura\Core\BusinessLogic\CheckoutAPI\CheckoutAPI;
 use Sequra\Core\Model\Api\Builders\CreateOrderRequestBuilder;
 use Sequra\Core\Model\Api\Builders\CreateOrderRequestBuilderFactory;
+use Sequra\Core\Model\Api\CartProvider\CartProvider;
+use Sequra\Core\Services\BusinessLogic\Utility\SeQuraTranslationProvider;
 
 /**
- * Class SequraPaymentMethodsService
+ * Class BaseSequraPaymentMethodsService
  *
- * @package Sequra\Core\Model\Api
+ * @package Sequra\Core\Model\Api\Checkout
  */
-abstract class AbstractrSequraPaymentMethodsService
+class BaseSequraPaymentMethodsService
 {
     /**
      * @var Http
      */
     protected $request;
 
-    /**
-     * @var Validator
-     */
-    protected $formKeyValidator;
     /**
      * @var \Sequra\Core\Model\Api\Builders\CreateOrderRequestBuilderFactory
      */
@@ -36,31 +32,44 @@ abstract class AbstractrSequraPaymentMethodsService
      * @var Json
      */
     private $jsonSerializer;
+    /**
+     * @var CartProvider
+     */
+    private $cartProvider;
+    /**
+     * @var SeQuraTranslationProvider
+     */
+    private $translationProvider;
 
     /**
-     * AbstractInternalApiController constructor.
+     * BaseSequraPaymentMethodsService constructor.
      * @param Http $request
      * @param Json $jsonSerializer
-     * @param Validator $formKeyValidator
+     * @param CartProvider $cartProvider
      * @param CreateOrderRequestBuilderFactory $createOrderRequestBuilderFactory
+     * @param SeQuraTranslationProvider $translationProvider
      */
     public function __construct(
         Http $request,
         Json $jsonSerializer,
-        Validator $formKeyValidator,
-        \Sequra\Core\Model\Api\Builders\CreateOrderRequestBuilderFactory $createOrderRequestBuilderFactory
+        CartProvider $cartProvider,
+        \Sequra\Core\Model\Api\Builders\CreateOrderRequestBuilderFactory $createOrderRequestBuilderFactory,
+        SeQuraTranslationProvider $translationProvider
     ) {
         $this->request = $request;
         $this->jsonSerializer = $jsonSerializer;
-        $this->formKeyValidator = $formKeyValidator;
+        $this->cartProvider = $cartProvider;
         $this->createOrderRequestBuilderFactory = $createOrderRequestBuilderFactory;
+        $this->translationProvider = $translationProvider;
     }
 
-    public function getAvailablePaymentMethods(string $cartId, string $formKey): array
+    public function getAvailablePaymentMethods(string $cartId): array
     {
-        $this->validateRequest($formKey);
+        $quote = $this->cartProvider->getQuote($cartId);
 
-        $quote = $this->getQuote($cartId);
+        if (empty($quote->getShippingAddress()->getCountryId())) {
+            return [];
+        }
 
         /** @var CreateOrderRequestBuilder $builder */
         $builder = $this->createOrderRequestBuilderFactory->create([
@@ -84,11 +93,9 @@ abstract class AbstractrSequraPaymentMethodsService
         return $response->toArray()['availablePaymentMethods'];
     }
 
-    public function getForm(string $cartId, string $formKey): string
+    public function getForm(string $cartId): string
     {
-        $this->validateRequest($formKey);
-
-        $quote = $this->getQuote($cartId);
+        $quote = $this->cartProvider->getQuote($cartId);
 
         $response = CheckoutAPI::get()
             ->solicitation((string)$quote->getStore()->getId())
@@ -98,10 +105,14 @@ abstract class AbstractrSequraPaymentMethodsService
             ]));
 
         if (!$response->isSuccessful()) {
-            throw new LocalizedException(__('An error occurred on the server. Please try to place the order again.'));
+            throw new LocalizedException($this->translationProvider->translate('sequra.error.serverError'));
         }
 
-        $payload = $this->jsonSerializer->unserialize($this->request->getContent());
+        $payload = [];
+        if (!empty($this->request->getContent())) {
+            $payload = $this->jsonSerializer->unserialize($this->request->getContent());
+        }
+
         $product = !empty($payload['product_data']['ssequra_product']) ? $payload['product_data']['ssequra_product'] : null;
         $campaign = !empty($payload['product_data']['sequra_campaign']) ? $payload['product_data']['sequra_campaign'] : null;
 
@@ -110,32 +121,9 @@ abstract class AbstractrSequraPaymentMethodsService
             ->getIdentificationForm($quote->getId(), $product, $campaign);
 
         if (!$formResponse->isSuccessful()) {
-            throw new LocalizedException(__('An error occurred on the server. Please try to place the order again.'));
+            throw new LocalizedException($this->translationProvider->translate('sequra.error.serverError'));
         }
 
         return $formResponse->getIdentificationForm()->getForm();
     }
-
-    /**
-     * @param $formKey
-     * @return bool
-     * @throws \Exception
-     */
-    public function validateRequest($formKey): bool
-    {
-        $isAjax = $this->request->isAjax();
-        // Post value has to be manually set since it will have no post data when this function is accessed
-        $formKeyValid = $this->formKeyValidator->validate($this->request->setPostValue('form_key', $formKey));
-
-        if (!$isAjax || !$formKeyValid) {
-            throw new \Exception(
-                'Invalid request',
-                401
-            );
-        }
-
-        return true;
-    }
-
-    abstract protected function getQuote(string $cartId): QuoteEntity;
 }
