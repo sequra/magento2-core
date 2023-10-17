@@ -153,23 +153,7 @@ class WidgetConfigService
             'currency' => 'EUR',
             'isProductListingEnabled' => $widgetSettings->isShowInstallmentsInProductListing(),
             'isProductEnabled' => $widgetSettings->isDisplayOnProductPage(),
-            'widgetConfig' => [
-                'type' => $widgetSettings->getWidgetConfig()->getType(),
-                'size' => $widgetSettings->getWidgetConfig()->getSize(),
-                'font-color' => $widgetSettings->getWidgetConfig()->getFontColor(),
-                'background-color' => $widgetSettings->getWidgetConfig()->getBackgroundColor(),
-                'alignment' => $widgetSettings->getWidgetConfig()->getAlignment(),
-                'branding' => $widgetSettings->getWidgetConfig()->getBranding(),
-                'starting-text' => $widgetSettings->getWidgetConfig()->getStartingText(),
-                'amount-font-size' => $widgetSettings->getWidgetConfig()->getAmountFontSize(),
-                'amount-font-color' => $widgetSettings->getWidgetConfig()->getAmountFontColor(),
-                'amount-font-bold' => $widgetSettings->getWidgetConfig()->getAmountFontBold(),
-                'link-font-color' => $widgetSettings->getWidgetConfig()->getLinkFontColor(),
-                'link-underline' => $widgetSettings->getWidgetConfig()->getLinkUnderline(),
-                'border-color' => $widgetSettings->getWidgetConfig()->getBorderColor(),
-                'border-radius' => $widgetSettings->getWidgetConfig()->getBorderRadius(),
-                'no-costs-claim' => $widgetSettings->getWidgetConfig()->getNoCostsClaim(),
-            ]
+            'widgetConfig' => $widgetSettings->getWidgetConfig(),
         ];
     }
 

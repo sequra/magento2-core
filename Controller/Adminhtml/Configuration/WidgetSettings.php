@@ -62,7 +62,7 @@ class WidgetSettings extends BaseConfigurationController
             reset($result['widgetLabels']['messages']): '';
         $result['widgetLabels']['messageBelowLimit'] = !empty($result['widgetLabels']['messagesBelowLimit']) ?
             reset($result['widgetLabels']['messagesBelowLimit']): '';
-        $result['widgetStyles'] = json_encode($result['widgetConfiguration']);
+        $result['widgetStyles'] = $result['widgetConfiguration'];
         unset($result['widgetLabels']['messages'], $result['widgetLabels']['messagesBelowLimit']);
         unset($result['widgetConfiguration']);
 
@@ -84,7 +84,6 @@ class WidgetSettings extends BaseConfigurationController
         $store = $this->storeManager->getStore($this->storeId);
         $storeConfig = $this->storeConfigManager->getStoreConfigs([$store->getCode()])[0];
 
-        $config = $data['widgetStyles'] ? json_decode($data['widgetStyles'], true) : [];
         $labels = $data['widgetLabels'] ?? [];
         $response = AdminAPI::get()->widgetConfiguration($this->storeId)->setWidgetSettings(
             new WidgetSettingsRequest(
@@ -94,21 +93,7 @@ class WidgetSettings extends BaseConfigurationController
                 $data['showInstallmentAmountInProductListing'],
                 $data['showInstallmentAmountInCartPage'],
                 $data['miniWidgetSelector'] ?? '',
-                $config['type'] ?? '',
-                $config['size'] ?? '',
-                $config['font-color'] ?? '',
-                $config['background-color'] ?? '',
-                $config['alignment'] ?? '',
-                $config['branding'] ?? '',
-                $config['starting-text'] ?? '',
-                $config['amount-font-size'] ?? '',
-                $config['amount-font-color'] ?? '',
-                $config['amount-font-bold'] ?? '',
-                $config['link-font-color'] ?? '',
-                $config['link-underline'] ?? '',
-                $config['border-color'] ?? '',
-                $config['border-radius'] ?? '',
-                $config['no-costs-claim'] ?? '',
+                $data['widgetStyles'] ?? '',
                 $labels['message'] ? [$storeConfig->getLocale() => $labels['message']] : [],
                 $labels['messageBelowLimit'] ? [$storeConfig->getLocale() => $labels['messageBelowLimit']] : []
             )

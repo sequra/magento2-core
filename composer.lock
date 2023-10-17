@@ -4,20 +4,20 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "723e2194b9013de5f44eeaf10fb1fa75",
+    "content-hash": "73ef0febfe03557f0f7770020c6ca7d2",
     "packages": [
         {
             "name": "sequra/integration-core",
-            "version": "dev-dev",
+            "version": "dev-CR-SET-04-01",
             "source": {
                 "type": "git",
                 "url": "git@github.com:sequra/integration-core.git",
-                "reference": "8d977adcaa3a93e831f363fc460feb566d0c04bd"
+                "reference": "46e958590ba6a40e0425d1a74a556f229e784614"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sequra/integration-core/zipball/8d977adcaa3a93e831f363fc460feb566d0c04bd",
-                "reference": "8d977adcaa3a93e831f363fc460feb566d0c04bd",
+                "url": "https://api.github.com/repos/sequra/integration-core/zipball/46e958590ba6a40e0425d1a74a556f229e784614",
+                "reference": "46e958590ba6a40e0425d1a74a556f229e784614",
                 "shasum": ""
             },
             "require": {
@@ -47,7 +47,7 @@
                 "proprietary"
             ],
             "description": "Core SeQura integration library",
-            "time": "2023-10-09T13:47:17+00:00"
+            "time": "2023-10-11T14:11:30+00:00"
         }
     ],
     "packages-dev": [],

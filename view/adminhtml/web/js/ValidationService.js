@@ -193,6 +193,28 @@ if (!window.SequraFE) {
         parent && parent.classList.remove('sqs--error');
     };
 
+
+    /**
+     * Validates the provided JSON string and marks field invalid if the JSON is invalid.
+     *
+     * @param {HTMLElement} element
+     * @param {string?} value JSON value.
+     * @param {string?} message
+     * @return {boolean}
+     */
+    const validateJson = (element, value, message) => {
+        try {
+            JSON.parse(value);
+            removeError(element);
+
+            return true;
+        } catch (e) {
+            setError(element, message);
+
+            return false;
+        }
+    };
+
     /**
      * Validates the condition against the input field and marks field invalid if the error condition is met.
      *
@@ -220,6 +242,7 @@ if (!window.SequraFE) {
         validateNumber,
         validateUrl,
         validateMaxLength,
+        validateJson,
         validateField,
         validateRequiredField,
         handleValidationErrors

@@ -17,7 +17,7 @@ if (!window.SequraFE) {
      * @property {boolean} showInstallmentAmountInProductListing
      * @property {boolean} showInstallmentAmountInCartPage
      * @property {WidgetLabels|null} widgetLabels
-     * @property {string|null} widgetStyles
+     * @property {string[]|null} widgetStyles
      */
 
     /**
@@ -301,6 +301,16 @@ if (!window.SequraFE) {
 
             if (name === 'useWidgets' || name === 'showInstallmentAmountInProductListing') {
                 refreshForm();
+            }
+
+            if (name === 'widgetStyles') {
+                if (!validator.validateJson(
+                    document.querySelector('[name="widget-configurator-input"]'),
+                    value,
+                    'validation.invalidJSON'
+                )) {
+                    disableFooter(true);
+                }
             }
 
             if (name === 'assetsKey') {

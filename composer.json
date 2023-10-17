@@ -18,7 +18,7 @@
     "minimum-stability": "stable",
     "require": {
         "php": ">=7.2",
-        "sequra/integration-core": "dev-dev",
+        "sequra/integration-core": "dev-CR-SET-04-01",
         "ext-json": "*"
     },
     "repositories": [
