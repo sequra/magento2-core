@@ -23,23 +23,14 @@ class GeneralResponseValidator extends AbstractValidator
     public function validate(array $validationSubject)
     {
         $response = $validationSubject['response'];
-        
+
         $isValid = true;
         $errorMessages = [];
         $errorCodes = [];
-
-        // if(!isset($response['Ds_MerchantParameters'])){
-        //     $isValid = false;
-        //     $errorMessages[] = "Error en la devolución online: ".$response['errorCode']??'';
-        //     $errorCodes[] = $response['errorCode']??'';
-        // } else {
-        //     $params = json_decode(base64_decode($response['Ds_MerchantParameters']),true);
-        //     if($params['Ds_Response']!='0000' && $params['Ds_Response']!='0900'){
-        //         $isValid = false;
-        //         $errorMessages[] = "Error en la devolución online: ".$params['Ds_Response'];
-        //         $errorCodes[] = $params['Ds_Response'];
-        //     }
-        // }
+        if (!empty($response['errorMessage'])) {
+            $isValid = false;
+            $errorMessages[] = $validationSubject['response']['errorMessage'];
+        }
 
         return $this->createResult($isValid, $errorMessages, $errorCodes);
     }

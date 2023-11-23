@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:Event/etc/events.xsd">
+
+    <!--event for product view by customer-->
+    <event name="controller_action_predispatch">
+        <observer name="service_register"
+                  instance="Sequra\Core\Observer\ServiceRegisterObserver"/>
+    </event>
+    <event name="model_load_before">
+        <observer name="service_register"
+                  instance="Sequra\Core\Observer\ServiceRegisterObserver"/>
+    </event>
+
+    <event name="sales_order_address_save_before">
+        <observer name="sequra_order_address_update" instance="Sequra\Core\Observer\OrderAddressObserver"/>
+    </event>
+    <event name="sales_order_shipment_save_before">
+        <observer name="sequra_order_shipment_update" instance="Sequra\Core\Observer\OrderShipmentObserver"/>
+    </event>
+    <event name="sales_order_save_before">
+        <observer name="sequra_order_cancellation" instance="Sequra\Core\Observer\OrderCancellationObserver"/>
+    </event>
+
+    <event name="payment_method_assign_data_sequra_payment">
+        <observer name="sequra_payment_data_assign" instance="Sequra\Core\Observer\DataAssignObserver" />
+    </event>
+
+</config>

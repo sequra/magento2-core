@@ -1,4 +1,5 @@
 <?php
+
 namespace Sequra\Core\Gateway\Http;
 
 use Magento\Payment\Gateway\Http\TransferBuilder;
@@ -17,7 +18,7 @@ class TransferFactory implements TransferFactoryInterface
      */
     public function __construct(
         TransferBuilder $transferBuilder
-    ){
+    ) {
         $this->transferBuilder = $transferBuilder;
     }
 

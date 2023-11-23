@@ -1,3 +1,2 @@
-# README #
-
-Core module for SeQura Payment Methods
+# sequra-magento2-rework
+SeQura magento2 payment gateway module.

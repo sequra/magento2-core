@@ -1,25 +1,21 @@
 <?php
-/**
- * Copyright © 2017 SeQura Engineering. All rights reserved.
- */
 
 namespace Sequra\Core\Model\Ui;
 
+use Exception;
 use Magento\Checkout\Model\ConfigProviderInterface;
-
-//@todo: Implement toknization as option
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\UrlInterface;
+use Magento\Store\Model\StoreManagerInterface;
+use SeQura\Core\BusinessLogic\AdminAPI\AdminAPI;
+use Sequra\Core\Services\BusinessLogic\WidgetConfigService;
 
 /**
  * Class ConfigProvider
  */
 class ConfigProvider implements ConfigProviderInterface
 {
-    const CODE = 'core';
-
-    /**
-     * @var Magento\Payment\Model\Method\ConfigInterface
-     */
-    protected $config;
+    const CODE = 'sequra_payment';
 
     /**
      * @var \Magento\Framework\App\ScopeResolverInterface
@@ -30,35 +26,63 @@ class ConfigProvider implements ConfigProviderInterface
      * @var \Magento\Framework\Locale\ResolverInterface
      */
     protected $localeResolver;
+    /**
+     * @var StoreManagerInterface
+     */
+    protected $storeManager;
+    /**
+     * @var WidgetConfigService
+     */
+    protected $widgetConfigService;
+    /**
+     * @var UrlInterface
+     */
+    private $urlBuilder;
 
     public function __construct(
-        \Magento\Payment\Model\Method\ConfigInterface $config,
         \Magento\Framework\App\ScopeResolverInterface $scopeResolver,
-        \Magento\Framework\Locale\ResolverInterface $localeResolver
+        \Magento\Framework\Locale\ResolverInterface   $localeResolver,
+        StoreManagerInterface                         $storeManager,
+        WidgetConfigService $widgetConfigService,
+        UrlInterface $urlBuilder
     ) {
-        $this->config = $config;
         $this->localeResolver = $localeResolver;
         $this->scopeResolver = $scopeResolver;
+        $this->storeManager = $storeManager;
+        $this->widgetConfigService = $widgetConfigService;
         $this->formatter = $this->getFormatter();
+        $this->urlBuilder = $urlBuilder;
     }
 
     /**
      * Retrieve assoc array of checkout configuration
      *
      * @return array
+     *
+     * @throws NoSuchEntityException
+     * @throws Exception
      */
     public function getConfig()
     {
+        $currentStore = $this->storeManager->getStore();
+        $settings = $this->widgetConfigService->getData($currentStore->getId());
+        $generalSettingsResponse = AdminAPI::get()->generalSettings($currentStore->getId())->getGeneralSettings();
+        $showFormAsHostedPage = false;
+        if ($generalSettingsResponse->isSuccessful()) {
+            $showFormAsHostedPage = $generalSettingsResponse->toArray()['showSeQuraCheckoutAsHostedPage'] ?? false;
+        }
+
         return [
             'payment' => [
-                'sequra_configuration' => [
-                    'merchant' => $this->config->getMerchantRef(),
-                    'assetKey' => $this->config->getAssetsKey(),
-                    'products' => ['i1','pp3','pp5','pp6','pp9','sp1'],
-                    'scriptUri' => $this->config->getScriptUri(),
+                self::CODE => [
+                    'showwidgets' => !empty($settings['assetKey']),
+                    'widget_settings' => $settings,
                     'decimalSeparator' => $this->getDecimalSeparator(),
                     'thousandSeparator' => $this->getThousandsSeparator(),
-                    'locale' => str_replace('_','-',$this->localeResolver->getLocale()),
+                    'locale' => str_replace('_', '-', $this->localeResolver->getLocale()),
+                    'showlogo' => true,
+                    'showSeQuraCheckoutAsHostedPage' => $showFormAsHostedPage,
+                    'sequraCheckoutHostedPage' => $this->urlBuilder->getUrl('sequra/hpp'),
                 ]
             ]
         ];
