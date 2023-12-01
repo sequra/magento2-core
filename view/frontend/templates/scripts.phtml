@@ -30,8 +30,6 @@
                 let grandTotal = totals[0].getElementsByClassName('price')[0];
                 let sequraElements = document.getElementsByClassName('sequra-promotion-widget');
 
-                console.log('price ' + Number(grandTotal.innerText.replace(/[^0-9\.-]+/g, "")));
-
                 [...sequraElements].forEach((el) => {
                     el.setAttribute('data-amount', (Number(grandTotal.innerText.replace(/[^0-9\.-]+/g, "")) * 100));
                 });

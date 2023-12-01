@@ -37,6 +37,7 @@ use Sequra\Core\Services\BusinessLogic\CategoryService;
 use Sequra\Core\Services\BusinessLogic\ConfigurationService;
 use Sequra\Core\Services\BusinessLogic\DisconnectService;
 use Sequra\Core\Services\BusinessLogic\OrderReportService;
+use Sequra\Core\Services\BusinessLogic\PaymentMethodsService;
 use Sequra\Core\Services\BusinessLogic\SellingCountriesService;
 use Sequra\Core\Services\BusinessLogic\StoreService;
 use Sequra\Core\Services\BusinessLogic\Utility\Encryptor;
@@ -225,6 +226,13 @@ class Bootstrap extends BootstrapComponent
             OrderReportServiceInterface::class,
             static function () {
                 return static::$instance->orderReportService;
+            }
+        );
+
+        ServiceRegister::registerService(
+            PaymentMethodsService::class,
+            static function () {
+                return new PaymentMethodsService();
             }
         );
     }

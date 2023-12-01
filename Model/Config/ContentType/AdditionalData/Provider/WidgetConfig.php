@@ -3,8 +3,9 @@
 namespace Sequra\Core\Model\Config\ContentType\AdditionalData\Provider;
 
 use Exception;
+use Magento\Framework\Data\Form\FormKey;
 use Magento\PageBuilder\Model\Config\ContentType\AdditionalData\ProviderInterface;
-use Sequra\Core\Services\BusinessLogic\WidgetConfigService;
+use Sequra\Core\Helper\UrlHelper;
 
 /**
  * Class WidgetConfig
@@ -14,16 +15,22 @@ use Sequra\Core\Services\BusinessLogic\WidgetConfigService;
 class WidgetConfig implements ProviderInterface
 {
     /**
-     * @var WidgetConfigService
+     * @var UrlHelper
      */
-    private $widgetConfigService;
+    private $urlHelper;
+    /**
+     * @var FormKey
+     */
+    protected $formKey;
 
     /**
-     * @param WidgetConfigService $widgetConfigService
+     * @param UrlHelper $urlHelper
+     * @param FormKey $formKey
      */
-    public function __construct(WidgetConfigService $widgetConfigService)
+    public function __construct(UrlHelper $urlHelper, FormKey $formKey)
     {
-        $this->widgetConfigService = $widgetConfigService;
+        $this->urlHelper = $urlHelper;
+        $this->formKey = $formKey;
     }
 
     /**
@@ -35,6 +42,18 @@ class WidgetConfig implements ProviderInterface
      */
     public function getData(string $itemName): array
     {
-        return [$itemName => $this->widgetConfigService->getData()];
+        $routeParams = [
+            'action' => 'getData',
+            'form_key' => $this->formKey->getFormKey()
+        ];
+
+        return [
+            $itemName => [
+                'sequraUrl' => $this->urlHelper->getBackendUrl(
+                    'sequra/configuration/widgetsdataprovider',
+                    $routeParams
+                )
+            ]
+        ];
     }
 }
