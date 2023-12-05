@@ -106,7 +106,7 @@ class WidgetInitializer extends Template
 
         return json_encode(
             [
-                '[data-content-type="Sequra_Core"]' => [
+                '[data-content-type="sequra_core"]' => [
                     'Sequra_Core/js/content-type/sequra-core/appearance/default/widget' => [
                         'widgetConfig' => $config,
                     ]

@@ -90,10 +90,14 @@ define([
             }
 
             if (typeof Sequra === "undefined") {
+                let products = [];
+                config.widgetConfig.products.forEach((product) => {
+                    products.push(product.id);
+                });
                 var sequraConfigParams = {
                     merchant: config.widgetConfig.merchant,
                     assetKey: config.widgetConfig.assetKey,
-                    products: config.widgetConfig.products,
+                    products: products,
                     scriptUri: config.widgetConfig.scriptUri,
                     decimalSeparator: config.widgetConfig.decimalSeparator,
                     thousandSeparator: config.widgetConfig.thousandSeparator,
@@ -131,7 +135,7 @@ define([
             domObserver.get(
                 elementPath,
                 function (element) {
-                    var $element = $(element);
+                    let $element = $(element);
 
                     if (contextElement) {
                         $element = $(contextElement).find(element);

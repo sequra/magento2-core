@@ -204,7 +204,7 @@ class MiniWidgets
         $message = $widgetConfig->getWidgetLabels()->getMessages()[$storeConfig->getLocale()] ?? '';
         $belowLimit = $widgetConfig->getWidgetLabels()->getMessagesBelowLimit()[$storeConfig->getLocale()] ?? '';
 
-        return "<div class=\"sequra-educational-popup\" data-content-type=\"Sequra_Core\" data-amount=\""
+        return "<div class=\"sequra-educational-popup\" data-content-type=\"sequra_core\" data-amount=\""
             . $amount . "\" data-product=\"" . $paymentMethod->getProduct() . "\"
                 data-min-amount='" . $paymentMethod->getMinAmount() . "' data-label='" . $message . "'
                 data-below-limit='" . $belowLimit . "'></div>";

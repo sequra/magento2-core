@@ -15,7 +15,32 @@ define([
             return;
         }
 
-        let sequraElements = document.querySelectorAll('[data-content-type="Sequra_Core"]');
+        let sequraElements = document.querySelectorAll('[data-content-type="sequra_core"]');
+        let renderDefaultMethod = function (config, element) {
+            let product = config.widgetConfig.products[0];
+
+            let newElement = element.querySelector('[data-product="' + product.id + '"]')
+
+            if (newElement) {
+                return;
+            }
+
+            newElement = document.createElement('div');
+            newElement.classList.add('sequra-promotion-widget');
+            newElement.style.minWidth = '277px';
+            newElement.style.height = 'min-content';
+            newElement.style.paddingBottom = '20px';
+            newElement.setAttribute('data-amount', config.widgetConfig.amount);
+            newElement.setAttribute('data-product', product.id);
+            newElement.setAttribute('data-campaign', product.campaign);
+
+            Object.keys(widgetConfig).forEach(
+                key =>
+                    newElement.setAttribute('data-' + key, widgetConfig[key])
+            );
+
+            element.appendChild(newElement);
+        }
 
         if (!sequraElements.length) {
             return;
@@ -23,13 +48,27 @@ define([
 
         let widgetConfig = JSON.parse(config.widgetConfig.widgetConfig);
 
-        config.widgetConfig.products.forEach((product) => {
-            [...sequraElements].forEach((element) => {
+        [...sequraElements].forEach((element) => {
+            let enabledMethods = element.getAttribute('data-payment-method'),
+            oneRendered = false;
+
+            if (enabledMethods === '') {
+                renderDefaultMethod(config, element);
+
+                return;
+            }
+
+            config.widgetConfig.products.forEach((product) => {
                 if (element.classList.contains('sequra-educational-popup')) {
                     return;
                 }
 
-                let newElement = element.querySelector('[data-product="' + product + '"]')
+                if (element.hasAttribute('data-payment-method') && !enabledMethods.includes(product.id)) {
+                    return;
+                }
+
+                oneRendered = true;
+                let newElement = element.querySelector('[data-product="' + product.id + '"]')
 
                 if (newElement) {
                     return;
@@ -41,7 +80,8 @@ define([
                 newElement.style.height = 'min-content';
                 newElement.style.paddingBottom = '20px';
                 newElement.setAttribute('data-amount', config.widgetConfig.amount);
-                newElement.setAttribute('data-product', product);
+                newElement.setAttribute('data-product', product.id);
+                newElement.setAttribute('data-campaign', product.campaign);
 
                 Object.keys(widgetConfig).forEach(
                     key =>
@@ -50,6 +90,10 @@ define([
 
                 element.appendChild(newElement);
             });
+
+            if (!oneRendered) {
+                renderDefaultMethod(config, element);
+            }
         });
 
         if (typeof Sequra !== "undefined") {

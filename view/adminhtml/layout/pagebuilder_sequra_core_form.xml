@@ -3,7 +3,7 @@
     <update handle="styles"/>
     <body>
         <referenceContainer name="content">
-            <uiComponent name="pagebuilder_Sequra_Core_form"/>
+            <uiComponent name="pagebuilder_sequra_core_form"/>
         </referenceContainer>
     </body>
 </page>

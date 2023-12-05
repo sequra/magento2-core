@@ -11,6 +11,7 @@ use Magento\Store\Api\Data\StoreConfigInterface;
 use Magento\Store\Api\StoreConfigManagerInterface;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
+use SeQura\Core\BusinessLogic\AdminAPI\AdminAPI;
 use SeQura\Core\BusinessLogic\DataAccess\PromotionalWidgets\Entities\WidgetSettings as WidgetSettingsEntity;
 use SeQura\Core\BusinessLogic\Domain\Connection\Models\ConnectionData;
 use SeQura\Core\BusinessLogic\Domain\Connection\Services\ConnectionService;
@@ -18,6 +19,7 @@ use SeQura\Core\BusinessLogic\Domain\CountryConfiguration\Models\CountryConfigur
 use SeQura\Core\BusinessLogic\Domain\CountryConfiguration\Services\CountryConfigurationService;
 use SeQura\Core\BusinessLogic\Domain\Integration\Store\StoreServiceInterface;
 use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
+use SeQura\Core\BusinessLogic\Domain\PaymentMethod\Models\SeQuraPaymentMethod;
 use SeQura\Core\BusinessLogic\Domain\PaymentMethod\Services\PaymentMethodsService;
 use SeQura\Core\BusinessLogic\Domain\PromotionalWidgets\Models\WidgetSettings;
 use SeQura\Core\BusinessLogic\Domain\PromotionalWidgets\Services\WidgetSettingsService;
@@ -140,11 +142,19 @@ class WidgetConfigService
         }
 
         $products = $this->getProducts($merchantId);
+        $formattedProducts = [];
+
+        foreach ($products as $product) {
+            $formattedProducts[] = [
+                'id' => $product->getProduct(),
+                'campaign' => $product->getCampaign(),
+            ];
+        }
 
         return [
             'merchant' => $merchantId,
             'assetKey' => $widgetSettings->getAssetsKey(),
-            'products' => $products,
+            'products' => $formattedProducts,
             'scriptUri' => $connectionSettings->getEnvironment() === BaseProxy::TEST_MODE ?
                 self::TEST_SCRIPT_URL : self::LIVE_SCRIPT_URL,
             'decimalSeparator' => $this->formatter->getSymbol(\NumberFormatter::DECIMAL_SEPARATOR_SYMBOL),
@@ -154,6 +164,7 @@ class WidgetConfigService
             'isProductListingEnabled' => $widgetSettings->isShowInstallmentsInProductListing(),
             'isProductEnabled' => $widgetSettings->isDisplayOnProductPage(),
             'widgetConfig' => $widgetSettings->getWidgetConfig(),
+            'enabledStores' => $this->getEnabledStores(),
         ];
     }
 
@@ -223,13 +234,13 @@ class WidgetConfigService
     /**
      * @param string $merchantId
      *
-     * @return array
+     * @return SeQuraPaymentMethod[]
      *
      * @throws HttpRequestException
      */
     private function getProducts(string $merchantId): array
     {
-        return $this->getPaymentMethodsService()->getMerchantProducts($merchantId);
+        return $this->getPaymentMethodsService()->getMerchantsPaymentMethods($merchantId);
     }
 
     private function getFormatter(): \NumberFormatter
@@ -260,6 +271,29 @@ class WidgetConfigService
         }
 
         return null;
+    }
+
+    /**
+     * @return array
+     *
+     * @throws Exception
+     */
+    private function getEnabledStores(): array
+    {
+        $stores = $this->getStoreService()->getConnectedStores();
+        $result = [];
+
+        foreach ($stores as $store) {
+            $widgetsConfig = AdminAPI::get()->widgetConfiguration($store)->getWidgetSettings()->toArray();
+
+            if (isset($widgetsConfig['errorCode']) || !$widgetsConfig['useWidgets']) {
+                continue;
+            }
+
+            $result[] = $store;
+        }
+
+        return $result;
     }
 
     /**
