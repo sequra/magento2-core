@@ -41,7 +41,7 @@ define([
         }
 
         return {
-            ssequra_product: selectedPaymentMethod.product,
+            sequra_product: selectedPaymentMethod.product,
             sequra_campaign: selectedPaymentMethod.campaign
         };
     }
@@ -167,7 +167,7 @@ define([
                       window.checkoutConfig.payment.sequra_payment.sequraCheckoutHostedPage
                     );
 
-                    hppPageUrl.searchParams.append("ssequra_product", data.additional_data.ssequra_product);
+                    hppPageUrl.searchParams.append("sequra_product", data.additional_data.sequra_product);
                     hppPageUrl.searchParams.append(
                       "sequra_campaign", data.additional_data.sequra_campaign || ''
                     );

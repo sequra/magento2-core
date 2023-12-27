@@ -113,7 +113,7 @@ class BaseSequraPaymentMethodsService
             $payload = $this->jsonSerializer->unserialize($this->request->getContent());
         }
 
-        $product = !empty($payload['product_data']['ssequra_product']) ? $payload['product_data']['ssequra_product'] : null;
+        $product = !empty($payload['product_data']['sequra_product']) ? $payload['product_data']['sequra_product'] : null;
         $campaign = !empty($payload['product_data']['sequra_campaign']) ? $payload['product_data']['sequra_campaign'] : null;
 
         $formResponse = CheckoutAPI::get()

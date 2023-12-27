@@ -13,14 +13,14 @@ use Magento\Quote\Api\Data\PaymentInterface;
  */
 class DataAssignObserver extends AbstractDataAssignObserver
 {
-    const SSEQURA_PRODUCT_KEY = 'ssequra_product';
+    const SEQURA_PRODUCT_KEY = 'sequra_product';
     const SEQURA_CAMPAIGN_KEY = 'sequra_campaign';
 
     /**
      * @var array
      */
     protected $additionalInformationList = [
-        self::SSEQURA_PRODUCT_KEY,
+        self::SEQURA_PRODUCT_KEY,
         self::SEQURA_CAMPAIGN_KEY,
     ];
 
