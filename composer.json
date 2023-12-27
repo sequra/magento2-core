@@ -41,5 +41,12 @@
             "SeQura\\Core\\Tests\\Infrastructure\\": "vendor/sequra/integration-core/tests/Infrastructure",
             "SeQura\\Core\\Tests\\BusinessLogic\\": "vendor/sequra/integration-core/tests/BusinessLogic"
         }
+    },
+    "archive": {
+        "exclude": [
+            "docs",
+            "scripts",
+            "Test"
+        ]
     }
 }
