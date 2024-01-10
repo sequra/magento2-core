@@ -111,11 +111,15 @@ class OrderService implements ShopOrderService
     }
 
     /**
+     * @param Webhook $webhook
+     * @param string $status
+     * @param int|null $reasonCode
+     * @param string|null $message
      * @inheritdoc
      *
      * @throws Exception
      */
-    public function updateStatus(Webhook $webhook, string $status): void
+    public function updateStatus(Webhook $webhook, string $status, ?int $reasonCode = null, ?string $message = null): void
     {
         switch ($status) {
             case Order::STATE_PENDING_PAYMENT:

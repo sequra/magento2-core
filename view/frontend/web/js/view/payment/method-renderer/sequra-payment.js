@@ -164,12 +164,12 @@ define([
             ).done(function () {
                 if (window.checkoutConfig.payment.sequra_payment.showSeQuraCheckoutAsHostedPage) {
                     const hppPageUrl = new URL(
-                      window.checkoutConfig.payment.sequra_payment.sequraCheckoutHostedPage
+                        window.checkoutConfig.payment.sequra_payment.sequraCheckoutHostedPage
                     );
 
                     hppPageUrl.searchParams.append("ssequra_product", data.additional_data.ssequra_product);
                     hppPageUrl.searchParams.append(
-                      "sequra_campaign", data.additional_data.sequra_campaign || ''
+                        "sequra_campaign", data.additional_data.sequra_campaign || ''
                     );
 
                     window.location.replace(hppPageUrl.href);
@@ -238,10 +238,14 @@ define([
 
         loadSeQuraScript: function () {
             if (typeof Sequra === "undefined") {
+                let products = [];
+                window.checkoutConfig.payment.sequra_payment.widget_settings.products.forEach((product) => {
+                    products.push(product.id);
+                });
                 var sequraConfigParams = {
                     merchant: window.checkoutConfig.payment.sequra_payment.widget_settings.merchant,
                     assetKey: window.checkoutConfig.payment.sequra_payment.widget_settings.assetKey,
-                    products: window.checkoutConfig.payment.sequra_payment.widget_settings.products,
+                    products: products,
                     scriptUri: window.checkoutConfig.payment.sequra_payment.widget_settings.scriptUri,
                     decimalSeparator: window.checkoutConfig.payment.sequra_payment.widget_settings.decimalSeparator,
                     thousandSeparator: window.checkoutConfig.payment.sequra_payment.widget_settings.thousandSeparator,
