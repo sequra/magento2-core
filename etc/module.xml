@@ -5,7 +5,11 @@
  */
 -->
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:Module/etc/module.xsd">
+<<<<<<< HEAD
     <module name="Sequra_Core" setup_version="2.5.0.0">
+=======
+    <module name="Sequra_Core" setup_version="2.4.2.5">
+>>>>>>> master
         <sequence>
             <module name="Magento_Catalog"/>
             <module name="Magento_ConfigurableProduct"/>
