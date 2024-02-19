@@ -7,7 +7,7 @@
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file.xsd">
     <system>
         <section id="payment">
-            <group id="sequra" sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
+            <group id="sequra" translate="comment"  sortOrder="1" showInDefault="1" showInWebsite="1" showInStore="1">
                 <comment>
                 <![CDATA[<div class="sequra-payment-logo"></div><div class="sequra-payment-text">
                 Ofrezca más formas de pagar con SeQura.<br/>
@@ -15,100 +15,7 @@
                 Obtenga más clientes que compran más y con más frecuencia. SeQura siempre le paga el total de los pedidos por adelantado, mientras que sus clientes pagan en una fecha posterior.</div>]]>
                 </comment>
                 <fieldset_css>complex sequra-section</fieldset_css>
-                <frontend_model>Magento\Paypal\Block\Adminhtml\System\Config\Fieldset\Payment</frontend_model>
-                <field id="merchant_ref" translate="label" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
-                    <config_path>sequra/core/merchant_ref</config_path>
-                    <label>Merchant Ref</label>
-                </field>
-                <field id="user_name" translate="label" type="text" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
-                    <config_path>sequra/core/user_name</config_path>
-                    <label>User</label>
-                </field>
-                <field id="user_secret" translate="label" type="obscure" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
-                    <config_path>sequra/core/user_secret</config_path>
-                    <label>Password</label>
-                    <backend_model>Magento\Config\Model\Config\Backend\Encrypted</backend_model>
-                </field>
-                <field id="assets_key" translate="label" type="text" sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="1">
-                    <config_path>sequra/core/assets_key</config_path>
-                    <label>Assets key</label>
-                </field>
-                <!-- <field id="allow_sevices" translate="label" type="select" sortOrder="50" showInDefault="1" showInWebsite="1" showInStore="1" canRestore="1">
-                    <config_path>sequra/core/allow_sevices</config_path>
-                    <label>Allow selling services</label>
-                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
-                </field>
-                <field id="default_service_end_date" translate="label" type="select" sortOrder="60" showInDefault="1" showInWebsite="1" showInStore="1" canRestore="1">
-                    <config_path>sequra/core/default_service_end_date</config_path>
-                    <label>Allow selling services</label>
-                    <depends><field id="allow_remotesales">1</field></depends>
-                </field>
-                <field id="allow_remotesales" translate="label" type="select" sortOrder="70" showInDefault="1" showInWebsite="1" showInStore="1" canRestore="1">
-                    <config_path>sequra/core/allow_remotesales</config_path>
-                    <label>Allow remote sales</label>
-                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
-                </field> -->
-                <field id="test_ip" translate="label" type="text" sortOrder="80" showInDefault="1" showInWebsite="1" showInStore="1" canRestore="1">
-                    <config_path>sequra/core/test_ip</config_path>
-                    <label>Test IP addrs.</label>
-                </field>
-                <field id="test" translate="label" type="select" sortOrder="90" showInDefault="1" showInWebsite="1" showInStore="1">
-                    <config_path>sequra/core/endpoint</config_path>
-                    <label>Mode</label>
-                    <source_model>Sequra\Core\Model\Adminhtml\Source\Endpoint</source_model>
-                </field>
-                <field id="autoinvoice" translate="label" type="select" sortOrder="100" showInDefault="1" showInWebsite="1" showInStore="1">
-                    <config_path>sequra/core/autoinvoice</config_path>
-                    <label>Create invoice</label>
-                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
-                </field>
-                <field id="order_status" translate="label" type="select" sortOrder="110" showInDefault="1" showInWebsite="1" showInStore="1">
-                    <config_path>sequra/core/order_status</config_path>
-                    <label>New Order Status</label>
-                    <depends><field id="autoinvoice">1</field></depends>
-                    <source_model>Magento\Sales\Model\Config\Source\Order\Status\Processing</source_model>
-                </field>
-                <field id="new_order_status" translate="label" type="select" sortOrder="120" showInDefault="1" showInWebsite="1" showInStore="1">
-                    <config_path>sequra/core/new_order_status</config_path>
-                    <label>New Order Status</label>
-                    <depends><field id="autoinvoice">0</field></depends>
-                    <source_model>Magento\Sales\Model\Config\Source\Order\Status\NewStatus</source_model>
-                </field>
-            </group>
-        </section>
-        <section id="system">
-            <group id="sequra" translate="label" type="text" sortOrder="100" showInDefault="1" showInWebsite="0" showInStore="0">
-                <label>Sequra Reporting</label>
-                <field id="reporting" translate="label" type="select" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="0">
-                    <config_path>sequra/core/reporting</config_path>
-                    <label>Enable Delivery Report sending to SeQura</label>
-                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
-                </field>
-                <field id="reportingtime" translate="label" type="select" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="0">
-                    <config_path>sequra/core/reportingtime</config_path>
-                    <label>Time to send reports to SeQura</label>
-                    <source_model>Sequra\Core\Model\Adminhtml\Source\Hour</source_model>
-                </field>
-                <field id="statsperiod" translate="label" type="select" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="0">
-                    <config_path>sequra/core/statsperiod</config_path>
-                    <label>Send stats of the last...</label>
-                    <source_model>Sequra\Core\Model\Adminhtml\Source\StatsPeriod</source_model>
-                </field>
-                <field id="allowspecificstattypes" translate="label" type="select" sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="0">
-                    <config_path>sequra/core/allowspecificstattypes</config_path>
-                    <comment><![CDATA[Help improve SeQura by sending anonymous usage statistics]]></comment>
-                    <label>Allow sending statistics with the report</label>
-                    <source_model>Sequra\Core\Model\Adminhtml\Source\Allowspecificstattypes</source_model>
-                </field>
-                <field id="specificstattypes" translate="label" type="multiselect" sortOrder="50" showInDefault="1" showInWebsite="1" showInStore="0">
-                    <config_path>sequra/core/specificstattypes</config_path>
-                    <depends>
-                        <field id="allowspecificstattypes">1</field>
-                    </depends>
-                    <label>Select allowed stats if any</label>
-                    <can_be_empty>1</can_be_empty>
-                    <source_model>Sequra\Core\Model\Adminhtml\Source\Specificstattypes</source_model>
-                </field>
+                <frontend_model>Sequra\Core\Block\Adminhtml\System\Config\Fieldset</frontend_model>
             </group>
         </section>
     </system>

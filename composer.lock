@@ -1,0 +1,65 @@
+{
+    "_readme": [
+        "This file locks the dependencies of your project to a known state",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
+        "This file is @generated automatically"
+    ],
+    "content-hash": "b02b2b947626d8a28451eea7260d7218",
+    "packages": [
+        {
+            "name": "sequra/integration-core",
+            "version": "v1.0.11",
+            "source": {
+                "type": "git",
+                "url": "git@github.com:sequra/integration-core.git",
+                "reference": "c596dcc509063309ad995e1dbf33496c6c8d31be"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/sequra/integration-core/zipball/c596dcc509063309ad995e1dbf33496c6c8d31be",
+                "reference": "c596dcc509063309ad995e1dbf33496c6c8d31be",
+                "shasum": ""
+            },
+            "require": {
+                "ext-ctype": "*",
+                "ext-json": "*",
+                "ext-mbstring": "*",
+                "php": ">=7.2"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "8.5.14"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "SeQura\\Core\\Infrastructure\\": "src/Infrastructure",
+                    "SeQura\\Core\\BusinessLogic\\": "src/BusinessLogic"
+                }
+            },
+            "autoload-dev": {
+                "psr-4": {
+                    "SeQura\\Core\\Tests\\Infrastructure\\": "tests/Infrastructure",
+                    "SeQura\\Core\\Tests\\BusinessLogic\\": "tests/BusinessLogic",
+                    "SeQura\\Core\\Console\\": "console"
+                }
+            },
+            "license": [
+                "proprietary"
+            ],
+            "description": "Core SeQura integration library",
+            "time": "2024-01-10T14:06:16+00:00"
+        }
+    ],
+    "packages-dev": [],
+    "aliases": [],
+    "minimum-stability": "stable",
+    "stability-flags": [],
+    "prefer-stable": false,
+    "prefer-lowest": false,
+    "platform": {
+        "php": ">=7.2",
+        "ext-json": "*"
+    },
+    "platform-dev": [],
+    "plugin-api-version": "2.2.0"
+}

@@ -1,0 +1,69 @@
+<?php
+/** @var \Sequra\Core\Block\Hpp $block */
+?>
+<script>
+  if (!window.checkoutConfig || !window.checkoutConfig.quoteData) {
+    window.checkoutConfig = <?= /* @noEscape */ $block->getConfig() ?>;
+    window.isCustomerLoggedIn = window.checkoutConfig.isCustomerLoggedIn;
+    window.customerData = window.checkoutConfig.customerData;
+  }
+
+  require([
+    'jquery',
+    'Magento_Checkout/js/model/full-screen-loader',
+    'Sequra_Core/js/model/sequra-payment-service',
+    'mage/url'
+  ], function (
+    $,
+    fullScreenLoader,
+    sequraPaymentService,
+    urlBuilder
+  ) {
+    $(function () {
+      urlBuilder.setBaseUrl(window.BASE_URL);
+
+      let url = new URL(location.href);
+      var data = {
+        sequra_product: url.searchParams.get('sequra_product'),
+        sequra_campaign: url.searchParams.get('sequra_campaign')
+      };
+
+      sequraPaymentService.fetchIdentificationForm(data).done(function (response) {
+        fullScreenLoader.stopLoader();
+        showIdentificationForm(response);
+      }).fail(function (response) {
+        fullScreenLoader.stopLoader();
+        window.location.replace(urlBuilder.build('checkout'));
+      });
+
+      function showIdentificationForm (identificationForm) {
+        function waitForSequraFormInstance(callback) {
+          if (typeof window.SequraFormInstance === 'undefined') {
+            setTimeout(waitForSequraFormInstance, 100, callback);
+            return;
+          }
+
+          callback();
+        }
+
+        function showForm() {
+          window.SequraFormInstance.setCloseCallback(function () {
+            fullScreenLoader.stopLoader();
+            // Add additional stop since in some cases magento keeps one loader on the page
+            fullScreenLoader.stopLoader();
+            window.SequraFormInstance.defaultCloseCallback();
+            delete window.SequraFormInstance;
+            window.location.replace(urlBuilder.build('checkout'));
+          });
+
+          window.SequraFormInstance.show();
+          fullScreenLoader.stopLoader();
+        }
+
+        fullScreenLoader.startLoader();
+        $('body').append(identificationForm);
+        waitForSequraFormInstance(showForm);
+      }
+    });
+  });
+</script>

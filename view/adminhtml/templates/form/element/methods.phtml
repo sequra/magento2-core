@@ -1,0 +1,26 @@
+<?php
+/**
+ * @var PaymentMethods $block
+ */
+
+use Sequra\Core\Block\Adminhtml\Form\Element\PaymentMethods;
+
+$config = $block->getPaymentMethods();
+?>
+
+<script type="text/x-magento-init">
+    {
+        "[name='store_id']": {
+            "Sequra_Core/js/form/element/methods": {
+                "method": <?php echo json_encode($config); ?>
+    }
+}
+}
+</script>
+<span id="sequra-widgets-form-error"
+      style="background-color: #facccc; color: #720000; display: none; height: 50px;
+      font-size: 16px; line-height: 50px; padding-left: 10px; padding-right: 10px;
+      width: max-content; margin-left: 255px;"
+      data-bind="i18n: 'Please enable promotional widgets in the SeQura module for the selected store view.'"
+>
+</span>

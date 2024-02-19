@@ -1,32 +1,23 @@
 <?xml version="1.0"?>
-<!--
-/**
- * Copyright © 2017 SeQura Engineering. All rights reserved.
- */
--->
-<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Store:etc/config.xsd">
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Store:etc/config.xsd">
     <default>
-        <sequra>
-            <core>
-                <merchant_ref>dummy</merchant_ref>
-                <user_name>dummy</user_name>
-                <user_secret backend_model="Magento\Config\Model\Config\Backend\Encrypted">ZqbjrN6bhPYVIyram3wcuQgHUmP1C4</user_secret>
-                <assets_key>ADc3ZdOLh4</assets_key>
-                <autoinvoice>1</autoinvoice>
-                <test_ip>127.0.0.1,212.80.211.33</test_ip>
-                <endpoint>https://sandbox.sequrapi.com/orders</endpoint>
-                <statsperiod>7</statsperiod>
-                <reporting>1</reporting>
-                <reportingtime>4</reportingtime>
-                <allowspecificstattypes>0</allowspecificstattypes>
-                <order_status>processing</order_status>
-                <new_order_status>pending</new_order_status>
-                <currency>EUR</currency>
-                <allow_remotesales>0</allow_remotesales>
-                <allow_services>0</allow_services>
-                <default_service_end_date>P1Y</default_service_end_date>
-            </core>
-        </sequra>
+        <payment>
+            <sequra_payment>
+                <debug>1</debug>
+                <active>1</active>
+                <title>SeQura</title>
+                <checkout_title>SeQura</checkout_title>
+                <showlogo>1</showlogo>
+                <model>SequraPaymentGatewayFacade</model>
+                <is_gateway>1</is_gateway>
+                <can_order>1</can_order>
+                <can_use_checkout>1</can_use_checkout>
+                <can_capture>1</can_capture>
+                <can_use_for_multishipping>0</can_use_for_multishipping>
+                <can_capture_partial>0</can_capture_partial>
+                <can_refund>1</can_refund>
+                <can_refund_partial_per_invoice>1</can_refund_partial_per_invoice>
+            </sequra_payment>
+        </payment>
     </default>
 </config>

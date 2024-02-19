@@ -1,8 +1,5 @@
 <?php
-/**
- * Copyright © Magento, Inc. All rights reserved.
- * See COPYING.txt for license details.
- */
+
 namespace Sequra\Core\Gateway\Response;
 
 use Magento\Sales\Model\Order\Payment;

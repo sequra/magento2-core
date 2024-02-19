@@ -1,0 +1,350 @@
+<?php
+
+namespace Sequra\Core\Services\BusinessLogic;
+
+use DateTime;
+use Exception;
+use Magento\Framework\Api\SearchCriteriaBuilder;
+use Magento\Quote\Api\CartManagementInterface;
+use Magento\Sales\Api\OrderManagementInterface;
+use Magento\Sales\Api\OrderRepositoryInterface;
+use SeQura\Core\BusinessLogic\Domain\Order\Exceptions\InvalidOrderStateException;
+use SeQura\Core\BusinessLogic\Domain\Order\Models\OrderRequest\CreateOrderRequest;
+use SeQura\Core\BusinessLogic\Domain\Order\Models\OrderRequest\MerchantReference;
+use SeQura\Core\BusinessLogic\Domain\Order\Models\PaymentMethod;
+use SeQura\Core\BusinessLogic\Domain\Order\Models\SeQuraOrder;
+use SeQura\Core\BusinessLogic\Domain\Order\OrderRequestStatusMapping;
+use SeQura\Core\BusinessLogic\Domain\Order\RepositoryContracts\SeQuraOrderRepositoryInterface;
+use SeQura\Core\BusinessLogic\Domain\Webhook\Models\Webhook;
+use SeQura\Core\BusinessLogic\Webhook\Exceptions\OrderNotFoundException;
+use SeQura\Core\BusinessLogic\Webhook\Services\ShopOrderService;
+use Magento\Sales\Model\Order;
+use SeQura\Core\Infrastructure\Http\Exceptions\HttpRequestException;
+use SeQura\Core\Infrastructure\ServiceRegister;
+use SeQura\Core\BusinessLogic\Domain\Order\Service\OrderService as SeQuraOrderService;
+use Sequra\Core\Services\BusinessLogic\Utility\SeQuraTranslationProvider;
+
+/**
+ * Class OrderService
+ *
+ * @package Sequra\Core\Services\BusinessLogic
+ */
+class OrderService implements ShopOrderService
+{
+    /**
+     * Product codes for installment payments category.
+     */
+    private const INSTALLMENT_METHOD_CODES = ['pp3', 'pp6', 'pp9'];
+
+    /**
+     * @var SeQuraOrderRepositoryInterface
+     */
+    private $seQuraOrderRepository;
+    /**
+     * @var SearchCriteriaBuilder
+     */
+    private $searchOrderCriteriaBuilder;
+    /**
+     * @var OrderRepositoryInterface
+     */
+    private $shopOrderRepository;
+    /**
+     * @var OrderManagementInterface
+     */
+    private $orderManagement;
+    /**
+     * @var CartManagementInterface
+     */
+    private $cartManagement;
+    /**
+     * @var SeQuraTranslationProvider
+     */
+    private $translationProvider;
+
+    public function __construct(
+        SearchCriteriaBuilder          $searchOrderCriteriaBuilder,
+        OrderRepositoryInterface       $shopOrderRepository,
+        OrderManagementInterface       $orderManagement,
+        CartManagementInterface        $cartManagement,
+        SeQuraOrderRepositoryInterface $seQuraOrderRepository,
+        SeQuraTranslationProvider      $translationProvider
+    )
+    {
+        $this->searchOrderCriteriaBuilder = $searchOrderCriteriaBuilder;
+        $this->shopOrderRepository = $shopOrderRepository;
+        $this->orderManagement = $orderManagement;
+        $this->cartManagement = $cartManagement;
+        $this->seQuraOrderRepository = $seQuraOrderRepository;
+        $this->translationProvider = $translationProvider;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getReportOrderIds(int $page, int $limit = 5000): array
+    {
+        return [];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getStatisticsOrderIds(int $page, int $limit = 5000): array
+    {
+        $toDate = new DateTime();
+        $fromDate = clone $toDate;
+        $fromDate->modify('-7 days');
+
+        $searchCriteria = $this->searchOrderCriteriaBuilder
+            ->addFilter('created_at', $fromDate->format('Y-m-d H:i:s'), 'gteq')
+            ->addFilter('created_at', $toDate->format('Y-m-d H:i:s'), 'lteq')
+            ->setCurrentPage($page + 1)
+            ->setPageSize($limit)
+            ->create();
+
+        $orderList = $this->shopOrderRepository->getList($searchCriteria);
+        if ($page * $limit > $orderList->getTotalCount()) {
+            return [];
+        }
+
+        return array_column($orderList->getData(), 'entity_id');
+    }
+
+    /**
+     * @param Webhook $webhook
+     * @param string $status
+     * @param int|null $reasonCode
+     * @param string|null $message
+     * @inheritdoc
+     *
+     * @throws Exception
+     */
+    public function updateStatus(Webhook $webhook, string $status, ?int $reasonCode = null, ?string $message = null): void
+    {
+        switch ($status) {
+            case Order::STATE_PENDING_PAYMENT:
+            case Order::STATE_PAYMENT_REVIEW:
+                $this->updateOrderToStatus($webhook, $status);
+                break;
+            case Order::STATE_CANCELED:
+                $this->cancelOrder($webhook);
+                break;
+        }
+    }
+
+    /**
+     * Updates the Magento order and SeQuraOrder statuses.
+     *
+     * @param Webhook $webhook
+     * @param string $status
+     *
+     * @return void
+     *
+     * @throws Exception
+     */
+    private function updateOrderToStatus(Webhook $webhook, string $status): void
+    {
+        $order = $this->getOrder($webhook);
+        $order ? $this->updateSeQuraOrderStatus($webhook) : $order = $this->createOrder($webhook);
+        $order->addCommentToStatusHistory($this->translationProvider->translate('sequra.orderRefSent', $order->getIncrementId()), $status);
+        $this->shopOrderRepository->save($order);
+    }
+
+    /**
+     * Cancels the order in Magento and updates the SeQuraOrder status.
+     *
+     * @param Webhook $webhook
+     *
+     * @return void
+     *
+     * @throws InvalidOrderStateException
+     * @throws OrderNotFoundException
+     */
+    private function cancelOrder(Webhook $webhook): void
+    {
+        $order = $this->getOrder($webhook);
+        if (!$order) {
+            throw new OrderNotFoundException("Magento order with reference {$webhook->getOrderRef1()} not found.", 404);
+        }
+
+        $this->updateSeQuraOrderStatus($webhook);
+
+        if ($order->canUnhold()) {
+            $this->orderManagement->unHold($order->getId());
+        }
+
+        $this->orderManagement->cancel($order->getId());
+    }
+
+    /**
+     * Creates and saves a new SeQuraOrder.
+     *
+     * @param Webhook $webhook
+     *
+     * @return Order
+     *
+     * @throws Exception
+     */
+    private function createOrder(Webhook $webhook): Order
+    {
+        $seQuraOrder = $this->getSeQuraOrder($webhook->getOrderRef());
+
+        /** @var Order $order */
+        $order = $this->getOrderById(
+            $this->cartManagement->placeOrder($seQuraOrder->getCartId())
+        );
+
+        $updatedSeQuraOrder = (new CreateOrderRequest(
+            OrderRequestStatusMapping::mapOrderRequestStatus($webhook->getSqState()),
+            $seQuraOrder->getMerchant(),
+            $seQuraOrder->getUnshippedCart(),
+            $seQuraOrder->getDeliveryMethod(),
+            $seQuraOrder->getCustomer(),
+            $seQuraOrder->getPlatform(),
+            $seQuraOrder->getDeliveryAddress(),
+            $seQuraOrder->getInvoiceAddress(),
+            $seQuraOrder->getGui(),
+            MerchantReference::fromArray([
+                'order_ref_1' => $order->getIncrementId(),
+                'order_ref_2' => $webhook->getOrderRef()
+            ])
+        ))->toSequraOrderInstance($webhook->getOrderRef());
+
+        $updatedSeQuraOrder->setPaymentMethod(
+            $this->getOrderPaymentMethodInfo($updatedSeQuraOrder->getReference(), $webhook->getProductCode())
+        );
+
+        // Update order with merchant order references so that core can update order state with all required data
+        $this->seQuraOrderRepository->setSeQuraOrder($updatedSeQuraOrder);
+
+        return $order;
+    }
+
+    /**
+     * Updates the SeQuraOrder status.
+     *
+     * @param Webhook $webhook
+     *
+     * @return void
+     *
+     * @throws OrderNotFoundException
+     * @throws InvalidOrderStateException
+     */
+    private function updateSeQuraOrderStatus(Webhook $webhook): void
+    {
+        $seQuraOrder = $this->getSeQuraOrder($webhook->getOrderRef());
+        $seQuraOrder->setState(OrderRequestStatusMapping::mapOrderRequestStatus($webhook->getSqState()));
+        $this->seQuraOrderRepository->setSeQuraOrder($seQuraOrder);
+    }
+
+    /**
+     * Gets the magento order.
+     *
+     * @param Webhook $webhook
+     *
+     * @return Order|null
+     *
+     * @throws OrderNotFoundException
+     */
+    private function getOrder(Webhook $webhook): ?Order
+    {
+        $orderIncrementId = $webhook->getOrderRef1();
+        if (empty($orderIncrementId)) {
+            $seQuraOrder = $this->getSeQuraOrder($webhook->getOrderRef());
+            $orderIncrementId = $seQuraOrder->getMerchantReference()->getOrderRef1();
+        }
+
+        if (empty($orderIncrementId)) {
+            return null;
+        }
+
+        return $this->getOrderByIncrementId($webhook->getOrderRef1());
+    }
+
+    /**
+     * Gets the SeQura order.
+     *
+     * @param string $orderReference
+     *
+     * @return SeQuraOrder
+     *
+     * @throws OrderNotFoundException
+     */
+    private function getSeQuraOrder(string $orderReference): SeQuraOrder
+    {
+        $seQuraOrder = $this->seQuraOrderRepository->getByOrderReference($orderReference);
+        if (!$seQuraOrder) {
+            throw new OrderNotFoundException("SeQura order with reference $orderReference is not found.", 404);
+        }
+
+        return $seQuraOrder;
+    }
+
+    /**
+     * @param string $orderIncrementId
+     * @return Order|null
+     */
+    protected function getOrderByIncrementId(string $orderIncrementId): ?Order
+    {
+        $searchCriteria = $this->searchOrderCriteriaBuilder
+            ->addFilter('increment_id', $orderIncrementId)
+            ->create();
+        $orderList = $this->shopOrderRepository->getList($searchCriteria)->getItems();
+
+        return array_pop($orderList);
+    }
+
+    /**
+     * @param int $orderId
+     * @return Order|null
+     */
+    protected function getOrderById(int $orderId): ?Order
+    {
+        /** @var Order $order */
+        $order = $this->shopOrderRepository->get($orderId);
+
+        return $order;
+    }
+
+    /**
+     * Returns PaymentMethod information for SeQura order.
+     *
+     * @param string $orderReference
+     * @param string $paymentMethodId
+     *
+     * @return PaymentMethod|null
+     *
+     * @throws HttpRequestException
+     */
+    private function getOrderPaymentMethodInfo(string $orderReference, string $paymentMethodId): ?PaymentMethod
+    {
+        $methodCategories = $this->getSeQuraOrderService()->getAvailablePaymentMethodsInCategories($orderReference);
+        foreach ($methodCategories as $category) {
+            foreach ($category->getMethods() as $method) {
+                if ($method->getProduct() === $paymentMethodId) {
+                    $name = in_array($paymentMethodId, self::INSTALLMENT_METHOD_CODES) ?
+                        $category->getTitle() :
+                        $method->getTitle();
+
+                    return new PaymentMethod($paymentMethodId, $name, $method->getIcon());
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Returns an instance of Order service.
+     *
+     * @return SeQuraOrderService
+     */
+    private function getSeQuraOrderService(): SeQuraOrderService
+    {
+        if (!isset($this->sequraOrderService)) {
+            $this->sequraOrderService = ServiceRegister::getService(SeQuraOrderService::class);
+        }
+
+        return $this->sequraOrderService;
+    }
+}

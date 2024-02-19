@@ -1,14 +1,10 @@
 <?php
 
-/**
- * Copyright © Magento, Inc. All rights reserved.
- * See COPYING.txt for license details.
- */
-
 namespace Sequra\Core\Gateway\Response;
 
 use Magento\Payment\Gateway\Response\HandlerInterface;
 use Magento\Sales\Model\Order\Payment;
+use SeQura\Core\BusinessLogic\Domain\Order\Models\SeQuraOrder;
 
 class TransactionIdHandler implements HandlerInterface
 {
@@ -25,7 +21,9 @@ class TransactionIdHandler implements HandlerInterface
         if ($paymentDO->getPayment() instanceof Payment) {
             /** @var Payment $orderPayment */
             $orderPayment = $paymentDO->getPayment();
-            $orderPayment->setTransactionId(date('is') . "-" . $response['data']['merchant_reference']['order_ref_1']);
+            /** @var SeQuraOrder $sequraOrder */
+            $sequraOrder = $response['data'];
+            $orderPayment->setTransactionId(date('is') . "-" . $sequraOrder->getOrderRef1());
             $orderPayment->setIsTransactionClosed($this->shouldCloseTransaction());
             $closed = $this->shouldCloseParentTransaction($orderPayment);
             $orderPayment->setShouldCloseParentTransaction($closed);
