@@ -40,7 +40,8 @@ class SeQuraTranslationProvider
      */
     public function translate(string $text, ...$arguments): Phrase
     {
-        $locale = $this->session->getUser()?->getInterfaceLocale();
+        $locale = $this->session->getUser() ?
+            $this->session->getUser()->getInterfaceLocale() : null;
         if ($locale && !self::$englishTranslation) {
             $filePath = $this->moduleDirReader->getModuleDir('i18n', 'Sequra_Core') . '/' . $locale . '.csv';
             if (!file_exists($filePath)) {
