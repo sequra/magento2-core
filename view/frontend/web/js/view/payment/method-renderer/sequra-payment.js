@@ -237,6 +237,10 @@ define([
         },
 
         loadSeQuraScript: function () {
+            if (!window.checkoutConfig.payment.sequra_payment.widget_settings.hasOwnProperty('merchant')) {
+                return;
+            }
+
             if (typeof Sequra === "undefined") {
                 let products = [];
                 window.checkoutConfig.payment.sequra_payment.widget_settings.products.forEach((product) => {
