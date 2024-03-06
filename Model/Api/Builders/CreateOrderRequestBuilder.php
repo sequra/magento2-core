@@ -459,7 +459,7 @@ class CreateOrderRequestBuilder implements \SeQura\Core\BusinessLogic\Domain\Ord
         return [
             'name' => 'magento2',
             'version' => $this->productMetadata->getVersion(),
-            'integration_version' => $this->moduleResource->getDbVersion('Sequra_Core'),
+            'plugin_version' => $this->moduleResource->getDbVersion('Sequra_Core'),
             'uname' => php_uname(),
             'db_name' => !empty($connectionData['model']) ? $connectionData['model'] : 'mysql',
             'db_version' => $this->sqlVersionProvider->getSqlVersion(),

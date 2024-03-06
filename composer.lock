@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "faf7305667d1102b6c913c54662fc14f",
+    "content-hash": "a1e52d2dfd7feee97c92f6bfcc64538f",
     "packages": [
         {
             "name": "sequra/integration-core",
@@ -615,7 +615,7 @@
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
-        "php": ">=7.2",
+        "php": ">=7.4",
         "ext-json": "*"
     },
     "platform-dev": [],
