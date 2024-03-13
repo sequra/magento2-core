@@ -38,6 +38,10 @@ class ConfigProvider implements ConfigProviderInterface
      * @var UrlInterface
      */
     private $urlBuilder;
+    /**
+     * @var \NumberFormatter
+     */
+    private $formatter;
 
     public function __construct(
         \Magento\Framework\App\ScopeResolverInterface $scopeResolver,
