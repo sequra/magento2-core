@@ -60,6 +60,10 @@ class OrderService implements ShopOrderService
      * @var SeQuraTranslationProvider
      */
     private $translationProvider;
+    /**
+     * @var SeQuraOrderService
+     */
+    private $sequraOrderService;
 
     public function __construct(
         SearchCriteriaBuilder          $searchOrderCriteriaBuilder,

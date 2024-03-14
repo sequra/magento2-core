@@ -34,6 +34,11 @@ class OrderShipmentObserver implements ObserverInterface
     private $transformService;
 
     /**
+     * @var OrderService
+     */
+    private $orderService;
+
+    /**
      * @param SeQuraTranslationProvider $translationProvider
      * @param TransformEntityService $transformService
      */

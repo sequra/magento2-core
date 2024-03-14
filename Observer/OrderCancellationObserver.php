@@ -30,6 +30,11 @@ class OrderCancellationObserver implements ObserverInterface
     private $translationProvider;
 
     /**
+     * @var OrderService
+     */
+    private $orderService;
+
+    /**
      * @param SeQuraTranslationProvider $translationProvider
      */
     public function __construct(SeQuraTranslationProvider $translationProvider)

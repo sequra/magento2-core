@@ -35,6 +35,11 @@ class OrderAddressObserver implements ObserverInterface
     private $transformService;
 
     /**
+     * @var OrderService
+     */
+    private $orderService;
+
+    /**
      * @param SeQuraTranslationProvider $translationProvider
      * @param TransformEntityService $transformService
      */

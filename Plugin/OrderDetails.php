@@ -35,6 +35,11 @@ class OrderDetails
      */
     protected $translation;
 
+    /**
+     * @var OrderService
+     */
+    private $orderService;
+
     private const statusMap = [
         OrderRequestStates::CONFIRMED => 'sequra.status.paid',
         OrderRequestStates::ON_HOLD => 'sequra.status.pendingReview',
