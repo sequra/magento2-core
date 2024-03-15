@@ -53,8 +53,9 @@ if (!window.SequraFE) {
          *
          * @param {string} url The URL to call.
          * @param {(error: Record<string, any>) => Promise<void>?} errorCallback
+         * @param {Record<string, string>?} customHeader
          */
-        const get = (url, errorCallback) => call('GET', url, null, errorCallback);
+        const get = (url, errorCallback, customHeader = {}) => call('GET', url, null, errorCallback, customHeader);
 
         /**
          * Performs POST ajax request.
