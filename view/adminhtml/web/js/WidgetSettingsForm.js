@@ -445,8 +445,10 @@ if (!window.SequraFE) {
 
             const validationUrl =
                 `https://${mode}.sequracdn.com/scripts/${merchantId}/${assetsKey}/${methods}_cost.json`;
-
-            return api.get(validationUrl).then(() => true).catch(() => false)
+            customHeader = {
+                'Content-Type': 'text/plain'
+            };
+            return api.get(validationUrl, null, customHeader).then(() => true).catch(() => false)
         }
     }
 
