@@ -29,6 +29,11 @@ class OrderUpdateTransaction implements ClientInterface
     private $transformService;
 
     /**
+     * @var OrderService
+     */
+    private $orderService;
+
+    /**
      * @param SeQuraTranslationProvider $translationProvider
      * @param TransformEntityService $transformService
      */

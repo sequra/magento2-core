@@ -11,6 +11,10 @@ use Sequra\Core\Api\SequraPaymentMethodsInterface;
  */
 class SequraPaymentMethodsService implements SequraPaymentMethodsInterface
 {
+    /**
+     * @var FormValidationSequraPaymentMethodsService
+     */
+    private $paymentMethodsService;
 
     /**
      * SequraPaymentMethodsService constructor.
