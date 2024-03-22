@@ -174,7 +174,7 @@ class WidgetInitializer extends Template
 
         $config = $this->widgetConfigService->getData($this->_storeManager->getStore()->getId());
 
-        return $config ? array_merge($config, ['amount' => $amount, 'action_name' => $actionName]) : [];
+        return $config ? array_merge($config, ['amount' => (int)round($amount), 'action_name' => $actionName]) : [];
     }
 
     /**
