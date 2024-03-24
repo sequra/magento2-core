@@ -69,7 +69,9 @@ class SequraOrderLink extends Column
                 $shopOrderReferences[] = $item['increment_id'];
             }
         }
-
+        if (empty($shopOrderReferences)) {
+            return $dataSource;
+        }
         $orders = $this->getOrderService()->getOrderBatchForShopReferences($shopOrderReferences);
         $referenceMap = $this->createReferenceMap($orders);
 
