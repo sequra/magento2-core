@@ -103,7 +103,7 @@ class MiniWidgets
         $store = $this->storeManager->getStore();
         $product = $subject->getPrice()->getProduct();
 
-        $amount = (int)round($subject->getPrice()->getValue() * 100);
+        $amount = (int)round($subject->getPrice()->getAmount()->getValue() * 100);
         $result .= StoreContext::doWithStore($store->getId(), function () use ($amount, $store, $product) {
             return $this->getHtml($amount, $store, $product);
         });
