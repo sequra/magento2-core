@@ -3,15 +3,19 @@
 namespace Sequra\Core\Block;
 
 use Exception;
+use Magento\Catalog\Helper\Data;
 use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\ProductRepository;
 use Magento\Checkout\Block\Cart;
+use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\Request\Http;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Pricing\PriceCurrencyInterface;
 use Magento\Framework\View\Element\Template;
 use Magento\Framework\View\Element\Template\Context;
 use Magento\Quote\Model\Quote\Item;
+use Magento\Store\Model\ScopeInterface;
+use Magento\Store\Model\StoreManagerInterface;
 use SeQura\Core\BusinessLogic\Domain\GeneralSettings\Models\GeneralSettings;
 use SeQura\Core\BusinessLogic\Domain\GeneralSettings\Services\GeneralSettingsService;
 use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
@@ -52,6 +56,18 @@ class WidgetInitializer extends Template
      * @var PriceCurrencyInterface
      */
     private $priceCurrency;
+    /**
+     * @var ScopeConfigInterface
+     */
+    private $scopeConfig;
+    /**
+     * @var StoreManagerInterface
+     */
+    private $storeManager;
+    /**
+     * @var Data
+     */
+    private $catalogHelper;
 
     /**
      * @param WidgetConfigService $widgetConfigService
@@ -60,18 +76,24 @@ class WidgetInitializer extends Template
      * @param Cart $cart
      * @param ProductService $productService
      * @param PriceCurrencyInterface $priceCurrency
+     * @param ScopeConfigInterface $scopeConfig
+     * @param StoreManagerInterface $storeManager
+     * @param Data $catalogHelper
      * @param Context $context
      * @param array $data
      */
     public function __construct(
-        WidgetConfigService         $widgetConfigService,
-        Http                        $request,
-        ProductRepository           $productRepository,
-        Cart                        $cart,
-        ProductService              $productService,
-        PriceCurrencyInterface      $priceCurrency,
-        Template\Context            $context,
-        array                       $data = []
+        WidgetConfigService    $widgetConfigService,
+        Http                   $request,
+        ProductRepository      $productRepository,
+        Cart                   $cart,
+        ProductService         $productService,
+        PriceCurrencyInterface $priceCurrency,
+        ScopeConfigInterface   $scopeConfig,
+        StoreManagerInterface  $storeManager,
+        Data                   $catalogHelper,
+        Template\Context       $context,
+        array                  $data = []
     )
     {
         parent::__construct($context, $data);
@@ -82,6 +104,9 @@ class WidgetInitializer extends Template
         $this->cart = $cart;
         $this->productService = $productService;
         $this->priceCurrency = $priceCurrency;
+        $this->scopeConfig = $scopeConfig;
+        $this->storeManager = $storeManager;
+        $this->catalogHelper = $catalogHelper;
     }
 
     /**
@@ -128,20 +153,8 @@ class WidgetInitializer extends Template
         $widgetSettings = $this->getWidgetSettings();
         $settings = $this->getGeneralSettings();
 
-        if (empty($widgetSettings) || !$widgetSettings->isEnabled()) {
-            return [];
-        }
-
-        if ($this->priceCurrency->getCurrency()->getCurrencyCode() !== 'EUR' ||
-            ($settings && !empty($settings->getAllowedIPAddresses()) && !empty($ipAddress = $this->getCustomerIpAddress()) &&
-                !in_array($ipAddress, $settings->getAllowedIPAddresses(), true))
-            ||
-            ($actionName === 'catalog_product_view' && !$widgetSettings->isDisplayOnProductPage()
-                && !$widgetSettings->isShowInstallmentsInProductListing()) ||
-            ($actionName === 'checkout_cart_index' && !$widgetSettings->isShowInstallmentsInCartPage())
-            || ($actionName === 'catalog_category_view' && !$widgetSettings->isShowInstallmentsInProductListing())
-            || (($actionName === 'cms_index_index' || $actionName === 'catalogsearch_result_index')
-                && !$widgetSettings->isShowInstallmentsInProductListing())) {
+        if (empty($widgetSettings) || !$widgetSettings->isEnabled() ||
+            $this->shouldNotDisplayWidgets($settings, $widgetSettings, $actionName)) {
             return [];
         }
 
@@ -153,9 +166,7 @@ class WidgetInitializer extends Template
                 return [];
             }
 
-            $amount = ($product->getTypeId() === 'bundle' ?
-                    $product->getPriceInfo()->getPrice('regular_price')->getMinimalPrice()->getValue() :
-                    $product->getFinalPrice()) * 100;
+            $amount = $this->getProductPrice($product);
         }
 
         if ($actionName === 'checkout_cart_index') {
@@ -175,6 +186,30 @@ class WidgetInitializer extends Template
         $config = $this->widgetConfigService->getData($this->_storeManager->getStore()->getId());
 
         return $config ? array_merge($config, ['amount' => (int)round($amount), 'action_name' => $actionName]) : [];
+    }
+
+    /**
+     * @param GeneralSettings|null $settings
+     * @param WidgetSettings|null $widgetSettings
+     * @param string $actionName
+     *
+     * @return bool
+     */
+    private function shouldNotDisplayWidgets(
+        ?GeneralSettings $settings,
+        ?WidgetSettings  $widgetSettings,
+        string           $actionName
+    ): bool
+    {
+        return $this->priceCurrency->getCurrency()->getCurrencyCode() !== 'EUR' ||
+            ($settings && !empty($settings->getAllowedIPAddresses()) && !empty($ipAddress = $this->getCustomerIpAddress()) &&
+                !in_array($ipAddress, $settings->getAllowedIPAddresses(), true))
+            || ($actionName === 'catalog_product_view' && !$widgetSettings->isDisplayOnProductPage()
+                && !$widgetSettings->isShowInstallmentsInProductListing()) ||
+            ($actionName === 'checkout_cart_index' && !$widgetSettings->isShowInstallmentsInCartPage())
+            || ($actionName === 'catalog_category_view' && !$widgetSettings->isShowInstallmentsInProductListing())
+            || (($actionName === 'cms_index_index' || $actionName === 'catalogsearch_result_index')
+                && !$widgetSettings->isShowInstallmentsInProductListing());
     }
 
     /**
@@ -217,6 +252,51 @@ class WidgetInitializer extends Template
         $widgetService = ServiceRegister::getService(WidgetSettingsService::class);
 
         return $widgetService->getWidgetSettings();
+    }
+
+    /**
+     * @param Product $product
+     * @return float|int
+     *
+     * @throws NoSuchEntityException
+     */
+    private function getProductPrice(Product $product)
+    {
+        $price = ($product->getTypeId() === 'bundle' ?
+            $product->getPriceInfo()->getPrice('regular_price')->getMinimalPrice()->getValue() :
+            $product->getFinalPrice());
+
+        if ($product->getTypeId() === 'bundle' || !$this->isTaxEnabled()) {
+            return $price * 100;
+        }
+
+        return $this->catalogHelper->getTaxPrice($product, $price, true) * 100;
+    }
+
+    /**
+     * @return bool
+     *
+     * @throws NoSuchEntityException
+     */
+    private function isTaxEnabled(): bool
+    {
+        $storeId = StoreContext::getInstance()->getStoreId();
+        $taxSettings = $this->scopeConfig->getValue('tax/display/type', ScopeInterface::SCOPE_STORES, $storeId);
+
+        if ($taxSettings) {
+            return $taxSettings > 1;
+        }
+
+        $store = $this->storeManager->getStore($storeId);
+        $taxSettings = $this->scopeConfig->getValue('tax/display/type', ScopeInterface::SCOPE_WEBSITES, $store->getWebsiteId());
+
+        if ($taxSettings) {
+            return $taxSettings > 1;
+        }
+
+        $taxSettings = $this->scopeConfig->getValue('tax/display/type');
+
+        return $taxSettings > 1;
     }
 
     private function getCustomerIpAddress(): string
