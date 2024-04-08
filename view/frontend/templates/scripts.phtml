@@ -31,7 +31,7 @@
                 let sequraElements = document.getElementsByClassName('sequra-promotion-widget');
 
                 [...sequraElements].forEach((el) => {
-                    el.setAttribute('data-amount', (Number(grandTotal.innerText.replace(/[^0-9\.-]+/g, "")) * 100));
+                    el.setAttribute('data-amount', Math.round(Number(grandTotal.innerText.replace(/[^0-9\.-]+/g, "")) * 100));
                 });
 
                 Sequra.refreshComponents?.();
