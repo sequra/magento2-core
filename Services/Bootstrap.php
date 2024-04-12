@@ -6,19 +6,24 @@ use SeQura\Core\BusinessLogic\BootstrapComponent;
 use SeQura\Core\BusinessLogic\DataAccess\ConnectionData\Entities\ConnectionData;
 use SeQura\Core\BusinessLogic\DataAccess\CountryConfiguration\Entities\CountryConfiguration;
 use SeQura\Core\BusinessLogic\DataAccess\GeneralSettings\Entities\GeneralSettings;
-use SeQura\Core\BusinessLogic\DataAccess\OrderSettings\Entities\OrderStatusMapping;
+use SeQura\Core\BusinessLogic\DataAccess\OrderSettings\Entities\OrderStatusSettings;
 use SeQura\Core\BusinessLogic\DataAccess\PromotionalWidgets\Entities\WidgetSettings;
+use SeQura\Core\BusinessLogic\DataAccess\SendReport\Entities\SendReport;
 use SeQura\Core\BusinessLogic\DataAccess\StatisticalData\Entities\StatisticalData;
+use SeQura\Core\BusinessLogic\DataAccess\TransactionLog\Entities\TransactionLog;
 use SeQura\Core\BusinessLogic\Domain\Integration\Category\CategoryServiceInterface;
 use SeQura\Core\BusinessLogic\Domain\Integration\Disconnect\DisconnectServiceInterface;
 use SeQura\Core\BusinessLogic\Domain\Integration\OrderReport\OrderReportServiceInterface;
 use SeQura\Core\BusinessLogic\Domain\Integration\SellingCountries\SellingCountriesServiceInterface;
+use SeQura\Core\BusinessLogic\Domain\Integration\ShopOrderStatuses\ShopOrderStatusesServiceInterface;
 use SeQura\Core\BusinessLogic\Domain\Integration\Store\StoreServiceInterface;
 use SeQura\Core\BusinessLogic\Domain\Integration\Version\VersionServiceInterface;
 use SeQura\Core\BusinessLogic\Domain\Order\Models\SeQuraOrder;
 use SeQura\Core\BusinessLogic\Domain\Order\RepositoryContracts\SeQuraOrderRepositoryInterface;
+use SeQura\Core\BusinessLogic\Domain\OrderStatusSettings\RepositoryContracts\OrderStatusSettingsRepositoryInterface;
+use SeQura\Core\BusinessLogic\Domain\SendReport\RepositoryContracts\SendReportRepositoryInterface;
+use SeQura\Core\BusinessLogic\Domain\StatisticalData\RepositoryContracts\StatisticalDataRepositoryInterface;
 use SeQura\Core\BusinessLogic\Utility\EncryptorInterface;
-use SeQura\Core\BusinessLogic\Webhook\Repositories\OrderStatusMappingRepository as OrderStatusMappingRepositoryInterface;
 use SeQura\Core\BusinessLogic\Webhook\Services\ShopOrderService;
 use SeQura\Core\Infrastructure\Configuration\ConfigEntity;
 use SeQura\Core\Infrastructure\Configuration\Configuration;
@@ -30,6 +35,7 @@ use SeQura\Core\Infrastructure\Serializer\Serializer;
 use SeQura\Core\Infrastructure\ServiceRegister;
 use SeQura\Core\Infrastructure\TaskExecution\Process;
 use SeQura\Core\Infrastructure\TaskExecution\QueueItem;
+use SeQura\Core\Infrastructure\Utility\TimeProvider;
 use Sequra\Core\Repository\BaseRepository;
 use Sequra\Core\Repository\QueueItemRepository;
 use Sequra\Core\Repository\SeQuraOrderRepository;
@@ -39,6 +45,8 @@ use Sequra\Core\Services\BusinessLogic\DisconnectService;
 use Sequra\Core\Services\BusinessLogic\OrderReportService;
 use Sequra\Core\Services\BusinessLogic\PaymentMethodsService;
 use Sequra\Core\Services\BusinessLogic\SellingCountriesService;
+use Sequra\Core\Services\BusinessLogic\ShopOrderStatusesService;
+use Sequra\Core\Services\BusinessLogic\StatisticalDataService;
 use Sequra\Core\Services\BusinessLogic\StoreService;
 use Sequra\Core\Services\BusinessLogic\Utility\Encryptor;
 use Sequra\Core\Services\BusinessLogic\VersionService;
@@ -235,6 +243,24 @@ class Bootstrap extends BootstrapComponent
                 return new PaymentMethodsService();
             }
         );
+
+        ServiceRegister::registerService(
+            \SeQura\Core\BusinessLogic\Domain\StatisticalData\Services\StatisticalDataService::class,
+            static function () {
+                return new StatisticalDataService(
+                    ServiceRegister::getService(StatisticalDataRepositoryInterface::class),
+                    ServiceRegister::getService(SendReportRepositoryInterface::class),
+                    ServiceRegister::getService(TimeProvider::class)
+                );
+            }
+        );
+
+        ServiceRegister::registerService(
+            ShopOrderStatusesServiceInterface::class,
+            static function () {
+                return new ShopOrderStatusesService();
+            }
+        );
     }
 
     /**
@@ -250,15 +276,18 @@ class Bootstrap extends BootstrapComponent
         RepositoryRegistry::registerRepository(QueueItem::class, QueueItemRepository::class);
         RepositoryRegistry::registerRepository(Process::class, BaseRepository::class);
         RepositoryRegistry::registerRepository(ConnectionData::class, BaseRepository::class);
-        RepositoryRegistry::registerRepository(OrderStatusMapping::class, BaseRepository::class);
+        RepositoryRegistry::registerRepository(OrderStatusSettings::class, BaseRepository::class);
         RepositoryRegistry::registerRepository(StatisticalData::class, BaseRepository::class);
         RepositoryRegistry::registerRepository(CountryConfiguration::class, BaseRepository::class);
         RepositoryRegistry::registerRepository(GeneralSettings::class, BaseRepository::class);
         RepositoryRegistry::registerRepository(SeQuraOrder::class, SeQuraOrderRepository::class);
         RepositoryRegistry::registerRepository(WidgetSettings::class, BaseRepository::class);
+        RepositoryRegistry::registerRepository(SendReport::class, BaseRepository::class);
+        RepositoryRegistry::registerRepository(StatisticalData::class, BaseRepository::class);
+        RepositoryRegistry::registerRepository(TransactionLog::class, BaseRepository::class);
 
         ServiceRegister::registerService(
-            OrderStatusMappingRepositoryInterface::class,
+            OrderStatusSettingsRepositoryInterface::class,
             static function () {
                 return new OrderStatusMappingRepositoryOverride();
             }
