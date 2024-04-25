@@ -4,20 +4,20 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "f62fbaa24a6d0b737aaa2aabcd6b8bef",
+    "content-hash": "02abb91b23c5de31dbfaeecaddf6aeb7",
     "packages": [
         {
             "name": "sequra/integration-core",
-            "version": "dev-fix/php8.2-compatibility",
+            "version": "v1.0.13",
             "source": {
                 "type": "git",
                 "url": "git@github.com:sequra/integration-core.git",
-                "reference": "52d9c98e91e2135b3fdf4a9e24001633e7f79b58"
+                "reference": "7c9fd26e796f87f9ec0d8a187f6ec3e8236703bd"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sequra/integration-core/zipball/52d9c98e91e2135b3fdf4a9e24001633e7f79b58",
-                "reference": "52d9c98e91e2135b3fdf4a9e24001633e7f79b58",
+                "url": "https://api.github.com/repos/sequra/integration-core/zipball/7c9fd26e796f87f9ec0d8a187f6ec3e8236703bd",
+                "reference": "7c9fd26e796f87f9ec0d8a187f6ec3e8236703bd",
                 "shasum": ""
             },
             "require": {
@@ -47,7 +47,7 @@
                 "proprietary"
             ],
             "description": "Core SeQura integration library",
-            "time": "2024-04-01T09:15:25+00:00"
+            "time": "2024-04-25T08:36:24+00:00"
         }
     ],
     "packages-dev": [
