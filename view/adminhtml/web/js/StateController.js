@@ -283,7 +283,7 @@ SequraFE.appPages = {
             let config = utilities.cloneObject(configuration.pageConfiguration[controllerName] || {});
             Object.keys(config).forEach((key) => {
                 config[key] = config[key].replace(encodeURIComponent('{storeId}'), this.getStoreId);
-            })
+            });
 
             page && (config.page = page);
 

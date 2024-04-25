@@ -142,7 +142,7 @@ if (!window.SequraFE) {
                         buttonLabel: 'general.continue',
                         onClick: handleSave
                     })
-                )
+                );
 
                 !SequraFE.isPromotional && document.querySelector('.sq-statistics .sqp-field-subtitle').append(
                     generator.createButtonLink({
@@ -151,7 +151,7 @@ if (!window.SequraFE) {
                         href: 'https://en.sequra.com/',
                         openInNewTab: true
                     })
-                )
+                );
 
                 return;
             }

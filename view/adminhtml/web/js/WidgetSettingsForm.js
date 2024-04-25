@@ -351,7 +351,7 @@ if (!window.SequraFE) {
                 validator.validateRequiredField(
                     document.querySelector('[name="assets-key-input"]'),
                     'validation.requiredField'
-                )
+                );
 
                 return;
             }
