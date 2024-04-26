@@ -119,7 +119,7 @@ class CreateOrderRequestBuilder implements \SeQura\Core\BusinessLogic\Domain\Ord
     {
         $generalSettings = $generalSettingsResponse->toArray();
         $stateService = ServiceRegister::getService(UIStateService::class);
-        $isOnboarding = StoreContext::doWithStore($this->storeId, [$stateService, 'isOnboardingState']);
+        $isOnboarding = StoreContext::doWithStore($this->storeId, [$stateService, 'isOnboardingState'], [true]);
 
         if ($isOnboarding) {
             return false;

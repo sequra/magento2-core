@@ -63,8 +63,8 @@ class GeneralSettings extends BaseConfigurationController
     {
         $data = $this->getSequraPostData();
         $response = AdminAPI::get()->generalSettings($this->storeId)->saveGeneralSettings(new GeneralSettingsRequest(
-            $data['showSeQuraCheckoutAsHostedPage'],
             $data['sendOrderReportsPeriodicallyToSeQura'],
+            $data['showSeQuraCheckoutAsHostedPage'],
             $data['allowedIPAddresses'],
             $data['excludedProducts'],
             $data['excludedCategories']

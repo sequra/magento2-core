@@ -136,6 +136,11 @@ class OrderService implements ShopOrderService
         }
     }
 
+    public function getOrderUrl(string $merchantReference): string
+    {
+        return '';
+    }
+
     /**
      * Updates the Magento order and SeQuraOrder statuses.
      *
