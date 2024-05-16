@@ -13,6 +13,7 @@ use SeQura\Core\BusinessLogic\Domain\Order\Models\OrderUpdateData;
 use SeQura\Core\BusinessLogic\Domain\Order\Service\OrderService;
 use SeQura\Core\Infrastructure\Logger\Logger;
 use SeQura\Core\Infrastructure\ServiceRegister;
+use Sequra\Core\Model\Ui\ConfigProvider;
 use Sequra\Core\Services\BusinessLogic\Utility\SeQuraTranslationProvider;
 use Sequra\Core\Services\BusinessLogic\Utility\TransformEntityService;
 
@@ -76,6 +77,10 @@ class OrderShipmentObserver implements ObserverInterface
     private function handleShipment(MagentoShipment $shipmentData): void
     {
         $orderData = $shipmentData->getOrder();
+
+        if ($orderData->getPayment()->getMethod() !== ConfigProvider::CODE) {
+            return;
+        }
 
         if ($orderData->getStatus() === Order::STATE_PAYMENT_REVIEW) {
             throw new LocalizedException($this->translationProvider->translate('sequra.error.cannotShip'));

@@ -14,6 +14,7 @@ use SeQura\Core\BusinessLogic\Domain\Order\Service\OrderService;
 use Sequra\Core\Controller\Webhook\Index as WebhookController;
 use SeQura\Core\Infrastructure\Logger\Logger;
 use SeQura\Core\Infrastructure\ServiceRegister;
+use Sequra\Core\Model\Ui\ConfigProvider;
 use Sequra\Core\Services\BusinessLogic\Utility\SeQuraTranslationProvider;
 use Sequra\Core\Services\BusinessLogic\Utility\TransformEntityService;
 
@@ -81,6 +82,11 @@ class OrderAddressObserver implements ObserverInterface
     private function handleAddressUpdate(MagentoAddress $magentoAddress): void
     {
         $magentoOrder = $magentoAddress->getOrder();
+
+        if ($magentoOrder->getPayment()->getMethod() !== ConfigProvider::CODE) {
+            return;
+        }
+
         if ($magentoOrder->getStatus() === Order::STATE_PAYMENT_REVIEW) {
             throw new LocalizedException($this->translationProvider->translate('sequra.error.cannotUpdate'));
         }

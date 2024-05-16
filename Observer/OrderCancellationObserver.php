@@ -15,6 +15,7 @@ use SeQura\Core\BusinessLogic\Domain\Order\Models\OrderUpdateData;
 use SeQura\Core\BusinessLogic\Domain\Order\Service\OrderService;
 use SeQura\Core\Infrastructure\Logger\Logger;
 use SeQura\Core\Infrastructure\ServiceRegister;
+use Sequra\Core\Model\Ui\ConfigProvider;
 use Sequra\Core\Services\BusinessLogic\Utility\SeQuraTranslationProvider;
 
 /**
@@ -50,7 +51,8 @@ class OrderCancellationObserver implements ObserverInterface
     public function execute(Observer $observer): void
     {
         $orderData = $observer->getData('order');
-        if (WebhookController::isWebhookProcessing() || $orderData->getStatus() !== Order::STATE_CANCELED) {
+        if (WebhookController::isWebhookProcessing() || $orderData->getStatus() !== Order::STATE_CANCELED ||
+            $orderData->getPayment()->getMethod() !== ConfigProvider::CODE) {
             return;
         }
 
