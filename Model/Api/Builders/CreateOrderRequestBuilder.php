@@ -24,6 +24,7 @@ use SeQura\Core\BusinessLogic\Domain\Order\Models\OrderRequest\Item\ItemType;
 use SeQura\Core\BusinessLogic\Domain\UIState\Services\UIStateService;
 use SeQura\Core\Infrastructure\ServiceRegister;
 use Sequra\Core\Services\BusinessLogic\ProductService;
+use Throwable;
 
 /**
  * Class CreateOrderRequestBuilder
@@ -82,19 +83,18 @@ class CreateOrderRequestBuilder implements \SeQura\Core\BusinessLogic\Domain\Ord
     private $orderFactory;
 
     public function __construct(
-        CartRepositoryInterface  $quoteRepository,
+        CartRepositoryInterface $quoteRepository,
         ProductMetadataInterface $productMetadata,
-        ResourceInterface        $moduleResource,
-        DeploymentConfig         $deploymentConfig,
-        SqlVersionProvider       $sqlVersionProvider,
-        ScopeConfigInterface     $scopeConfig,
-        UrlInterface             $urlBuilder,
-        string                   $cartId,
-        string                   $storeId,
-        ProductService           $productService,
-        OrderFactory             $orderFactory
-    )
-    {
+        ResourceInterface $moduleResource,
+        DeploymentConfig $deploymentConfig,
+        SqlVersionProvider $sqlVersionProvider,
+        ScopeConfigInterface $scopeConfig,
+        UrlInterface $urlBuilder,
+        string $cartId,
+        string $storeId,
+        ProductService $productService,
+        OrderFactory $orderFactory
+    ) {
         $this->quoteRepository = $quoteRepository;
         $this->productMetadata = $productMetadata;
         $this->moduleResource = $moduleResource;
@@ -117,54 +117,59 @@ class CreateOrderRequestBuilder implements \SeQura\Core\BusinessLogic\Domain\Ord
 
     public function isAllowedFor(GeneralSettingsResponse $generalSettingsResponse): bool
     {
-        $generalSettings = $generalSettingsResponse->toArray();
-        $stateService = ServiceRegister::getService(UIStateService::class);
-        $isOnboarding = StoreContext::doWithStore($this->storeId, [$stateService, 'isOnboardingState'], [true]);
+        try {
+            $generalSettings = $generalSettingsResponse->toArray();
+            $stateService = ServiceRegister::getService(UIStateService::class);
+            $isOnboarding = StoreContext::doWithStore($this->storeId, [$stateService, 'isOnboardingState'], [true]);
+            $this->quote = $this->quoteRepository->getActive($this->cartId);
+            $this->getMerchantId();
+            if ($isOnboarding) {
+                return false;
+            }
 
-        if ($isOnboarding) {
-            return false;
-        }
+            if (
+                !empty($generalSettings['allowedIPAddresses']) &&
+                !empty($ipAddress = $this->getCustomerIpAddress()) &&
+                !in_array($ipAddress, $generalSettings['allowedIPAddresses'], true)
+            ) {
+                return false;
+            }
 
-        if (
-            !empty($generalSettings['allowedIPAddresses']) &&
-            !empty($ipAddress = $this->getCustomerIpAddress()) &&
-            !in_array($ipAddress, $generalSettings['allowedIPAddresses'], true)
-        ) {
-            return false;
-        }
+            if (
+                empty($generalSettings['excludedProducts']) &&
+                empty($generalSettings['excludedCategories'])
+            ) {
+                return true;
+            }
 
-        if (
-            empty($generalSettings['excludedProducts']) &&
-            empty($generalSettings['excludedCategories'])
-        ) {
+            $this->quote = $this->quoteRepository->getActive($this->cartId);
+            foreach ($this->quote->getAllVisibleItems() as $item) {
+                if (
+                    !empty($generalSettings['excludedProducts']) &&
+                    !empty($item->getSku()) &&
+                    (in_array($item->getProduct()->getData('sku'), $generalSettings['excludedProducts'], true) ||
+                        in_array($item->getProduct()->getSku(), $generalSettings['excludedProducts'], true))
+                ) {
+                    return false;
+                }
+
+                if ($item->getIsVirtual()) {
+                    return false;
+                }
+
+                if (
+                    !empty($generalSettings['excludedCategories']) &&
+                    !empty(array_intersect($generalSettings['excludedCategories'],
+                        $this->productService->getAllProductCategories($item->getProduct()->getCategoryIds())))
+                ) {
+                    return false;
+                }
+            }
+
             return true;
+        } catch (Throwable $exception) {
+            return false;
         }
-
-        $this->quote = $this->quoteRepository->getActive($this->cartId);
-        foreach ($this->quote->getAllVisibleItems() as $item) {
-            if (
-                !empty($generalSettings['excludedProducts']) &&
-                !empty($item->getSku()) &&
-                (in_array($item->getProduct()->getData('sku'), $generalSettings['excludedProducts'], true) ||
-                    in_array($item->getProduct()->getSku(), $generalSettings['excludedProducts'], true))
-            ) {
-                return false;
-            }
-
-            if ($item->getIsVirtual()) {
-                return false;
-            }
-
-            if (
-                !empty($generalSettings['excludedCategories']) &&
-                !empty(array_intersect($generalSettings['excludedCategories'],
-                    $this->productService->getAllProductCategories($item->getProduct()->getCategoryIds())))
-            ) {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     private function generateCreateOrderRequest(): CreateOrderRequest
