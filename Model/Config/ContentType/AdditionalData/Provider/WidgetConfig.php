@@ -4,7 +4,6 @@ namespace Sequra\Core\Model\Config\ContentType\AdditionalData\Provider;
 
 use Exception;
 use Magento\Framework\Data\Form\FormKey;
-use Magento\PageBuilder\Model\Config\ContentType\AdditionalData\ProviderInterface;
 use Sequra\Core\Helper\UrlHelper;
 
 /**
@@ -12,7 +11,7 @@ use Sequra\Core\Helper\UrlHelper;
  *
  * @package Sequra\Core\Model\Config\ContentType\AdditionalData\Provider
  */
-class WidgetConfig implements ProviderInterface
+class WidgetConfig
 {
     /**
      * @var UrlHelper
