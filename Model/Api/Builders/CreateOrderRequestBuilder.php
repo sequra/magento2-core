@@ -22,6 +22,7 @@ use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
 use SeQura\Core\BusinessLogic\Domain\Order\Models\OrderRequest\CreateOrderRequest;
 use SeQura\Core\BusinessLogic\Domain\Order\Models\OrderRequest\Item\ItemType;
 use SeQura\Core\BusinessLogic\Domain\UIState\Services\UIStateService;
+use SeQura\Core\Infrastructure\Logger\Logger;
 use SeQura\Core\Infrastructure\ServiceRegister;
 use Sequra\Core\Services\BusinessLogic\ProductService;
 use Throwable;
@@ -115,6 +116,13 @@ class CreateOrderRequestBuilder implements \SeQura\Core\BusinessLogic\Domain\Ord
         return $this->generateCreateOrderRequest();
     }
 
+    /**
+     * Returns true if SeQura payment methods are available for current checkout. Otherwise it returns false.
+     *
+     * @param GeneralSettingsResponse $generalSettingsResponse
+     *
+     * @return bool
+     */
     public function isAllowedFor(GeneralSettingsResponse $generalSettingsResponse): bool
     {
         try {
@@ -122,8 +130,9 @@ class CreateOrderRequestBuilder implements \SeQura\Core\BusinessLogic\Domain\Ord
             $stateService = ServiceRegister::getService(UIStateService::class);
             $isOnboarding = StoreContext::doWithStore($this->storeId, [$stateService, 'isOnboardingState'], [true]);
             $this->quote = $this->quoteRepository->getActive($this->cartId);
-            $this->getMerchantId();
-            if ($isOnboarding) {
+            $merchantId = $this->getMerchantId();
+
+            if (!$merchantId || $isOnboarding) {
                 return false;
             }
 
@@ -168,6 +177,9 @@ class CreateOrderRequestBuilder implements \SeQura\Core\BusinessLogic\Domain\Ord
 
             return true;
         } catch (Throwable $exception) {
+            Logger::logWarning('Unexpected error occurred while checking if SeQura payment methods are available.
+             Reason: ' . $exception->getMessage() . ' . Stack trace: ' . $exception->getTraceAsString());
+
             return false;
         }
     }
@@ -213,7 +225,7 @@ class CreateOrderRequestBuilder implements \SeQura\Core\BusinessLogic\Domain\Ord
         }
 
         return [
-            'id' => $this->getMerchantId(),
+            'id' => (string)$this->getMerchantId(),
             'notify_url' => $webhookUrl,
             'return_url' => $this->urlBuilder->getUrl('sequra/comeback', ['cartId' => $this->cartId]),
             'notification_parameters' => [
@@ -473,14 +485,14 @@ class CreateOrderRequestBuilder implements \SeQura\Core\BusinessLogic\Domain\Ord
     }
 
     /**
-     * @return string
+     * @return string|null
      */
-    private function getMerchantId(): string
+    private function getMerchantId(): ?string
     {
         $shippingCountry = $this->quote->getShippingAddress()->getCountryId();
         $data = AdminAPI::get()->countryConfiguration($this->storeId)->getCountryConfigurations();
         if (!$data->isSuccessful()) {
-            throw new \RuntimeException('Unable to find merchant configuration for selling country ' . $shippingCountry);
+            return null;
         }
 
         $merchantId = null;
@@ -490,11 +502,7 @@ class CreateOrderRequestBuilder implements \SeQura\Core\BusinessLogic\Domain\Ord
             }
         }
 
-        if (!$merchantId) {
-            throw new \RuntimeException('Unable to find merchant configuration for selling country ' . $shippingCountry);
-        }
-
-        return (string)$merchantId;
+        return $merchantId;
     }
 
     private function getSignature(): string
