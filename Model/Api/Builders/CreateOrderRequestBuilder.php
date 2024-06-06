@@ -22,8 +22,10 @@ use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
 use SeQura\Core\BusinessLogic\Domain\Order\Models\OrderRequest\CreateOrderRequest;
 use SeQura\Core\BusinessLogic\Domain\Order\Models\OrderRequest\Item\ItemType;
 use SeQura\Core\BusinessLogic\Domain\UIState\Services\UIStateService;
+use SeQura\Core\Infrastructure\Logger\Logger;
 use SeQura\Core\Infrastructure\ServiceRegister;
 use Sequra\Core\Services\BusinessLogic\ProductService;
+use Throwable;
 
 /**
  * Class CreateOrderRequestBuilder
@@ -82,19 +84,18 @@ class CreateOrderRequestBuilder implements \SeQura\Core\BusinessLogic\Domain\Ord
     private $orderFactory;
 
     public function __construct(
-        CartRepositoryInterface  $quoteRepository,
+        CartRepositoryInterface $quoteRepository,
         ProductMetadataInterface $productMetadata,
-        ResourceInterface        $moduleResource,
-        DeploymentConfig         $deploymentConfig,
-        SqlVersionProvider       $sqlVersionProvider,
-        ScopeConfigInterface     $scopeConfig,
-        UrlInterface             $urlBuilder,
-        string                   $cartId,
-        string                   $storeId,
-        ProductService           $productService,
-        OrderFactory             $orderFactory
-    )
-    {
+        ResourceInterface $moduleResource,
+        DeploymentConfig $deploymentConfig,
+        SqlVersionProvider $sqlVersionProvider,
+        ScopeConfigInterface $scopeConfig,
+        UrlInterface $urlBuilder,
+        string $cartId,
+        string $storeId,
+        ProductService $productService,
+        OrderFactory $orderFactory
+    ) {
         $this->quoteRepository = $quoteRepository;
         $this->productMetadata = $productMetadata;
         $this->moduleResource = $moduleResource;
@@ -115,56 +116,72 @@ class CreateOrderRequestBuilder implements \SeQura\Core\BusinessLogic\Domain\Ord
         return $this->generateCreateOrderRequest();
     }
 
+    /**
+     * Returns true if SeQura payment methods are available for current checkout. Otherwise it returns false.
+     *
+     * @param GeneralSettingsResponse $generalSettingsResponse
+     *
+     * @return bool
+     */
     public function isAllowedFor(GeneralSettingsResponse $generalSettingsResponse): bool
     {
-        $generalSettings = $generalSettingsResponse->toArray();
-        $stateService = ServiceRegister::getService(UIStateService::class);
-        $isOnboarding = StoreContext::doWithStore($this->storeId, [$stateService, 'isOnboardingState'], [true]);
+        try {
+            $generalSettings = $generalSettingsResponse->toArray();
+            $stateService = ServiceRegister::getService(UIStateService::class);
+            $isOnboarding = StoreContext::doWithStore($this->storeId, [$stateService, 'isOnboardingState'], [true]);
+            $this->quote = $this->quoteRepository->getActive($this->cartId);
+            $merchantId = $this->getMerchantId();
 
-        if ($isOnboarding) {
-            return false;
-        }
+            if (!$merchantId || $isOnboarding) {
+                return false;
+            }
 
-        if (
-            !empty($generalSettings['allowedIPAddresses']) &&
-            !empty($ipAddress = $this->getCustomerIpAddress()) &&
-            !in_array($ipAddress, $generalSettings['allowedIPAddresses'], true)
-        ) {
-            return false;
-        }
+            if (
+                !empty($generalSettings['allowedIPAddresses']) &&
+                !empty($ipAddress = $this->getCustomerIpAddress()) &&
+                !in_array($ipAddress, $generalSettings['allowedIPAddresses'], true)
+            ) {
+                return false;
+            }
 
-        if (
-            empty($generalSettings['excludedProducts']) &&
-            empty($generalSettings['excludedCategories'])
-        ) {
+            if (
+                empty($generalSettings['excludedProducts']) &&
+                empty($generalSettings['excludedCategories'])
+            ) {
+                return true;
+            }
+
+            $this->quote = $this->quoteRepository->getActive($this->cartId);
+            foreach ($this->quote->getAllVisibleItems() as $item) {
+                if (
+                    !empty($generalSettings['excludedProducts']) &&
+                    !empty($item->getSku()) &&
+                    (in_array($item->getProduct()->getData('sku'), $generalSettings['excludedProducts'], true) ||
+                        in_array($item->getProduct()->getSku(), $generalSettings['excludedProducts'], true))
+                ) {
+                    return false;
+                }
+
+                if ($item->getIsVirtual()) {
+                    return false;
+                }
+
+                if (
+                    !empty($generalSettings['excludedCategories']) &&
+                    !empty(array_intersect($generalSettings['excludedCategories'],
+                        $this->productService->getAllProductCategories($item->getProduct()->getCategoryIds())))
+                ) {
+                    return false;
+                }
+            }
+
             return true;
+        } catch (Throwable $exception) {
+            Logger::logWarning('Unexpected error occurred while checking if SeQura payment methods are available.
+             Reason: ' . $exception->getMessage() . ' . Stack trace: ' . $exception->getTraceAsString());
+
+            return false;
         }
-
-        $this->quote = $this->quoteRepository->getActive($this->cartId);
-        foreach ($this->quote->getAllVisibleItems() as $item) {
-            if (
-                !empty($generalSettings['excludedProducts']) &&
-                !empty($item->getSku()) &&
-                (in_array($item->getProduct()->getData('sku'), $generalSettings['excludedProducts'], true) ||
-                    in_array($item->getProduct()->getSku(), $generalSettings['excludedProducts'], true))
-            ) {
-                return false;
-            }
-
-            if ($item->getIsVirtual()) {
-                return false;
-            }
-
-            if (
-                !empty($generalSettings['excludedCategories']) &&
-                !empty(array_intersect($generalSettings['excludedCategories'],
-                    $this->productService->getAllProductCategories($item->getProduct()->getCategoryIds())))
-            ) {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     private function generateCreateOrderRequest(): CreateOrderRequest
@@ -208,7 +225,7 @@ class CreateOrderRequestBuilder implements \SeQura\Core\BusinessLogic\Domain\Ord
         }
 
         return [
-            'id' => $this->getMerchantId(),
+            'id' => (string)$this->getMerchantId(),
             'notify_url' => $webhookUrl,
             'return_url' => $this->urlBuilder->getUrl('sequra/comeback', ['cartId' => $this->cartId]),
             'notification_parameters' => [
@@ -468,14 +485,14 @@ class CreateOrderRequestBuilder implements \SeQura\Core\BusinessLogic\Domain\Ord
     }
 
     /**
-     * @return string
+     * @return string|null
      */
-    private function getMerchantId(): string
+    private function getMerchantId(): ?string
     {
         $shippingCountry = $this->quote->getShippingAddress()->getCountryId();
         $data = AdminAPI::get()->countryConfiguration($this->storeId)->getCountryConfigurations();
         if (!$data->isSuccessful()) {
-            throw new \RuntimeException('Unable to find merchant configuration for selling country ' . $shippingCountry);
+            return null;
         }
 
         $merchantId = null;
@@ -485,11 +502,7 @@ class CreateOrderRequestBuilder implements \SeQura\Core\BusinessLogic\Domain\Ord
             }
         }
 
-        if (!$merchantId) {
-            throw new \RuntimeException('Unable to find merchant configuration for selling country ' . $shippingCountry);
-        }
-
-        return (string)$merchantId;
+        return $merchantId;
     }
 
     private function getSignature(): string
