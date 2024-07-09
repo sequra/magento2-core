@@ -7,3 +7,4 @@
 .github export-ignore
 docs export-ignore
 docker export-ignore
+bin export-ignore
