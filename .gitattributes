@@ -1,9 +1,9 @@
 # Exclude configuration files
 .env* export-ignore
+.gitignore export-ignore
+.gitattributes export-ignore
 
 # Exclude specific directories
 .github export-ignore
-.gitignore export-ignore
-.gitattribures export-ignore
 docs export-ignore
 docker export-ignore
