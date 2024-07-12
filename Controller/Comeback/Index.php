@@ -105,7 +105,7 @@ class Index extends Onepage
         $metadata = $this->cookieMetadataFactory
             ->createPublicCookieMetadata()
             ->setPath('/');
-        $sectiondata = json_decode($this->cookieManager->getCookie('section_data_ids'));
+        $sectiondata = json_decode($this->cookieManager->getCookie('section_data_ids') ?: '');
         if($sectiondata){
             $sectiondata->cart += 1000;
             $this->cookieManager->setPublicCookie(

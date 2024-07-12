@@ -111,7 +111,11 @@ class CreateOrderRequestBuilder implements \SeQura\Core\BusinessLogic\Domain\Ord
 
     public function build(): CreateOrderRequest
     {
-        $this->quote = $this->quoteRepository->getActive($this->cartId);
+        try {
+            $this->quote = $this->quoteRepository->getActive($this->cartId);
+        } catch (\Exception $e) {
+            $this->quote = $this->quoteRepository->get($this->cartId);
+        }
 
         return $this->generateCreateOrderRequest();
     }
