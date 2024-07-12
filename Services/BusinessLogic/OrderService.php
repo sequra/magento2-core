@@ -5,7 +5,9 @@ namespace Sequra\Core\Services\BusinessLogic;
 use DateTime;
 use Exception;
 use Magento\Framework\Api\SearchCriteriaBuilder;
+use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Quote\Api\CartManagementInterface;
+use Magento\Quote\Api\CartRepositoryInterface;
 use Magento\Sales\Api\OrderManagementInterface;
 use Magento\Sales\Api\OrderRepositoryInterface;
 use SeQura\Core\BusinessLogic\Domain\Order\Exceptions\InvalidOrderStateException;
@@ -22,6 +24,7 @@ use Magento\Sales\Model\Order;
 use SeQura\Core\Infrastructure\Http\Exceptions\HttpRequestException;
 use SeQura\Core\Infrastructure\ServiceRegister;
 use SeQura\Core\BusinessLogic\Domain\Order\Service\OrderService as SeQuraOrderService;
+use Sequra\Core\Model\Api\Builders\CreateOrderRequestBuilderFactory;
 use Sequra\Core\Services\BusinessLogic\Utility\SeQuraTranslationProvider;
 
 /**
@@ -64,6 +67,14 @@ class OrderService implements ShopOrderService
      * @var SeQuraOrderService
      */
     private $sequraOrderService;
+    /**
+     * @var CartRepositoryInterface
+     */
+    private $cartRepository;
+    /**
+     * @var CreateOrderRequestBuilderFactory
+     */
+    private $createOrderRequestBuilderFactory;
 
     public function __construct(
         SearchCriteriaBuilder          $searchOrderCriteriaBuilder,
@@ -71,7 +82,9 @@ class OrderService implements ShopOrderService
         OrderManagementInterface       $orderManagement,
         CartManagementInterface        $cartManagement,
         SeQuraOrderRepositoryInterface $seQuraOrderRepository,
-        SeQuraTranslationProvider      $translationProvider
+        SeQuraTranslationProvider      $translationProvider,
+        CartRepositoryInterface $cartProvider,
+        CreateOrderRequestBuilderFactory $createOrderRequestBuilderFactory
     )
     {
         $this->searchOrderCriteriaBuilder = $searchOrderCriteriaBuilder;
@@ -80,6 +93,8 @@ class OrderService implements ShopOrderService
         $this->cartManagement = $cartManagement;
         $this->seQuraOrderRepository = $seQuraOrderRepository;
         $this->translationProvider = $translationProvider;
+        $this->cartRepository = $cartProvider;
+        $this->createOrderRequestBuilderFactory = $createOrderRequestBuilderFactory;
     }
 
     /**
@@ -139,6 +154,24 @@ class OrderService implements ShopOrderService
     public function getOrderUrl(string $merchantReference): string
     {
         return '';
+    }
+
+    /**
+     * @inheritDoc
+     *
+     * @throws NoSuchEntityException
+     */
+    public function getCreateOrderRequest(string $orderReference): CreateOrderRequest
+    {
+        $seQuraOrder = $this->seQuraOrderRepository->getByOrderReference($orderReference);
+        $quote = $this->cartRepository->get($seQuraOrder->getCartId());
+
+        $builder = $this->createOrderRequestBuilderFactory->create([
+            'cartId' => $quote->getId(),
+            'storeId' => (string)$quote->getStore()->getId(),
+        ]);
+
+        return $builder->build();
     }
 
     /**
