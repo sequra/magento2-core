@@ -177,6 +177,9 @@ if (!window.SequraFE) {
          * @returns {TableCell[][]}
          */
         const getTableRows = () => {
+            if (!paymentMethods) {
+                return [];
+            }
             return paymentMethods.map((method) => {
                 return [
                     {
