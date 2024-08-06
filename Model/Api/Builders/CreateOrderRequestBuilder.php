@@ -7,6 +7,7 @@ use Magento\Framework\App\DeploymentConfig;
 use Magento\Framework\App\ProductMetadataInterface;
 use Magento\Framework\Config\ConfigOptionsListConstants;
 use Magento\Framework\DB\Adapter\SqlVersionProvider;
+use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Module\ResourceInterface;
 use Magento\Framework\UrlInterface;
 use Magento\Quote\Api\CartRepositoryInterface;
@@ -113,7 +114,7 @@ class CreateOrderRequestBuilder implements \SeQura\Core\BusinessLogic\Domain\Ord
     {
         try {
             $this->quote = $this->quoteRepository->getActive($this->cartId);
-        } catch (\Exception $e) {
+        } catch (NoSuchEntityException $e) {
             $this->quote = $this->quoteRepository->get($this->cartId);
         }
 
