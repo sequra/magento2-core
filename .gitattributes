@@ -8,3 +8,4 @@
 docs export-ignore
 docker export-ignore
 bin export-ignore
+docker-entrypoint-init.d export-ignore
