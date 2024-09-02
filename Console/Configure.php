@@ -20,9 +20,11 @@ use SeQura\Core\BusinessLogic\Domain\CountryConfiguration\Services\CountryConfig
 use SeQura\Core\BusinessLogic\Domain\CountryConfiguration\Services\SellingCountriesService;
 use SeQura\Core\BusinessLogic\Domain\GeneralSettings\Models\GeneralSettings;
 use SeQura\Core\BusinessLogic\Domain\GeneralSettings\Services\GeneralSettingsService;
+use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
 use SeQura\Core\BusinessLogic\Domain\PromotionalWidgets\Models\WidgetSettings;
 use SeQura\Core\BusinessLogic\Domain\PromotionalWidgets\Services\WidgetSettingsService;
 use SeQura\Core\BusinessLogic\SeQuraAPI\BaseProxy;
+use SeQura\Core\Infrastructure\Logger\Logger;
 use SeQura\Core\Infrastructure\ServiceRegister;
 use Sequra\Core\Services\Bootstrap;
 
@@ -55,6 +57,10 @@ class Configure extends Command
      * Values of input arguments or options
      */
     const INPUT_KEY_PASSWORD = 'password';
+    /**
+     * Values of input arguments or options
+     */
+    const INPUT_KEY_STOREID = 'store_id';
 
     /**
      * @var ConnectionService
@@ -124,6 +130,12 @@ class Configure extends Command
                 null,
                 InputOption::VALUE_OPTIONAL,
                 'Password'
+            )
+            ->addOption(
+                self::INPUT_KEY_STOREID,
+                null,
+                InputOption::VALUE_OPTIONAL,
+                'Coma separated store ids'
             );
         parent::configure();
     }
@@ -139,6 +151,34 @@ class Configure extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        $storeIds = $this->getStoreIds($input);
+        foreach ($storeIds as $storeId) {
+            try {
+                echo "Saving configuration to store Id " . $storeId;
+                Logger::logError('Saving configuration to store Id ' . $storeId);
+                StoreContext::doWithStore(
+                    $storeId,
+                    function () use ($input) {
+                        $this->safeConfigDataForStore($input);
+                    }
+                );
+            } catch (Exception $e) {
+                Logger::logError('Configuration could not be saved for store Id ' .
+                    $storeId . ' because ' . $e->getMessage());
+            }
+        }
+        return 0;
+    }
+
+    protected function getStoreIds($input){
+        $storeIds = explode(',', $input->getOption(self::INPUT_KEY_STOREID));
+        if (count($storeIds) < 1) {
+            $storeIds = [1];
+        }
+        return $storeIds;
+    }
+
+    protected function safeConfigDataForStore($input){
         $this->saveConnectionData(
             $input->getOption(self::INPUT_KEY_ENDPOINT),
             $input->getOption(self::INPUT_KEY_USERNAME),
@@ -157,10 +197,9 @@ class Configure extends Command
         );
         $this->getGeneralSettingsService()->saveGeneralSettings($generalSettings);
         $this->saveWidgetSettings($input->getOption(self::INPUT_KEY_ASSETS_KEY));
-        return 0;
     }
 
-        /**
+    /**
      * @param string $endpoint
      * @param string $username
      * @param string $password
