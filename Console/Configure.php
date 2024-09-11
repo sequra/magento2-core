@@ -171,7 +171,7 @@ class Configure extends Command
     }
 
     protected function getStoreIds($input){
-        $storeIds = explode(',', $input->getOption(self::INPUT_KEY_STOREID));
+        $storeIds = explode(',', $input->getOption(self::INPUT_KEY_STOREID)??1);
         if (count($storeIds) < 1) {
             $storeIds = [1];
         }
