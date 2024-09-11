@@ -1,2 +1,2 @@
 #!/bin/bash
-docker compose exec -u daemon -w /bitnami/magento magento bin/magento $1
+docker compose exec -u daemon -w /bitnami/magento magento bin/magento $@

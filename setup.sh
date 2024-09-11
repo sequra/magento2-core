@@ -1,4 +1,5 @@
 #!/bin/bash
+DIR="$( cd "$( dirname "$0" )" && pwd )" # Get the current directory
 # Colors for the output
 GREEN=$(tput setaf 2)
 RED=$(tput setaf 1)
@@ -11,7 +12,6 @@ case "${unameOut}" in
     Darwin*)    open_cmd=open;;
     *)          open_cmd=start
 esac
-inContainer="docker compose exec -u daemon -w /bitnami/magento magento"
 
 set -o allexport
 # shellcheck source=.env.sample
@@ -29,7 +29,8 @@ retry=600
 timeout=10
 start=$(date +%s)
 while [ $(($(date +%s) - $start)) -lt $retry ]; do
-    response_code="$(curl -s -o /dev/null -w ''%{http_code}'' "http://${MAGENTO_HOST}")"
+    # Check if Magento is up and running against exposed http port just in case varnish or anything else is set in front.
+    response_code="$(curl -s -o /dev/null -w ''%{http_code}'' "http://localhost:${MAGENTO_HTTP_PORT}")"
     if [[ $response_code == "000" ]] ; then
         echo -ne "⏳ Waiting for Magento to be up and running... $(($(date +%s) - $start)) / $retry "\\r
         sleep $timeout
@@ -43,11 +44,10 @@ while [ $(($(date +%s) - $start)) -lt $retry ]; do
 
     echo $GREEN
     echo " ✅ Magento installed"
-    if [[ $MAGENTO_SAMPLEDATA == "true" ]] ; then
-        ${inContainer} bin/magento sampledata:deploy || { echo "❌ Failed to install sample-data" ; exit 1; }
-    fi
-    ${inContainer} bin/magento setup:upgrade || { echo "❌ Failed to upgrade" ; exit 1; }
     echo " Magento is up and running at http://${MAGENTO_HOST}"
+    if [[ $MAGENTO_SAMPLEDATA == "true" || $MAGENTO_SAMPLEDATA == "yes" ]] ; then
+        $DIR/bin/install-sampledata || { echo "❌ Failed to install sample-data" ; exit 1; }
+    fi
     echo "🚀 Openning the browser..."
     $open_cmd "http://${MAGENTO_HOST}"
     echo $NC
