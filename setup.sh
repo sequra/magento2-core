@@ -24,12 +24,12 @@ else
 fi
 set +o allexport
 
-docker compose up -d --build || { echo "❌ Failed to start docker compose" ; exit 1; }
+docker compose up -d --build --remove-orphans || { echo "❌ Failed to start docker compose" ; exit 1; }
 
 echo "🚀 Waiting for installation to complete..."
 
 retry=600
-timeout=10
+timeout=1
 start=$(date +%s)
 while [ $(($(date +%s) - $start)) -lt $retry ]; do
     # Check if Magento is up and running against exposed http port just in case varnish or anything else is set in front.
@@ -37,7 +37,7 @@ while [ $(($(date +%s) - $start)) -lt $retry ]; do
     if [[ $response_code == "000" ]] ; then
         echo -ne "⏳ Waiting for Magento to be up and running... $(($(date +%s) - $start)) / $retry "\\r
         sleep $timeout
-        docker compose ps --services magento > /dev/null || { echo "❌ Magento container failed" ; exit 1; } 
+        docker compose ps --services | grep -q magento || { echo -ne \\r\\n"❌ Magento container failed"\\r\\n ; exit 1; }
         continue
     fi
     if [[ $response_code == "500" ]] ; then

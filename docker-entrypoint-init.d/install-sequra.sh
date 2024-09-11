@@ -11,6 +11,10 @@ if [ "$SQ_M2_CORE_VERSION" = "local" ]; then
 else
     composer require sequra/magento2-core:"$SQ_M2_CORE_VERSION"
 fi
+composer require mageplaza/magento-2-spanish-language-pack:dev-master \
+ mageplaza/magento-2-portuguese-language-pack:dev-master \
+ mageplaza/magento-2-french-language-pack:dev-master \
+ mageplaza/magento-2-italian-language-pack:dev-master;
 bin/magento config:set dev/template/allow_symlink 1
 # bin/magento config:set general/locale/code "$MAGENTO_LOCALE" 
 # bin/magento config:set general/locale/timezone "$MAGENTO_TIMEZONE"
