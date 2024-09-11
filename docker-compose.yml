@@ -10,6 +10,11 @@ services:
       - "mariadb_data:/bitnami/mariadb"
     ports:
       - "${MAGENTO_MYSQL_PORT}:3306"
+    env_file:
+      - path: ./.env.sample
+        required: true
+      - path: ./.env
+        required: false
   magento:
     image: docker.io/bitnami/magento:${MAGENTO_VERSION:-latest}
     ports:

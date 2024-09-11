@@ -18,6 +18,9 @@ set -o allexport
 source .env.sample
 if [ -f .env ]; then
     source .env
+else
+    echo "⚠️ No .env file found, coping from .env.sample"
+    cp .env.sample .env
 fi
 set +o allexport
 
