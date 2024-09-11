@@ -47,12 +47,13 @@ while [ $(($(date +%s) - $start)) -lt $retry ]; do
 
     echo $GREEN
     echo " ✅ Magento installed"
-    echo " Magento is up and running at http://${MAGENTO_HOST}"
+    echo " Magento is up and running at http://${MAGENTO_HOST}:${MAGENTO_EXTERNAL_HTTP_PORT_NUMBER}/"
     if [[ $MAGENTO_SAMPLEDATA == "true" || $MAGENTO_SAMPLEDATA == "yes" ]] ; then
         $DIR/bin/install-sampledata || { echo "❌ Failed to install sample-data" ; exit 1; }
     fi
+    $DIR/bin/magento setup:upgrade || { echo "❌ Failed to run setup:upgrade" ; exit 1; }
     echo "🚀 Openning the browser..."
-    $open_cmd "http://${MAGENTO_HOST}"
+    $open_cmd "http://${MAGENTO_HOST}:${MAGENTO_EXTERNAL_HTTP_PORT_NUMBER}/"
     echo $NC
     exit 0;
 done
