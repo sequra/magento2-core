@@ -2,6 +2,8 @@
 .env* export-ignore
 .gitignore export-ignore
 .gitattributes export-ignore
+docker-compose.yml export-ignore
+docker-compose.override.sample.yml export-ignore
 
 # Exclude specific directories
 .github export-ignore
