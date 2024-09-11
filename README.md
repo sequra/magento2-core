@@ -67,6 +67,7 @@ The repository includes a docker-compose file to easily test the module. You can
 
 This will start a Magento 2 instance with the seQura module installed. You can access the admin panel at `http://localhost:8018/admin` with the credentials `admin`/`password123`.
 
+Once installed you could start/stop the magento instance with `docker compose up` and `docker compose down` commands.
 
 ### Customizing the environment
 You could create you own .env file to customize the environment. You can copy the .env.example file and modify the values as needed.
