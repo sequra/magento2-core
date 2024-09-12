@@ -72,7 +72,18 @@ Once installed you could start/stop the magento instance with `docker compose up
 ### Customizing the environment
 You could create you own .env file to customize the environment. You can copy the .env.example file and modify the values as needed.
 
-#### Some examples
+In order to use magento sample data you MUST set your credentials for https://repo.magento.com/ in you .env file at 
+
+```bash
+COMPOSER_AUTH='{"http-basic":{"repo.magento.com":{"username":"<public-key>","password":"<private-key>"}}}'
+```
+
+Otherwise you will get a warning message:
+> "warning": "You haven't provided your Magento authentication keys. For instructions, visit https://devdocs.magento.com/guides/v2.3/install-gde/prereq/connect-auth.html"
+
+and the installation will fail.
+
+#### Other examples
 * You can customize the Magento version by setting the `MAGENTO_VERSION` environment variable.
 * You can customize the sequra/magento module version by setting the `SQ_M2_CORE_VERSION` environment variable. Leave it as local to use the local version of the module.
 * You can customize the host and ports by setting the `MAGENTO_HOST` and `MAGENTO_HTTP_PORT` environment variable.
