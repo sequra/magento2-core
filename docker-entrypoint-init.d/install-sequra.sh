@@ -5,9 +5,6 @@ cd /bitnami/magento/ || exit 0
 if [ "$SQ_M2_CORE_VERSION" = "local" ]; then
     php ./vendor/bin/composer config repositories.sequra/magento2-core path /Sequra/Core
     COMPOSER_MIRROR_PATH_REPOS=1 php ./vendor/bin/composer require sequra/magento2-core:^2.5
-    # mkdir -p ./app/code
-    # ln -s /Sequra ./app/code/Sequra
-    # composer update
 else
     composer require sequra/magento2-core:"$SQ_M2_CORE_VERSION"
 fi
@@ -16,11 +13,6 @@ composer require mageplaza/magento-2-spanish-language-pack:dev-master \
  mageplaza/magento-2-french-language-pack:dev-master \
  mageplaza/magento-2-italian-language-pack:dev-master;
 bin/magento config:set dev/template/allow_symlink 1
-# bin/magento config:set general/locale/code "$MAGENTO_LOCALE" 
-# bin/magento config:set general/locale/timezone "$MAGENTO_TIMEZONE"
-# bin/magento config:set general/country/default "$MAGENTO_COUNTRY"
-# bin/magento config:set currency/options/base "$MAGENTO_CURRENCY"
-# bin/magento config:set currency/options/default "$MAGENTO_CURRENCY"
 bin/magento module:enable Sequra_Core
 bin/magento deploy:mode:set developer
 bin/magento setup:upgrade
