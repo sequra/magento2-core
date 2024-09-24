@@ -1,0 +1,3 @@
+#!/bin/bash
+docker compose exec -u daemon -w /bitnami/magento magento bash -c \
+"mysql -h \$MAGENTO_DATABASE_HOST -P \$MAGENTO_DATABASE_PORT_NUMBER -u \$MAGENTO_DATABASE_USER \$MAGENTO_DATABASE_NAME"

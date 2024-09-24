@@ -1,0 +1,13 @@
+services:
+  varnish:
+    image: varnish:6.6
+    ports:
+      - "8180:80"
+    volumes:
+      - ./default.vcl:/etc/varnish/default.vcl
+    environment:
+      - VARNISH_SIZE=256M
+      - VARNISH_BACKEND_HOST=magento
+      - VARNISH_BACKEND_PORT=8080
+    depends_on:
+      - magento

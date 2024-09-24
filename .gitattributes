@@ -2,9 +2,15 @@
 .env* export-ignore
 .gitignore export-ignore
 .gitattributes export-ignore
+docker-compose.yml export-ignore
+docker-compose.override.sample.yml export-ignore
 
 # Exclude specific directories
 .github export-ignore
 docs export-ignore
 docker export-ignore
 bin export-ignore
+docker-entrypoint-init.d export-ignore
+
+# Exclude scripts
+*.sh export-ignore

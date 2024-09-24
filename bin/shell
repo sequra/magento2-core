@@ -1,0 +1,6 @@
+#!/bin/bash
+if [ -z "$1" ]; then
+    docker compose exec -u daemon -w /bitnami/magento magento bash
+else
+    docker compose exec -u daemon -w /bitnami/magento magento bash -c "$@"
+fi

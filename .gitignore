@@ -1,2 +1,7 @@
 .idea
 vendor
+docker-compose.override.yml
+.composer_cache
+.env
+default.vcl
+id_rsa
