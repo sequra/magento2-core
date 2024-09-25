@@ -3,34 +3,34 @@
     <policies>
         <policy id="img-src">
             <values>
-                <value id="sequra-sandbox-cdn" type="host">https://sandbox.sequracdn.com</value>
-                <value id="sequra-production-cdn" type="host">https://live.sequracdn.com</value>
-                <value id="sequra-sandbox-api" type="host">https://sandbox.sequrapi.com</value>
-                <value id="sequra-production-api" type="host">https://live.sequrapi.com</value>
+                <value id="sequra-sandbox-cdn" type="host">sandbox.sequracdn.com</value>
+                <value id="sequra-production-cdn" type="host">live.sequracdn.com</value>
+                <value id="sequra-sandbox-api" type="host">sandbox.sequrapi.com</value>
+                <value id="sequra-production-api" type="host">live.sequrapi.com</value>
             </values>
         </policy>
         <policy id="script-src">
             <values>
-                <value id="sequra-sandbox-cdn" type="host">https://sandbox.sequracdn.com</value>
-                <value id="sequra-production-cdn" type="host">https://live.sequracdn.com</value>
-                <value id="sequra-sandbox-api" type="host">https://sandbox.sequrapi.com</value>
-                <value id="sequra-production-api" type="host">https://live.sequrapi.com</value>
+                <value id="sequra-sandbox-cdn" type="host">sandbox.sequracdn.com</value>
+                <value id="sequra-production-cdn" type="host">live.sequracdn.com</value>
+                <value id="sequra-sandbox-api" type="host">sandbox.sequrapi.com</value>
+                <value id="sequra-production-api" type="host">live.sequrapi.com</value>
             </values>
         </policy>
         <policy id="connect-src">
             <values>
-                <value id="sequra-sandbox-cdn" type="host">https://sandbox.sequracdn.com</value>
-                <value id="sequra-production-cdn" type="host">https://live.sequracdn.com</value>
-                <value id="sequra-sandbox-api" type="host">https://sandbox.sequrapi.com</value>
-                <value id="sequra-production-api" type="host">https://live.sequrapi.com</value>
+                <value id="sequra-sandbox-cdn" type="host">sandbox.sequracdn.com</value>
+                <value id="sequra-production-cdn" type="host">live.sequracdn.com</value>
+                <value id="sequra-sandbox-api" type="host">sandbox.sequrapi.com</value>
+                <value id="sequra-production-api" type="host">live.sequrapi.com</value>
             </values>
         </policy>
         <policy id="frame-src">
             <values>
-                <value id="sequra-sandbox-cdn" type="host">https://sandbox.sequracdn.com</value>
-                <value id="sequra-production-cdn" type="host">https://live.sequracdn.com</value>
-                <value id="sequra-sandbox-api" type="host">https://sandbox.sequrapi.com</value>
-                <value id="sequra-production-api" type="host">https://live.sequrapi.com</value>
+                <value id="sequra-sandbox-cdn" type="host">sandbox.sequracdn.com</value>
+                <value id="sequra-production-cdn" type="host">live.sequracdn.com</value>
+                <value id="sequra-sandbox-api" type="host">sandbox.sequrapi.com</value>
+                <value id="sequra-production-api" type="host">live.sequrapi.com</value>
             </values>
         </policy>
     </policies>
