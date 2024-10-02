@@ -4,9 +4,9 @@
     <default>
         <csp>
             <mode>
-                <storefront>
+                <storefront_checkout_index_index>
                     <report_only>1</report_only>
-                </storefront>
+                </storefront_checkout_index_index>
             </mode>
         </csp>
         <payment>
