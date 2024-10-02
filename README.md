@@ -123,3 +123,8 @@ To open mysql terminal in the container.
 ./bin/shell
 ```
 To open a bash shell commands in the container.
+
+```bash
+./bin/xdebug
+```
+To toggle xdebug it will be enabled by default.
