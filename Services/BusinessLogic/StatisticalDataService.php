@@ -2,11 +2,9 @@
 
 namespace Sequra\Core\Services\BusinessLogic;
 
+use SeQura\Core\BusinessLogic\Domain\SendReport\Models\SendReport;
 use SeQura\Core\BusinessLogic\Domain\StatisticalData\Models\StatisticalData;
 use SeQura\Core\BusinessLogic\Domain\StatisticalData\Services\StatisticalDataService as CoreStatisticalDataService;
-use SeQura\Core\BusinessLogic\Domain\Stores\Services\StoreService;
-use SeQura\Core\Infrastructure\ServiceRegister;
-use SeQura\Core\Infrastructure\Utility\TimeProvider;
 
 /**
  * Class StatisticalDataService
@@ -16,6 +14,7 @@ use SeQura\Core\Infrastructure\Utility\TimeProvider;
 class StatisticalDataService extends CoreStatisticalDataService
 {
     private const SCHEDULE_TIME = '4 am';
+    private const SCHEDULE_TIME_NEXT_DAY = '4 am +1 day';
 
     /**
      * @inheirtDoc
@@ -23,26 +22,26 @@ class StatisticalDataService extends CoreStatisticalDataService
     public function saveStatisticalData(StatisticalData $statisticalData): void
     {
         $this->statisticalDataRepository->setStatisticalData($statisticalData);
+
+        if ($statisticalData->isSendStatisticalData()) {
+            if ($this->timeProvider->getCurrentLocalTime()->getTimestamp() <= strtotime(self::SCHEDULE_TIME)) {
+                $sendReport = new SendReport(strtotime(self::SCHEDULE_TIME));
+            } else {
+                $sendReport = new SendReport(strtotime(self::SCHEDULE_TIME_NEXT_DAY));
+            }
+
+            $this->sendReportRepository->setSendReport(
+                $sendReport
+            );
+        }
     }
 
     /**
      * @inheirtDoc
      */
-    public function getContextsForSendingReport(): array
+    public function setSendReportTime(): void
     {
-        if ($this->timeProvider->getCurrentLocalTime()->getTimestamp()
-            !== strtotime(self::SCHEDULE_TIME)) {
-            return [];
-        }
-
-        return $this->getStoreService()->getConnectedStores();
-    }
-
-    /**
-     * @return StoreService
-     */
-    private function getStoreService(): StoreService
-    {
-        return ServiceRegister::getService(StoreService::class);
+        $time = strtotime(self::SCHEDULE_TIME_NEXT_DAY);
+        $this->sendReportRepository->setSendReport(new SendReport($time));
     }
 }
