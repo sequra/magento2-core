@@ -23,17 +23,19 @@ class StatisticalDataService extends CoreStatisticalDataService
     {
         $this->statisticalDataRepository->setStatisticalData($statisticalData);
 
-        if ($statisticalData->isSendStatisticalData()) {
-            if ($this->timeProvider->getCurrentLocalTime()->getTimestamp() <= strtotime(self::SCHEDULE_TIME)) {
-                $sendReport = new SendReport(strtotime(self::SCHEDULE_TIME));
-            } else {
-                $sendReport = new SendReport(strtotime(self::SCHEDULE_TIME_NEXT_DAY));
-            }
-
-            $this->sendReportRepository->setSendReport(
-                $sendReport
-            );
+        if (!$statisticalData->isSendStatisticalData()) {
+            return;
         }
+
+        if ($this->timeProvider->getCurrentLocalTime()->getTimestamp() <= strtotime(self::SCHEDULE_TIME)) {
+            $sendReport = new SendReport(strtotime(self::SCHEDULE_TIME));
+        } else {
+            $sendReport = new SendReport(strtotime(self::SCHEDULE_TIME_NEXT_DAY));
+        }
+
+        $this->sendReportRepository->setSendReport(
+            $sendReport
+        );
     }
 
     /**
