@@ -31,11 +31,6 @@ class OrderCancellationObserver implements ObserverInterface
     private $translationProvider;
 
     /**
-     * @var OrderService
-     */
-    private $orderService;
-
-    /**
      * @param SeQuraTranslationProvider $translationProvider
      */
     public function __construct(SeQuraTranslationProvider $translationProvider)
@@ -79,7 +74,11 @@ class OrderCancellationObserver implements ObserverInterface
             throw new LocalizedException($this->translationProvider->translate('sequra.error.cannotCancel'));
         }
 
-        StoreContext::doWithStore($orderData->getStoreId(), [$this->getOrderService(), 'updateOrder'], [
+        $orderService = StoreContext::doWithStore($orderData->getStoreId(), function () {
+            return ServiceRegister::getService(OrderService::class);
+        });
+
+        StoreContext::doWithStore($orderData->getStoreId(), [$orderService, 'updateOrder'], [
             new OrderUpdateData(
                 $orderData->getIncrementId(),
                 new SeQuraCart($orderData->getOrderCurrencyCode()),
@@ -87,20 +86,6 @@ class OrderCancellationObserver implements ObserverInterface
                 null, null
             )
         ]);
-    }
-
-    /**
-     * Returns an instance of Order service.
-     *
-     * @return OrderService
-     */
-    private function getOrderService(): OrderService
-    {
-        if (!isset($this->orderService)) {
-            $this->orderService = ServiceRegister::getService(OrderService::class);
-        }
-
-        return $this->orderService;
     }
 
     /**

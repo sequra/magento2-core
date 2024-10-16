@@ -36,11 +36,6 @@ class OrderAddressObserver implements ObserverInterface
     private $transformService;
 
     /**
-     * @var OrderService
-     */
-    private $orderService;
-
-    /**
      * @param SeQuraTranslationProvider $translationProvider
      * @param TransformEntityService $transformService
      */
@@ -94,27 +89,17 @@ class OrderAddressObserver implements ObserverInterface
         $isShippingAddress = $magentoAddress->getAddressType() === 'shipping';
         $address = $this->transformService->transformAddressToSeQuraOrderAddress($magentoAddress);
 
-        StoreContext::doWithStore($magentoOrder->getStoreId(), [$this->getOrderService(), 'updateOrder'], [
+        $orderService = StoreContext::doWithStore($magentoOrder->getStoreId(), function () {
+            return ServiceRegister::getService(OrderService::class);
+        });
+
+        StoreContext::doWithStore($magentoOrder->getStoreId(), [$orderService, 'updateOrder'], [
             new OrderUpdateData(
                 $magentoOrder->getIncrementId(), null, null,
                 $isShippingAddress ? $address : null,
                 !$isShippingAddress ? $address : null
             )
         ]);
-    }
-
-    /**
-     * Returns an instance of Order service.
-     *
-     * @return OrderService
-     */
-    private function getOrderService(): OrderService
-    {
-        if (!isset($this->orderService)) {
-            $this->orderService = ServiceRegister::getService(OrderService::class);
-        }
-
-        return $this->orderService;
     }
 
     /**
