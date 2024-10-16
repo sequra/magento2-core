@@ -26,6 +26,7 @@ use SeQura\Core\Infrastructure\ServiceRegister;
 use SeQura\Core\BusinessLogic\Domain\Order\Service\OrderService as SeQuraOrderService;
 use Sequra\Core\Model\Api\Builders\CreateOrderRequestBuilderFactory;
 use Sequra\Core\Services\BusinessLogic\Utility\SeQuraTranslationProvider;
+use Magento\Sales\Model\ResourceModel\Order\CollectionFactory as OrderCollectionFactory;
 
 /**
  * Class OrderService
@@ -47,6 +48,10 @@ class OrderService implements ShopOrderService
      * @var SearchCriteriaBuilder
      */
     private $searchOrderCriteriaBuilder;
+    /**
+     * @var OrderCollectionFactory
+     */
+    private $collectionFactory;
     /**
      * @var OrderRepositoryInterface
      */
@@ -77,17 +82,19 @@ class OrderService implements ShopOrderService
     private $createOrderRequestBuilderFactory;
 
     public function __construct(
-        SearchCriteriaBuilder          $searchOrderCriteriaBuilder,
-        OrderRepositoryInterface       $shopOrderRepository,
-        OrderManagementInterface       $orderManagement,
-        CartManagementInterface        $cartManagement,
-        SeQuraOrderRepositoryInterface $seQuraOrderRepository,
-        SeQuraTranslationProvider      $translationProvider,
-        CartRepositoryInterface $cartProvider,
+        SearchCriteriaBuilder            $searchOrderCriteriaBuilder,
+        OrderCollectionFactory           $collectionFactory,
+        OrderRepositoryInterface         $shopOrderRepository,
+        OrderManagementInterface         $orderManagement,
+        CartManagementInterface          $cartManagement,
+        SeQuraOrderRepositoryInterface   $seQuraOrderRepository,
+        SeQuraTranslationProvider        $translationProvider,
+        CartRepositoryInterface          $cartProvider,
         CreateOrderRequestBuilderFactory $createOrderRequestBuilderFactory
     )
     {
         $this->searchOrderCriteriaBuilder = $searchOrderCriteriaBuilder;
+        $this->collectionFactory = $collectionFactory;
         $this->shopOrderRepository = $shopOrderRepository;
         $this->orderManagement = $orderManagement;
         $this->cartManagement = $cartManagement;
@@ -114,19 +121,18 @@ class OrderService implements ShopOrderService
         $fromDate = clone $toDate;
         $fromDate->modify('-7 days');
 
-        $searchCriteria = $this->searchOrderCriteriaBuilder
-            ->addFilter('created_at', $fromDate->format('Y-m-d H:i:s'), 'gteq')
-            ->addFilter('created_at', $toDate->format('Y-m-d H:i:s'), 'lteq')
-            ->setCurrentPage($page + 1)
-            ->setPageSize($limit)
-            ->create();
+        $collection = $this->collectionFactory
+            ->create()
+            ->setPage($page, $limit)
+            ->addFieldToFilter('created_at', ['gteq' => $fromDate->format('Y-m-d H:i:s')])
+            ->addFieldToFilter('created_at', ['lteq' => $toDate->format('Y-m-d H:i:s')]);
 
-        $orderList = $this->shopOrderRepository->getList($searchCriteria);
-        if ($page * $limit > $orderList->getTotalCount()) {
+        $count = $collection->getSize();
+        if ($page !== 1 && $page > round($count / $limit)) {
             return [];
         }
 
-        return array_column($orderList->getData(), 'entity_id');
+        return array_column($collection->getData(), 'entity_id');
     }
 
     /**
