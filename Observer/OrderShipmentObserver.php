@@ -35,11 +35,6 @@ class OrderShipmentObserver implements ObserverInterface
     private $transformService;
 
     /**
-     * @var OrderService
-     */
-    private $orderService;
-
-    /**
      * @param SeQuraTranslationProvider $translationProvider
      * @param TransformEntityService $transformService
      */
@@ -89,7 +84,11 @@ class OrderShipmentObserver implements ObserverInterface
         $unshippedCart = $this->transformService->transformOrderCartToSeQuraCart($orderData, false);
         $shippedCart = $this->transformService->transformOrderCartToSeQuraCart($orderData, true);
 
-        StoreContext::doWithStore($orderData->getStoreId(), [$this->getOrderService(), 'updateOrder'], [
+        $orderService = StoreContext::doWithStore($orderData->getStoreId(), function () {
+            return ServiceRegister::getService(OrderService::class);
+        });
+
+        StoreContext::doWithStore($orderData->getStoreId(), [$orderService, 'updateOrder'], [
             new OrderUpdateData(
                 $orderData->getIncrementId(),
                 $shippedCart,
@@ -98,20 +97,6 @@ class OrderShipmentObserver implements ObserverInterface
                 null
             )
         ]);
-    }
-
-    /**
-     * Returns an instance of Order service.
-     *
-     * @return OrderService
-     */
-    private function getOrderService(): OrderService
-    {
-        if (!isset($this->orderService)) {
-            $this->orderService = ServiceRegister::getService(OrderService::class);
-        }
-
-        return $this->orderService;
     }
 
     /**
