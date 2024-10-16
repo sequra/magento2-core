@@ -1,0 +1,8 @@
+#!/bin/bash
+echo "Mount Sequra Core module"
+docker compose exec -u daemon -w /bitnami/magento magento bash -c "
+    php ./vendor/bin/composer config repositories.sequra/magento2-core path /Sequra/Core
+    COMPOSER_MIRROR_PATH_REPOS=1 php ./vendor/bin/composer require sequra/magento2-core:^2.5
+    bin/magento module:enable Sequra_Core
+    bin/magento setup:upgrade
+"
