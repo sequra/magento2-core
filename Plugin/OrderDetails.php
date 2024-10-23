@@ -11,7 +11,7 @@ use SeQura\Core\BusinessLogic\Domain\Order\Models\SeQuraOrder;
 use SeQura\Core\BusinessLogic\Domain\Order\Service\OrderService;
 use SeQura\Core\Infrastructure\ServiceRegister;
 use Sequra\Core\Services\BusinessLogic\Utility\SeQuraTranslationProvider;
-use Sequra\Core\Ui\Component\Listing\Column\SequraOrderLink;
+use Sequra\Core\Helper\UrlHelper;
 
 /**
  * Class OrderDetails
@@ -24,6 +24,11 @@ class OrderDetails
      * @var UrlInterface
      */
     protected $urlBuilder;
+
+    /**
+     * @var UrlHelper
+     */
+    protected $urlHelper;
 
     /**
      * @var Currency
@@ -51,11 +56,17 @@ class OrderDetails
      * @param Currency $currencyModel
      * @param SeQuraTranslationProvider $translation
      */
-    public function __construct(UrlInterface $urlBuilder, Currency $currencyModel, SeQuraTranslationProvider $translation)
+    public function __construct(
+      UrlInterface $urlBuilder,
+      Currency $currencyModel,
+      SeQuraTranslationProvider $translation,
+      UrlHelper $urlHelper
+    )
     {
         $this->urlBuilder = $urlBuilder;
         $this->currencyModel = $currencyModel;
         $this->translation = $translation;
+        $this->urlHelper = $urlHelper;
     }
 
     /**
@@ -93,7 +104,7 @@ class OrderDetails
         $paymentAmount = $this->getPaymentAmount($order);
         $paymentMethodName = $order->getPaymentMethod() ? $order->getPaymentMethod()->getName() : '/';
         $paymentMethodIcon = $order->getPaymentMethod() ? $order->getPaymentMethod()->getIcon() ?? '/' : '/';
-        $sequraLink = $this->urlBuilder->getUrl(SequraOrderLink::SEQURA_PORTAL_URL . $order->getReference());
+        $sequraLink = $this->urlHelper->getBackendUrlForSequraOrder($order->getReference());
 
         $viewOnSeQuraButton = '';
         if ($order->getState() === OrderRequestStates::CONFIRMED) {

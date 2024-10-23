@@ -6,15 +6,12 @@ use Magento\Framework\View\Asset\Repository;
 use Magento\Ui\Component\Listing\Columns\Column;
 use Magento\Framework\View\Element\UiComponent\ContextInterface;
 use Magento\Framework\View\Element\UiComponentFactory;
-use Magento\Framework\UrlInterface;
-use SeQura\Core\BusinessLogic\Domain\Connection\Models\ConnectionData;
-use SeQura\Core\BusinessLogic\Domain\Connection\Services\ConnectionService;
 use SeQura\Core\BusinessLogic\Domain\Order\Models\OrderRequest\OrderRequestStates;
 use SeQura\Core\BusinessLogic\Domain\Order\Models\SeQuraOrder;
 use SeQura\Core\BusinessLogic\Domain\Order\Service\OrderService;
-use SeQura\Core\BusinessLogic\SeQuraAPI\BaseProxy;
 use SeQura\Core\Infrastructure\ServiceRegister;
 use Sequra\Core\Services\BusinessLogic\Utility\SeQuraTranslationProvider;
+use Sequra\Core\Helper\UrlHelper;
 
 /**
  * Class SequraOrderLink
@@ -23,17 +20,20 @@ use Sequra\Core\Services\BusinessLogic\Utility\SeQuraTranslationProvider;
  */
 class SequraOrderLink extends Column
 {
-    protected $assetRepository;
-    protected $urlBuilder;
-    protected $translationProvider;
-    public const SEQURA_PORTAL_SANDBOX_URL = 'https://simbox.sequrapi.com/orders/';
-    public const SEQURA_PORTAL_URL = 'https://simba.sequra.com/orders/';
+    private $assetRepository;
+    /**
+     * @var SeQuraTranslationProvider
+     */
+    private $translationProvider;
+    /**
+     * @var UrlHelper
+     */
+    private $urlHelper;
 
     /**
      * @param ContextInterface $context
      * @param UiComponentFactory $uiComponentFactory
      * @param Repository $assetRepository
-     * @param UrlInterface $urlBuilder
      * @param SeQuraTranslationProvider $translationProvider
      * @param array $components
      * @param array $data
@@ -42,15 +42,15 @@ class SequraOrderLink extends Column
         ContextInterface          $context,
         UiComponentFactory        $uiComponentFactory,
         Repository                $assetRepository,
-        UrlInterface              $urlBuilder,
         SeQuraTranslationProvider $translationProvider,
+        UrlHelper                 $urlHelper,
         array                     $components = [],
         array                     $data = []
     )
     {
         $this->assetRepository = $assetRepository;
-        $this->urlBuilder = $urlBuilder;
         $this->translationProvider = $translationProvider;
+        $this->urlHelper = $urlHelper;
         parent::__construct($context, $uiComponentFactory, $components, $data);
     }
 
@@ -83,7 +83,9 @@ class SequraOrderLink extends Column
             if (isset($item['entity_id'], $referenceMap[$item['increment_id']])) {
                 $orderInfo = $referenceMap[$item['increment_id']];
                 $item[$this->getData('name') . '_reference'] = $orderInfo['ref'];
-                $orderInfo['isApproved'] && $item[$this->getData('name')] = $this->getButtonLink($orderInfo['ref']);
+                $orderInfo['isApproved'] && $item[$this->getData('name')] = $this->getButtonLink(
+                    $this->urlHelper->getBackendUrlForSequraOrder($orderInfo['ref'])
+                );
             }
         }
 
@@ -116,25 +118,17 @@ class SequraOrderLink extends Column
      *
      * @return string
      */
-    private function getButtonLink(string $orderReference): string
+    private function getButtonLink(string $url): string
     {
         $imagePath = $this->assetRepository->getUrl('Sequra_Core::images/sequra-logo.png');
 
         return html_entity_decode(
-            '<a class="sequra-link" href="' . $this->getButtonLinkUrl($orderReference) . '" target="_blank" onclick="event.stopPropagation()">
+            '<a class="sequra-link" href="' . $url . '" target="_blank" onclick="event.stopPropagation()">
                         <button class="sequra-preview">
                             <img class="sequra-logo" src=' . $imagePath . ' alt="sequra-logo">
                                 ' . $this->translationProvider->translate("sequra.viewOnSequra") . '
                         </button>
                    </a>');
-    }
-
-    private function getButtonLinkUrl(string $orderReference): string
-    {
-        $connectionSettings = $this->getConnectionSettings();
-        $baseUrl = $connectionSettings && $connectionSettings->getEnvironment() === BaseProxy::LIVE_MODE ?
-            self::SEQURA_PORTAL_URL : self::SEQURA_PORTAL_SANDBOX_URL;
-        return $this->urlBuilder->getUrl( $baseUrl . $orderReference );
     }
 
     /**
@@ -149,21 +143,5 @@ class SequraOrderLink extends Column
         }
 
         return $this->orderService;
-    }
-
-    /**
-     * @return ConnectionData|null
-     */
-    private function getConnectionSettings(): ?ConnectionData
-    {
-        return $this->getConnectionService()->getConnectionData();
-    }
-
-    /**
-     * @return ConnectionService
-     */
-    private function getConnectionService(): ConnectionService
-    {
-        return ServiceRegister::getService(ConnectionService::class);
     }
 }
