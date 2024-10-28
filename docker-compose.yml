@@ -16,6 +16,7 @@ services:
       - path: ./.env
         required: false
   magento:
+    container_name: ${COMPOSE_PROJECT_NAME:-sequra}-magento
     image: docker.io/bitnami/magento:${MAGENTO_VERSION:-latest}
     ports:
       - "${MAGENTO_HTTP_PORT}:8080"

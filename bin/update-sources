@@ -1,0 +1,2 @@
+#!/bin/bash
+docker cp ${COMPOSE_PROJECT_NAME:-sequra}-magento:/var/www/html .magento-src

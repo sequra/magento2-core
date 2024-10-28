@@ -5,3 +5,4 @@ docker-compose.override.yml
 .env
 default.vcl
 id_rsa
+.magento-src
