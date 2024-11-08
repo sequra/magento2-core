@@ -32,12 +32,6 @@ class CustomerCartProvider implements CartProvider
         /** @var Quote $quote */
         $quote = $this->quoteResotory->getActive($cartId);
 
-        if ($quote->getCheckoutMethod()) {
-            $quote->setCheckoutMethod('');
-            $quote->setCustomerIsGuest(false);
-            $this->quoteResotory->save($quote);
-        }
-
         return $quote;
     }
 }

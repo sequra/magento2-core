@@ -46,12 +46,6 @@ class GuestCartProvider implements CartProvider
             throw NoSuchEntityException::singleField('cartId', $cartId);
         }
 
-        if ($quote->getCheckoutMethod() !== Onepage::METHOD_GUEST) {
-            $quote->setCheckoutMethod(Onepage::METHOD_GUEST);
-            $quote->setCustomerIsGuest(true);
-            $this->cartRepository->save($quote);
-        }
-
         return $quote;
     }
 }
