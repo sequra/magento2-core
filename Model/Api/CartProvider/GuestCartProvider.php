@@ -19,23 +19,16 @@ class GuestCartProvider implements CartProvider
      * @var GuestCartRepositoryInterface
      */
     private $guestCartRepository;
-    /**
-     * @var CartRepositoryInterface
-     */
-    private $cartRepository;
 
     /**
      * GuestCartProvider constructor.
      *
      * @param GuestCartRepositoryInterface $guestCartRepository
-     * @param CartRepositoryInterface $cartRepository
      */
     public function __construct(
-        GuestCartRepositoryInterface $guestCartRepository,
-        CartRepositoryInterface $cartRepository
+        GuestCartRepositoryInterface $guestCartRepository
     ) {
         $this->guestCartRepository = $guestCartRepository;
-        $this->cartRepository = $cartRepository;
     }
 
     public function getQuote(string $cartId): Quote
@@ -44,8 +37,7 @@ class GuestCartProvider implements CartProvider
         $quote = $this->guestCartRepository->get($cartId);
         if (!$quote->getIsActive()) {
             throw NoSuchEntityException::singleField('cartId', $cartId);
-        }
-
+        } 
         return $quote;
     }
 }
