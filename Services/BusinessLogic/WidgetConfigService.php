@@ -19,14 +19,18 @@ use SeQura\Core\BusinessLogic\Domain\CountryConfiguration\Models\CountryConfigur
 use SeQura\Core\BusinessLogic\Domain\CountryConfiguration\Services\CountryConfigurationService;
 use SeQura\Core\BusinessLogic\Domain\Integration\Store\StoreServiceInterface;
 use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
-use SeQura\Core\BusinessLogic\Domain\PaymentMethod\Models\SeQuraPaymentMethod;
 use SeQura\Core\BusinessLogic\Domain\PaymentMethod\Services\PaymentMethodsService;
 use SeQura\Core\BusinessLogic\Domain\PromotionalWidgets\Models\WidgetSettings;
 use SeQura\Core\BusinessLogic\Domain\PromotionalWidgets\Services\WidgetSettingsService;
 use SeQura\Core\BusinessLogic\Domain\Stores\Models\Store;
 use SeQura\Core\BusinessLogic\SeQuraAPI\BaseProxy;
+use Sequra\Core\DataAccess\Entities\PaymentMethod;
+use Sequra\Core\DataAccess\Entities\PaymentMethods as PaymentMethodsEntity;
 use SeQura\Core\Infrastructure\Http\Exceptions\HttpRequestException;
+use SeQura\Core\Infrastructure\ORM\Exceptions\QueryFilterInvalidParamException;
 use SeQura\Core\Infrastructure\ORM\Exceptions\RepositoryNotRegisteredException;
+use SeQura\Core\Infrastructure\ORM\QueryFilter\Operators;
+use SeQura\Core\Infrastructure\ORM\QueryFilter\QueryFilter;
 use SeQura\Core\Infrastructure\ORM\RepositoryRegistry;
 use SeQura\Core\Infrastructure\ServiceRegister;
 
@@ -234,13 +238,27 @@ class WidgetConfigService
     /**
      * @param string $merchantId
      *
-     * @return SeQuraPaymentMethod[]
+     * @return PaymentMethod[]
      *
-     * @throws HttpRequestException
+     * @throws RepositoryNotRegisteredException
+     * @throws QueryFilterInvalidParamException
      */
     private function getProducts(string $merchantId): array
     {
-        return $this->getPaymentMethodsService()->getMerchantsPaymentMethods($merchantId);
+        $paymentMethodsRepository = RepositoryRegistry::getRepository(PaymentMethodsEntity::CLASS_NAME);
+
+        $filter = new QueryFilter();
+        $filter->where('storeId', Operators::EQUALS, $this->storeManager->getStore()->getId())
+            ->where('merchantId', Operators::EQUALS, $merchantId);
+
+        /** @var PaymentMethodsEntity $paymentMethods */
+        $paymentMethods = $paymentMethodsRepository->selectOne($filter);
+
+        if ($paymentMethods === null) {
+            return [];
+        }
+
+        return $paymentMethods->getPaymentMethods();
     }
 
     private function getFormatter(): \NumberFormatter
