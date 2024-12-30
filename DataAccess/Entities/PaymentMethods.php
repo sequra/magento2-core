@@ -33,7 +33,7 @@ class PaymentMethods extends Entity
     /**
      * @inheritDoc
      */
-    public function getConfig()
+    public function getConfig(): EntityConfiguration
     {
         $indexMap = new IndexMap();
 
@@ -48,7 +48,7 @@ class PaymentMethods extends Entity
      *
      * @throws \Exception
      */
-    public function inflate(array $data)
+    public function inflate(array $data): void
     {
         parent::inflate($data);
 
