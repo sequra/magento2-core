@@ -5,4 +5,5 @@ docker compose exec -u daemon -w /bitnami/magento magento bash -c "
     COMPOSER_MIRROR_PATH_REPOS=1 php ./vendor/bin/composer reinstall sequra/magento2-core
     bin/magento module:enable Sequra_Core
     bin/magento setup:upgrade
+    /opt/bitnami/scripts/php/reload.sh
 "
