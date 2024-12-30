@@ -19,7 +19,7 @@
     "minimum-stability": "stable",
     "require": {
         "php": ">=7.4",
-        "sequra/integration-core": "v1.0.16",
+        "sequra/integration-core": "dev-dev",
         "ext-json": "*"
     },
     "autoload": {
@@ -50,5 +50,11 @@
         "allow-plugins": {
             "dealerdirect/phpcodesniffer-composer-installer": true
         }
-    }
+    },
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/sequra/integration-core"
+        }
+    ]
 }
