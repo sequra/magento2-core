@@ -61,7 +61,7 @@ class LoggerService extends Singleton implements ShopLoggerAdapter
      *
      * @param LogData $data
      */
-    public function logMessage(LogData $data)
+    public function logMessage(LogData $data): void
     {
         /** @var ConfigurationService $configService */
         $configService = ServiceRegister::getService(Configuration::CLASS_NAME);

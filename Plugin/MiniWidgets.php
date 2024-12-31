@@ -19,11 +19,17 @@ use SeQura\Core\BusinessLogic\Domain\CountryConfiguration\Services\CountryConfig
 use SeQura\Core\BusinessLogic\Domain\GeneralSettings\Models\GeneralSettings;
 use SeQura\Core\BusinessLogic\Domain\GeneralSettings\Services\GeneralSettingsService;
 use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
-use SeQura\Core\BusinessLogic\Domain\PaymentMethod\Models\SeQuraPaymentMethod;
 use SeQura\Core\BusinessLogic\Domain\PaymentMethod\Services\PaymentMethodsService;
 use SeQura\Core\BusinessLogic\Domain\PromotionalWidgets\Models\WidgetSettings;
 use SeQura\Core\BusinessLogic\Domain\PromotionalWidgets\Services\WidgetSettingsService;
+use Sequra\Core\DataAccess\Entities\PaymentMethod;
+use Sequra\Core\DataAccess\Entities\PaymentMethods as PaymentMethodsEntity;
 use SeQura\Core\Infrastructure\Http\Exceptions\HttpRequestException;
+use SeQura\Core\Infrastructure\ORM\Exceptions\QueryFilterInvalidParamException;
+use SeQura\Core\Infrastructure\ORM\Exceptions\RepositoryNotRegisteredException;
+use SeQura\Core\Infrastructure\ORM\QueryFilter\Operators;
+use SeQura\Core\Infrastructure\ORM\QueryFilter\QueryFilter;
+use SeQura\Core\Infrastructure\ORM\RepositoryRegistry;
 use SeQura\Core\Infrastructure\ServiceRegister;
 use Sequra\Core\Services\BusinessLogic\ProductService;
 
@@ -189,7 +195,7 @@ class MiniWidgets
     /**
      * @param WidgetSettings $widgetConfig
      * @param StoreConfigInterface $storeConfig
-     * @param SeQuraPaymentMethod $paymentMethod
+     * @param PaymentMethod $paymentMethod
      * @param int $amount
      *
      * @return string
@@ -197,7 +203,7 @@ class MiniWidgets
     private function getWidgetHtml(
         WidgetSettings       $widgetConfig,
         StoreConfigInterface $storeConfig,
-        SeQuraPaymentMethod  $paymentMethod,
+        PaymentMethod        $paymentMethod,
         int                  $amount
     ): string
     {
@@ -249,13 +255,27 @@ class MiniWidgets
     /**
      * @param string $merchantId
      *
-     * @return SeQuraPaymentMethod[]
+     * @return PaymentMethod[]
      *
-     * @throws HttpRequestException
+     * @throws QueryFilterInvalidParamException
+     * @throws RepositoryNotRegisteredException
      */
     private function getPaymentMethods(string $merchantId): array
     {
-        return $this->getPaymentMethodsService()->getMerchantsPaymentMethods($merchantId);
+        $paymentMethodsRepository = RepositoryRegistry::getRepository(PaymentMethodsEntity::CLASS_NAME);
+
+        $filter = new QueryFilter();
+        $filter->where('storeId', Operators::EQUALS, $this->storeManager->getStore()->getId())
+            ->where('merchantId', Operators::EQUALS, $merchantId);
+
+        /** @var PaymentMethodsEntity $paymentMethods */
+        $paymentMethods = $paymentMethodsRepository->selectOne($filter);
+
+        if ($paymentMethods === null) {
+            return [];
+        }
+
+        return $paymentMethods->getPaymentMethods();
     }
 
     /**

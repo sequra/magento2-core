@@ -58,7 +58,7 @@ class QueueItemRepository extends BaseRepository implements QueueItemRepositoryI
     /**
      * @inheridoc
      */
-    public function batchStatusUpdate(array $ids, $status)
+    public function batchStatusUpdate(array $ids, $status): void
     {
         if (empty($ids)) {
             return;
@@ -81,7 +81,7 @@ class QueueItemRepository extends BaseRepository implements QueueItemRepositoryI
      *
      * @throws QueueItemSaveException if queue item could not be saved
      */
-    public function saveWithCondition(QueueItem $queueItem, array $additionalWhere = [])
+    public function saveWithCondition(QueueItem $queueItem, array $additionalWhere = []): int
     {
         return $this->resourceEntity->saveWithCondition($queueItem, $additionalWhere);
     }
