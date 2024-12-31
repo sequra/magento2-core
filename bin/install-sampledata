@@ -1,7 +1,0 @@
-#!/bin/bash
-echo " Installing sample data..."
-docker compose exec -w /bitnami/magento magento bash -c "rm -rf var/di/* var/generation/*"
-docker compose exec -u daemon -w /bitnami/magento magento bin/magento sampledata:deploy
-docker compose exec -u daemon -w /bitnami/magento magento bin/magento setup:upgrade
-docker compose exec -u daemon -w /bitnami/magento magento bin/magento cache:clean
-docker compose exec -u daemon -w /bitnami/magento magento bin/magento cache:flush

@@ -1,5 +1,0 @@
-#!/bin/bash
-echo \
-"ALTER TABLE sequence_order_0 AUTO_INCREMENT = $(date +%s);" \
-"ALTER TABLE sequence_order_1 AUTO_INCREMENT = $(date +%s);" | \
-mysql -h $MAGENTO_DATABASE_HOST -P $MAGENTO_DATABASE_PORT_NUMBER -u $MAGENTO_DATABASE_USER $MAGENTO_DATABASE_NAME
