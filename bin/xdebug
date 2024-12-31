@@ -1,2 +1,2 @@
 #!/bin/bash
-docker compose exec magento /docker-entrypoint-init.d/xdebug.sh
+docker compose exec magento toggle-xdebug

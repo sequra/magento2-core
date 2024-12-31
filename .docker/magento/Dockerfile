@@ -4,7 +4,7 @@ FROM php:${PHP_VERSION}-apache
 
 SHELL ["/bin/bash", "-c"]
 
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     mariadb-client \
     libfreetype6-dev \
     libjpeg62-turbo-dev \
@@ -44,33 +44,46 @@ RUN apt-get update && apt-get install -y \
     sockets \
     xsl \
     zip \
-    && apt-get clean && rm -rf /var/lib/apt/lists/* \
-    && docker-php-ext-enable redis xdebug
+    && docker-php-ext-enable \
+    redis \
+    xdebug \
+    && echo "xdebug.mode=debug" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+    && echo "xdebug.start_with_request=yes" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+    && echo "xdebug.client_host=${M2_HOST}" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+    && echo "xdebug.log_level=1" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+    && sed -i 's/^/;/' "/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini" \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Enable apache modules
-RUN a2enmod rewrite
-RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
+# Apache configuration
+RUN a2enmod rewrite && echo "ServerName localhost" >> /etc/apache2/apache2.conf
 
+# PHP configuration
 COPY ./docker-php-m2.ini /usr/local/etc/php/conf.d/docker-php-m2.ini
 
+# Custom scripts
 COPY ./m2-entrypoint.sh /usr/local/bin/m2-entrypoint
-RUN chmod +x /usr/local/bin/m2-entrypoint
+COPY ./toggle-xdebug.sh /usr/local/bin/toggle-xdebug
+RUN chmod +x /usr/local/bin/m2-entrypoint && \
+chmod +x /usr/local/bin/toggle-xdebug
 
 ARG M2_VERSION
 ARG M2_REPO_KEY
 ARG M2_REPO_SECRET
 
-RUN mkdir -p /Sequra/Core && chown -R www-data:www-data /Sequra && chmod -R 755 /Sequra
+RUN mkdir -p /Sequra/Core \
+    && chown -R www-data:www-data /Sequra \
+    && chmod -R 755 /Sequra \
+    && mkdir -p /var/www/.composer/cache/files/ \
+    && chown -R www-data:www-data /var/www/.composer
 
 WORKDIR /var/www/html
 
-RUN composer config -g http-basic.repo.magento.com $M2_REPO_KEY $M2_REPO_SECRET
-
-RUN composer create-project --repository-url=https://repo.magento.com/ magento/project-community-edition=$M2_VERSION . \
-    && composer require mageplaza/magento-2-spanish-language-pack:dev-master mageplaza/magento-2-portuguese-language-pack:dev-master mageplaza/magento-2-french-language-pack:dev-master mageplaza/magento-2-italian-language-pack:dev-master \
+RUN composer config -g http-basic.repo.magento.com $M2_REPO_KEY $M2_REPO_SECRET \
+    && composer create-project --repository-url=https://repo.magento.com/ magento/project-community-edition=$M2_VERSION . \
+    && composer require n98/magerun2-dist mageplaza/magento-2-spanish-language-pack:dev-master mageplaza/magento-2-portuguese-language-pack:dev-master mageplaza/magento-2-french-language-pack:dev-master mageplaza/magento-2-italian-language-pack:dev-master \
     && chmod -R 755 ./ \
     && chown -R www-data:www-data ./
 

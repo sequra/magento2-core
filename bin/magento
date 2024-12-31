@@ -1,2 +1,2 @@
 #!/bin/bash
-docker compose exec -u daemon -w /bitnami/magento magento bin/magento $@
+docker compose exec -u www-data magento bin/magento $@
