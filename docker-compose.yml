@@ -28,7 +28,7 @@ services:
       - m2_html:/var/www/html
       - .:/Sequra/Core:ro
     extra_hosts:
-      - "localhost.sequrapi.com:host-gateway"
+      - "${M2_HTTP_HOST}:host-gateway"
     <<: *env_file
 
   mariadb:
