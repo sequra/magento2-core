@@ -42,6 +42,16 @@ set -o allexport
 source .env
 set +o allexport
 
+if [ -z "$M2_COMPOSER_REPO_KEY" ]; then
+    echo "❌ Please set M2_COMPOSER_REPO_KEY with your Magento repo public key in your .env file"
+    exit 1
+fi
+
+if [ -z "$M2_COMPOSER_REPO_SECRET" ]; then
+    echo "❌ Please set M2_COMPOSER_REPO_SECRET with your Magento repo private key in your .env file"
+    exit 1
+fi
+
 if [ $ngrok -eq 1 ]; then
 
     if [ -z "$NGROK_AUTHTOKEN" ]; then
