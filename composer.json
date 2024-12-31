@@ -50,11 +50,5 @@
         "allow-plugins": {
             "dealerdirect/phpcodesniffer-composer-installer": true
         }
-    },
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com/sequra/integration-core"
-        }
-    ]
+    }
 }
