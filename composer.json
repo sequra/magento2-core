@@ -38,9 +38,20 @@
     },
     "archive": {
         "exclude": [
-            "docs",
-            "scripts",
-            "Test"
+            ".docker",
+            ".github",
+            "bin",
+            "docker-entrypoint-init.d",
+            "Test",
+            ".env",
+            ".env.sample",
+            ".gitattributes",
+            ".gitingore",
+            ".docker-compose.override.sample.yml",
+            ".docker-compose.yml",
+            "README.md",
+            "setup.sh",
+            "teardown.sh"
         ]
     },
     "require-dev": {
