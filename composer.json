@@ -46,9 +46,9 @@
             ".env",
             ".env.sample",
             ".gitattributes",
-            ".gitingore",
-            ".docker-compose.override.sample.yml",
-            ".docker-compose.yml",
+            ".gitignore",
+            "docker-compose.override.sample.yml",
+            "docker-compose.yml",
             "README.md",
             "setup.sh",
             "teardown.sh"
