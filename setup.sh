@@ -101,7 +101,7 @@ retry=300 # 5 minutes
 timeout=1
 start=$(date +%s)
 while [ $(($(date +%s) - $start)) -lt $retry ]; do
-    if docker compose exec web ls /var/www/html/.post-install-complete > /dev/null 2>&1; then
+    if docker compose exec magento ls /var/www/html/.post-install-complete > /dev/null 2>&1; then
         seconds=$(($(date +%s) - $start))
         echo "✅ Done in ${seconds} seconds."
         echo "🔗 Browse products at ${M2_URL}"
