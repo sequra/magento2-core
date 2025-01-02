@@ -58,73 +58,40 @@ If you are not a seQura merchant yet, you can sign up [here](https://sqra.es/sig
 
 ## For developers
 
-### How to try the module
+### Starting the environment
+
 The repository includes a docker-compose file to easily test the module. You can start the environment with the following command:
 
 ```bash
 ./setup.sh
 ```
 
-This will start a Magento 2 instance with the seQura module installed. You can access the admin panel at `http://localhost:8018/admin` with the credentials `admin`/`password123`.
+This will start a Magento 2 instance with the seQura module installed. You can access the admin panel at `http://localhost.sequrapi.com:8018/admin` with the credentials `admin`/`Admin123`.
 
-Once installed you could start/stop the magento instance with `docker compose up` and `docker compose down` commands.
+> **_NOTE:_**  Make sure you have `127.0.0.1	localhost.sequrapi.com` line added in your hosts file.
 
-### Customizing the environment
-You could create you own .env file to customize the environment. You can copy the .env.example file and modify the values as needed.
+### Customization
 
-In order to use magento sample data you MUST set your credentials for https://repo.magento.com/ in you .env file at 
+When the setup script runs, it takes the configuration from the `.env` file in the root of the repository. If the file doesn't exists, it will create a new one, copying the `.env.sample` template. In order to customize your environment before the setup occurs, you might create your `.env` file. To avoid errors, is important that you make a duplicate of `.env.sample` and then rename it to `.env`
 
-```bash
-COMPOSER_AUTH='{"http-basic":{"repo.magento.com":{"username":"<public-key>","password":"<private-key>"}}}'
-```
+You can read the `.env.sample` file to know what are the available configuration variables and understand the purpose of each one.
 
-Otherwise you will get a warning message:
-> "warning": "You haven't provided your Magento authentication keys. For instructions, visit https://devdocs.magento.com/guides/v2.3/install-gde/prereq/connect-auth.html"
+### Stopping the environment
 
-and the installation will fail.
-
-#### Other examples
-* You can customize the Magento version by setting the `MAGENTO_VERSION` environment variable.
-* You can customize the sequra/magento module version by setting the `SQ_M2_CORE_VERSION` environment variable. Leave it as local to use the local version of the module.
-* You can customize the host and ports by setting the `MAGENTO_HOST` and `MAGENTO_HTTP_PORT` environment variable.
-
-### Loading sample data
-You can load sample data with the following command:
+To stop the containers and perform the cleanup operations run:
 
 ```bash
-./bin/install-sampledata
+./teardown.sh
 ```
 
-or setting the `MAGENTO_SAMPLEDATA` environment variable to `yes` when before running the ./setup.sh script.
+## Utilities
 
+This repo contains a group of utility scripts under `bin/` directory. The goal is to ease the execution of common tasks without installing additional software.
 
-> After installing sample data you may get 404 errors for http://${MAGENTO_HOST}/%7B%7BMEDIA_URL%7D%7Dstyles.css.
-> To fix this issue go to Content -> Design -> Configuration -> Edit your theme -> HTML Head -> Scripts and Style Sheets and change the line with `{{MEDIA_URL}}styles.css` to `media/styles.css`
-
-### Other helper scripts
-You can run commands in the Magento container with the following command:
-
-```bash
-./bin/magento <command>
-```
-To run magento commands in the container.
-
-```bash
-./bin/composer <command>
-```
-To run composer commands in the container.
-
-```bash
-./bin/mysql
-```
-To open mysql terminal in the container.
-
-```bash
-./bin/shell
-```
-To open a bash shell commands in the container.
-
-```bash
-./bin/xdebug
-```
-To toggle xdebug it will be enabled by default.
+| Utility | Description |
+| -------- | ------------------------------------------------------------------ |
+| `bin/composer <arguments>` | This is a wrapper to run composer commands. |
+| `bin/magento <arguments>` | This is a wrapper to run Magento CLI commands. |
+| `bin/n98-magerun2 <arguments>` | This is a wrapper to run n98 magerun CLI commands. |
+| `bin/update-sequra` | Reinstall the seQura plugin in Magento's `vendor` directory using the project files as the repository. |
+| `bin/xdebug` | Toggle XDebug on/off. By default XDebug comes disabled by default. |
