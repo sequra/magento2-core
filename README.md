@@ -13,7 +13,7 @@ The easiest, safest, and quickest way for your customers to pay on installments.
 
 +6.000 e-commerce and +1.5 million delight shoppers already use seQura. Are you still thinking about it?
 
-This WooCommerce plugin allows you to make payments with [seQura](https://sequra.es).
+This Magento 2 plugin allows you to make payments with [seQura](https://sequra.es).
 
 ### Benefits for merchants
 
