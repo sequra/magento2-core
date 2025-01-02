@@ -68,7 +68,8 @@ The repository includes a docker-compose file to easily test the module. You can
 
 This will start a Magento 2 instance with the seQura module installed. You can access the admin panel at `http://localhost.sequrapi.com:8018/admin` with the credentials `admin`/`Admin123`.
 
-> **_NOTE:_**  Make sure you have `127.0.0.1	localhost.sequrapi.com` line added in your hosts file.
+> [!IMPORTANT]  
+> Make sure you have the line `127.0.0.1	localhost.sequrapi.com` added in your hosts file.
 
 ### Customization
 
