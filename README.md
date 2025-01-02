@@ -65,11 +65,22 @@ The repository includes a docker-compose file to easily test the module. You can
 ```bash
 ./setup.sh
 ```
-
 This will start a Magento 2 instance with the seQura module installed. You can access the admin panel at `http://localhost.sequrapi.com:8018/admin` with the credentials `admin`/`Admin123`.
 
 > [!IMPORTANT]  
 > Make sure you have the line `127.0.0.1	localhost.sequrapi.com` added in your hosts file.
+
+> [!NOTE]  
+> Once the setup is complete, the Magento root URL, back-office URL, and user credentials (including the password) will be displayed in your terminal.
+
+Additionally, the setup script supports the following arguments:
+
+| Argument | Description |
+| -------- | ------------------------------------------------------------------ |
+| `--ngrok` | Starts an ngrok container to expose the site to internet using HTTPS. An ngrok Auth Token must be provided either as an argument or as a variable in the `.env` file for it to work |
+| `--ngrok-token=YOUR_NGROK_TOKEN` | Define the ngrok Auth Token |
+| `--build` | Force building Docker images |
+| `--open-browser` | Open the browser and navigate to the Magento root URL once the installation is complete |
 
 ### Customization
 
