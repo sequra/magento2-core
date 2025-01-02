@@ -4,15 +4,7 @@ x-env_file: &env_file
 
 services:
   magento:
-    image: sequra/magento:$M2_VERSION-$PHP_VERSION
-    build:
-      dockerfile: Dockerfile
-      context: ./.docker/magento
-      args:
-        PHP_VERSION: ${PHP_VERSION}
-        M2_VERSION: ${M2_VERSION}
-        M2_REPO_KEY: ${M2_COMPOSER_REPO_KEY}
-        M2_REPO_SECRET: ${M2_COMPOSER_REPO_SECRET}
+    image: ghcr.io/sequra/magento2-core:$M2_VERSION-$PHP_VERSION
     depends_on:
       mariadb:
         condition: service_healthy
