@@ -7,82 +7,47 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     mariadb-client \
     libfreetype6-dev \
     libjpeg62-turbo-dev \
-    libmcrypt-dev \
-    libedit-dev \
-    libedit2 \
     libpng-dev \
-    libjpeg-dev \
     libicu-dev \
     libxslt1-dev \
     libzip-dev \
-    libssl-dev \
-    libxml2-dev \
+    libcurl4-openssl-dev \
+    libonig-dev \
+    libsodium-dev \
     git \
-    wget \
     curl \
-    lynx \
-    psmisc \
     unzip \
     tar \
-    cron \
     libpcre3 \
-    libpcre3-dev \
-    && pecl install \
-    xdebug \
-    redis \
-    oauth \
+    && pecl install xdebug-3.1.6 redis oauth \
     && echo "extension=oauth.so" > /usr/local/etc/php/conf.d/docker-php-ext-oauth.ini \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install \
     bcmath \
-    ctype \
     curl \
-    dom \
-    fileinfo \
-    filter \
+    opcache \
     gd \
-    hash \
-    iconv \
     intl \
-    json \
     mbstring \
     mysqli \
-    opcache \
     pdo_mysql \
     simplexml \
     soap \
     sockets \
     sodium \
     tokenizer \
-    xml \
     xmlwriter \
     xsl \
     zip \
     && docker-php-ext-enable \
-    bcmath \
-    ctype \
-    curl \
-    dom \
-    fileinfo \
-    filter \
-    gd \
-    hash \
-    iconv \
-    intl \
-    json \
-    mbstring \
-    mysqli \
-    opcache \
-    pdo_mysql \
-    simplexml \
-    soap \
-    sockets \
-    sodium \
-    tokenizer \
-    xml \
-    xmlwriter \
-    xsl \
-    zip
+    redis \
+    xdebug \
+    && echo "xdebug.mode=debug" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+    && echo "xdebug.start_with_request=yes" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+    && echo "xdebug.client_host=${M2_HOST}" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+    && echo "xdebug.log_level=1" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+    && sed -i 's/^/;/' "/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini" \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
@@ -94,7 +59,7 @@ RUN a2enmod rewrite && echo "ServerName localhost" >> /etc/apache2/apache2.conf
 COPY ./docker-php-m2.ini /usr/local/etc/php/conf.d/docker-php-m2.ini
 
 # Custom scripts
-COPY ./m2-entrypoint.sh /usr/local/bin/m2-entrypoint
+COPY ./m2-entrypoint.php74.sh /usr/local/bin/m2-entrypoint
 COPY ./toggle-xdebug.sh /usr/local/bin/toggle-xdebug
 RUN chmod +x /usr/local/bin/m2-entrypoint && \
 chmod +x /usr/local/bin/toggle-xdebug
@@ -111,7 +76,8 @@ WORKDIR /var/www/html
 
 RUN --mount=type=secret,id=M2_COMPOSER_REPO_KEY,env=M2_REPO_KEY \
     --mount=type=secret,id=M2_COMPOSER_REPO_SECRET,env=M2_REPO_SECRET \
-    composer config -g http-basic.repo.magento.com $M2_REPO_KEY $M2_REPO_SECRET \
+    composer config -g --no-plugins allow-plugins true \
+    && composer config -g http-basic.repo.magento.com $M2_REPO_KEY $M2_REPO_SECRET \
     && composer create-project --repository-url=https://repo.magento.com/ magento/project-community-edition=$M2_VERSION . \
     && composer require n98/magerun2-dist mageplaza/magento-2-spanish-language-pack:dev-master mageplaza/magento-2-portuguese-language-pack:dev-master mageplaza/magento-2-french-language-pack:dev-master mageplaza/magento-2-italian-language-pack:dev-master \
     && chmod -R 755 ./ \
