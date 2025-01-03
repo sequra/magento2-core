@@ -107,3 +107,26 @@ This repo contains a group of utility scripts under `bin/` directory. The goal i
 | `bin/n98-magerun2 <arguments>` | This is a wrapper to run n98 magerun CLI commands. |
 | `bin/update-sequra` | Reinstall the seQura plugin in Magento's `vendor` directory using the project files as the repository. |
 | `bin/xdebug` | Toggle XDebug on/off. By default XDebug comes disabled by default. |
+
+
+## Building Docker images
+
+The `docker-compose.yml` file uses a customized Magento 2 Docker image available at GitHub Packages Registry. Since the image is private, you need to authenticate to pull it. To do so, you need to create a GitHub Personal Access Token and store it in the `.env` file under the `GITHUB_TOKEN` variable.
+
+Tools for building and pushing the Docker image are available in the `.docker/magento` directory. You can easily build and push the image by running the following commands:
+
+```bash
+.docker/magento/build-image.sh
+```
+The behavior of the script can be customized by setting the following arguments:
+
+| Argument | Description |
+| -------- | ------------------------------------------------------------------ |
+| `--push` | Push the image to the GitHub Packages Registry. Authentication is required. |
+| `--magento=<VERSION>` | The Magento version to use. Supported versions are 2.4.3-p3, 2.4.4-p11, 2.4.5-p10, 2.4.6-p8, 2.4.7-p3 |
+| `--php=<VERSION>` | The PHP version to use. Supported versions are 7.4, 8.1, 8.2 |
+
+If arguments are not provided, the script will build the image using the values defined in the `.env` file.
+
+> [!NOTE]  
+> For pushing the image, you need a token with the `read:packages` and `write:packages` scopes. The token must be stored in the `.env` file under the `GITHUB_TOKEN` variable or as a global environment variable.
