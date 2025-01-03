@@ -8,34 +8,22 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     mariadb-client \
     libfreetype6-dev \
     libjpeg62-turbo-dev \
-    libmcrypt-dev \
-    libedit-dev \
-    libedit2 \
     libpng-dev \
-    libjpeg-dev \
     libicu-dev \
     libxslt1-dev \
     libzip-dev \
     libssl-dev \
     git \
-    wget \
     curl \
-    lynx \
-    psmisc \
     unzip \
     tar \
-    cron \
     libpcre3 \
-    libpcre3-dev \
-    && pecl install \
-    xdebug \
-    redis \
-    oauth \
+    && pecl install xdebug redis oauth \
     && echo "extension=oauth.so" > /usr/local/etc/php/conf.d/docker-php-ext-oauth.ini \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install \
-    opcache \
     bcmath \
+    opcache \
     gd \
     intl \
     mysqli \
