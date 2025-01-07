@@ -61,7 +61,7 @@ class BaseRepository implements RepositoryInterface
      *
      * @param string $entityClass Repository entity class.
      */
-    public function setEntityClass($entityClass)
+    public function setEntityClass($entityClass): void
     {
         $this->entityClass = $entityClass;
     }
