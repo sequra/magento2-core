@@ -191,22 +191,48 @@ class CreateOrderRequestBuilder implements \SeQura\Core\BusinessLogic\Domain\Ord
 
     private function generateCreateOrderRequest(): CreateOrderRequest
     {
+        //@var string
+        $shippingMethod = $this->quote->getShippingAddress()->getShippingMethod();
         return CreateOrderRequest::fromArray([
             'state' => '',
             'merchant' => $this->getMerchantData(),
-//            'merchant_reference' => [
-//                'order_ref_1' => $request->getOrder()->getId(),
-//            ],
             'cart' => $this->getCart(),
             'delivery_method' => [
-                'name' => $this->quote->getShippingAddress()->getShippingMethod(),
+                'name' => $shippingMethod,
+                'home_delivery' => !in_array(
+                    $shippingMethod,
+                    [
+                        //Magento MSI In-Store Pickup (BOPIS)
+                        'msi_instore_pickup',
+                        'instore_pickup',
+                        //Amasty Store Pickup
+                        'amstorepickup_amstorepickup',
+                        'amstorepickup_storepickup',
+                        //Mageplaza Store Pickup
+                        'mageplaza_storepickup',
+                        //Mirasvit Store Pickup
+                        'mirasvit_pickup',
+                        'mirasvit_storepickup',
+                        //MageWorx Store Pickup
+                        'mageworx_storepickup',
+                        'mageworx_instore_pickup',
+                        //Webkul Store Pickup
+                        'webkul_storepickup',
+                        //Other/Generic or Custom Store Pickup
+                        'storepickup_storepickup',
+                        'pickup_storepickup',
+                        'clickandcollect_clickandcollect',
+                        'instorepickup_instorepickup',
+                        'pickup_pickup',
+                        'clickandcollect',
+                        'pick_instore',
+                        'pickup',
+                    ]
+                ),
             ],
             'delivery_address' => $this->getAddress($this->quote->getShippingAddress()),
             'invoice_address' => $this->getAddress($this->quote->getBillingAddress()),
             'customer' => $this->getCustomer(),
-//            'instore' => [
-//                'code' => $request->getOrder()->getId(),
-//            ],
             'gui' => [
                 'layout' => 'desktop',
             ],
