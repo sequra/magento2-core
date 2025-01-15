@@ -17,6 +17,7 @@ services:
     volumes:
       - m2_html:/var/www/html
       - .:/Sequra/Core:ro
+      - ./.docker/magento/HelperModule/Sequra:/var/www/html/app/code/Sequra
     extra_hosts:
       - "${M2_HTTP_HOST}:host-gateway"
     <<: *env_file
