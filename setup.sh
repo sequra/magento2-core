@@ -1,11 +1,4 @@
 #!/bin/bash
-DIR="$( cd "$( dirname "$0" )" && pwd )" # Get the current directory
-# Colors for the output
-GREEN=$(tput setaf 2)
-RED=$(tput setaf 1)
-YELLOW=$(tput setaf 3)
-WHITE=$(tput setaf 7)
-NC=$(tput sgr0) # No color
 unameOut="$(uname -s)"
 case "${unameOut}" in
     Linux*)     open_cmd=xdg-open;;
@@ -13,51 +6,121 @@ case "${unameOut}" in
     *)          open_cmd=start
 esac
 
-set -o allexport
-# shellcheck source=.env.sample
-source .env.sample
-if [ -f .env ]; then
-    source .env
-else
-    echo "⚠️ No .env file found, coping from .env.sample"
+if [ ! -f .env ]; then
     cp .env.sample .env
 fi
+
+ngrok=0
+build=0
+open_browser=0
+
+# Parse arguments:
+# --build: Build of docker images
+# --ngrok-token=YOUR_NGROK_TOKEN: Override the ngrok token in .env
+# --ngrok: Use ngrok to expose the site
+# --open-browser: Open the browser after the installation is complete
+while [[ "$#" -gt 0 ]]; do
+    if [ "$1" == "--ngrok" ]; then
+        ngrok=1
+    elif [ "$1" == "--build" ]; then
+        build=1
+    elif [[ "$1" == --ngrok-token=* ]]; then
+        ngrok_token="${1#*=}"
+        sed -i.bak "s|NGROK_AUTHTOKEN=.*|NGROK_AUTHTOKEN=$ngrok_token|" .env
+        rm .env.bak
+    elif [ "$1" == "--open-browser" ]; then
+        open_browser=1
+    fi
+    shift
+done
+
+# Reset PUBLIC_URL inside .env
+sed -i.bak "s|PUBLIC_URL=.*|PUBLIC_URL=|" .env
+rm .env.bak
+
+set -o allexport
+source .env
 set +o allexport
 
-docker compose up -d --build --remove-orphans || { echo "❌ Failed to start docker compose" ; exit 1; }
+if [ -z "$M2_COMPOSER_REPO_KEY" ]; then
+    echo "❌ Please set M2_COMPOSER_REPO_KEY with your Magento repo public key in your .env file"
+    exit 1
+fi
+
+if [ -z "$M2_COMPOSER_REPO_SECRET" ]; then
+    echo "❌ Please set M2_COMPOSER_REPO_SECRET with your Magento repo private key in your .env file"
+    exit 1
+fi
+
+if [ $ngrok -eq 1 ]; then
+
+    if [ -z "$NGROK_AUTHTOKEN" ]; then
+        echo "❌ Please set NGROK_AUTHTOKEN with your ngrok auth token in your .env file (get it from https://dashboard.ngrok.com/)"
+        exit 1
+    fi
+    
+    echo "🚀 Starting ngrok..."
+
+    docker run -d -e NGROK_AUTHTOKEN=$NGROK_AUTHTOKEN \
+        -p $NGROK_PORT:4040 \
+        --name $NGROK_CONTAINER_NAME \
+        --add-host=host:host-gateway \
+        ngrok/ngrok:alpine \
+        http host:$M2_HTTP_PORT
+    
+    M2_URL=""
+    retry=10
+    timeout=1
+    start=$(date +%s)
+    while [ -z "$M2_URL" ]; do
+        sleep $timeout
+        M2_URL=$(curl -s http://localhost:$NGROK_PORT/api/tunnels | grep -o '"public_url":"[^"]*"' | sed 's/"public_url":"\(.*\)"/\1/' | head -n 1)
+        if [ $(($(date +%s) - $start)) -gt $retry ]; then
+            docker rm -f $NGROK_CONTAINER_NAME || true
+            echo "❌ Error getting public url from ngrok after ${retry} seconds"
+            exit 1
+        fi
+    done
+
+    # Overwrite PUBLIC_URL inside .env
+    sed -i.bak "s|PUBLIC_URL=.*|PUBLIC_URL=$M2_URL|" .env
+    rm .env.bak
+
+    echo "✅ Ngrok started. Public URL: $M2_URL"
+fi
+
+if [ $build -eq 1 ]; then
+    docker compose up -d --build || exit 1
+else
+    docker compose up -d || exit 1
+fi
 
 echo "🚀 Waiting for installation to complete..."
 
-retry=600
+retry=300 # 5 minutes
 timeout=1
 start=$(date +%s)
 while [ $(($(date +%s) - $start)) -lt $retry ]; do
-    # Check if Magento is up and running against exposed http port just in case varnish or anything else is set in front.
-    response_code="$(curl -s -o /dev/null -w ''%{http_code}'' "http://localhost:${MAGENTO_HTTP_PORT}")"
-    if [[ $response_code == "000" ]] ; then
-        echo -ne "⏳ Waiting for Magento to be up and running... $(($(date +%s) - $start)) / $retry "\\r
-        sleep $timeout
-        docker compose ps --services | grep -q magento || { echo -ne \\r\\n"❌ Magento container failed"\\r\\n ; exit 1; }
-        continue
-    fi
-    if [[ $response_code == "500" ]] ; then
-        echo "❌ Something went wrong and Magento returned a 500 error"
-        exit 1;
-    fi
+    if docker compose exec magento ls /var/www/html/.post-install-complete > /dev/null 2>&1; then
+        seconds=$(($(date +%s) - $start))
+        echo "✅ Done in ${seconds} seconds."
+        echo "🔗 Browse products at ${M2_URL}"
+        echo "🔗 Access Admin at ${M2_URL}/admin"
+        echo "User: $M2_ADMIN_USER"
+        echo "Password: $M2_ADMIN_PASSWORD"
 
-    echo $GREEN
-    echo " ✅ Magento installed"
-    echo " Magento is up and running at http://${MAGENTO_HOST}:${MAGENTO_EXTERNAL_HTTP_PORT_NUMBER}/"
-    if [[ $MAGENTO_SAMPLEDATA == "true" || $MAGENTO_SAMPLEDATA == "yes" ]] ; then
-        $DIR/bin/install-sampledata || { echo "❌ Failed to install sample-data" ; exit 1; }
+        if [ $open_browser -eq 1 ]; then
+            echo "🚀 Opening the browser..."
+            $open_cmd $M2_URL
+        fi
+
+        exit 0
+    elif docker compose exec web ls /var/www/html/.post-install-failed > /dev/null 2>&1; then
+        seconds=$(($(date +%s) - $start))
+        echo "❌ Installation failed after ${seconds} seconds."
+        exit 1
     fi
-    $DIR/bin/magento setup:upgrade || { echo "❌ Failed to run setup:upgrade" ; exit 1; }
-    echo "🚀 Openning the browser..."
-    $open_cmd "http://${MAGENTO_HOST}:${MAGENTO_EXTERNAL_HTTP_PORT_NUMBER}/"
-    echo $NC
-    exit 0;
+    sleep $timeout
 done
-echo $RED
-echo "❌ Timeout after $retry seconds"
-echo $NC
+echo "❌ Timeout after ${retry} seconds"
 exit 1

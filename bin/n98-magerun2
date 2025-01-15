@@ -1,4 +1,2 @@
 #!/bin/bash
-docker compose exec -u daemon -w /bitnami/magento magento bash -c \
-"[ ! -f 'vendor/bin/n98-magerun2' ] && php vendor/bin/composer require n98/magerun2-dist"
-docker compose exec -u daemon -w /bitnami/magento magento vendor/bin/n98-magerun2 $@
+docker compose exec -u www-data magento vendor/bin/n98-magerun2 $@

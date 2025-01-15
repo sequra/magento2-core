@@ -1,2 +1,0 @@
-#!/bin/bash
-docker cp ${COMPOSE_PROJECT_NAME:-magento2-core}-magento:/bitnami/magento .magento-src

@@ -1,0 +1,15 @@
+{
+    "name": "sequra/magento2-helper",
+    "type": "magento2-module",
+    "autoload": {
+        "psr-4": {
+            "Sequra\\Helper\\": ""
+        }
+    },
+    "authors": [
+        {
+            "name": "Sequra Engineering"
+        }
+    ],
+    "require": {}
+}

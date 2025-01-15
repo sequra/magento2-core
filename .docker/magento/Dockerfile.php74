@@ -1,0 +1,87 @@
+# Dockerfile para PHP 7.4 con las extensiones necesarias para Magento Open Source
+FROM php:7.4-apache
+
+SHELL ["/bin/bash", "-c"]
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    mariadb-client \
+    libfreetype6-dev \
+    libjpeg62-turbo-dev \
+    libpng-dev \
+    libicu-dev \
+    libxslt1-dev \
+    libzip-dev \
+    libcurl4-openssl-dev \
+    libonig-dev \
+    libsodium-dev \
+    git \
+    curl \
+    unzip \
+    tar \
+    libpcre3 \
+    && pecl install xdebug-3.1.6 redis oauth \
+    && echo "extension=oauth.so" > /usr/local/etc/php/conf.d/docker-php-ext-oauth.ini \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install \
+    bcmath \
+    curl \
+    opcache \
+    gd \
+    intl \
+    mbstring \
+    mysqli \
+    pdo_mysql \
+    simplexml \
+    soap \
+    sockets \
+    sodium \
+    tokenizer \
+    xmlwriter \
+    xsl \
+    zip \
+    && docker-php-ext-enable \
+    redis \
+    xdebug \
+    && echo "xdebug.mode=debug" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+    && echo "xdebug.start_with_request=yes" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+    && echo "xdebug.client_host=${M2_HOST}" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+    && echo "xdebug.log_level=1" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
+    && sed -i 's/^/;/' "/usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini" \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Install composer
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+# Apache configuration
+RUN a2enmod rewrite && echo "ServerName localhost" >> /etc/apache2/apache2.conf
+
+# PHP configuration
+COPY ./docker-php-m2.ini /usr/local/etc/php/conf.d/docker-php-m2.ini
+
+# Custom scripts
+COPY ./m2-entrypoint.php74.sh /usr/local/bin/m2-entrypoint
+COPY ./toggle-xdebug.sh /usr/local/bin/toggle-xdebug
+RUN chmod +x /usr/local/bin/m2-entrypoint && \
+chmod +x /usr/local/bin/toggle-xdebug
+
+ARG M2_VERSION
+
+RUN mkdir -p /Sequra/Core \
+    && chown -R www-data:www-data /Sequra \
+    && chmod -R 755 /Sequra \
+    && mkdir -p /var/www/.composer/cache/files/ \
+    && chown -R www-data:www-data /var/www/.composer
+
+WORKDIR /var/www/html
+
+RUN --mount=type=secret,id=M2_COMPOSER_REPO_KEY,env=M2_REPO_KEY \
+    --mount=type=secret,id=M2_COMPOSER_REPO_SECRET,env=M2_REPO_SECRET \
+    composer config -g --no-plugins allow-plugins true \
+    && composer config -g http-basic.repo.magento.com $M2_REPO_KEY $M2_REPO_SECRET \
+    && composer create-project --repository-url=https://repo.magento.com/ magento/project-community-edition=$M2_VERSION . \
+    && composer require n98/magerun2-dist mageplaza/magento-2-spanish-language-pack:dev-master mageplaza/magento-2-portuguese-language-pack:dev-master mageplaza/magento-2-french-language-pack:dev-master mageplaza/magento-2-italian-language-pack:dev-master \
+    && chmod -R 755 ./ \
+    && chown -R www-data:www-data ./
+
+# Modify base entry point to run our custom setup script
+RUN sed -i 's/exec "$@"/\/usr\/local\/bin\/m2-entrypoint \&\& exec "$@"/g' /usr/local/bin/docker-php-entrypoint

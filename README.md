@@ -13,7 +13,7 @@ The easiest, safest, and quickest way for your customers to pay on installments.
 
 +6.000 e-commerce and +1.5 million delight shoppers already use seQura. Are you still thinking about it?
 
-This WooCommerce plugin allows you to make payments with [seQura](https://sequra.es).
+This Magento 2 plugin allows you to make payments with [seQura](https://sequra.es).
 
 ### Benefits for merchants
 
@@ -58,73 +58,75 @@ If you are not a seQura merchant yet, you can sign up [here](https://sqra.es/sig
 
 ## For developers
 
-### How to try the module
+### Starting the environment
+
 The repository includes a docker-compose file to easily test the module. You can start the environment with the following command:
 
 ```bash
 ./setup.sh
 ```
+This will start a Magento 2 instance with the seQura module installed. You can access the admin panel at `http://localhost.sequrapi.com:8018/admin` with the credentials `admin`/`Admin123`.
 
-This will start a Magento 2 instance with the seQura module installed. You can access the admin panel at `http://localhost:8018/admin` with the credentials `admin`/`password123`.
+> [!IMPORTANT]  
+> Make sure you have the line `127.0.0.1	localhost.sequrapi.com` added in your hosts file.
 
-Once installed you could start/stop the magento instance with `docker compose up` and `docker compose down` commands.
+> [!NOTE]  
+> Once the setup is complete, the Magento root URL, back-office URL, and user credentials (including the password) will be displayed in your terminal.
 
-### Customizing the environment
-You could create you own .env file to customize the environment. You can copy the .env.example file and modify the values as needed.
+Additionally, the setup script supports the following arguments:
 
-In order to use magento sample data you MUST set your credentials for https://repo.magento.com/ in you .env file at 
+| Argument | Description |
+| -------- | ------------------------------------------------------------------ |
+| `--ngrok` | Starts an ngrok container to expose the site to internet using HTTPS. An ngrok Auth Token must be provided either as an argument or as a variable in the `.env` file for it to work |
+| `--ngrok-token=YOUR_NGROK_TOKEN` | Define the ngrok Auth Token |
+| `--build` | Force building Docker images |
+| `--open-browser` | Open the browser and navigate to the Magento root URL once the installation is complete |
 
-```bash
-COMPOSER_AUTH='{"http-basic":{"repo.magento.com":{"username":"<public-key>","password":"<private-key>"}}}'
-```
+### Customization
 
-Otherwise you will get a warning message:
-> "warning": "You haven't provided your Magento authentication keys. For instructions, visit https://devdocs.magento.com/guides/v2.3/install-gde/prereq/connect-auth.html"
+When the setup script runs, it takes the configuration from the `.env` file in the root of the repository. If the file doesn't exists, it will create a new one, copying the `.env.sample` template. In order to customize your environment before the setup occurs, you might create your `.env` file. To avoid errors, is important that you make a duplicate of `.env.sample` and then rename it to `.env`
 
-and the installation will fail.
+You can read the `.env.sample` file to know what are the available configuration variables and understand the purpose of each one.
 
-#### Other examples
-* You can customize the Magento version by setting the `MAGENTO_VERSION` environment variable.
-* You can customize the sequra/magento module version by setting the `SQ_M2_CORE_VERSION` environment variable. Leave it as local to use the local version of the module.
-* You can customize the host and ports by setting the `MAGENTO_HOST` and `MAGENTO_HTTP_PORT` environment variable.
+### Stopping the environment
 
-### Loading sample data
-You can load sample data with the following command:
-
-```bash
-./bin/install-sampledata
-```
-
-or setting the `MAGENTO_SAMPLEDATA` environment variable to `yes` when before running the ./setup.sh script.
-
-
-> After installing sample data you may get 404 errors for http://${MAGENTO_HOST}/%7B%7BMEDIA_URL%7D%7Dstyles.css.
-> To fix this issue go to Content -> Design -> Configuration -> Edit your theme -> HTML Head -> Scripts and Style Sheets and change the line with `{{MEDIA_URL}}styles.css` to `media/styles.css`
-
-### Other helper scripts
-You can run commands in the Magento container with the following command:
+To stop the containers and perform the cleanup operations run:
 
 ```bash
-./bin/magento <command>
+./teardown.sh
 ```
-To run magento commands in the container.
+
+## Utilities
+
+This repo contains a group of utility scripts under `bin/` directory. The goal is to ease the execution of common tasks without installing additional software.
+
+| Utility | Description |
+| -------- | ------------------------------------------------------------------ |
+| `bin/composer <arguments>` | This is a wrapper to run composer commands. |
+| `bin/magento <arguments>` | This is a wrapper to run Magento CLI commands. |
+| `bin/n98-magerun2 <arguments>` | This is a wrapper to run n98 magerun CLI commands. |
+| `bin/update-sequra` | Reinstall the seQura plugin in Magento's `vendor` directory using the project files as the repository. |
+| `bin/xdebug` | Toggle XDebug on/off. By default XDebug comes disabled by default. |
+
+
+## Building Docker images
+
+The `docker-compose.yml` file uses a customized Magento 2 Docker image available at GitHub Packages Registry. Since the image is private, you need to authenticate to pull it. To do so, you need to create a GitHub Personal Access Token and store it in the `.env` file under the `GITHUB_TOKEN` variable.
+
+Tools for building and pushing the Docker image are available in the `.docker/magento` directory. You can easily build and push the image by running the following commands:
 
 ```bash
-./bin/composer <command>
+.docker/magento/build-image.sh
 ```
-To run composer commands in the container.
+The behavior of the script can be customized by setting the following arguments:
 
-```bash
-./bin/mysql
-```
-To open mysql terminal in the container.
+| Argument | Description |
+| -------- | ------------------------------------------------------------------ |
+| `--push` | Push the image to the GitHub Packages Registry. Authentication is required. |
+| `--magento=<VERSION>` | The Magento version to use. Supported versions are 2.4.3-p3, 2.4.4-p11, 2.4.5-p10, 2.4.6-p8, 2.4.7-p3 |
+| `--php=<VERSION>` | The PHP version to use. Supported versions are 7.4, 8.1, 8.2 |
 
-```bash
-./bin/shell
-```
-To open a bash shell commands in the container.
+If arguments are not provided, the script will build the image using the values defined in the `.env` file.
 
-```bash
-./bin/xdebug
-```
-To toggle xdebug it will be enabled by default.
+> [!NOTE]  
+> For pushing the image, you need a token with the `read:packages` and `write:packages` scopes. The token must be stored in the `.env` file under the `GITHUB_TOKEN` variable or as a global environment variable.
