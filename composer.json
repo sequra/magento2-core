@@ -51,7 +51,11 @@
             "docker-compose.yml",
             "README.md",
             "setup.sh",
-            "teardown.sh"
+            "teardown.sh",
+            "tests-e2e",
+            "package.json",
+            "package-lock.json",
+            "playwright.config.js"
         ]
     },
     "require-dev": {

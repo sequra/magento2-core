@@ -1,0 +1,41 @@
+#!/bin/bash
+BASEDIR="$(dirname $(realpath $0))/.."
+
+cd "${BASEDIR}" || exit
+set -o allexport
+source .env
+set +o allexport
+
+if [ -z "$PUBLIC_URL" ]; then
+	PUBLIC_URL="$M2_URL"
+fi
+
+wait_for() {
+	local retry=60
+	local timeout=1
+	local start=$(date +%s)
+
+	while [ $(($(date +%s) - $start)) -lt $retry ]; do
+		if "$@" > /dev/null 2>&1; then
+			return 0
+		fi
+		sleep $timeout
+	done
+	return 1
+}
+echo "🚀 Waiting for ngrok tunnel to be ready..."
+result=$(wait_for curl -H "ngrok-skip-browser-warning: 1" -s -o /dev/null --head --fail "${PUBLIC_URL}")
+if [ "$result" == "1" ]; then
+	echo "❌ Magento is not available at: ${PUBLIC_URL}"
+	exit 1
+fi
+echo "✅ Magento is available at: ${PUBLIC_URL}"
+
+# Check if --headed is passed
+if [[ "$@" == *"--headed"* || "$@" == *"--ui"* ]]; then
+    npx playwright test $@
+else
+    docker run \
+    --env-file "${BASEDIR}"/.env \
+    -it --rm -v "${BASEDIR}":/app -w /app mcr.microsoft.com/playwright:v1.49.1-jammy bash -c "npx playwright test $@"
+fi
