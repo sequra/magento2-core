@@ -8,4 +8,5 @@
             </argument>
         </arguments>
      </type>
+     <preference for="Sequra\Helper\Api\WebhooksInterface" type="Sequra\Helper\Model\Api\Webhooks"/>
 </config>
