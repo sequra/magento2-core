@@ -36,9 +36,9 @@ export default defineConfig({
   /* Configure projects for major browsers */
   projects: [
     {
-      name: 'example',
+      name: 'configuration-payment-methods',
       use: { ...devices['Desktop Chrome'] },
-      testMatch: 'example.spec.js',
+      testMatch: '004-configuration-payment-methods.spec.js',
     },
   ],
 });
