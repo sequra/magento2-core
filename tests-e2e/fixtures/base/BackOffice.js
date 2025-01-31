@@ -1,5 +1,5 @@
-import { BackOffice } from 'playwright-fixture-for-plugins';
-export default class MagentoBackOffice extends BackOffice {
+import { BackOffice as BaseBackOffice } from 'playwright-fixture-for-plugins';
+export default class BackOffice extends BaseBackOffice {
 
     /**
      * Init the locators with the locators available

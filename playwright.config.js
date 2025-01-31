@@ -36,6 +36,11 @@ export default defineConfig({
   /* Configure projects for major browsers */
   projects: [
     {
+      name: 'checkout-product',
+      use: { ...devices['Desktop Chrome'] },
+      testMatch: '001-checkout-product.spec.js',
+    },
+    {
       name: 'configuration-payment-methods',
       use: { ...devices['Desktop Chrome'] },
       testMatch: '004-configuration-payment-methods.spec.js',

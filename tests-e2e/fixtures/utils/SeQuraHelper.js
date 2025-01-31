@@ -1,6 +1,6 @@
-import { SeQuraHelper } from 'playwright-fixture-for-plugins';
+import { SeQuraHelper as BaseSeQuraHelper } from 'playwright-fixture-for-plugins';
 
-export default class MagentoSeQuraHelper extends SeQuraHelper {
+export default class SeQuraHelper extends BaseSeQuraHelper {
 
     /**
      * Init the webhooks available
