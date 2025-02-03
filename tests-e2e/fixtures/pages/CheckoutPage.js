@@ -12,13 +12,11 @@ export default class CheckoutPage extends BaseCheckoutPage {
     */
     initLocators() {
         return {
-            //    ...super.initLocators(),
-            //    messageSuccess: () => this.page.locator('.message-success'),
+            ...super.initLocators(),
             loader: () => this.page.locator('.loading-mask', { state: 'visible' }),
             email: () => this.page.locator('#customer-email'),
             firstName: () => this.page.locator('[name=firstname]'),
             lastName: () => this.page.locator('[name=lastname]'),
-            // locator for selector [name="street[0]"]
             address1: () => this.page.locator('[name="street[0]"]'),
             country: () => this.page.locator('[name=country_id]'),
             state: () => this.page.locator('[name=region_id]'),
@@ -58,7 +56,7 @@ export default class CheckoutPage extends BaseCheckoutPage {
         await this.fillShippingForm(options);
         await this.selectShippingMethod(options);
         await this.locators.continueButton().click();
-        // TODO: Implement the form filling
+        await this.#waitForFinishLoading();
     }
 
     /**
@@ -79,7 +77,6 @@ export default class CheckoutPage extends BaseCheckoutPage {
         await this.page.waitForURL(/#shipping/);
         await this.#waitForFinishLoading();
         const { email, firstName, lastName, address1, country, state, city, postcode, phone } = options;
-        // TODO: Implement the form filling
         await this.locators.email().fill(email);
         await this.locators.firstName().fill(firstName);
         await this.locators.lastName().fill(lastName);
@@ -99,8 +96,6 @@ export default class CheckoutPage extends BaseCheckoutPage {
      */
     async selectShippingMethod(options) {
         await this.page.waitForURL(/#shipping/);
-        const { shippingMethod } = options;
-        // TODO: Implement the method selection
         await this.#waitForFinishLoading();
         this.locators.flatRateShipping().click();
     }
@@ -113,5 +108,27 @@ export default class CheckoutPage extends BaseCheckoutPage {
         do {
             await this.expect(this.locators.loader().first()).toBeHidden();
         } while ((await this.locators.loader()) > 0);
+    }
+
+    /**
+    * Provide the locator to input the payment method
+    * @param {Object} options
+    * @param {string} options.product seQura product (i1, pp3, etc)
+    * @param {boolean} options.checked Whether the payment method should be checked
+    * @returns {import("@playwright/test").Locator}
+    */
+    paymentMethodInputLocator(options) {
+        return this.page.locator(`#sequra_${options.product}${options.checked ? ':checked' : ''}`);
+    }
+
+    /**
+     * Provide the locator to input the payment method
+     * @param {Object} options
+     * @param {string} options.product seQura product (i1, pp3, etc)
+     * @param {string} options.title Payment method title as it appears in the UI
+     * @returns {import("@playwright/test").Locator}
+     */
+    paymentMethodTitleLocator(options) {
+        return this.page.locator(`#sequra_${options.product} + label`).getByText(options.title);
     }
 }
