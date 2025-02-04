@@ -25,6 +25,7 @@ export default class CheckoutPage extends BaseCheckoutPage {
             phone: () => this.page.locator('[name=telephone]'),
             flatRateShipping: () => this.page.locator('[value="flatrate_flatrate"]'),
             continueButton: () => this.page.locator('.action.continue'),
+            submitCheckout: () => this.page.locator('.payment-method._active .action.checkout'),
         };
     }
 
@@ -97,7 +98,7 @@ export default class CheckoutPage extends BaseCheckoutPage {
     async selectShippingMethod(options) {
         await this.page.waitForURL(/#shipping/);
         await this.#waitForFinishLoading();
-        this.locators.flatRateShipping().click();
+        await this.locators.flatRateShipping().click();
     }
 
     /**
@@ -130,5 +131,42 @@ export default class CheckoutPage extends BaseCheckoutPage {
      */
     paymentMethodTitleLocator(options) {
         return this.page.locator(`#sequra_${options.product} + label`).getByText(options.title);
+    }
+
+    /**
+    * Select the payment method and place the order
+    * @param {Object} options 
+    * @param {string} options.product seQura product (i1, pp3, etc)
+    * @param {string} options.dateOfBirth Date of birth
+    * @param {string} options.dni National identification number
+    * @param {string[]} options.otp Digits of the OTP
+    */
+    async placeOrder(options) {
+        await this.locators.paymentMethodInput({ ...options, checked: false }).click();
+        await this.#waitForFinishLoading();
+        await this.locators.submitCheckout().click();
+        await this.#waitForFinishLoading();
+        // Fill checkout form.
+        switch (options.product) {
+            case 'i1':
+                await this.fillI1CheckoutForm(options);
+                break;
+            case 'pp3':
+                await this.fillPp3CheckoutForm(options);
+                break;
+            case 'sp1':
+                await this.fillSp1CheckoutForm(options);
+                break;
+            default:
+                throw new Error(`Unknown product ${options.product}`);
+        }
+    }
+
+    /**
+    * Define the expected behavior after placing an order
+    * @param {Object} options 
+    */
+    async waitForOrderSuccess(options) {
+        await this.page.waitForURL(/checkout\/onepage\/success\//, { timeout: 30000, waitUntil: 'commit' });
     }
 }

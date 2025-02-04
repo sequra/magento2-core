@@ -18,16 +18,19 @@ test.describe('Product checkout', () => {
     }
   });
 
-  // test('Make a successful payment using any shopper name', async ({ productPage, checkoutPage }) => {
-  //   await checkoutPage.setupForPhysicalProducts();
-  //   await productPage.addToCart({ slug: 'sunglasses', quantity: 1 });
+  test('Make a successful payment using any shopper name', async ({ helper, dataProvider, productPage, checkoutPage }) => {
+    // Setup
+    const { dummy_config } = helper.webhooks;
+    await helper.executeWebhook({ webhook: dummy_config }); // Setup for physical products.
+    const shopper = dataProvider.shopper();
 
-  //   await checkoutPage.goto();
-  //   await checkoutPage.fillWithNonSpecialShopperName({});
-  //   await checkoutPage.expectPaymentMethodsBeingReloaded();
-  //   await checkoutPage.placeOrderUsingI1({ shopper: 'nonSpecial' });
-  //   await checkoutPage.waitForOrderSuccess();
-  // });
+    // Execution
+    await productPage.addToCart({ slug: 'push-it-messenger-bag', quantity: 1 });
+    await checkoutPage.goto();
+    await checkoutPage.fillForm(shopper);
+    await checkoutPage.placeOrder({ ...shopper, product: 'i1' });
+    await checkoutPage.waitForOrderSuccess();
+  });
 
   // test('Make a 🍊 payment with "Review test approve" names', async ({ productPage, checkoutPage }) => {
   //   await checkoutPage.setupForPhysicalProducts();
