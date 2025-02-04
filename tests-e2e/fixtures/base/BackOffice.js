@@ -11,8 +11,8 @@ export default class BackOffice extends BaseBackOffice {
             usernameInput: () => this.page.locator('#username'),
             passwordInput: () => this.page.locator('#login'),
             loginButton: () => this.page.locator('.action-login'),
-            // menuBarItemSales: () => this.page.locator('#menu-magento-sales-sales'),
             menuBarItemSeQuraLink: () => this.page.locator('[data-ui-id="menu-sequra-core-menu"] > a'),
+            menuBarItemOrdersLink: () => this.page.locator('[data-ui-id="menu-magento-sales-sales-order"] > a'),
         };
     }
 
@@ -53,6 +53,11 @@ export default class BackOffice extends BaseBackOffice {
         throw new Error('Not implemented');
     }
 
+    async #gotoLinkTarget(link, append = '') {
+        const url = (await link.getAttribute('href')) + append;
+        await this.page.goto(url, { waitUntil: 'domcontentloaded' });
+    }
+
     /**
      * Navigate to SeQura settings page
      * 
@@ -61,9 +66,16 @@ export default class BackOffice extends BaseBackOffice {
      */
     async gotoSeQuraSettings(options = { page: '' }) {
         await this.login();
-        // await this.locators.menuBarItemSales().click();
-        const link = this.locators.menuBarItemSeQuraLink();
-        const url = (await link.getAttribute('href')) + `#${options.page}`;
-        await this.page.goto(url, { waitUntil: 'domcontentloaded' });
+        await this.#gotoLinkTarget(this.locators.menuBarItemSeQuraLink(), `#${options.page}`);
+    }
+
+    /**
+     * Navigate to Order listing page
+     * 
+     * @param {Object} options
+     */
+    async gotoOrderListing(options) {
+        await this.login();
+        await this.#gotoLinkTarget(this.locators.menuBarItemOrdersLink());
     }
 }

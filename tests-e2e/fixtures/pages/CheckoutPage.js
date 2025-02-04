@@ -1,4 +1,4 @@
-import { CheckoutPage as BaseCheckoutPage } from "playwright-fixture-for-plugins";
+import { BackOffice, CheckoutPage as BaseCheckoutPage } from "playwright-fixture-for-plugins";
 
 /**
  * Checkout page
@@ -26,6 +26,8 @@ export default class CheckoutPage extends BaseCheckoutPage {
             flatRateShipping: () => this.page.locator('[value="flatrate_flatrate"]'),
             continueButton: () => this.page.locator('.action.continue'),
             submitCheckout: () => this.page.locator('.payment-method._active .action.checkout'),
+            orderRowStatus: orderNumber => this.page.locator(`.data-row:has(td:has-text("${orderNumber}")) td:nth-child(9)`),
+            orderNumber: () => this.page.locator('.checkout-success p>span'),
         };
     }
 
@@ -168,5 +170,53 @@ export default class CheckoutPage extends BaseCheckoutPage {
     */
     async waitForOrderSuccess(options) {
         await this.page.waitForURL(/checkout\/onepage\/success\//, { timeout: 30000, waitUntil: 'commit' });
+    }
+
+    /**
+     * Read the order number from the success page
+     * 
+     * @returns {Promise<string>}
+     */
+    async getOrderNumber() {
+        return await this.locators.orderNumber().textContent();
+    }
+
+    /**
+    * Expects the order to have the expected status
+    * @param {Object} options 
+    * @param {string} options.orderNumber The order number
+    * @param {string} options.status The expected status
+    * @returns {Promise<void>}
+    */
+    async expectOrderHasStatus(options) {
+        const { orderNumber, status } = options;
+        await this.expect(this.locators.orderRowStatus(orderNumber)).toHaveText(status);
+    }
+
+    /**
+    * The timeout to wait before retrying to check the order status
+    * @param {Object} options 
+    * @returns {int}
+    */
+    getOrderStatusTimeoutInMs(options) {
+        return 0;
+    }
+
+    /**
+    * Check if the order changes to the expected state
+    * @param {BackOffice} backOffice
+    * @param {Object} options
+    * @param {string} options.toStatus The expected status
+    * @param {string} options.fromStatus The initial status. Optional
+    * @param {int} options.waitFor The maximum amount of seconds to wait for the order status to change
+    */
+    async expectOrderChangeTo(backOffice, options) {
+        const { toStatus, fromStatus = null, waitFor = 60 } = options;
+        const orderNumber = await this.getOrderNumber();
+        await backOffice.gotoOrderListing();
+        if (fromStatus) {
+            await this.waitForOrderStatus({ orderNumber, status: fromStatus, waitFor: 10 });
+        }
+        await this.waitForOrderStatus({ orderNumber, status: toStatus, waitFor });
     }
 }
