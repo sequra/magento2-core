@@ -32,7 +32,7 @@ test.describe('Product checkout', () => {
     await checkoutPage.waitForOrderSuccess();
   });
 
-  test.only('Make a 🍊 payment with "Review test approve" names', async ({ helper, dataProvider, backOffice, productPage, checkoutPage }) => {
+  test('Make a 🍊 payment with "Review test approve" names', async ({ helper, dataProvider, backOffice, productPage, checkoutPage }) => {
     // Setup
     const { dummy_config } = helper.webhooks;
     await helper.executeWebhook({ webhook: dummy_config }); // Setup for physical products.
@@ -44,18 +44,21 @@ test.describe('Product checkout', () => {
     await checkoutPage.fillForm(shopper);
     await checkoutPage.placeOrder({ ...shopper, product: 'i1' });
     await checkoutPage.waitForOrderSuccess();
-    await checkoutPage.expectOrderChangeTo(backOffice, { toStatus: 'Processing' });
+    await checkoutPage.expectOrderChangeTo(backOffice, { fromStatus: 'Pending Payment', toStatus: 'Processing' });
   });
 
-  // test('Make a 🍊 payment with "Review test cancel" names', async ({ productPage, checkoutPage }) => {
-  //   await checkoutPage.setupForPhysicalProducts();
-  //   await productPage.addToCart({ slug: 'sunglasses', quantity: 1 });
+  test('Make a 🍊 payment with "Review test cancel" names', async ({ helper, dataProvider, backOffice, productPage, checkoutPage }) => {
+    // Setup
+    const { dummy_config } = helper.webhooks;
+    await helper.executeWebhook({ webhook: dummy_config }); // Setup for physical products.
+    const shopper = dataProvider.shopper('cancel');
 
-  //   await checkoutPage.goto();
-  //   await checkoutPage.fillWithReviewTest({ shopper: 'cancel' });
-  //   await checkoutPage.expectPaymentMethodsBeingReloaded();
-  //   await checkoutPage.placeOrderUsingI1({});
-  //   await checkoutPage.waitForOrderOnHold();
-  //   await checkoutPage.expectOrderChangeTo({ toStatus: 'wc-cancelled' });
-  // });
+    // Execution
+    await productPage.addToCart({ slug: 'push-it-messenger-bag', quantity: 1 });
+    await checkoutPage.goto();
+    await checkoutPage.fillForm(shopper);
+    await checkoutPage.placeOrder({ ...shopper, product: 'i1' });
+    await checkoutPage.waitForOrderSuccess();
+    await checkoutPage.expectOrderChangeTo(backOffice, { fromStatus: 'Pending Payment', toStatus: 'Canceled' });
+  });
 });
