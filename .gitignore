@@ -6,3 +6,10 @@ docker-compose.override.yml
 default.vcl
 id_rsa
 .magento-src
+
+# Playwright
+node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/

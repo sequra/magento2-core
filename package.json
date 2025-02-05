@@ -1,0 +1,16 @@
+{
+  "name": "magento2-core",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "1. [About seQura](#about-sequra) 2. [Installation guide](https://sequra.atlassian.net/wiki/spaces/DOC/pages/1377304583/MAGENTO+2) 3. [Sign-up](#sign-up) 4. [For developers](#for-developers)",
+  "main": "index.js",
+  "scripts": {},
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.49.1",
+    "@types/node": "^22.10.7",
+    "playwright-fixture-for-plugins": "github:sequra/playwright-fixture-for-plugins"
+  }
+}
