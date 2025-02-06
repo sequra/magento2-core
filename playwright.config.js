@@ -41,6 +41,11 @@ export default defineConfig({
       testMatch: '001-checkout-product.spec.js',
     },
     {
+      name: 'configuration-onboarding',
+      use: { ...devices['Desktop Chrome'] },
+      testMatch: '003-configuration-onboarding.spec.js',
+    },
+    {
       name: 'configuration-payment-methods',
       use: { ...devices['Desktop Chrome'] },
       testMatch: '004-configuration-payment-methods.spec.js',
