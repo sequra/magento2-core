@@ -136,6 +136,15 @@ export default class CheckoutPage extends BaseCheckoutPage {
     }
 
     /**
+     * Provide the locator seQura payment methods
+     * @param {Object} options
+     * @returns {import("@playwright/test").Locator}
+     */
+    paymentMethodsLocator(options) {
+        return this.page.locator('[id^="sequra_"]');
+    }
+
+    /**
     * Select the payment method and place the order
     * @param {Object} options 
     * @param {string} options.product seQura product (i1, pp3, etc)
