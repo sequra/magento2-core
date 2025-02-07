@@ -50,6 +50,11 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
       testMatch: '004-configuration-payment-methods.spec.js',
     },
+    {
+      name: 'configuration-general',
+      use: { ...devices['Desktop Chrome'] },
+      testMatch: '006-configuration-general.spec.js',
+    },
   ],
 });
 

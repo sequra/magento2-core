@@ -50,7 +50,8 @@ export default class BackOffice extends BaseBackOffice {
      * @returns {Promise<void>}
      */
     async logout(options = {}) {
-        throw new Error('Not implemented');
+        // clear all cookies to remove session.
+        await this.page.context().clearCookies();
     }
 
     async #gotoLinkTarget(link, append = '') {
