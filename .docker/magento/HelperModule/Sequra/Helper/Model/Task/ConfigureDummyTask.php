@@ -36,8 +36,11 @@ class ConfigureDummyTask extends Task {
 
 		$table_name = DatabaseHandler::SEQURA_ENTITY_TABLE;
 		$conn = $this->conn->getConnection();
+
+		// Get the max id from the table or set it to 1
+		$id = max((int) $conn->fetchOne( "SELECT MAX(id) FROM $table_name" ), 0);
 		$time = time();
-		$id = $time;
+		
 		$conn->insert(
 			$table_name,
 			array(
