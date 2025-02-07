@@ -4,8 +4,7 @@ test.describe('Connection settings', () => {
 
   test('Disconnect', async ({ helper, connectionSettingsPage }) => {
     // Setup
-    const { clear_config, dummy_config } = helper.webhooks;
-    // await helper.executeWebhook({ webhook: clear_config }); // Clear the configuration.
+    const { dummy_config } = helper.webhooks;
     await helper.executeWebhook({ webhook: dummy_config }); // Setup for physical products.
 
     // Execution
@@ -16,8 +15,7 @@ test.describe('Connection settings', () => {
 
   test('Change', async ({ helper, page, connectionSettingsPage }) => {
     // Setup
-    const { clear_config, dummy_config } = helper.webhooks;
-    // await helper.executeWebhook({ webhook: clear_config }); // Clear the configuration.
+    const { dummy_config } = helper.webhooks;
     await helper.executeWebhook({ webhook: dummy_config }); // Setup for physical products.
 
     const credentials = {
