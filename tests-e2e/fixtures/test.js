@@ -1,5 +1,5 @@
 import { test as baseTest, expect } from "@playwright/test";
-import { DataProvider, GeneralSettingsPage, PaymentMethodsSettingsPage } from "playwright-fixture-for-plugins";
+import { ConnectionSettingsPage, DataProvider, GeneralSettingsPage, OnboardingSettingsPage, PaymentMethodsSettingsPage } from "playwright-fixture-for-plugins";
 import BackOffice from "./base/BackOffice";
 import SeQuraHelper from "./utils/SeQuraHelper";
 import ProductPage from "./pages/ProductPage";
@@ -11,8 +11,10 @@ const test = baseTest.extend({
     helper: async ({ page, baseURL, request }, use) => await use(new SeQuraHelper(page, baseURL, expect, request)),
     paymentMethodsSettingsPage: async ({ page, baseURL, request, backOffice, helper}, use) =>  await use(new PaymentMethodsSettingsPage(page, baseURL, expect, request, backOffice, helper)),
     productPage: async ({ page, baseURL, request}, use) =>  await use(new ProductPage(page, baseURL, expect, request)),
+    onboardingSettingsPage: async ({ page, baseURL, request, backOffice, helper}, use) =>  await use(new OnboardingSettingsPage(page, baseURL, expect, request, backOffice, helper)),
     checkoutPage: async ({ page, baseURL, request}, use) =>  await use(new CheckoutPage(page, baseURL, expect, request)),
     generalSettingsPage: async ({ page, baseURL, request, backOffice, helper}, use) =>  await use(new GeneralSettingsPage(page, baseURL, expect, request, backOffice, helper)),
+    connectionSettingsPage: async ({ page, baseURL, request, backOffice, helper}, use) =>  await use(new ConnectionSettingsPage(page, baseURL, expect, request, backOffice, helper)),
 });
 
 test.afterEach(async ({ page }, testInfo) => {
