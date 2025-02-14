@@ -107,6 +107,40 @@ This repo contains a group of utility scripts under `bin/` directory. The goal i
 | `bin/update-sequra` | Reinstall the seQura plugin in Magento's `vendor` directory using the project files as the repository. |
 | `bin/xdebug` | Toggle XDebug on/off. By default XDebug comes disabled by default. |
 
+## Debugging with XDebug
+
+Create a VS Code Workspace file at `.vscode/magento2-core.code-workspace` with the following content:
+
+```json
+{
+	"folders": [
+		{
+			"path": ".."
+		}
+	],
+	"settings": {
+		"launch": {
+			"version": "0.2.0",
+			"configurations": [
+				{
+					"name": "Listen for Xdebug",
+					"type": "php",
+					"request": "launch",
+					"port": 9003,
+					"pathMappings": {
+						"/var/www/html/vendor/sequra/magento2-core": "${workspaceFolder}",
+						"/var/www/html/app/code/Sequra/Helper": "${workspaceFolder}/.docker/magento/HelperModule/Sequra/Helper"
+					}
+				}
+			]
+		}
+	}
+}
+```
+Then start debugging (F5) making sure you have the option `Listen for Xdebug (workspace)` selected in VS Code
+
+> [!NOTE]  
+> You need to install and activate [PHP Debug](https://marketplace.visualstudio.com/items?itemName=xdebug.php-debug) extension
 
 ## Building Docker images
 
