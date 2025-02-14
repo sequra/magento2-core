@@ -19,6 +19,7 @@ services:
       - .:/Sequra/Core:ro
       - ./.docker/magento/HelperModule/Sequra:/var/www/html/app/code/Sequra
     extra_hosts:
+      - "host.docker.internal:host-gateway" # For XDebug to work properly on Linux
       - "${M2_HTTP_HOST}:host-gateway"
     <<: *env_file
 
