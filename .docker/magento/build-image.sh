@@ -28,7 +28,7 @@ fi
 
 # Parse arguments:
 # --push: Push the image to the registry
-# --magento=VERSION: Supported versions are 2.4.3-p3, 2.4.4-p11, 2.4.5-p10, 2.4.6-p8, 2.4.7-p3
+# --magento=VERSION: Supported versions are 2.4.3-p3, 2.4.4-p11, 2.4.5-p10, 2.4.6-p8, 2.4.7-p3, 2.4.7-p4
 # --php=VERSION: Supported versions are 7.4, 8.1, 8.2
 while [[ "$#" -gt 0 ]]; do
     if [ "$1" == "--push" ]; then
@@ -60,8 +60,8 @@ if [ "$PHP_VERSION" != "7.4" ] && [ "$PHP_VERSION" != "8.1" ] && [ "$PHP_VERSION
 fi
 
 # Check if the Magento version is supported
-if [ "$M2_VERSION" != "2.4.3-p3" ] && [ "$M2_VERSION" != "2.4.4-p11" ] && [ "$M2_VERSION" != "2.4.5-p10" ] && [ "$M2_VERSION" != "2.4.6-p8" ] && [ "$M2_VERSION" != "2.4.7-p3" ]; then
-    echo "❌ Magento version $M2_VERSION is not supported. Supported versions are 2.4.3-p3, 2.4.4-p11, 2.4.5-p10, 2.4.6-p8, 2.4.7-p3"
+if [ "$M2_VERSION" != "2.4.3-p3" ] && [ "$M2_VERSION" != "2.4.4-p11" ] && [ "$M2_VERSION" != "2.4.5-p10" ] && [ "$M2_VERSION" != "2.4.6-p8" ] && [ "$M2_VERSION" != "2.4.7-p3" ] && [ "$M2_VERSION" != "2.4.7-p4" ]; then
+    echo "❌ Magento version $M2_VERSION is not supported. Supported versions are 2.4.3-p3, 2.4.4-p11, 2.4.5-p10, 2.4.6-p8, 2.4.7-p3, 2.4.7-p4"
     exit 1
 fi
 
@@ -87,6 +87,11 @@ if [ "$M2_VERSION" == "2.4.6-p8" ] && [ "$PHP_VERSION" != "8.2" ]; then
 fi
 
 if [ "$M2_VERSION" == "2.4.7-p3" ] && [ "$PHP_VERSION" != "8.2" ]; then
+    echo "❌ Magento version $M2_VERSION is not compatible with PHP version $PHP_VERSION. Please use PHP version 8.2"
+    exit 1
+fi
+
+if [ "$M2_VERSION" == "2.4.7-p4" ] && [ "$PHP_VERSION" != "8.2" ]; then
     echo "❌ Magento version $M2_VERSION is not compatible with PHP version $PHP_VERSION. Please use PHP version 8.2"
     exit 1
 fi
