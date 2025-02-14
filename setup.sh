@@ -11,19 +11,15 @@ if [ ! -f .env ]; then
 fi
 
 ngrok=0
-build=0
 open_browser=0
 
 # Parse arguments:
-# --build: Build of docker images
 # --ngrok-token=YOUR_NGROK_TOKEN: Override the ngrok token in .env
 # --ngrok: Use ngrok to expose the site
 # --open-browser: Open the browser after the installation is complete
 while [[ "$#" -gt 0 ]]; do
     if [ "$1" == "--ngrok" ]; then
         ngrok=1
-    elif [ "$1" == "--build" ]; then
-        build=1
     elif [[ "$1" == --ngrok-token=* ]]; then
         ngrok_token="${1#*=}"
         sed -i.bak "s|NGROK_AUTHTOKEN=.*|NGROK_AUTHTOKEN=$ngrok_token|" .env
@@ -89,11 +85,7 @@ if [ $ngrok -eq 1 ]; then
     echo "✅ Ngrok started. Public URL: $M2_URL"
 fi
 
-if [ $build -eq 1 ]; then
-    docker compose up -d --build || exit 1
-else
-    docker compose up -d || exit 1
-fi
+docker compose up -d || exit 1
 
 echo "🚀 Waiting for installation to complete..."
 
