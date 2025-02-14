@@ -79,7 +79,6 @@ Additionally, the setup script supports the following arguments:
 | -------- | ------------------------------------------------------------------ |
 | `--ngrok` | Starts an ngrok container to expose the site to internet using HTTPS. An ngrok Auth Token must be provided either as an argument or as a variable in the `.env` file for it to work |
 | `--ngrok-token=YOUR_NGROK_TOKEN` | Define the ngrok Auth Token |
-| `--build` | Force building Docker images |
 | `--open-browser` | Open the browser and navigate to the Magento root URL once the installation is complete |
 
 ### Customization
