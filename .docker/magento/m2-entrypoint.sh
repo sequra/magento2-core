@@ -51,6 +51,11 @@ if [ ! -f /var/www/html/.post-install-complete ]; then
         disable_modules="--disable-modules=$M2_DISABLE_MODULES"
     fi
 
+    sample_data=""
+    if [ -n "$M2_SAMPLE_DATA" ]; then
+        sample_data="--use-sample-data"
+    fi
+
     # Install Magento 2 
     su -s /bin/bash www-data -c "bin/magento setup:install \
     --base-url=$M2_URL \
@@ -75,11 +80,9 @@ if [ ! -f /var/www/html/.post-install-complete ]; then
     --elasticsearch-enable-auth=0 \
     --elasticsearch-index-prefix=$M2_ELASTICSEARCH_INDEX_PREFIX \
     --elasticsearch-timeout=$M2_ELASTICSEARCH_TIMEOUT \
-    $session_save $disable_modules" \
+    $sample_data $session_save $disable_modules" \
     && su -s /bin/bash www-data -c "composer config http-basic.repo.magento.com $M2_COMPOSER_REPO_KEY $M2_COMPOSER_REPO_SECRET" \
-    && su -s /bin/bash www-data -c "bin/magento deploy:mode:set developer" \
-    && su -s /bin/bash www-data -c "bin/magento sampledata:deploy && bin/magento setup:upgrade && bin/magento cache:flush" \
-    || handle_failure
+    && su -s /bin/bash www-data -c "bin/magento deploy:mode:set developer" || handle_failure
     
     # Set auto increment to current timestamp for Order Sequence tables
     echo "ALTER TABLE sequence_order_0 AUTO_INCREMENT = $(date +%s);ALTER TABLE sequence_order_1 AUTO_INCREMENT = $(date +%s);" \

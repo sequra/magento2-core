@@ -41,6 +41,11 @@ class Setup extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        if(empty(getenv('M2_SAMPLE_DATA'))){
+            $output->writeln("Skip setup, M2_SAMPLE_DATA is not set"); 
+            return 0;
+        }
+
         $objectManager = \Magento\Framework\App\ObjectManager::getInstance();
         $customerRepository = $objectManager->create(\Magento\Customer\Api\CustomerRepositoryInterface::class);
     
