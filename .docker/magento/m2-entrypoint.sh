@@ -51,10 +51,16 @@ if [ ! -f /var/www/html/.post-install-complete ]; then
         disable_modules="--disable-modules=$M2_DISABLE_MODULES"
     fi
 
-    sample_data=""
-    if [ -n "$M2_SAMPLE_DATA" ]; then
-        sample_data="--use-sample-data"
+    search_engine_arg_prefix="--elasticsearch-"
+    if [ "$M2_SEARCH_ENGINE" == 'opensearch' ]; then
+        search_engine_arg_prefix="--opensearch-"
     fi
+    search_engine="--search-engine=$M2_SEARCH_ENGINE \
+    ${search_engine_arg_prefix}host=$M2_SEARCH_ENGINE_HOST \
+    ${search_engine_arg_prefix}port=$M2_SEARCH_ENGINE_PORT \
+    ${search_engine_arg_prefix}enable-auth=0 \
+    ${search_engine_arg_prefix}index-prefix=$M2_SEARCH_ENGINE_INDEX_PREFIX \
+    ${search_engine_arg_prefix}timeout=$M2_SEARCH_ENGINE_TIMEOUT"
 
     # Install Magento 2 
     su -s /bin/bash www-data -c "bin/magento setup:install \
@@ -80,9 +86,14 @@ if [ ! -f /var/www/html/.post-install-complete ]; then
     --elasticsearch-enable-auth=0 \
     --elasticsearch-index-prefix=$M2_ELASTICSEARCH_INDEX_PREFIX \
     --elasticsearch-timeout=$M2_ELASTICSEARCH_TIMEOUT \
-    $sample_data $session_save $disable_modules" \
+    $session_save $search_engine $disable_modules" \
     && su -s /bin/bash www-data -c "composer config http-basic.repo.magento.com $M2_COMPOSER_REPO_KEY $M2_COMPOSER_REPO_SECRET" \
-    && su -s /bin/bash www-data -c "bin/magento deploy:mode:set developer" || handle_failure
+    && su -s /bin/bash www-data -c "bin/magento deploy:mode:set developer" \
+    || handle_failure
+
+    if [ -n "$M2_SAMPLE_DATA" ]; then
+        su -s /bin/bash www-data -c "bin/magento sampledata:deploy && bin/magento setup:upgrade && bin/magento cache:flush" || handle_failure
+    fi
     
     # Set auto increment to current timestamp for Order Sequence tables
     echo "ALTER TABLE sequence_order_0 AUTO_INCREMENT = $(date +%s);ALTER TABLE sequence_order_1 AUTO_INCREMENT = $(date +%s);" \
