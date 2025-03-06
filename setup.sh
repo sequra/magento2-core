@@ -85,6 +85,11 @@ if [ $ngrok -eq 1 ]; then
     echo "✅ Ngrok started. Public URL: $M2_URL"
 fi
 
+# search_engine_profile="elasticsearch"
+# if [ "$M2_SEARCH_ENGINE_HOST" == 'opensearch' ]; then
+#     search_engine_profile="opensearch"
+# fi
+
 docker compose up -d || exit 1
 
 echo "🚀 Waiting for installation to complete..."

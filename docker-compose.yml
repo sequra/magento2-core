@@ -8,8 +8,6 @@ services:
     depends_on:
       mariadb:
         condition: service_healthy
-      elasticsearch:
-        condition: service_healthy
       redis:
         condition: service_healthy
     ports:
@@ -31,7 +29,7 @@ services:
     volumes:
       - m2_db:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
       interval: 1s
       timeout: 3s
       retries: 10
@@ -43,7 +41,7 @@ services:
     volumes:
       - m2_redis:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 1s
       timeout: 3s
       retries: 10
@@ -64,16 +62,30 @@ services:
       memlock:
         soft: -1
         hard: -1
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:$ELASTICSEARCH_API_PORT"]
-      interval: 3s
-      timeout: 3s
-      retries: 15
     volumes:
       - m2_elasticsearch:/usr/share/elasticsearch/data
-  
+    profiles:
+      - elasticsearch
+  opensearch:
+    image: opensearchproject/opensearch:$OPENSEARCH_TAG
+    ports:
+      - $OPENSEARCH_API_PORT:9200
+      - $OPENSEARCH_INTERNODE_PORT:9600
+    environment:
+      - discovery.type=single-node
+      - DISABLE_SECURITY_PLUGIN=true
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - m2_opensearch:/usr/share/opensearch/data
+    profiles:
+      - opensearch
+
 volumes:
   m2_db:
   m2_redis:
   m2_elasticsearch:
+  m2_opensearch:
   m2_html:
