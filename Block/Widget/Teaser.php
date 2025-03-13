@@ -145,14 +145,21 @@ class Teaser extends Template implements BlockInterface
         $currency = $this->scopeResolver->getScope()->getCurrentCurrency();
         $storeId = $this->scopeResolver->getScope()->getStoreId();
         $subject = ['currency' => $currency->getCode(), 'storeId' => $storeId];
+
+        if(!$this->getWidgetSettings()->isEnabled()){
+            // TODO: Log widget not enabled
+            return '';
+        }
+
+        // TODO: check if product is banned
         
         if(!$this->currencyValidator->validate($subject)->isValid()){
-            // TODO: Log error
+            // TODO: Log currency error
             return '';
         }
         
         if(!$this->ipAddressValidator->validate($subject)->isValid()){
-            // TODO: Log error
+            // TODO: Log IP error
             return '';
         }
         
@@ -186,6 +193,25 @@ class Teaser extends Template implements BlockInterface
         return !$settings || !$settings->getEnvironment() ? '' : "https://{$settings->getEnvironment()}.sequracdn.com/assets/sequra-checkout.min.js";
     }
 
+    /**
+     * Return the list of payment methods selected in the widget settings
+     * Each element is an array with the following:
+     * - countryCode
+     * - product
+     * - campaign
+     * 
+     * @return array<string, string>
+     */
+    private function getPaymentMethodsData()
+    {
+        return array_map(
+            function($value){
+                return json_decode(base64_decode($value), true);
+            }, 
+            explode(',', $this->getData('payment_methods'))
+        );
+    }
+
     public function getProduct()
     {
         $products = [];
@@ -206,10 +232,14 @@ class Teaser extends Template implements BlockInterface
         return !$settings ? '' : $settings->getAssetsKey();
     }
 
-    public function getMerchantRef()
-    {
+    private function getCurrentCountry(){
         $parts = explode('_', $this->localeResolver->getLocale());
-        $country = strtoupper(count($parts) > 1 ? $parts[1] : $parts[0]);
+        return strtoupper(count($parts) > 1 ? $parts[1] : $parts[0]);
+    }
+
+    private function getMerchantRef()
+    {
+        $country = $this->getCurrentCountry();
         $settingsArr = $this->getCountrySettings();
         if(is_array($settingsArr)){
             foreach($settingsArr as $settings){
@@ -223,5 +253,35 @@ class Teaser extends Template implements BlockInterface
 
     public function getLocale(){
         return str_replace('_','-',$this->localeResolver->getLocale());
+    }
+
+    /**
+     * Prepare the list of available widgets to show in the frontend
+     * based on the configuration and the current store context
+     * 
+     * @return array
+     */
+    public function getAvailableWidgets(){
+        $merchantId = $this->getMerchantRef();
+        if(!$merchantId || !$this->getWidgetSettings()->isDisplayOnProductPage()){
+            return [];
+        }
+
+        $currentCountry = $this->getCurrentCountry();
+        $widgets = [];
+        foreach($this->getPaymentMethodsData() as $payment_method){
+            if(!isset($payment_method['countryCode'], $payment_method['product']) || $payment_method['countryCode'] !== $currentCountry){
+                continue;
+            }
+            $widgets[] = [
+                'product' => $payment_method['product'],
+                'campaign' => $payment_method['campaign'] ?? '',
+                'priceSel' => $this->getData('price_sel') ?: '',
+                'dest' => $this->getData('dest_sel'),
+                'theme' => $this->getData('theme') ?: $this->getWidgetSettings()->getWidgetConfig(),
+                'reverse' => "0",
+            ];
+        }
+        return $widgets;
     }
 }

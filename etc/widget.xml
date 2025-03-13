@@ -14,7 +14,7 @@
             </parameter>
             <parameter name="theme" visible="true" xsi:type="text">
                 <label>Theme</label>
-                <description>L, R, minimal, legacy... or params in JSON format</description>
+                <description>L, R, minimal, legacy... or params in JSON format. Leave empty to use the global value</description>
             </parameter>
             <parameter name="payment_methods" visible="true" xsi:type="multiselect" source_model="Sequra\Core\Model\Config\Source\WidgetPaymentMethods">
                 <label>Payment methods</label>

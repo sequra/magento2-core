@@ -3,19 +3,10 @@ namespace Sequra\Core\Model\Config\Source;
 
 use Magento\Framework\App\ScopeResolverInterface;
 use Magento\Framework\Data\OptionSourceInterface;
-
-
 use SeQura\Core\Infrastructure\ServiceRegister;
 use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
 use SeQura\Core\BusinessLogic\Domain\PaymentMethod\Services\PaymentMethodsService;
 use SeQura\Core\BusinessLogic\Domain\PaymentMethod\Models\SeQuraPaymentMethod;
-
-use SeQura\Core\BusinessLogic\Domain\Connection\Models\ConnectionData;
-use SeQura\Core\BusinessLogic\Domain\Connection\Services\ConnectionService;
-use SeQura\Core\BusinessLogic\Domain\GeneralSettings\Models\GeneralSettings;
-use SeQura\Core\BusinessLogic\Domain\GeneralSettings\Services\GeneralSettingsService;
-use SeQura\Core\BusinessLogic\Domain\PromotionalWidgets\Models\WidgetSettings;
-use SeQura\Core\BusinessLogic\Domain\PromotionalWidgets\Services\WidgetSettingsService;
 use SeQura\Core\BusinessLogic\Domain\CountryConfiguration\Models\CountryConfiguration;
 use SeQura\Core\BusinessLogic\Domain\CountryConfiguration\Services\CountryConfigurationService;
 
@@ -59,7 +50,7 @@ class WidgetPaymentMethods implements OptionSourceInterface
                 }
 
                 $value = [
-                    'countyCode' => $country->getCountryCode(),
+                    'countryCode' => $country->getCountryCode(),
                     'product' => $payment_method->getProduct(),
                     'campaign' => $payment_method->getCampaign() 
                 ];

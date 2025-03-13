@@ -1,21 +1,23 @@
-<div id="sequra_partpayment_teaser"></div>
-<script type="text/x-magento-init">
-    {
-        "#sequra_partpayment_teaser": {
-            "Sequra_Core/js/widget-js": {
-                "css_price_selector": "<?php echo addslashes($block->getData('price_sel')?:"");?>",
-                "css_dest_selector": "<?php echo addslashes($block->getData('dest_sel')?:'#sequra_partpayment_teaser');?>",
-                "theme": "<?php echo addslashes($block->getData('theme')?:"");?>",
-                "sequra_configuration":{
-                    "scriptUri": "<?php echo $block->getScriptUri(); ?>",
-                    "thousandSeparator": "<?php echo $block->getThousandsSeparator(); ?>",
-                    "decimalSeparator": "<?php echo $block->getDecimalSeparator(); ?>",
-                    "locale": "<?php echo $block->getLocale(); ?>",
-                    "merchant": "<?php echo $block->getMerchantRef(); ?>",
-                    "assetKey": "<?php echo $block->getAssetsKey(); ?>",
-                    "products": <?php echo json_encode($block->getProduct()); ?>
-                }
-            }
-        }
+<?php $div_id = str_replace('.', '', uniqid('sequra_partpayment_teaser_', true));  ?>
+<div id="<?php echo $div_id; ?>"></div>
+<script>
+    if('undefined' === typeof window.SequraWidgetFacade){
+        window.SequraWidgetFacade = {};
     }
+    if('undefined' === typeof window.SequraWidgetFacade.widgets){
+        window.SequraWidgetFacade.widgets = [];
+    }
+    if('undefined' === typeof window.SequraWidgetFacade.miniWidgets){
+        window.SequraWidgetFacade.miniWidgets = [];
+    }
+    <?php foreach ($block->getAvailableWidgets() as $widget): ?>
+    window.SequraWidgetFacade.widgets.push({
+       product: "<?php echo $widget['product']; ?>",
+       campaign: "<?php echo $widget['campaign'];?>",
+       priceSel: "<?php echo addslashes($widget['priceSel']);?>",
+       dest: "<?php echo addslashes($widget['dest']?:"#{$div_id}");?>",
+       theme: "<?php echo addslashes($widget['theme']);?>",
+       reverse: "<?php echo $widget['reverse'];?>"
+    });
+    <?php endforeach; ?>
 </script>
