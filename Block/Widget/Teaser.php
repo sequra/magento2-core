@@ -9,8 +9,6 @@ use SeQura\Core\Infrastructure\ServiceRegister;
 use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
 use SeQura\Core\BusinessLogic\Domain\Connection\Models\ConnectionData;
 use SeQura\Core\BusinessLogic\Domain\Connection\Services\ConnectionService;
-use SeQura\Core\BusinessLogic\Domain\GeneralSettings\Models\GeneralSettings;
-use SeQura\Core\BusinessLogic\Domain\GeneralSettings\Services\GeneralSettingsService;
 use SeQura\Core\BusinessLogic\Domain\PromotionalWidgets\Models\WidgetSettings;
 use SeQura\Core\BusinessLogic\Domain\PromotionalWidgets\Services\WidgetSettingsService;
 use SeQura\Core\BusinessLogic\Domain\CountryConfiguration\Models\CountryConfiguration;
@@ -149,12 +147,12 @@ class Teaser extends Template implements BlockInterface
         $subject = ['currency' => $currency->getCode(), 'storeId' => $storeId];
         
         if(!$this->currencyValidator->validate($subject)->isValid()){
-            // return 'Currency not valid';
+            // TODO: Log error
             return '';
         }
         
         if(!$this->ipAddressValidator->validate($subject)->isValid()){
-            // return 'IP not valid';
+            // TODO: Log error
             return '';
         }
         
@@ -182,26 +180,24 @@ class Teaser extends Template implements BlockInterface
         return $this->formatter->getSymbol(\NumberFormatter::GROUPING_SEPARATOR_SYMBOL);
     }
 
-    // public function getMaxOrderTotal()
-    // {
-    //     return $this->config->getMaxOrderTotal();
-    // }
-
     public function getScriptUri()
     {
         $settings = $this->getConnectionSettings();
         return !$settings || !$settings->getEnvironment() ? '' : "https://{$settings->getEnvironment()}.sequracdn.com/assets/sequra-checkout.min.js";
     }
 
-    // public function getMinOrderTotal()
-    // {
-    //     return $this->config->getMinOrderTotal();
-    // }
-
     public function getProduct()
     {
-        return ["pp3"];
-        // return $this->config->getProduct();
+        $products = [];
+        $payment_methods = explode(',', $this->getData('payment_methods'));
+        foreach ($payment_methods as $value) {
+            $decoded = json_decode(base64_decode($value), true);
+            if(isset($decoded['product'])){
+                $products[] = $decoded['product'];
+            }
+        }
+
+        return $products;
     }
 
     public function getAssetsKey()
@@ -228,9 +224,4 @@ class Teaser extends Template implements BlockInterface
     public function getLocale(){
         return str_replace('_','-',$this->localeResolver->getLocale());
     }
-
-    // /** @deprecated */
-    // public function getSilent(){
-    //     return 'false';
-    // }
 }
