@@ -114,13 +114,11 @@
                 type="Sequra\Core\Model\Api\SequraPaymentMethodsService"/>
 
 
-    <type name="Magento\PageBuilder\Model\WidgetInitializerConfig">
+    <!-- <type name="Magento\PageBuilder\Model\WidgetInitializerConfig">
         <arguments>
             <argument name="config" xsi:type="array">
                 <item name="Sequra_Core" xsi:type="array">
-                    <!-- Name is the appearance name -->
                     <item name="default" xsi:type="array">
-                        <!--required argument-->
                         <item name="component" xsi:type="string">Sequra_Core/js/content-type/sequra-core/appearance/default/widget</item>
                     </item>
                 </item>
@@ -133,16 +131,14 @@
         <arguments>
             <argument name="config" xsi:type="array">
                 <item name="Sequra_Core" xsi:type="array">
-                    <!-- Name is the appearance name -->
                     <item name="default" xsi:type="array">
-                        <!--required argument-->
                         <item name="component" xsi:type="string">Sequra_Core/js/content-type/sequra-core/appearance/default/widget</item>
                     </item>
                 </item>
             </argument>
         </arguments>
     </type>
-
+ -->
     <!-- Commandline option to triggerrerport and update orders-->
     <type name="Magento\Framework\Console\CommandList">
         <arguments>
@@ -151,7 +147,9 @@
             </argument>
         </arguments>
      </type>
-
+    <virtualType name="SequraGatewayCurrencyValidator" type="Sequra\Core\Gateway\Validator\CurrencyValidator" />
+    <virtualType name="SequraGatewayIpAddressValidator" type="Sequra\Core\Gateway\Validator\IpAddressVAlidator" /> 
+    <virtualType name="SequraGatewayProductWidgetAvailabilityValidator" type="Sequra\Core\Gateway\Validator\ProductWidgetAvailabilityValidator" /> 
     <!-- CSRF -->
     <type name="Magento\Framework\App\Request\CsrfValidator">
         <plugin name="sequra_disable_form_key_validation" type="Sequra\Core\Plugin\Framework\App\Request\CsrfValidator" />

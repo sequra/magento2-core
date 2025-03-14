@@ -1,0 +1,25 @@
+<?xml version="1.0" ?>
+<widgets xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Widget:etc/widget.xsd">
+    <widget class="Sequra\Core\Block\Widget\Teaser" id="sequra_teaser">
+        <label>seQura Teaser</label>
+        <description>seQura Teaser</description>
+        <parameters>
+            <parameter name="price_sel" visible="true" xsi:type="text">
+                <label>Price CSS selector</label>
+                <description>Define a CSS selector to retrieve the product price</description>
+            </parameter>
+            <parameter name="dest_sel" visible="true" xsi:type="text">
+                <label>Location CSS selector</label>
+                <description>CSS selector to define the default container element for the widget. Leave empty not to move it</description>
+            </parameter>
+            <parameter name="theme" visible="true" xsi:type="text">
+                <label>Theme</label>
+                <description>L, R, minimal, legacy... or params in JSON format. Leave empty to use the global value</description>
+            </parameter>
+            <parameter name="payment_methods" visible="true" xsi:type="multiselect" source_model="Sequra\Core\Model\Config\Source\WidgetPaymentMethods">
+                <label>Payment methods</label>
+                <description>Select payment methods to promote</description>
+            </parameter>
+        </parameters>
+    </widget>
+</widgets>
