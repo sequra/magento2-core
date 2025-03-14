@@ -1,23 +1,12 @@
 <?php $div_id = str_replace('.', '', uniqid('sequra_partpayment_teaser_', true));  ?>
 <div id="<?php echo $div_id; ?>"></div>
-<script>
-    if('undefined' === typeof window.SequraWidgetFacade){
-        window.SequraWidgetFacade = {};
+<script type="text/x-magento-init">
+    {
+        "*": {
+            "Sequra_Core/js/widget": {
+                "divId": "<?php echo $div_id; ?>",
+                "widgets": <?php echo json_encode($block->getAvailableWidgets()); ?>
+            }
+        }
     }
-    if('undefined' === typeof window.SequraWidgetFacade.widgets){
-        window.SequraWidgetFacade.widgets = [];
-    }
-    if('undefined' === typeof window.SequraWidgetFacade.miniWidgets){
-        window.SequraWidgetFacade.miniWidgets = [];
-    }
-    <?php foreach ($block->getAvailableWidgets() as $widget): ?>
-    window.SequraWidgetFacade.widgets.push({
-       product: "<?php echo $widget['product']; ?>",
-       campaign: "<?php echo $widget['campaign'];?>",
-       priceSel: "<?php echo addslashes($widget['priceSel']);?>",
-       dest: "<?php echo addslashes($widget['dest']?:"#{$div_id}");?>",
-       theme: "<?php echo addslashes($widget['theme']);?>",
-       reverse: "<?php echo $widget['reverse'];?>"
-    });
-    <?php endforeach; ?>
 </script>

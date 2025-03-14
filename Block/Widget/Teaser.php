@@ -273,11 +273,12 @@ class Teaser extends Template implements BlockInterface
             if(!isset($payment_method['countryCode'], $payment_method['product']) || $payment_method['countryCode'] !== $currentCountry){
                 continue;
             }
+
             $widgets[] = [
                 'product' => $payment_method['product'],
                 'campaign' => $payment_method['campaign'] ?? '',
-                'priceSel' => $this->getData('price_sel') ?: '',
-                'dest' => $this->getData('dest_sel'),
+                'priceSel' => addslashes(($this->getData('price_sel') ?: '')),
+                'dest' => addslashes(($this->getData('dest_sel') ?: '')),
                 'theme' => $this->getData('theme') ?: $this->getWidgetSettings()->getWidgetConfig(),
                 'reverse' => "0",
             ];
