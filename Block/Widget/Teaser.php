@@ -131,7 +131,7 @@ class Teaser extends Template implements BlockInterface
         CurrencyValidator $currencyValidator,
         IpAddressValidator $ipAddressValidator,
         ProductWidgetAvailabilityValidator $productValidator,
-        array $data = [],
+        array $data = []
     ) {
         $this->scopeResolver = $scopeResolver;
         $this->localeResolver = $localeResolver;
