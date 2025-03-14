@@ -5,6 +5,7 @@ use Magento\Framework\View\Element\Template;
 use Magento\Widget\Block\BlockInterface;
 use Sequra\Core\Gateway\Validator\CurrencyValidator;
 use Sequra\Core\Gateway\Validator\IpAddressValidator;
+use Sequra\Core\Gateway\Validator\ProductWidgetAvailabilityValidator;
 use SeQura\Core\Infrastructure\ServiceRegister;
 use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
 use SeQura\Core\BusinessLogic\Domain\Connection\Models\ConnectionData;
@@ -41,6 +42,11 @@ class Teaser extends Template implements BlockInterface
      * @var CurrencyValidator
      */
     private $currencyValidator;
+
+    /**
+     * @var ProductWidgetAvailabilityValidator
+     */
+    private $productWidgetAvailabilityValidator;
 
     /**
      * @var ConnectionData
@@ -124,7 +130,8 @@ class Teaser extends Template implements BlockInterface
         \Magento\Framework\View\Element\Template\Context $context,
         CurrencyValidator $currencyValidator,
         IpAddressValidator $ipAddressValidator,
-        array $data = []
+        ProductWidgetAvailabilityValidator $productValidator,
+        array $data = [],
     ) {
         $this->scopeResolver = $scopeResolver;
         $this->localeResolver = $localeResolver;
@@ -132,6 +139,7 @@ class Teaser extends Template implements BlockInterface
         $this->formatter = $this->getFormatter();
         $this->currencyValidator = $currencyValidator;
         $this->ipAddressValidator = $ipAddressValidator;
+        $this->productWidgetAvailabilityValidator = $productValidator;
     }
     
     /**
@@ -146,13 +154,6 @@ class Teaser extends Template implements BlockInterface
         $storeId = $this->scopeResolver->getScope()->getStoreId();
         $subject = ['currency' => $currency->getCode(), 'storeId' => $storeId];
 
-        if(!$this->getWidgetSettings()->isEnabled()){
-            // TODO: Log widget not enabled
-            return '';
-        }
-
-        // TODO: check if product is banned
-        
         if(!$this->currencyValidator->validate($subject)->isValid()){
             // TODO: Log currency error
             return '';
@@ -160,6 +161,11 @@ class Teaser extends Template implements BlockInterface
         
         if(!$this->ipAddressValidator->validate($subject)->isValid()){
             // TODO: Log IP error
+            return '';
+        }
+
+        if (!$this->productWidgetAvailabilityValidator->validate($subject)->isValid()) {
+            // TODO: Log product is not eligible for widgets
             return '';
         }
         
@@ -263,7 +269,7 @@ class Teaser extends Template implements BlockInterface
      */
     public function getAvailableWidgets(){
         $merchantId = $this->getMerchantRef();
-        if(!$merchantId || !$this->getWidgetSettings()->isDisplayOnProductPage()){
+        if(!$merchantId ){
             return [];
         }
 
