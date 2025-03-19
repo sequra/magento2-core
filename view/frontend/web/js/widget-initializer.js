@@ -327,6 +327,10 @@ define([
         
                             oldWidget.remove();// remove the old widget to draw a new one.
                         }
+
+                        if ('undefined' !== typeof widget.maxAmount && widget.maxAmount && widget.maxAmount < cents) {
+                            return;
+                        }
         
                         const promoWidgetNode = document.createElement('div');
                         promoWidgetNode.className = className + ' ' + modifierClassName;

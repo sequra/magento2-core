@@ -287,6 +287,8 @@ class Teaser extends Template implements BlockInterface
                 'dest' => addslashes(($this->getData('dest_sel') ?: '')),
                 'theme' => $this->getData('theme') ?: $this->getWidgetSettings()->getWidgetConfig(),
                 'reverse' => "0",
+                'minAmount' => $payment_method['minAmount'] ?? 0,
+                'maxAmount' => $payment_method['maxAmount'] ?? null,
             ];
         }
         return $widgets;
