@@ -52,9 +52,7 @@ class WidgetPaymentMethods implements OptionSourceInterface
                 $value = [
                     'countryCode' => $country->getCountryCode(),
                     'product' => $payment_method->getProduct(),
-                    'campaign' => $payment_method->getCampaign(),
-                    'minAmount' => $payment_method->getMinAmount(),
-                    'maxAmount' => $payment_method->getMaxAmount() 
+                    'campaign' => $payment_method->getCampaign()
                 ];
                 $value = base64_encode(json_encode($value));
 
