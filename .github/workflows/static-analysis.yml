@@ -1,0 +1,46 @@
+name: CI
+
+on: [push, pull_request]
+
+concurrency:
+  # For pull requests, cancel all currently-running jobs for this workflow
+  # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#concurrency
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+env:
+  # Force terminal colors. @see https://www.npmjs.com/package/colors
+  FORCE_COLOR: 1
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache bin/php Composer dependencies
+        uses: actions/cache@v4
+        id: cache-bin-php-composer
+        with:
+          path: |
+            bin/php/vendor
+            bin/php/composer.lock
+          key: composer-${{ hashFiles('bin/php/composer.json') }}
+
+      - name: Install bin/php Composer dependencies
+        if: steps.cache-bin-php-composer.outputs.cache-hit != 'true'
+        run: |
+          chmod +x ./bin/php/install
+          ./bin/php/install
+
+      - name: PHPCS
+        if: github.event_name == 'push'
+        run: |
+          chmod +x ./bin/phpcs
+          ./bin/phpcs -q
+
+      - name: PHPStan
+        if: github.event_name == 'push'
+        run: |
+          chmod +x ./bin/phpstan
+          ./bin/phpstan --error-format=github --no-progress
