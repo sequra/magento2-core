@@ -1,0 +1,23 @@
+parameters:
+    level: 9
+    errorFormat: table
+    treatPhpDocTypesAsCertain: false
+    paths:
+        - registration.php
+        - .docker/magento/HelperModule/Sequra/Helper/
+        - Api/
+        - Block/
+        - Console/
+        - Controller/
+        - DataAccess/
+        - Gateway/
+        - Helper/
+        - i18n/
+        - Model/
+        - Observer/
+        - Plugin/
+        - Repository/
+        - ResourceModel/
+        - Services/
+        - Setup/
+        - Ui/
