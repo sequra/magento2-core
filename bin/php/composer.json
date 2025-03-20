@@ -1,0 +1,24 @@
+{
+    "name": "bin/php",
+    "type": "project",
+    "description": "PHP binaries",
+    "authors": [
+        {
+            "name": "seQura Tech",
+            "email": "wordpress@sequra.es"
+        }
+    ],
+    "config": {
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true,
+            "phpstan/extension-installer": true
+        }
+    },
+    "require": {
+        "squizlabs/php_codesniffer": "*",
+        "magento/magento-coding-standard": "*",
+        "phpstan/phpstan": "*",
+        "phpstan/extension-installer": "*"
+    },
+    "prefer-stable": true
+}
