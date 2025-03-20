@@ -2,7 +2,10 @@
 <ruleset name="Magento2 Coding Standards based custom ruleset for your plugin">
 	<!-- What to scan -->
 	<file>.</file>
-	<exclude-pattern>.docker/</exclude-pattern>
+    <file>.docker/magento/HelperModule/Sequra/Helper</file>
+
+    <exclude-pattern>.docker/magento/(?!HelperModule/Sequra/Helper).*</exclude-pattern>
+    <exclude-pattern>.docker/(?!magento).*</exclude-pattern>
 	<exclude-pattern>.github/</exclude-pattern>
 	<exclude-pattern>.vscode/</exclude-pattern>
 	<exclude-pattern>bin/</exclude-pattern>
