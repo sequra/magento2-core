@@ -245,6 +245,15 @@ define([
                     isMiniWidget: function (widget) {
                         return this.miniWidgets.indexOf(widget) !== -1;
                     },
+                    isAmountInAllowedRange: function (widget, cents) {
+                        if ('undefined' !== typeof widget.minAmount && widget.minAmount && cents < widget.minAmount) {
+                            return false;
+                        }
+                        if ('undefined' !== typeof widget.maxAmount && widget.maxAmount && widget.maxAmount < cents) {
+                            return false;
+                        }
+                        return true;
+                    },
         
                     drawMiniWidgetOnElement: function (widget, element, priceElem) {
                         if (!priceElem) {
@@ -256,9 +265,6 @@ define([
                             }
                         }
                         const cents = this.nodeToCents(priceElem);
-        
-        
-        
                         const className = 'sequra-educational-popup';
                         const modifierClassName = className + '--' + widget.product;
         
@@ -271,7 +277,7 @@ define([
                             oldWidget.remove();// remove the old widget to draw a new one.
                         }
         
-                        if (widget.maxAmount && widget.maxAmount < cents) {
+                        if (!this.isAmountInAllowedRange(widget, cents)) {
                             return;
                         }
         
@@ -315,7 +321,6 @@ define([
                             return;
                         }
                         const cents = this.nodeToCents(priceElem);
-        
                         const className = 'sequra-promotion-widget';
                         const modifierClassName = className + '--' + widget.product;
         
@@ -328,7 +333,7 @@ define([
                             oldWidget.remove();// remove the old widget to draw a new one.
                         }
 
-                        if ('undefined' !== typeof widget.maxAmount && widget.maxAmount && widget.maxAmount < cents) {
+                        if (!this.isAmountInAllowedRange(widget, cents)) {
                             return;
                         }
         
