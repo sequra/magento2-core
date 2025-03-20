@@ -20,7 +20,9 @@ define([
                     priceSel: widget.priceSel,
                     dest: widget.dest || '#' + config.divId,
                     theme: widget.theme,
-                    reverse: widget.reverse
+                    reverse: widget.reverse,
+                    minAmount: widget.minAmount,
+                    maxAmount: widget.maxAmount
                 });
             }
         }

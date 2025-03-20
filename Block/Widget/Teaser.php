@@ -14,6 +14,8 @@ use SeQura\Core\BusinessLogic\Domain\PromotionalWidgets\Models\WidgetSettings;
 use SeQura\Core\BusinessLogic\Domain\PromotionalWidgets\Services\WidgetSettingsService;
 use SeQura\Core\BusinessLogic\Domain\CountryConfiguration\Models\CountryConfiguration;
 use SeQura\Core\BusinessLogic\Domain\CountryConfiguration\Services\CountryConfigurationService;
+use SeQura\Core\BusinessLogic\Domain\PaymentMethod\Services\PaymentMethodsService;
+use SeQura\Core\BusinessLogic\Domain\PaymentMethod\Models\SeQuraPaymentMethod;
 
 class Teaser extends Template implements BlockInterface
 {
@@ -274,21 +276,54 @@ class Teaser extends Template implements BlockInterface
         }
 
         $currentCountry = $this->getCurrentCountry();
+        $paymentMethods = $this->getPaymentMethods($merchantId);
+        $priceSelector = addslashes($this->getData('price_sel') ?: '');
+        $theme = $this->getData('theme') ?: $this->getWidgetSettings()->getWidgetConfig();
+        $destinationSelector = addslashes($this->getData('dest_sel') ?: '');
+
         $widgets = [];
-        foreach($this->getPaymentMethodsData() as $payment_method){
-            if(!isset($payment_method['countryCode'], $payment_method['product']) || $payment_method['countryCode'] !== $currentCountry){
+        foreach($this->getPaymentMethodsData() as $paymentMethodData){
+            if(!isset($paymentMethodData['countryCode'], $paymentMethodData['product']) || $paymentMethodData['countryCode'] !== $currentCountry){
                 continue;
             }
 
-            $widgets[] = [
-                'product' => $payment_method['product'],
-                'campaign' => $payment_method['campaign'] ?? '',
-                'priceSel' => addslashes(($this->getData('price_sel') ?: '')),
-                'dest' => addslashes(($this->getData('dest_sel') ?: '')),
-                'theme' => $this->getData('theme') ?: $this->getWidgetSettings()->getWidgetConfig(),
-                'reverse' => "0",
-            ];
+            foreach ($paymentMethods as $paymentMethod) {
+                if($paymentMethod->getProduct() !== $paymentMethodData['product'] || $paymentMethod->getCampaign() !== $paymentMethodData['campaign']){
+                    continue;
+                }
+
+                $widgets[] = [
+                    'product' => $paymentMethod->getProduct(),
+                    'campaign' => $paymentMethod->getCampaign() ?? '',
+                    'priceSel' => $priceSelector,
+                    'dest' => $destinationSelector,
+                    'theme' => $theme,
+                    'reverse' => "0",
+                    'minAmount' => $paymentMethod->getMinAmount() ?? 0,
+                    'maxAmount' => $paymentMethod->getMaxAmount() ?? null,
+                ];
+
+                break;
+            }   
         }
         return $widgets;
+    }
+
+    /**
+     * Get payment methods for a given merchant using the current store context
+     * @param string $merchantId
+     * @return SeQuraPaymentMethod[]
+     */
+    private function getPaymentMethods($merchantId){
+        $storeId = $this->scopeResolver->getScope()->getStoreId();
+        $payment_methods = [];
+        try {
+            $payment_methods = StoreContext::doWithStore($storeId, function () use ( $merchantId ) {
+                return ServiceRegister::getService(PaymentMethodsService::class)->getMerchantsPaymentMethods($merchantId);
+            });
+        } catch ( \Throwable $e ) {
+            // TODO: Log error
+        }
+        return $payment_methods;
     }
 }
