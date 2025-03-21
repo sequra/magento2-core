@@ -1,5 +1,5 @@
 #!/bin/bash
 DIR="$(dirname $(realpath $0))"
-"$DIR/php/install"
+"$DIR/phpstan-bin/install"
 BASEDIR="$DIR/.."
-docker run $@ --rm -v "${BASEDIR}":/app -w /app -u $(id -u):$(id -g) php:cli-alpine php bin/php/vendor/bin/phpstan analyse -c phpstan.neon $@ --memory-limit=1G
+docker run --rm -v "${BASEDIR}":/app -w /app -u $(id -u):$(id -g) php:cli-alpine php bin/phpstan-bin/vendor/bin/phpstan analyse -c phpstan.neon $@ --memory-limit=1G

@@ -1,6 +1,6 @@
 # PHP Binaries
 
-This directory contains PHP binaries that are required for the static analysis process.
+This directory contains PHPStan binaries that are required for the static analysis process.
 
 ## Manual installation
 

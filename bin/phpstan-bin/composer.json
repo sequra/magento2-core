@@ -10,15 +10,19 @@
     ],
     "config": {
         "allow-plugins": {
-            "dealerdirect/phpcodesniffer-composer-installer": true,
             "phpstan/extension-installer": true
         }
     },
     "require": {
-        "squizlabs/php_codesniffer": "*",
-        "magento/magento-coding-standard": "*",
-        "phpstan/phpstan": "*",
-        "phpstan/extension-installer": "*"
+        "phpstan/phpstan": "^2.1.8",
+        "phpstan/extension-installer": "^1.4.3",
+        "phpstan/phpstan-deprecation-rules": "^2.0.1",
+        "bitexpert/phpstan-magento": "^v0.41.0"
+    },
+    "autoload": {
+        "classmap": [
+            "stubs/Zend_Db_Select.php"
+        ]
     },
     "prefer-stable": true
 }
