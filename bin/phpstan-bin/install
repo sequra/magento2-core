@@ -1,0 +1,6 @@
+#!/bin/bash
+BASEDIR="$(dirname $(realpath $0))"
+if [ -d "$BASEDIR/vendor" ]; then
+    exit 0
+fi
+docker run --rm -v "$BASEDIR":/app -w /app -u $(id -u):$(id -g) composer:latest composer install --no-dev
