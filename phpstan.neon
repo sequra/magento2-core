@@ -2,6 +2,8 @@ parameters:
     level: 9
     errorFormat: table
     treatPhpDocTypesAsCertain: false
+    stubFiles:
+        - bin/phpstan-bin/stubs/Zend_Db_Select.php
     paths:
         - registration.php
         - .docker/magento/HelperModule/Sequra/Helper/
