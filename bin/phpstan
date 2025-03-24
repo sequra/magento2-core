@@ -1,5 +1,2 @@
 #!/bin/bash
-DIR="$(dirname $(realpath $0))"
-"$DIR/phpstan-bin/install"
-BASEDIR="$DIR/.."
-docker run --rm -v "${BASEDIR}":/app -w /app -u $(id -u):$(id -g) php:cli-alpine php bin/phpstan-bin/vendor/bin/phpstan analyse -c phpstan.neon $@ --memory-limit=1G
+docker compose exec magento /bin/bash -c "vendor/bin/phpstan analyse -c /Sequra/Core/phpstan.neon --memory-limit=1G $@"
