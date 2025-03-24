@@ -18,20 +18,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Cache bin/php Composer dependencies
+      - name: Cache bin/phpcs-bin content
         uses: actions/cache@v4
         id: cache-bin-php-composer
         with:
           path: |
-            bin/php/vendor
-            bin/php/composer.lock
-          key: composer-${{ hashFiles('bin/php/composer.json') }}
+            bin/phpcs-bin/vendor
+            bin/phpcs-bin/composer.lock
+          key: composer-${{ hashFiles('bin/phpcs-bin/composer.json') }}
 
-      - name: Install bin/php Composer dependencies
+      - name: Install bin/phpcs-bin Composer dependencies
         if: steps.cache-bin-php-composer.outputs.cache-hit != 'true'
         run: |
-          chmod +x ./bin/php/install
-          ./bin/php/install
+          chmod +x ./bin/phpcs-bin/install
+          ./bin/phpcs-bin/install
 
       - name: PHPCS
         if: github.event_name == 'push'
