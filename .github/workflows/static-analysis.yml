@@ -1,6 +1,6 @@
 name: CI
 
-on: [push, pull_request]
+on: [push]
 
 concurrency:
   # For pull requests, cancel all currently-running jobs for this workflow
@@ -34,13 +34,11 @@ jobs:
           ./bin/phpcs-bin/install
 
       - name: PHPCS
-        if: github.event_name == 'push'
         run: |
           chmod +x ./bin/phpcs
           ./bin/phpcs -q
 
       - name: PHPStan
-        if: github.event_name == 'push'
         run: |
           chmod +x ./bin/phpstan
           ./bin/phpstan --error-format=github --no-progress
