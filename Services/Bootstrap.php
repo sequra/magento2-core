@@ -7,6 +7,7 @@ use SeQura\Core\BusinessLogic\DataAccess\ConnectionData\Entities\ConnectionData;
 use SeQura\Core\BusinessLogic\DataAccess\CountryConfiguration\Entities\CountryConfiguration;
 use SeQura\Core\BusinessLogic\DataAccess\GeneralSettings\Entities\GeneralSettings;
 use SeQura\Core\BusinessLogic\DataAccess\OrderSettings\Entities\OrderStatusSettings;
+use SeQura\Core\BusinessLogic\DataAccess\PaymentMethod\Entities\PaymentMethod;
 use SeQura\Core\BusinessLogic\DataAccess\PromotionalWidgets\Entities\WidgetSettings;
 use SeQura\Core\BusinessLogic\DataAccess\SendReport\Entities\SendReport;
 use SeQura\Core\BusinessLogic\DataAccess\StatisticalData\Entities\StatisticalData;
@@ -25,8 +26,6 @@ use SeQura\Core\BusinessLogic\Domain\SendReport\RepositoryContracts\SendReportRe
 use SeQura\Core\BusinessLogic\Domain\StatisticalData\RepositoryContracts\StatisticalDataRepositoryInterface;
 use SeQura\Core\BusinessLogic\Utility\EncryptorInterface;
 use SeQura\Core\BusinessLogic\Webhook\Services\ShopOrderService;
-use Sequra\Core\DataAccess\Entities\PaymentMethod;
-use Sequra\Core\DataAccess\Entities\PaymentMethods;
 use SeQura\Core\Infrastructure\Configuration\ConfigEntity;
 use SeQura\Core\Infrastructure\Configuration\Configuration;
 use SeQura\Core\Infrastructure\Logger\Interfaces\ShopLoggerAdapter;
