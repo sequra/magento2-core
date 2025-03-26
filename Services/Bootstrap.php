@@ -25,6 +25,7 @@ use SeQura\Core\BusinessLogic\Domain\SendReport\RepositoryContracts\SendReportRe
 use SeQura\Core\BusinessLogic\Domain\StatisticalData\RepositoryContracts\StatisticalDataRepositoryInterface;
 use SeQura\Core\BusinessLogic\Utility\EncryptorInterface;
 use SeQura\Core\BusinessLogic\Webhook\Services\ShopOrderService;
+use Sequra\Core\DataAccess\Entities\PaymentMethod;
 use Sequra\Core\DataAccess\Entities\PaymentMethods;
 use SeQura\Core\Infrastructure\Configuration\ConfigEntity;
 use SeQura\Core\Infrastructure\Configuration\Configuration;
@@ -286,7 +287,7 @@ class Bootstrap extends BootstrapComponent
         RepositoryRegistry::registerRepository(SendReport::class, BaseRepository::class);
         RepositoryRegistry::registerRepository(StatisticalData::class, BaseRepository::class);
         RepositoryRegistry::registerRepository(TransactionLog::class, BaseRepository::class);
-        RepositoryRegistry::registerRepository(PaymentMethods::class, BaseRepository::class);
+        RepositoryRegistry::registerRepository(PaymentMethod::class, BaseRepository::class);
 
         ServiceRegister::registerService(
             OrderStatusSettingsRepositoryInterface::class,
