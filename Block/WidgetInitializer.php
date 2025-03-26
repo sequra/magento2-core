@@ -11,6 +11,7 @@ use Magento\Framework\Pricing\PriceCurrencyInterface;
 use Magento\Framework\View\Element\Template;
 use Magento\Framework\View\Element\Template\Context;
 use Magento\Store\Model\StoreManagerInterface;
+use Magento\Checkout\Model\Session;
 use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
 use SeQura\Core\BusinessLogic\Domain\PromotionalWidgets\Models\WidgetSettings;
 use SeQura\Core\BusinessLogic\Domain\PromotionalWidgets\Services\WidgetSettingsService;
@@ -31,7 +32,6 @@ use SeQura\Core\BusinessLogic\Domain\PaymentMethod\Models\SeQuraPaymentMethod;
  */
 class WidgetInitializer extends Template
 {
-
      /**
      * @var \Magento\Framework\Locale\ResolverInterface
      */
@@ -42,7 +42,7 @@ class WidgetInitializer extends Template
      */
     protected $formatter;
 
-      /**
+    /**
      * @var ConnectionData
      */
     private $connectionSettings;
@@ -57,7 +57,12 @@ class WidgetInitializer extends Template
      */
     private $countrySettings;
 
-     /**
+    /**
+     * @var Session
+     */
+    private Session $session;
+
+    /**
      * @var \Magento\Framework\App\ScopeResolverInterface
      */
     protected $scopeResolver;
@@ -79,38 +84,38 @@ class WidgetInitializer extends Template
         return $this->widgetSettings;
     }
 
-     /**
+    /**
      * @return CountryConfiguration[]|null
      */
     private function getCountrySettings()
     {
-        if(!$this->countrySettings){
+        if (!$this->countrySettings) {
             try {
                 $storeId = $this->scopeResolver->getScope()->getStoreId();
                 $this->countrySettings = StoreContext::doWithStore($storeId, function () {
                     $settings = ServiceRegister::getService(CountryConfigurationService::class);
                     return $settings->getCountryConfiguration();
                 });
-            } catch ( \Throwable $e ) {
+            } catch (\Throwable $e) {
                 // TODO: Log error
             }
         }
         return $this->countrySettings;
     }
 
-     /**
+    /**
      * @return ConnectionData|null
      */
     private function getConnectionSettings()
     {
-        if(!$this->connectionSettings){
+        if (!$this->connectionSettings) {
             try {
                 $storeId = $this->scopeResolver->getScope()->getStoreId();
                 $this->connectionSettings = StoreContext::doWithStore($storeId, function () {
                     $service = ServiceRegister::getService(ConnectionService::class);
                     return $service->getConnectionData();
                 });
-            } catch ( \Throwable $e ) {
+            } catch (\Throwable $e) {
                 // TODO: Log error
             }
         }
@@ -131,16 +136,17 @@ class WidgetInitializer extends Template
      * @param array $data
      */
     public function __construct(
-        Template\Context       $context,
+        Template\Context $context,
         \Magento\Framework\App\ScopeResolverInterface $scopeResolver,
         \Magento\Framework\Locale\ResolverInterface $localeResolver,
-        array                  $data = []
-    )
-    {
+        Session $checkoutSession,
+        array $data = []
+    ) {
         parent::__construct($context, $data);
         $this->localeResolver = $localeResolver;
         $this->scopeResolver = $scopeResolver;
         $this->formatter = $this->getFormatter();
+        $this->session = $checkoutSession;
     }
 
     private function getFormatter()
@@ -166,6 +172,7 @@ class WidgetInitializer extends Template
     public function getScriptUri()
     {
         $settings = $this->getConnectionSettings();
+
         return !$settings || !$settings->getEnvironment() ? '' : "https://{$settings->getEnvironment()}.sequracdn.com/assets/sequra-checkout.min.js";
     }
 
@@ -175,22 +182,22 @@ class WidgetInitializer extends Template
      * - countryCode
      * - product
      * - campaign
-     * 
+     *
      * @return array<string>
      */
     public function getProducts()
     {
         $paymentMethods = [];
         $storeId = $this->scopeResolver->getScope()->getStoreId();
-        $merchantId = $this->getMerchantRef();    
-        if(!$merchantId){
+        $merchantId = $this->getMerchantRef();
+        if (!$merchantId) {
             // TODO: Log Merchant ID not found
             return $paymentMethods;
         }
 
         foreach ($this->getPaymentMethods($storeId, $merchantId) as $paymentMethod) {
             // Check if supports widgets
-            if(in_array( $paymentMethod->getProduct(), array( 'i1', 'pp5', 'pp3', 'pp6', 'pp9', 'sp1' ), true )){
+            if (in_array($paymentMethod->getProduct(), array('i1', 'pp5', 'pp3', 'pp6', 'pp9', 'sp1'), true)) {
                 $paymentMethods[] = $paymentMethod->getProduct();
             }
         }
@@ -199,17 +206,20 @@ class WidgetInitializer extends Template
 
     /**
      * Get payment methods for a given merchant using the current store context
+     *
      * @param string $storeId
      * @param string $merchantId
+     *
      * @return SeQuraPaymentMethod[]
      */
-    private function getPaymentMethods($storeId, $merchantId){
+    private function getPaymentMethods($storeId, $merchantId)
+    {
         $payment_methods = [];
         try {
-            $payment_methods = StoreContext::doWithStore($storeId, function () use ( $merchantId ) {
+            $payment_methods = StoreContext::doWithStore($storeId, function () use ($merchantId) {
                 return ServiceRegister::getService(PaymentMethodsService::class)->getMerchantsPaymentMethods($merchantId);
             });
-        } catch ( \Throwable $e ) {
+        } catch (\Throwable $e) {
             // TODO: Log error
         }
         return $payment_methods;
@@ -218,11 +228,14 @@ class WidgetInitializer extends Template
     public function getAssetsKey()
     {
         $settings = $this->getWidgetSettings();
+
         return !$settings ? '' : $settings->getAssetsKey();
     }
 
-    private function getCurrentCountry(){
+    private function getCurrentCountry()
+    {
         $parts = explode('_', $this->localeResolver->getLocale());
+
         return strtoupper(count($parts) > 1 ? $parts[1] : $parts[0]);
     }
 
@@ -230,17 +243,30 @@ class WidgetInitializer extends Template
     {
         $country = $this->getCurrentCountry();
         $settingsArr = $this->getCountrySettings();
-        if(is_array($settingsArr)){
-            foreach($settingsArr as $settings){
-                if($settings->getCountryCode() === $country){
+        if (is_array($settingsArr)) {
+            foreach ($settingsArr as $settings) {
+                if ($settings->getCountryCode() === $country) {
                     return $settings->getMerchantId();
                 }
             }
         }
+
+        $quote = $this->session->getQuote();
+        $billingAddress = $quote->getBillingAddress();
+
+        if (is_array($settingsArr) && $billingAddress) {
+            foreach ($settingsArr as $settings) {
+                if ($settings->getCountryCode() === $billingAddress->getCountry()) {
+                    return $settings->getMerchantId();
+                }
+            }
+        }
+
         return '';
     }
 
-    public function getLocale(){
-        return str_replace('_','-',$this->localeResolver->getLocale());
+    public function getLocale()
+    {
+        return str_replace('_', '-', $this->localeResolver->getLocale());
     }
 }
