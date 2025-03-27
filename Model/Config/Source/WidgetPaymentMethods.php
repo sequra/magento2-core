@@ -25,18 +25,18 @@ class WidgetPaymentMethods implements OptionSourceInterface
     }
 
     /**
-     * Get options array
-     *
-     * @return array
+     * Returns and array containing data for each available payment method:
+     * - countryCode: ISO 3166-1 alpha-2 country code
+     * - product: Payment method product code
+     * - campaign: Payment method campaign code
+     * 
+     * @return array<array<string, string>> Array of payment method values
      */
-    public function toOptionArray()
-    {
-        $options = [];
+    public function getPaymentMethodValues(){
+        $values = [];
         $storeId = $this->scopeResolver->getScope()->getStoreId();
-        
         $countries = $this->getAvailableCountries($storeId);
         foreach ($countries as $country) {
-            
             if(!$country->getMerchantId()){
                 // TODO: Log Merchant ID not found
                 continue;
@@ -49,19 +49,39 @@ class WidgetPaymentMethods implements OptionSourceInterface
                     continue;
                 }
 
-                $value = [
+                $values[] = [
                     'countryCode' => $country->getCountryCode(),
                     'product' => $payment_method->getProduct(),
                     'campaign' => $payment_method->getCampaign()
                 ];
-                $value = base64_encode(json_encode($value));
-
-                $options[] = [
-                    'value' => $value,
-                    'label' => "{$this->getCountryFlag($country->getCountryCode())} {$payment_method->getTitle()}"
-                ];
             }
+        }
+        return $values;
+    }
 
+    /**
+     * Encode payment method value to be used as option value
+     * 
+     * @param array<string, string> $value Payment method value
+     * @return string Encoded value
+     */
+    public function encodePaymentMethodValue($value){
+        return base64_encode(json_encode($value));
+    }
+
+    /**
+     * Get options array
+     *
+     * @return array
+     */
+    public function toOptionArray()
+    {
+        $options = [];
+        foreach ($this->getPaymentMethodValues() as $value) {
+            $options[] = [
+                'value' => $this->encodePaymentMethodValue($value),
+                'label' => "{$this->getCountryFlag($value['countryCode'])} {$value['product']}"
+            ];
         }
 
         // reorder by label
