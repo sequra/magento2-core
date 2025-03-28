@@ -55,3 +55,7 @@ jobs:
         run: |
           chmod +x ./bin/phpstan
           ./bin/phpstan --error-format=github --no-progress
+      
+      - name: Teardown Environment
+        if: always()
+        run: ./teardown.sh
