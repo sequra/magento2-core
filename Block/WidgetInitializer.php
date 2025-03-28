@@ -241,22 +241,21 @@ class WidgetInitializer extends Template
 
     public function getMerchantRef()
     {
-        $country = $this->getCurrentCountry();
         $settingsArr = $this->getCountrySettings();
-        if (is_array($settingsArr)) {
+        $quote = $this->session->getQuote();
+        $billingAddress = $quote->getBillingAddress();
+        $isBillingAddressExists = $billingAddress && $billingAddress->getId();
+        if (is_array($settingsArr) && $isBillingAddressExists) {
             foreach ($settingsArr as $settings) {
-                if ($settings->getCountryCode() === $country) {
+                if ($settings->getCountryCode() === $billingAddress->getCountry()) {
                     return $settings->getMerchantId();
                 }
             }
         }
-
-        $quote = $this->session->getQuote();
-        $billingAddress = $quote->getBillingAddress();
-
-        if (is_array($settingsArr) && $billingAddress) {
+        $country = $this->getCurrentCountry();
+        if (is_array($settingsArr)) {
             foreach ($settingsArr as $settings) {
-                if ($settings->getCountryCode() === $billingAddress->getCountry()) {
+                if ($settings->getCountryCode() === $country) {
                     return $settings->getMerchantId();
                 }
             }
