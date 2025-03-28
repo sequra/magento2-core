@@ -98,8 +98,8 @@ retry=300 # 5 minutes
 timeout=1
 start=$(date +%s)
 while [ $(($(date +%s) - $start)) -lt $retry ]; do
+    seconds=$(($(date +%s) - $start))
     if docker compose exec magento ls /var/www/html/.post-install-complete > /dev/null 2>&1; then
-        seconds=$(($(date +%s) - $start))
         echo "✅ Done in ${seconds} seconds."
         echo "🔗 Browse products at ${M2_URL}"
         echo "🔗 Access Admin at ${M2_URL}/admin"
@@ -113,8 +113,11 @@ while [ $(($(date +%s) - $start)) -lt $retry ]; do
 
         exit 0
     elif docker compose exec magento ls /var/www/html/.post-install-failed > /dev/null 2>&1; then
-        seconds=$(($(date +%s) - $start))
         echo "❌ Installation failed after ${seconds} seconds."
+        docker compose logs --tail=100 magento
+        exit 1
+    elif ! docker compose ps --format "{{.Service}} {{.State}}" | grep -q "^magento running" && [ "$seconds" -gt 10 ]; then
+        echo "❌ Magento container is not running after ${seconds} seconds."
         docker compose logs --tail=100 magento
         exit 1
     fi
