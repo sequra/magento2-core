@@ -115,6 +115,7 @@ while [ $(($(date +%s) - $start)) -lt $retry ]; do
     elif docker compose exec web ls /var/www/html/.post-install-failed > /dev/null 2>&1; then
         seconds=$(($(date +%s) - $start))
         echo "❌ Installation failed after ${seconds} seconds."
+        docker compose logs --tail=100 magento
         exit 1
     fi
     sleep $timeout
