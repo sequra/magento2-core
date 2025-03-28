@@ -33,10 +33,10 @@ jobs:
           chmod +x ./bin/phpcs-bin/install
           ./bin/phpcs-bin/install
 
-      # - name: PHPCS
-      #   run: |
-      #     chmod +x ./bin/phpcs
-      #     ./bin/phpcs -q
+      - name: PHPCS
+        run: |
+          chmod +x ./bin/phpcs
+          ./bin/phpcs -q
       
       - name: Run the setup
         env:
