@@ -104,9 +104,20 @@ if [ ! -f /var/www/html/.post-install-complete ]; then
     && su -s /bin/bash www-data -c "COMPOSER_MIRROR_PATH_REPOS=1 composer require sequra/magento2-core:^2.5" \
     && su -s /bin/bash www-data -c "bin/magento config:set dev/template/allow_symlink $M2_ALLOW_SYMLINK" \
     && su -s /bin/bash www-data -c "bin/magento module:enable Sequra_Core" \
-    && su -s /bin/bash www-data -c "bin/magento setup:upgrade" \
-    && su -s /bin/bash www-data -c "bin/magento sequra-helper:setup" \
-    && su -s /bin/bash www-data -c "bin/magento sequra:configure --merchant_ref="$SQ_MERCHANT_REF" --username="$SQ_USER_NAME" --password="$SQ_USER_SECRET" --assets_key="$SQ_ASSETS_KEY" --endpoint="$SQ_ENDPOINT"" || handle_failure
+    && su -s /bin/bash www-data -c "bin/magento setup:upgrade" || handle_failure
+
+    if [ -n "$M2_SAMPLE_DATA" ]; then
+        su -s /bin/bash www-data -c "bin/magento sequra-helper:setup" || handle_failure
+    else
+        echo "⚠️ Setup skipped. Please set M2_SAMPLE_DATA in your .env file."
+    fi
+
+    if [ -n "$SQ_MERCHANT_REF" ] || [ -n "$SQ_USER_NAME" ] || [ -n "$SQ_USER_SECRET" ] || [ -n "$SQ_ASSETS_KEY" ] || [ -n "$SQ_ENDPOINT" ]; then
+        su -s /bin/bash www-data -c "bin/magento sequra:configure --merchant_ref="$SQ_MERCHANT_REF" --username="$SQ_USER_NAME" --password="$SQ_USER_SECRET" --assets_key="$SQ_ASSETS_KEY" --endpoint="$SQ_ENDPOINT"" || \
+        echo "⚠️ seQura plugin not configured. An error occurred, please check your credentials and try again."
+    else
+        echo "⚠️ seQura plugin not configured. Please set SQ_MERCHANT_REF, SQ_USER_NAME, SQ_USER_SECRET, SQ_ASSETS_KEY and SQ_ENDPOINT in your .env file."
+    fi
 
     touch /var/www/html/.post-install-complete && echo "✅ Magento 2 installed and configured."
 fi

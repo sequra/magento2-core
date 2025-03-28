@@ -1,0 +1,23 @@
+parameters:
+    level: 9
+    errorFormat: table
+    treatPhpDocTypesAsCertain: false
+    paths:
+        - /var/www/html/vendor/sequra/magento2-core/registration.php
+        - /var/www/html/app/code/Sequra/Helper/
+        - /var/www/html/vendor/sequra/magento2-core/Api/
+        - /var/www/html/vendor/sequra/magento2-core/Block/
+        - /var/www/html/vendor/sequra/magento2-core/Console/
+        - /var/www/html/vendor/sequra/magento2-core/Controller/
+        - /var/www/html/vendor/sequra/magento2-core/DataAccess/
+        - /var/www/html/vendor/sequra/magento2-core/Gateway/
+        - /var/www/html/vendor/sequra/magento2-core/Helper/
+        - /var/www/html/vendor/sequra/magento2-core/i18n/
+        - /var/www/html/vendor/sequra/magento2-core/Model/
+        - /var/www/html/vendor/sequra/magento2-core/Observer/
+        - /var/www/html/vendor/sequra/magento2-core/Plugin/
+        - /var/www/html/vendor/sequra/magento2-core/Repository/
+        - /var/www/html/vendor/sequra/magento2-core/ResourceModel/
+        - /var/www/html/vendor/sequra/magento2-core/Services/
+        - /var/www/html/vendor/sequra/magento2-core/Setup/
+        - /var/www/html/vendor/sequra/magento2-core/Ui/

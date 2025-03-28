@@ -14,3 +14,9 @@ node_modules/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# PHP Binaries
+bin/php/*
+!bin/php/install
+!bin/php/composer.json
+!bin/php/README.md
