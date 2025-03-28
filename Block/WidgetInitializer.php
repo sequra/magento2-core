@@ -12,6 +12,7 @@ use Magento\Framework\View\Element\Template;
 use Magento\Framework\View\Element\Template\Context;
 use Magento\Store\Model\StoreManagerInterface;
 use Magento\Checkout\Model\Session;
+use SeQura\Core\BusinessLogic\AdminAPI\AdminAPI;
 use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
 use SeQura\Core\BusinessLogic\Domain\PromotionalWidgets\Models\WidgetSettings;
 use SeQura\Core\BusinessLogic\Domain\PromotionalWidgets\Services\WidgetSettingsService;
@@ -20,8 +21,6 @@ use Sequra\Core\Services\BusinessLogic\ProductService;
 use Sequra\Core\Services\BusinessLogic\WidgetConfigService;
 use SeQura\Core\BusinessLogic\Domain\Connection\Models\ConnectionData;
 use SeQura\Core\BusinessLogic\Domain\Connection\Services\ConnectionService;
-use SeQura\Core\BusinessLogic\Domain\CountryConfiguration\Models\CountryConfiguration;
-use SeQura\Core\BusinessLogic\Domain\CountryConfiguration\Services\CountryConfigurationService;
 use SeQura\Core\BusinessLogic\Domain\PaymentMethod\Services\PaymentMethodsService;
 use SeQura\Core\BusinessLogic\Domain\PaymentMethod\Models\SeQuraPaymentMethod;
 
@@ -53,11 +52,6 @@ class WidgetInitializer extends Template
     private $widgetSettings;
 
     /**
-     * @var CountryConfiguration[]
-     */
-    private $countrySettings;
-
-    /**
      * @var Session
      */
     private Session $session;
@@ -82,25 +76,6 @@ class WidgetInitializer extends Template
             }
         }
         return $this->widgetSettings;
-    }
-
-    /**
-     * @return CountryConfiguration[]|null
-     */
-    private function getCountrySettings()
-    {
-        if (!$this->countrySettings) {
-            try {
-                $storeId = $this->scopeResolver->getScope()->getStoreId();
-                $this->countrySettings = StoreContext::doWithStore($storeId, function () {
-                    $settings = ServiceRegister::getService(CountryConfigurationService::class);
-                    return $settings->getCountryConfiguration();
-                });
-            } catch (\Throwable $e) {
-                // TODO: Log error
-            }
-        }
-        return $this->countrySettings;
     }
 
     /**
@@ -189,7 +164,7 @@ class WidgetInitializer extends Template
     {
         $paymentMethods = [];
         $storeId = $this->scopeResolver->getScope()->getStoreId();
-        $merchantId = $this->getMerchantRef();
+        $merchantId = $this->getMerchantId();
         if (!$merchantId) {
             // TODO: Log Merchant ID not found
             return $paymentMethods;
@@ -239,28 +214,27 @@ class WidgetInitializer extends Template
         return strtoupper(count($parts) > 1 ? $parts[1] : $parts[0]);
     }
 
-    public function getMerchantRef()
+    public function getMerchantId()
     {
-        $settingsArr = $this->getCountrySettings();
         $quote = $this->session->getQuote();
-        $billingAddress = $quote->getBillingAddress();
-        $isBillingAddressExists = $billingAddress && $billingAddress->getId();
-        if (is_array($settingsArr) && $isBillingAddressExists) {
-            foreach ($settingsArr as $settings) {
-                if ($settings->getCountryCode() === $billingAddress->getCountry()) {
-                    return $settings->getMerchantId();
-                }
-            }
+        $shippingCountry = $quote->getShippingAddress()->getCountryId();
+        $storeId = $this->scopeResolver->getScope()->getStoreId();
+        $data = AdminAPI::get()->countryConfiguration($storeId)->getCountryConfigurations();
+        if (!$data->isSuccessful()) {
+            return '';
         }
-        $country = $this->getCurrentCountry();
-        if (is_array($settingsArr)) {
-            foreach ($settingsArr as $settings) {
-                if ($settings->getCountryCode() === $country) {
-                    return $settings->getMerchantId();
-                }
+        foreach ($data->toArray() as $country) {
+            if ($country['countryCode'] === $shippingCountry && !empty($country['merchantId'])) {
+                return $country['merchantId'];
             }
         }
 
+        $currentCountry = $this->getCurrentCountry();
+        foreach ($data->toArray() as $country) {
+            if ($country['countryCode'] === $currentCountry && !empty($country['merchantId'])) {
+                return $country['merchantId'];
+            }
+        }
         return '';
     }
 
