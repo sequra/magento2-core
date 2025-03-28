@@ -48,6 +48,7 @@ jobs:
           sed -i "s/^M2_SAMPLE_DATA=.*/#M2_SAMPLE_DATA=&/" .env
           sed -i "s/^M2_COMPOSER_REPO_KEY=.*/M2_COMPOSER_REPO_KEY=$M2_COMPOSER_REPO_KEY/" .env
           sed -i "s/^M2_COMPOSER_REPO_SECRET=.*/M2_COMPOSER_REPO_SECRET=$M2_COMPOSER_REPO_SECRET/" .env
+          echo $GITHUB_TOKEN | docker login ghcr.io -u sequra --password-stdin || (echo "❌ Can't log in to the GitHub Container Registry" && exit 1)
           ./setup.sh
 
       - name: PHPStan
