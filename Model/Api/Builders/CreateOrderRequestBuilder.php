@@ -19,12 +19,9 @@ use Magento\Store\Model\ScopeInterface;
 use Magento\Tax\Model\Config;
 use SeQura\Core\BusinessLogic\AdminAPI\AdminAPI;
 use SeQura\Core\BusinessLogic\AdminAPI\GeneralSettings\Responses\GeneralSettingsResponse;
-use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
 use SeQura\Core\BusinessLogic\Domain\Order\Models\OrderRequest\CreateOrderRequest;
 use SeQura\Core\BusinessLogic\Domain\Order\Models\OrderRequest\Item\ItemType;
-use SeQura\Core\BusinessLogic\Domain\UIState\Services\UIStateService;
 use SeQura\Core\Infrastructure\Logger\Logger;
-use SeQura\Core\Infrastructure\ServiceRegister;
 use Sequra\Core\Services\BusinessLogic\ProductService;
 use Throwable;
 
@@ -132,12 +129,10 @@ class CreateOrderRequestBuilder implements \SeQura\Core\BusinessLogic\Domain\Ord
     {
         try {
             $generalSettings = $generalSettingsResponse->toArray();
-            $stateService = ServiceRegister::getService(UIStateService::class);
-            $isOnboarding = StoreContext::doWithStore($this->storeId, [$stateService, 'isOnboardingState'], [true]);
             $this->quote = $this->quoteRepository->getActive($this->cartId);
             $merchantId = $this->getMerchantId();
 
-            if (!$merchantId || $isOnboarding) {
+            if (!$merchantId) {
                 return false;
             }
 
