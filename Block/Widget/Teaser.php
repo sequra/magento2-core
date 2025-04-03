@@ -245,7 +245,7 @@ class Teaser extends Template implements BlockInterface
         return strtoupper(count($parts) > 1 ? $parts[1] : $parts[0]);
     }
 
-    private function getMerchantRef()
+    private function getMerchantId()
     {
         $country = $this->getCurrentCountry();
         $settingsArr = $this->getCountrySettings();
@@ -270,7 +270,7 @@ class Teaser extends Template implements BlockInterface
      * @return array
      */
     public function getAvailableWidgets(){
-        $merchantId = $this->getMerchantRef();
+        $merchantId = $this->getMerchantId();
         if(!$merchantId ){
             return [];
         }
