@@ -1,0 +1,2 @@
+#!/bin/bash
+docker compose exec magento /bin/bash -c "vendor/bin/phpstan analyse -c /Sequra/Core/phpstan.neon --memory-limit=1G $@"
