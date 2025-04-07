@@ -4,11 +4,6 @@ namespace Sequra\Core\Model;
 
 use Sequra\Core\ResourceModel\QueueItemEntity as QueueItemResourceModel;
 
-/**
- * Class QueueItemEntity
- *
- * @package Sequra\Core\Model
- */
 class QueueItemEntity extends SequraEntity
 {
     /**

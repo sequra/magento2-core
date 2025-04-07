@@ -8,10 +8,9 @@ use Sequra\Core\Model\Config\Source\WidgetPaymentMethods;
 
 /**
  * Class Version260
- * 
+ *
  * Migration script to transition from the widgets based on the PageBuilder block to the new widgets based on the Teaser block.
  *
- * @package Sequra\Core\Setup\Patch\Data
  */
 class Version260 implements DataPatchInterface
 {
@@ -109,7 +108,7 @@ class Version260 implements DataPatchInterface
 
     /**
      * Get the payment methods parameters
-     * 
+     *
      * @param string[] $paymentMethods
      * @return string[]
      */
@@ -117,8 +116,8 @@ class Version260 implements DataPatchInterface
     {
         $paymentMethodsParams = [];
         foreach ($paymentMethods as $paymentMethod) {
-            foreach($this->widgetPaymentMethods->getPaymentMethodValues() as $paymentMethodValue) {
-                if($paymentMethodValue['product'] === $paymentMethod) {
+            foreach ($this->widgetPaymentMethods->getPaymentMethodValues() as $paymentMethodValue) {
+                if ($paymentMethodValue['product'] === $paymentMethod) {
                     $paymentMethodsParams[] = $this->widgetPaymentMethods->encodePaymentMethodValue($paymentMethodValue);
                     break;
                 }

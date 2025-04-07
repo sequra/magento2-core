@@ -10,12 +10,6 @@ use SeQura\Core\Infrastructure\TaskExecution\Exceptions\QueueItemSaveException;
 use SeQura\Core\Infrastructure\TaskExecution\QueueItem;
 use Sequra\Core\ResourceModel\QueueItemEntity;
 
-/**
- * Class QueueItemRepository
- *
- * @package Sequra\Core\Repository
- * @property QueueItemEntity $resourceEntity
- */
 class QueueItemRepository extends BaseRepository implements QueueItemRepositoryInterface
 {
     /**

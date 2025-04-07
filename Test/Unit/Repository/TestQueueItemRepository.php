@@ -4,11 +4,6 @@ namespace Sequra\Core\Test\Unit\Repository;
 
 use Sequra\Core\Repository\QueueItemRepository;
 
-/**
- * Class TestQueueItemRepository
- *
- * @package Sequra\Core\Test\Unit\Repository
- */
 class TestQueueItemRepository extends QueueItemRepository
 {
     /**

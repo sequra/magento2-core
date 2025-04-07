@@ -11,11 +11,6 @@ use Magento\Framework\Controller\ResultInterface;
 use Magento\Framework\Webapi\Exception;
 use SeQura\Core\BusinessLogic\AdminAPI\Response\Response;
 
-/**
- * Class BaseConfigurationController
- *
- * @package Sequra\Core\Controller\Adminhtml\Configuration
- */
 class BaseConfigurationController extends Action
 {
     /**

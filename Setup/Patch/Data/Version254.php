@@ -14,11 +14,6 @@ use SeQura\Core\Infrastructure\ORM\QueryFilter\QueryFilter;
 use SeQura\Core\Infrastructure\ORM\RepositoryRegistry;
 use DateTime;
 
-/**
- * Class Version254
- *
- * @package Sequra\Core\Setup\Patch\Data
- */
 class Version254 implements DataPatchInterface
 {
     private const SCHEDULE_TIME = '4 am';
@@ -53,8 +48,7 @@ class Version254 implements DataPatchInterface
         foreach ($statisticalDataArray as $statisticalData) {
             $storeId = $statisticalData->getStoreId();
 
-            if (
-                $this->getSendReportForGivenStore($storeId) ||
+            if ($this->getSendReportForGivenStore($storeId) ||
                 !$statisticalData->getStatisticalData()->isSendStatisticalData()
             ) {
                 return $this;

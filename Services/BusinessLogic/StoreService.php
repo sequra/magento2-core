@@ -12,11 +12,6 @@ use SeQura\Core\Infrastructure\ORM\Exceptions\RepositoryNotRegisteredException;
 use SeQura\Core\Infrastructure\ORM\Interfaces\RepositoryInterface;
 use SeQura\Core\Infrastructure\ORM\RepositoryRegistry;
 
-/**
- * Class StoreService
- *
- * @package Sequra\Core\Services\BusinessLogic
- */
 class StoreService implements StoreServiceInterface
 {
     /**

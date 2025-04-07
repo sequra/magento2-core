@@ -13,11 +13,6 @@ use SeQura\Core\Infrastructure\ServiceRegister;
 use Sequra\Core\Services\BusinessLogic\Utility\SeQuraTranslationProvider;
 use Sequra\Core\Helper\UrlHelper;
 
-/**
- * Class OrderDetails
- *
- * @package Sequra\Core\Plugin
- */
 class OrderDetails
 {
     /**
@@ -57,12 +52,11 @@ class OrderDetails
      * @param SeQuraTranslationProvider $translation
      */
     public function __construct(
-      UrlInterface $urlBuilder,
-      Currency $currencyModel,
-      SeQuraTranslationProvider $translation,
-      UrlHelper $urlHelper
-    )
-    {
+        UrlInterface $urlBuilder,
+        Currency $currencyModel,
+        SeQuraTranslationProvider $translation,
+        UrlHelper $urlHelper
+    ) {
         $this->urlBuilder = $urlBuilder;
         $this->currencyModel = $currencyModel;
         $this->translation = $translation;

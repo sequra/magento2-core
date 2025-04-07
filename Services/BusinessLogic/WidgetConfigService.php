@@ -34,11 +34,6 @@ use SeQura\Core\Infrastructure\ORM\QueryFilter\QueryFilter;
 use SeQura\Core\Infrastructure\ORM\RepositoryRegistry;
 use SeQura\Core\Infrastructure\ServiceRegister;
 
-/**
- * Class WidgetConfigService
- *
- * @package Sequra\Core\Services\BusinessLogic
- */
 class WidgetConfigService
 {
     public const TEST_SCRIPT_URL = 'https://sandbox.sequracdn.com/assets/sequra-checkout.min.js';
@@ -83,8 +78,7 @@ class WidgetConfigService
         \Magento\Framework\Locale\ResolverInterface   $localeResolver,
         StoreConfigManagerInterface $storeConfigManager,
         ScopeConfigInterface $scopeConfig
-    )
-    {
+    ) {
         $this->storeManager = $storeManager;
         $this->scopeResolver = $scopeResolver;
         $this->localeResolver = $localeResolver;

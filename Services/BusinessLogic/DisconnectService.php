@@ -6,11 +6,6 @@ use Magento\Framework\App\ResourceConnection;
 use SeQura\Core\BusinessLogic\Domain\Integration\Disconnect\DisconnectServiceInterface;
 use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
 
-/**
- * Class DisconnectService
- *
- * @package Sequra\Core\Services\BusinessLogic
- */
 class DisconnectService implements DisconnectServiceInterface
 {
     /**

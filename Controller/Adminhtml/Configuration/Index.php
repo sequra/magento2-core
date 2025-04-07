@@ -10,11 +10,6 @@ use Magento\Framework\View\Result\PageFactory;
 use SeQura\Core\Infrastructure\ServiceRegister;
 use SeQura\Core\Infrastructure\TaskExecution\Interfaces\TaskRunnerWakeup;
 
-/**
- * Class Index
- *
- * @package Sequra\Core\Controller\Adminhtml\Configuration
- */
 class Index extends Action
 {
     /**

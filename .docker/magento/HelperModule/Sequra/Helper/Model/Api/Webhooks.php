@@ -12,16 +12,17 @@ class Webhooks implements WebhooksInterface
     protected $request;
 
     /**
-	 * Resource connection
-	 */
-	protected $conn;
+     * Resource connection
+     */
+    protected $conn;
 
     /**
-	 * Constructor
-	 */
-	public function __construct(ResourceConnection $resourceConnection) {
-		$this->conn = $resourceConnection;
-	}
+     * Constructor
+     */
+    public function __construct(ResourceConnection $resourceConnection)
+    {
+        $this->conn = $resourceConnection;
+    }
 
     public function execute()
     {
@@ -29,18 +30,18 @@ class Webhooks implements WebhooksInterface
     }
 
 
-	/**
-	 * Get task for webhook
-	 */
-	private function getTaskForWebhook( $webhook ): Task {
-		$map = array(
-			// 'dummy_services_config' => ConfigureDummy_Service_Task::class,
-			'dummy_config'          => ConfigureDummyTask::class,
-			'clear_config'          => ClearConfigurationTask::class,
-			// 'remove_db_tables'      => RemoveDbTablesTask::class
+    /**
+     * Get task for webhook
+     */
+    private function getTaskForWebhook($webhook): Task
+    {
+        $map = [
+            // 'dummy_services_config' => ConfigureDummy_Service_Task::class,
+            'dummy_config'          => ConfigureDummyTask::class,
+            'clear_config'          => ClearConfigurationTask::class,
+            // 'remove_db_tables'      => RemoveDbTablesTask::class
 
-		);
-		return ! isset( $map[ $webhook ] ) ? new Task($this->conn) : new $map[ $webhook ]($this->conn);
-	}
-
+        ];
+        return ! isset($map[ $webhook ]) ? new Task($this->conn) : new $map[ $webhook ]($this->conn);
+    }
 }

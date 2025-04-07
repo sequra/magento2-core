@@ -5,13 +5,13 @@
     {
         "*": {
             "Sequra_Core/js/widget-initializer": {
-                "scriptUri": "<?php echo $block->getScriptUri(); ?>",
-                "thousandSeparator": "<?php echo $block->getThousandsSeparator(); ?>",
-                "decimalSeparator": "<?php echo $block->getDecimalSeparator(); ?>",
-                "locale": "<?php echo $block->getLocale(); ?>",
-                "merchant": "<?php echo $block->getMerchantId(); ?>",
-                "assetKey": "<?php echo $block->getAssetsKey(); ?>",
-                "products": <?php echo json_encode($block->getProducts()); ?>
+                "scriptUri": "<?= $block->getScriptUri(); ?>",
+                "thousandSeparator": "<?= $block->getThousandsSeparator(); ?>",
+                "decimalSeparator": "<?= $block->getDecimalSeparator(); ?>",
+                "locale": "<?= $block->getLocale(); ?>",
+                "merchant": "<?= $block->getMerchantId(); ?>",
+                "assetKey": "<?= $block->getAssetsKey(); ?>",
+                "products": <?= json_encode($block->getProducts()); ?>
             }
         }
     }

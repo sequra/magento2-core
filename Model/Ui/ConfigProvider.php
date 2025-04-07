@@ -10,9 +10,6 @@ use Magento\Store\Model\StoreManagerInterface;
 use SeQura\Core\BusinessLogic\AdminAPI\AdminAPI;
 use Sequra\Core\Services\BusinessLogic\WidgetConfigService;
 
-/**
- * Class ConfigProvider
- */
 class ConfigProvider implements ConfigProviderInterface
 {
     const CODE = 'sequra_payment';

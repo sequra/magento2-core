@@ -5,11 +5,6 @@ namespace Sequra\Core\Gateway\Request;
 use Magento\Payment\Gateway\Request\BuilderInterface;
 use Magento\Sales\Model\Order\Payment;
 
-/**
- * Class OrderUpdateBuilder
- *
- * @package Sequra\Core\Gateway\Request
- */
 class OrderUpdateBuilder implements BuilderInterface
 {
 

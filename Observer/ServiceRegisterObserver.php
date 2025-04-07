@@ -11,7 +11,6 @@ use Sequra\Core\Services\Bootstrap;
  *
  * Class ServiceRegisterObserver
  *
- * @package Sequra\Core\Observer
  */
 class ServiceRegisterObserver implements ObserverInterface
 {

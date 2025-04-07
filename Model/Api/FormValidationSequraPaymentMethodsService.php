@@ -9,7 +9,6 @@ use Sequra\Core\Model\Api\Checkout\BaseSequraPaymentMethodsService;
 /**
  * Class SequraPaymentMethodsService
  *
- * @package Sequra\Core\Model\Api
  */
 class FormValidationSequraPaymentMethodsService
 {

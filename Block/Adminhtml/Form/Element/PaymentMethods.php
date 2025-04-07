@@ -8,11 +8,6 @@ use Magento\Backend\Block\Template\Context;
 use SeQura\Core\Infrastructure\ServiceRegister;
 use Sequra\Core\Services\BusinessLogic\PaymentMethodsService;
 
-/**
- * Class PaymentMethods
- *
- * @package Sequra\Core\Block\Adminhtml\Form\Element
- */
 class PaymentMethods extends Template
 {
     /**
@@ -30,8 +25,7 @@ class PaymentMethods extends Template
     public function __construct(
         Context $context,
         array   $data = []
-    )
-    {
+    ) {
         parent::__construct($context, $data);
     }
 

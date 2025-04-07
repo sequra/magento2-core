@@ -24,16 +24,11 @@ use SeQura\Core\BusinessLogic\Domain\Connection\Services\ConnectionService;
 use SeQura\Core\BusinessLogic\Domain\PaymentMethod\Services\PaymentMethodsService;
 use SeQura\Core\BusinessLogic\Domain\PaymentMethod\Models\SeQuraPaymentMethod;
 
-/**
- * Class WidgetInitializer
- *
- * @package Sequra\Core\Block
- */
 class WidgetInitializer extends Template
 {
      /**
-     * @var \Magento\Framework\Locale\ResolverInterface
-     */
+      * @var \Magento\Framework\Locale\ResolverInterface
+      */
     protected $localeResolver;
 
     /**
@@ -62,16 +57,16 @@ class WidgetInitializer extends Template
     protected $scopeResolver;
 
      /**
-     * @return WidgetSettings|null
-     */
+      * @return WidgetSettings|null
+      */
     private function getWidgetSettings()
     {
-        if(!$this->widgetSettings){
+        if (!$this->widgetSettings) {
             try {
                 $this->widgetSettings = StoreContext::doWithStore($this->scopeResolver->getScope()->getStoreId(), function () {
                     return ServiceRegister::getService(WidgetSettingsService::class)->getWidgetSettings();
                 });
-            } catch ( \Throwable $e ) {
+            } catch (\Throwable $e) {
                 // TODO: Log error
             }
         }
@@ -172,7 +167,7 @@ class WidgetInitializer extends Template
 
         foreach ($this->getPaymentMethods($storeId, $merchantId) as $paymentMethod) {
             // Check if supports widgets
-            if (in_array($paymentMethod->getProduct(), array('i1', 'pp5', 'pp3', 'pp6', 'pp9', 'sp1'), true)) {
+            if (in_array($paymentMethod->getProduct(), ['i1', 'pp5', 'pp3', 'pp6', 'pp9', 'sp1'], true)) {
                 $paymentMethods[] = $paymentMethod->getProduct();
             }
         }

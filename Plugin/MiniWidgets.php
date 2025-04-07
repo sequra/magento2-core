@@ -33,11 +33,6 @@ use SeQura\Core\Infrastructure\ORM\RepositoryRegistry;
 use SeQura\Core\Infrastructure\ServiceRegister;
 use Sequra\Core\Services\BusinessLogic\ProductService;
 
-/**
- * Class MiniWidgets
- *
- * @package Sequra\Core\Plugin
- */
 class MiniWidgets
 {
     const MINI_WIDGET_PRODUCTS = ['sp1', 'pp3', 'pp6', 'pp9'];
@@ -82,8 +77,7 @@ class MiniWidgets
         ProductService              $productService,
         ScopeConfigInterface        $scopeConfig,
         PriceCurrencyInterface      $priceCurrency
-    )
-    {
+    ) {
         $this->storeManager = $storeManager;
         $this->storeConfigManager = $storeConfigManager;
         $this->productRepository = $productRepository;
@@ -205,8 +199,7 @@ class MiniWidgets
         StoreConfigInterface $storeConfig,
         PaymentMethod        $paymentMethod,
         int                  $amount
-    ): string
-    {
+    ): string {
         $message = $widgetConfig->getWidgetLabels()->getMessages()[$storeConfig->getLocale()] ?? '';
         $belowLimit = $widgetConfig->getWidgetLabels()->getMessagesBelowLimit()[$storeConfig->getLocale()] ?? '';
 

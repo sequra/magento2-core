@@ -9,11 +9,6 @@ use SeQura\Core\Infrastructure\ORM\Interfaces\RepositoryInterface;
 use SeQura\Core\Infrastructure\ORM\QueryFilter\QueryFilter;
 use Sequra\Core\ResourceModel\SequraEntity;
 
-/**
- * Class BaseRepository
- *
- * @package Sequra\Core\Repository
- */
 class BaseRepository implements RepositoryInterface
 {
     /**

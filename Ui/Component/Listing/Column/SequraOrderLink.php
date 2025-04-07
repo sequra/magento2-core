@@ -13,11 +13,6 @@ use SeQura\Core\Infrastructure\ServiceRegister;
 use Sequra\Core\Services\BusinessLogic\Utility\SeQuraTranslationProvider;
 use Sequra\Core\Helper\UrlHelper;
 
-/**
- * Class SequraOrderLink
- *
- * @package Sequra\Core\Ui\Component\Listing\Column
- */
 class SequraOrderLink extends Column
 {
     private $assetRepository;
@@ -46,8 +41,7 @@ class SequraOrderLink extends Column
         UrlHelper                 $urlHelper,
         array                     $components = [],
         array                     $data = []
-    )
-    {
+    ) {
         $this->assetRepository = $assetRepository;
         $this->translationProvider = $translationProvider;
         $this->urlHelper = $urlHelper;
@@ -128,7 +122,8 @@ class SequraOrderLink extends Column
                             <img class="sequra-logo" src=' . $imagePath . ' alt="sequra-logo">
                                 ' . $this->translationProvider->translate("sequra.viewOnSequra") . '
                         </button>
-                   </a>');
+                   </a>'
+        );
     }
 
     /**

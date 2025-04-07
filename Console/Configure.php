@@ -84,8 +84,7 @@ class Configure extends Command
      */
     public function __construct(
         Bootstrap                $bootstrap
-    )
-    {
+    ) {
         parent::__construct();
         $bootstrap->initInstance();
     }
@@ -170,7 +169,8 @@ class Configure extends Command
         return 0;
     }
 
-    protected function getStoreIds($input){
+    protected function getStoreIds($input)
+    {
         $storeIds = explode(',', $input->getOption(self::INPUT_KEY_STOREID)??1);
         if (count($storeIds) < 1) {
             $storeIds = [1];
@@ -178,7 +178,8 @@ class Configure extends Command
         return $storeIds;
     }
 
-    protected function safeConfigDataForStore($input){
+    protected function safeConfigDataForStore($input)
+    {
         $this->saveConnectionData(
             $input->getOption(self::INPUT_KEY_ENDPOINT),
             $input->getOption(self::INPUT_KEY_USERNAME),
@@ -269,8 +270,8 @@ class Configure extends Command
         return $this->countryConfigService;
     }
      /**
-     * @return SellingCountriesService
-     */
+      * @return SellingCountriesService
+      */
     private function getSellingCountriesService(): SellingCountriesService
     {
         if ($this->sellingCountriesService === null) {

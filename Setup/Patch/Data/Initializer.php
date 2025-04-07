@@ -36,11 +36,6 @@ use Sequra\Core\Services\Bootstrap;
 use Sequra\Core\Services\BusinessLogic\ConfigurationService;
 use Sequra\Core\Setup\DatabaseHandler;
 
-/**
- * Class Initializer
- *
- * @package Sequra\Core\Setup\Patch\Data
- */
 class Initializer implements DataPatchInterface
 {
     /**
@@ -91,8 +86,7 @@ class Initializer implements DataPatchInterface
         ScopeConfigInterface     $scopeConfig,
         StoreManagerInterface    $storeManager,
         Bootstrap                $bootstrap
-    )
-    {
+    ) {
         $this->moduleDataSetup = $moduleDataSetup;
         $this->scopeConfig = $scopeConfig;
         $this->storeManager = $storeManager;
@@ -188,8 +182,7 @@ class Initializer implements DataPatchInterface
         ?string $defaultAssetsKey,
         ?string $defaultTestIps,
         ?string $defaultEndpoint
-    )
-    {
+    ) {
         $storeId = StoreContext::getInstance()->getStoreId();
         $store = $this->storeManager->getStore($storeId);
         $websiteId = $store->getWebsiteId();

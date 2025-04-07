@@ -4,11 +4,6 @@ namespace Sequra\Core\Test\Unit\Repository;
 
 use Sequra\Core\Repository\BaseRepository;
 
-/**
- * Class TestRepository
- *
- * @package Sequra\Core\Test\Unit\Repository
- */
 class TestRepository extends BaseRepository
 {
     /**

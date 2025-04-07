@@ -8,11 +8,6 @@ use Magento\Quote\Api\CartRepositoryInterface;
 use Magento\Quote\Api\GuestCartRepositoryInterface;
 use Magento\Quote\Model\Quote;
 
-/**
- * Class GuestCartProvider
- *
- * @package Sequra\Core\Model\Api\CartProvider
- */
 class GuestCartProvider implements CartProvider
 {
     /**

@@ -11,11 +11,6 @@ use SeQura\Core\Infrastructure\Singleton;
 use Sequra\Core\Services\BusinessLogic\ConfigurationService;
 use Psr\Log\LoggerInterface;
 
-/**
- * Class LoggerService
- *
- * @package Sequra\Core\Services\Infrastructure
- */
 class LoggerService extends Singleton implements ShopLoggerAdapter
 {
     /**

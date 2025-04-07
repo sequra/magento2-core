@@ -1,7 +1,7 @@
 <?php
 /**
  * Task class
- * 
+ *
  * @package SeQura/Helper
  */
 
@@ -10,15 +10,17 @@
 /**
  * Task class
  */
-class ClearConfigurationTask extends Task {
+class ClearConfigurationTask extends Task
+{
 
-	/**
-	 * Execute the task
-	 * 
-	 * @throws \Exception If the task fails
-	 */
-	public function execute( array $args = array() ) {
-		$this->removeStoreDataFromEntityTable();
-		return $this->httpSuccessResponse();
-	}
+    /**
+     * Execute the task
+     *
+     * @throws \Exception If the task fails
+     */
+    public function execute(array $args = [])
+    {
+        $this->removeStoreDataFromEntityTable();
+        return $this->httpSuccessResponse();
+    }
 }

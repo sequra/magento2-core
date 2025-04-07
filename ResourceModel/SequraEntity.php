@@ -11,11 +11,6 @@ use SeQura\Core\Infrastructure\ORM\QueryFilter\QueryCondition;
 use SeQura\Core\Infrastructure\ORM\QueryFilter\QueryFilter;
 use SeQura\Core\Infrastructure\ORM\Utility\IndexHelper;
 
-/**
- * Class SequraEntity
- *
- * @package Sequra\Core\ResourceModel
- */
 class SequraEntity extends AbstractDb
 {
     /**

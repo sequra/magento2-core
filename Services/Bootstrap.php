@@ -54,11 +54,6 @@ use Sequra\Core\Services\BusinessLogic\VersionService;
 use Sequra\Core\Services\BusinessLogic\Webhook\Repositories\OrderStatusMappingRepositoryOverride;
 use Sequra\Core\Services\Infrastructure\LoggerService;
 
-/**
- * Class Bootstrap
- *
- * @package Sequra\Core\Services
- */
 class Bootstrap extends BootstrapComponent
 {
     /**
@@ -119,8 +114,7 @@ class Bootstrap extends BootstrapComponent
         OrderReportService                                      $orderReportService,
         Encryptor                                               $encryptor,
         \Sequra\Core\Services\BusinessLogic\OrderServiceFactory $orderServiceFactory
-    )
-    {
+    ) {
         $this->loggerService = $loggerService;
         $this->configurationService = $configurationService;
         $this->storeService = $storeService;

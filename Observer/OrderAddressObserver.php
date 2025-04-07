@@ -18,11 +18,6 @@ use Sequra\Core\Model\Ui\ConfigProvider;
 use Sequra\Core\Services\BusinessLogic\Utility\SeQuraTranslationProvider;
 use Sequra\Core\Services\BusinessLogic\Utility\TransformEntityService;
 
-/**
- * Class OrderAddressObserver
- *
- * @package Sequra\Core\Observer
- */
 class OrderAddressObserver implements ObserverInterface
 {
     /**
@@ -95,7 +90,9 @@ class OrderAddressObserver implements ObserverInterface
 
         StoreContext::doWithStore($magentoOrder->getStoreId(), [$orderService, 'updateOrder'], [
             new OrderUpdateData(
-                $magentoOrder->getIncrementId(), null, null,
+                $magentoOrder->getIncrementId(),
+                null,
+                null,
                 $isShippingAddress ? $address : null,
                 !$isShippingAddress ? $address : null
             )

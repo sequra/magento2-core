@@ -57,8 +57,8 @@ class ProductWidgetAvailabilityValidator extends AbstractValidator
      */
     public function validate(array $validationSubject)
     {
-        try{
-            if($this->request->getFullActionName() !== 'catalog_product_view' || !isset($validationSubject['storeId'])){
+        try {
+            if ($this->request->getFullActionName() !== 'catalog_product_view' || !isset($validationSubject['storeId'])) {
                 return $this->createResult(false);
             }
 
@@ -76,7 +76,7 @@ class ProductWidgetAvailabilityValidator extends AbstractValidator
                 return $this->createResult(false);
             }
             return $this->createResult(true);
-        }catch(\Throwable $e){
+        } catch (\Throwable $e) {
             return $this->createResult(false);
         }
     }

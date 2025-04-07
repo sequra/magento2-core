@@ -14,11 +14,6 @@ use SeQura\Core\BusinessLogic\Domain\Connection\Services\ConnectionService;
 use SeQura\Core\BusinessLogic\Domain\Order\RepositoryContracts\SeQuraOrderRepositoryInterface;
 use SeQura\Core\Infrastructure\ServiceRegister;
 
-/**
- * Class UrlHelper
- *
- * @package Sequra\Core\Helper
- */
 class UrlHelper
 {
     public const SEQURA_PORTAL_SANDBOX_URL = 'https://simbox.sequrapi.com/orders/';
@@ -58,8 +53,7 @@ class UrlHelper
         MagentoBackendUrl     $backendUrlHelper,
         OrderFactory          $orderFactory,
         UrlInterface          $urlBuilder
-    )
-    {
+    ) {
         $this->storeManager = $storeManager;
         $this->urlHelper = $urlHelper;
         $this->backendUrlHelper = $backendUrlHelper;
@@ -116,7 +110,7 @@ class UrlHelper
         );
         $baseUrl = $connectionSettings && $connectionSettings->getEnvironment() === BaseProxy::LIVE_MODE ?
             self::SEQURA_PORTAL_URL : self::SEQURA_PORTAL_SANDBOX_URL;
-        return $this->urlBuilder->getUrl( $baseUrl . $orderReference );
+        return $this->urlBuilder->getUrl($baseUrl . $orderReference);
     }
 
     /**

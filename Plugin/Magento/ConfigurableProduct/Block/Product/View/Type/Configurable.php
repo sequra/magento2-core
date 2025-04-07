@@ -11,11 +11,6 @@ use SeQura\Core\BusinessLogic\Domain\GeneralSettings\Services\GeneralSettingsSer
 use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
 use SeQura\Core\Infrastructure\ServiceRegister;
 
-/**
- * Class Configurable
- *
- * @package Sequra\Core\Plugin\Magento\ConfigurableProduct\Block\Product\View\Type
- */
 class Configurable
 {
     /**

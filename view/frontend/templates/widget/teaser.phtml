@@ -1,11 +1,11 @@
 <?php $div_id = str_replace('.', '', uniqid('sequra_partpayment_teaser_', true));  ?>
-<div id="<?php echo $div_id; ?>"></div>
+<div id="<?= $div_id; ?>"></div>
 <script type="text/x-magento-init">
     {
         "*": {
             "Sequra_Core/js/widget": {
-                "divId": "<?php echo $div_id; ?>",
-                "widgets": <?php echo json_encode($block->getAvailableWidgets()); ?>
+                "divId": "<?= $div_id; ?>",
+                "widgets": <?= json_encode($block->getAvailableWidgets()); ?>
             }
         }
     }

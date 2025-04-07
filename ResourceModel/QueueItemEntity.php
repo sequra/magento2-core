@@ -10,11 +10,6 @@ use SeQura\Core\Infrastructure\ORM\Utility\IndexHelper;
 use SeQura\Core\Infrastructure\TaskExecution\Exceptions\QueueItemSaveException;
 use SeQura\Core\Infrastructure\TaskExecution\QueueItem;
 
-/**
- * Class QueueItemEntity
- *
- * @package Sequra\Core\ResourceModel
- */
 class QueueItemEntity extends SequraEntity
 {
     /**

@@ -5,7 +5,6 @@ namespace Sequra\Core\Api;
 /**
  * Interface SequraPaymentMethodsInterface
  *
- * @package Sequra\Core\Api
  */
 interface SequraPaymentMethodsInterface
 {

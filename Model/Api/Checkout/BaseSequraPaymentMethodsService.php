@@ -12,11 +12,6 @@ use Sequra\Core\Model\Api\Builders\CreateOrderRequestBuilderFactory;
 use Sequra\Core\Model\Api\CartProvider\CartProvider;
 use Sequra\Core\Services\BusinessLogic\Utility\SeQuraTranslationProvider;
 
-/**
- * Class BaseSequraPaymentMethodsService
- *
- * @package Sequra\Core\Model\Api\Checkout
- */
 class BaseSequraPaymentMethodsService
 {
     /**

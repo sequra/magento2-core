@@ -5,11 +5,6 @@ namespace Sequra\Core\Block;
 use Magento\Checkout\Model\DefaultConfigProvider;
 use Magento\Framework\View\Element\Template;
 
-/**
- * Class Hpp
- *
- * @package Sequra\Core\Block
- */
 class Hpp extends Template
 {
     /**
@@ -29,5 +24,4 @@ class Hpp extends Template
     {
         return json_encode($this->defaultConfigProvider->getConfig());
     }
-
 }

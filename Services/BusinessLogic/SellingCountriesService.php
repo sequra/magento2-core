@@ -9,11 +9,6 @@ use Magento\Store\Model\StoreManagerInterface;
 use SeQura\Core\BusinessLogic\Domain\Integration\SellingCountries\SellingCountriesServiceInterface;
 use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
 
-/**
- * Class SellingCountriesService
- *
- * @package Sequra\Core\Services\BusinessLogic
- */
 class SellingCountriesService implements SellingCountriesServiceInterface
 {
     /**

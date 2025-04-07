@@ -20,7 +20,8 @@ class WidgetPaymentMethods implements OptionSourceInterface
     /**
      * Constructor
      */
-    public function __construct(ScopeResolverInterface $scopeResolver) {
+    public function __construct(ScopeResolverInterface $scopeResolver)
+    {
         $this->scopeResolver = $scopeResolver;
     }
 
@@ -29,15 +30,16 @@ class WidgetPaymentMethods implements OptionSourceInterface
      * - countryCode: ISO 3166-1 alpha-2 country code
      * - product: Payment method product code
      * - campaign: Payment method campaign code
-     * 
+     *
      * @return array<array<string, string>> Array of payment method values
      */
-    public function getPaymentMethodValues(){
+    public function getPaymentMethodValues()
+    {
         $values = [];
         $storeId = $this->scopeResolver->getScope()->getStoreId();
         $countries = $this->getAvailableCountries($storeId);
         foreach ($countries as $country) {
-            if(!$country->getMerchantId()){
+            if (!$country->getMerchantId()) {
                 // TODO: Log Merchant ID not found
                 continue;
             }
@@ -45,7 +47,7 @@ class WidgetPaymentMethods implements OptionSourceInterface
             $payment_methods = $this->getPaymentMethods($storeId, $country->getMerchantId());
             foreach ($payment_methods as $payment_method) {
                 // Check if supports widgets
-                if(!in_array( $payment_method->getProduct(), array( 'i1', 'pp5', 'pp3', 'pp6', 'pp9', 'sp1' ), true )){
+                if (!in_array($payment_method->getProduct(), [ 'i1', 'pp5', 'pp3', 'pp6', 'pp9', 'sp1' ], true)) {
                     continue;
                 }
 
@@ -61,11 +63,12 @@ class WidgetPaymentMethods implements OptionSourceInterface
 
     /**
      * Encode payment method value to be used as option value
-     * 
+     *
      * @param array<string, string> $value Payment method value
      * @return string Encoded value
      */
-    public function encodePaymentMethodValue($value){
+    public function encodePaymentMethodValue($value)
+    {
         return base64_encode(json_encode($value));
     }
 
@@ -85,7 +88,7 @@ class WidgetPaymentMethods implements OptionSourceInterface
         }
 
         // reorder by label
-        usort($options, function($a, $b) {
+        usort($options, function ($a, $b) {
             return strcmp($a['label'], $b['label']);
         });
 
@@ -97,13 +100,14 @@ class WidgetPaymentMethods implements OptionSourceInterface
      * @param string $storeId
      * @return CountryConfiguration[]
      */
-    private function getAvailableCountries($storeId){
+    private function getAvailableCountries($storeId)
+    {
         $countries = [];
         try {
             $countries = StoreContext::doWithStore($storeId, function () {
                 return ServiceRegister::getService(CountryConfigurationService::class)->getCountryConfiguration();
             });
-        } catch ( \Throwable $e ) {
+        } catch (\Throwable $e) {
             // TODO: Log error
         }
         return $countries;
@@ -115,13 +119,14 @@ class WidgetPaymentMethods implements OptionSourceInterface
      * @param string $merchantId
      * @return SeQuraPaymentMethod[]
      */
-    private function getPaymentMethods($storeId, $merchantId){
+    private function getPaymentMethods($storeId, $merchantId)
+    {
         $payment_methods = [];
         try {
-            $payment_methods = StoreContext::doWithStore($storeId, function () use ( $merchantId ) {
+            $payment_methods = StoreContext::doWithStore($storeId, function () use ($merchantId) {
                 return ServiceRegister::getService(PaymentMethodsService::class)->getMerchantsPaymentMethods($merchantId);
             });
-        } catch ( \Throwable $e ) {
+        } catch (\Throwable $e) {
             // TODO: Log error
         }
         return $payment_methods;
@@ -129,11 +134,12 @@ class WidgetPaymentMethods implements OptionSourceInterface
 
     /**
      * Convert country code to flag emoji
-     * 
+     *
      * @param string $countryCode ISO 3166-1 alpha-2 country code
      * @return string Flag emoji
      */
-    private function getCountryFlag($countryCode) {
+    private function getCountryFlag($countryCode)
+    {
         if (empty($countryCode) || strlen($countryCode) !== 2) {
             return '';
         }

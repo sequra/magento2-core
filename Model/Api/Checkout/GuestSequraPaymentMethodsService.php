@@ -4,11 +4,6 @@ namespace Sequra\Core\Model\Api\Checkout;
 
 use Sequra\Core\Api\Checkout\GuestSequraPaymentMethodsInterface;
 
-/**
- * Class GuestSequraPaymentMethodsService
- *
- * @package Sequra\Core\Model\Api\Checkout
- */
 class GuestSequraPaymentMethodsService implements GuestSequraPaymentMethodsInterface
 {
     /**

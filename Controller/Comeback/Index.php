@@ -9,11 +9,6 @@ use Magento\Framework\Stdlib\CookieManagerInterface;
 use Magento\Framework\Stdlib\Cookie\CookieMetadataFactory;
 use Sequra\Core\Services\BusinessLogic\Utility\SeQuraTranslationProvider;
 
-/**
- * Class Index
- *
- * @package Sequra\Core\Controller\Comeback
- */
 class Index extends Onepage
 {
     /**
@@ -106,7 +101,7 @@ class Index extends Onepage
             ->createPublicCookieMetadata()
             ->setPath('/');
         $sectiondata = json_decode($this->cookieManager->getCookie('section_data_ids') ?: '');
-        if($sectiondata){
+        if ($sectiondata) {
             $sectiondata->cart += 1000;
             $this->cookieManager->setPublicCookie(
                 'section_data_ids',

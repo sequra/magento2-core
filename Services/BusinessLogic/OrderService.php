@@ -28,11 +28,6 @@ use Sequra\Core\Model\Api\Builders\CreateOrderRequestBuilderFactory;
 use Sequra\Core\Services\BusinessLogic\Utility\SeQuraTranslationProvider;
 use Magento\Sales\Model\ResourceModel\Order\CollectionFactory as OrderCollectionFactory;
 
-/**
- * Class OrderService
- *
- * @package Sequra\Core\Services\BusinessLogic
- */
 class OrderService implements ShopOrderService
 {
     /**
@@ -91,8 +86,7 @@ class OrderService implements ShopOrderService
         SeQuraTranslationProvider        $translationProvider,
         CartRepositoryInterface          $cartProvider,
         CreateOrderRequestBuilderFactory $createOrderRequestBuilderFactory
-    )
-    {
+    ) {
         $this->searchOrderCriteriaBuilder = $searchOrderCriteriaBuilder;
         $this->collectionFactory = $collectionFactory;
         $this->shopOrderRepository = $shopOrderRepository;

@@ -4,11 +4,6 @@ namespace Sequra\Core\Setup;
 
 use Magento\Framework\DB\Ddl\Table;
 
-/**
- * Class DatabaseHandler
- *
- * @package Sequra\Core\Setup
- */
 class DatabaseHandler
 {
     public const SEQURA_ENTITY_TABLE = 'sequra_entity';

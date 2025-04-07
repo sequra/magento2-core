@@ -19,11 +19,6 @@ use SeQura\Core\BusinessLogic\WebhookAPI\WebhookAPI;
 use SeQura\Core\Infrastructure\Logger\Logger;
 use SeQura\Core\Infrastructure\ServiceRegister;
 
-/**
- * Class Index
- *
- * @package Sequra\Core\Controller\Webhook
- */
 class Index extends Action
 {
     private const PREFIX = 'm_';
@@ -42,8 +37,7 @@ class Index extends Action
         TransactionFactory       $transactionFactory,
         SearchCriteriaBuilder    $searchCriteriaBuilder,
         OrderRepositoryInterface $orderRepository
-    )
-    {
+    ) {
         parent::__construct($context);
         $this->invoiceService = $invoiceService;
         $this->invoiceRepository = $invoiceRepository;

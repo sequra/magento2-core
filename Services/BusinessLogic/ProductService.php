@@ -7,11 +7,6 @@ use Magento\Catalog\Model\ResourceModel\Category\Tree;
 use Magento\Framework\Exception\NoSuchEntityException;
 use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
 
-/**
- * Class ProductService
- *
- * @package Sequra\Core\Services\BusinessLogic
- */
 class ProductService
 {
     /**

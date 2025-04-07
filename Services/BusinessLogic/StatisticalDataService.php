@@ -6,11 +6,6 @@ use SeQura\Core\BusinessLogic\Domain\SendReport\Models\SendReport;
 use SeQura\Core\BusinessLogic\Domain\StatisticalData\Models\StatisticalData;
 use SeQura\Core\BusinessLogic\Domain\StatisticalData\Services\StatisticalDataService as CoreStatisticalDataService;
 
-/**
- * Class StatisticalDataService
- *
- * @package Sequra\Core\Services\BusinessLogic
- */
 class StatisticalDataService extends CoreStatisticalDataService
 {
     private const SCHEDULE_TIME = '4 am';

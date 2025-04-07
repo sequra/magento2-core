@@ -7,11 +7,6 @@ use SeQura\Core\BusinessLogic\Domain\Order\OrderStates;
 use SeQura\Core\BusinessLogic\Domain\OrderStatusSettings\Models\OrderStatusMapping;
 use SeQura\Core\BusinessLogic\Domain\OrderStatusSettings\RepositoryContracts\OrderStatusSettingsRepositoryInterface;
 
-/**
- * Class OrderStatusMappingRepositoryOverride
- *
- * @package Sequra\Core\Services\BusinessLogic\Webhook\Repositories
- */
 class OrderStatusMappingRepositoryOverride implements OrderStatusSettingsRepositoryInterface
 {
 

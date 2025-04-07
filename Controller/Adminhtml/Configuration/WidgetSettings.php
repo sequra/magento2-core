@@ -11,11 +11,6 @@ use Magento\Store\Model\StoreManagerInterface;
 use SeQura\Core\BusinessLogic\AdminAPI\AdminAPI;
 use SeQura\Core\BusinessLogic\AdminAPI\PromotionalWidgets\Requests\WidgetSettingsRequest;
 
-/**
- * Class WidgetSettings
- *
- * @package Sequra\Core\Controller\Adminhtml\Configuration
- */
 class WidgetSettings extends BaseConfigurationController
 {
     /**
@@ -32,8 +27,7 @@ class WidgetSettings extends BaseConfigurationController
         JsonFactory $jsonFactory,
         StoreConfigManagerInterface $storeConfigManager,
         StoreManagerInterface $storeManager
-    )
-    {
+    ) {
         parent::__construct($context, $jsonFactory);
         $this->storeConfigManager = $storeConfigManager;
         $this->storeManager = $storeManager;

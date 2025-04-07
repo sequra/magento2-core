@@ -25,13 +25,14 @@ class Fieldset extends MagentoFieldset
      * @param array $data
      * @param SecureHtmlRenderer|null $secureRenderer
      */
-    public function __construct(SeQuraTranslationProvider $translationProvider,
-                                Context                   $context,
-                                Session                   $authSession,
-                                Js                        $jsHelper,
-                                array                     $data = [],
-                                ?SecureHtmlRenderer       $secureRenderer = null)
-    {
+    public function __construct(
+        SeQuraTranslationProvider $translationProvider,
+        Context                   $context,
+        Session                   $authSession,
+        Js                        $jsHelper,
+        array                     $data = [],
+        ?SecureHtmlRenderer       $secureRenderer = null
+    ) {
         parent::__construct($context, $authSession, $jsHelper, $data, $secureRenderer);
         $this->translationProvider = $translationProvider;
     }

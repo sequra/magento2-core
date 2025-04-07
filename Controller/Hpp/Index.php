@@ -6,11 +6,6 @@ use Magento\Framework\App\Action\HttpGetActionInterface;
 use Magento\Framework\App\RequestInterface;
 use Magento\Framework\View\Result\PageFactory;
 
-/**
- * Class Index
- *
- * @package Sequra\Core\Controller\Hpp
- */
 class Index implements HttpGetActionInterface
 {
     /**

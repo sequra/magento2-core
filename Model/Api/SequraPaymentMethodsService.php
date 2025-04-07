@@ -4,11 +4,6 @@ namespace Sequra\Core\Model\Api;
 
 use Sequra\Core\Api\SequraPaymentMethodsInterface;
 
-/**
- * Class SequraPaymentMethodsService
- *
- * @package Sequra\Core\Model\Api
- */
 class SequraPaymentMethodsService implements SequraPaymentMethodsInterface
 {
     /**

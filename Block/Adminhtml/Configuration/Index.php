@@ -8,10 +8,6 @@ use Magento\Backend\Model\Auth\Session;
 use Magento\Framework\Exception\LocalizedException;
 use Sequra\Core\Helper\UrlHelper;
 
-/**
- * Class Index
- *
- */
 class Index extends Template
 {
     /**
@@ -59,8 +55,7 @@ class Index extends Template
         string $storeId,
         string $action,
         string $identifier = null
-    ): string
-    {
+    ): string {
         $routeParams = [
             'storeId' => $storeId,
             'action' => $action,

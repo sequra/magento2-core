@@ -16,7 +16,7 @@ class IpAddressValidator extends \Magento\Payment\Gateway\Validator\AbstractVali
         /** @var GeneralSettingsResponse $settings */
         $settings = AdminAPI::get()->generalSettings($validationSubject['storeId'])->getGeneralSettings();
 
-        if(!$settings->isSuccessful()) {
+        if (!$settings->isSuccessful()) {
             return $this->createResult(false);
         }
 

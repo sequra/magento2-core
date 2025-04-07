@@ -66,16 +66,16 @@ class Teaser extends Template implements BlockInterface
     private $countrySettings;
 
      /**
-     * @return WidgetSettings|null
-     */
+      * @return WidgetSettings|null
+      */
     private function getWidgetSettings()
     {
-        if(!$this->widgetSettings){
+        if (!$this->widgetSettings) {
             try {
                 $this->widgetSettings = StoreContext::doWithStore($this->scopeResolver->getScope()->getStoreId(), function () {
                     return ServiceRegister::getService(WidgetSettingsService::class)->getWidgetSettings();
                 });
-            } catch ( \Throwable $e ) {
+            } catch (\Throwable $e) {
                 // TODO: Log error
             }
         }
@@ -83,18 +83,18 @@ class Teaser extends Template implements BlockInterface
     }
 
      /**
-     * @return CountryConfiguration[]|null
-     */
+      * @return CountryConfiguration[]|null
+      */
     private function getCountrySettings()
     {
-        if(!$this->countrySettings){
+        if (!$this->countrySettings) {
             try {
                 $storeId = $this->scopeResolver->getScope()->getStoreId();
                 $this->countrySettings = StoreContext::doWithStore($storeId, function () {
                     $settings = ServiceRegister::getService(CountryConfigurationService::class);
                     return $settings->getCountryConfiguration();
                 });
-            } catch ( \Throwable $e ) {
+            } catch (\Throwable $e) {
                 // TODO: Log error
             }
         }
@@ -102,18 +102,18 @@ class Teaser extends Template implements BlockInterface
     }
 
      /**
-     * @return ConnectionData|null
-     */
+      * @return ConnectionData|null
+      */
     private function getConnectionSettings()
     {
-        if(!$this->connectionSettings){
+        if (!$this->connectionSettings) {
             try {
                 $storeId = $this->scopeResolver->getScope()->getStoreId();
                 $this->connectionSettings = StoreContext::doWithStore($storeId, function () {
                     $service = ServiceRegister::getService(ConnectionService::class);
                     return $service->getConnectionData();
                 });
-            } catch ( \Throwable $e ) {
+            } catch (\Throwable $e) {
                 // TODO: Log error
             }
         }
@@ -156,12 +156,12 @@ class Teaser extends Template implements BlockInterface
         $storeId = $this->scopeResolver->getScope()->getStoreId();
         $subject = ['currency' => $currency->getCode(), 'storeId' => $storeId];
 
-        if(!$this->currencyValidator->validate($subject)->isValid()){
+        if (!$this->currencyValidator->validate($subject)->isValid()) {
             // TODO: Log currency error
             return '';
         }
         
-        if(!$this->ipAddressValidator->validate($subject)->isValid()){
+        if (!$this->ipAddressValidator->validate($subject)->isValid()) {
             // TODO: Log IP error
             return '';
         }
@@ -207,15 +207,15 @@ class Teaser extends Template implements BlockInterface
      * - countryCode
      * - product
      * - campaign
-     * 
+     *
      * @return array<string, string>
      */
     private function getPaymentMethodsData()
     {
         return array_map(
-            function($value){
+            function ($value) {
                 return json_decode(base64_decode($value), true);
-            }, 
+            },
             explode(',', $this->getData('payment_methods'))
         );
     }
@@ -226,7 +226,7 @@ class Teaser extends Template implements BlockInterface
         $payment_methods = explode(',', $this->getData('payment_methods'));
         foreach ($payment_methods as $value) {
             $decoded = json_decode(base64_decode($value), true);
-            if(isset($decoded['product'])){
+            if (isset($decoded['product'])) {
                 $products[] = $decoded['product'];
             }
         }
@@ -240,7 +240,8 @@ class Teaser extends Template implements BlockInterface
         return !$settings ? '' : $settings->getAssetsKey();
     }
 
-    private function getCurrentCountry(){
+    private function getCurrentCountry()
+    {
         $parts = explode('_', $this->localeResolver->getLocale());
         return strtoupper(count($parts) > 1 ? $parts[1] : $parts[0]);
     }
@@ -249,9 +250,9 @@ class Teaser extends Template implements BlockInterface
     {
         $country = $this->getCurrentCountry();
         $settingsArr = $this->getCountrySettings();
-        if(is_array($settingsArr)){
-            foreach($settingsArr as $settings){
-                if($settings->getCountryCode() === $country){
+        if (is_array($settingsArr)) {
+            foreach ($settingsArr as $settings) {
+                if ($settings->getCountryCode() === $country) {
                     return $settings->getMerchantId();
                 }
             }
@@ -259,19 +260,21 @@ class Teaser extends Template implements BlockInterface
         return '';
     }
 
-    public function getLocale(){
-        return str_replace('_','-',$this->localeResolver->getLocale());
+    public function getLocale()
+    {
+        return str_replace('_', '-', $this->localeResolver->getLocale());
     }
 
     /**
      * Prepare the list of available widgets to show in the frontend
      * based on the configuration and the current store context
-     * 
+     *
      * @return array
      */
-    public function getAvailableWidgets(){
+    public function getAvailableWidgets()
+    {
         $merchantId = $this->getMerchantId();
-        if(!$merchantId ){
+        if (!$merchantId) {
             return [];
         }
 
@@ -282,13 +285,13 @@ class Teaser extends Template implements BlockInterface
         $destinationSelector = addslashes($this->getData('dest_sel') ?: '');
 
         $widgets = [];
-        foreach($this->getPaymentMethodsData() as $paymentMethodData){
-            if(!isset($paymentMethodData['countryCode'], $paymentMethodData['product']) || $paymentMethodData['countryCode'] !== $currentCountry){
+        foreach ($this->getPaymentMethodsData() as $paymentMethodData) {
+            if (!isset($paymentMethodData['countryCode'], $paymentMethodData['product']) || $paymentMethodData['countryCode'] !== $currentCountry) {
                 continue;
             }
 
             foreach ($paymentMethods as $paymentMethod) {
-                if($paymentMethod->getProduct() !== $paymentMethodData['product'] || $paymentMethod->getCampaign() !== $paymentMethodData['campaign']){
+                if ($paymentMethod->getProduct() !== $paymentMethodData['product'] || $paymentMethod->getCampaign() !== $paymentMethodData['campaign']) {
                     continue;
                 }
 
@@ -304,7 +307,7 @@ class Teaser extends Template implements BlockInterface
                 ];
 
                 break;
-            }   
+            }
         }
         return $widgets;
     }
@@ -314,14 +317,15 @@ class Teaser extends Template implements BlockInterface
      * @param string $merchantId
      * @return SeQuraPaymentMethod[]
      */
-    private function getPaymentMethods($merchantId){
+    private function getPaymentMethods($merchantId)
+    {
         $storeId = $this->scopeResolver->getScope()->getStoreId();
         $payment_methods = [];
         try {
-            $payment_methods = StoreContext::doWithStore($storeId, function () use ( $merchantId ) {
+            $payment_methods = StoreContext::doWithStore($storeId, function () use ($merchantId) {
                 return ServiceRegister::getService(PaymentMethodsService::class)->getMerchantsPaymentMethods($merchantId);
             });
-        } catch ( \Throwable $e ) {
+        } catch (\Throwable $e) {
             // TODO: Log error
         }
         return $payment_methods;

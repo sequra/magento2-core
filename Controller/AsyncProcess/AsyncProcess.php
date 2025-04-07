@@ -9,11 +9,6 @@ use SeQura\Core\Infrastructure\Logger\Logger;
 use SeQura\Core\Infrastructure\ServiceRegister;
 use SeQura\Core\Infrastructure\TaskExecution\Interfaces\AsyncProcessService;
 
-/**
- * Class AsyncProcess
- *
- * @package Sequra\Core\Controller\AsyncProcess
- */
 class AsyncProcess extends Action
 {
     /**

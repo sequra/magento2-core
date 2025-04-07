@@ -6,11 +6,6 @@ use SeQura\Core\Infrastructure\ORM\Configuration\EntityConfiguration;
 use SeQura\Core\Infrastructure\ORM\Configuration\IndexMap;
 use SeQura\Core\Infrastructure\ORM\Entity;
 
-/**
- * Class PaymentMethods
- *
- * @package Sequra\Core\DataAccess\Entities
- */
 class PaymentMethods extends Entity
 {
     /**

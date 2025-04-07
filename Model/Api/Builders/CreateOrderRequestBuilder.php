@@ -25,11 +25,6 @@ use SeQura\Core\Infrastructure\Logger\Logger;
 use Sequra\Core\Services\BusinessLogic\ProductService;
 use Throwable;
 
-/**
- * Class CreateOrderRequestBuilder
- *
- * @package Sequra\Core\Model\Api\Builders
- */
 class CreateOrderRequestBuilder implements \SeQura\Core\BusinessLogic\Domain\Order\Builders\CreateOrderRequestBuilder
 {
     /**
@@ -136,16 +131,14 @@ class CreateOrderRequestBuilder implements \SeQura\Core\BusinessLogic\Domain\Ord
                 return false;
             }
 
-            if (
-                !empty($generalSettings['allowedIPAddresses']) &&
+            if (!empty($generalSettings['allowedIPAddresses']) &&
                 !empty($ipAddress = $this->getCustomerIpAddress()) &&
                 !in_array($ipAddress, $generalSettings['allowedIPAddresses'], true)
             ) {
                 return false;
             }
 
-            if (
-                empty($generalSettings['excludedProducts']) &&
+            if (empty($generalSettings['excludedProducts']) &&
                 empty($generalSettings['excludedCategories'])
             ) {
                 return true;
@@ -153,8 +146,7 @@ class CreateOrderRequestBuilder implements \SeQura\Core\BusinessLogic\Domain\Ord
 
             $this->quote = $this->quoteRepository->getActive($this->cartId);
             foreach ($this->quote->getAllVisibleItems() as $item) {
-                if (
-                    !empty($generalSettings['excludedProducts']) &&
+                if (!empty($generalSettings['excludedProducts']) &&
                     !empty($item->getSku()) &&
                     (in_array($item->getProduct()->getData('sku'), $generalSettings['excludedProducts'], true) ||
                         in_array($item->getProduct()->getSku(), $generalSettings['excludedProducts'], true))
@@ -166,10 +158,11 @@ class CreateOrderRequestBuilder implements \SeQura\Core\BusinessLogic\Domain\Ord
                     return false;
                 }
 
-                if (
-                    !empty($generalSettings['excludedCategories']) &&
-                    !empty(array_intersect($generalSettings['excludedCategories'],
-                        $this->productService->getAllProductCategories($item->getProduct()->getCategoryIds())))
+                if (!empty($generalSettings['excludedCategories']) &&
+                    !empty(array_intersect(
+                        $generalSettings['excludedCategories'],
+                        $this->productService->getAllProductCategories($item->getProduct()->getCategoryIds())
+                    ))
                 ) {
                     return false;
                 }
@@ -496,7 +489,8 @@ class CreateOrderRequestBuilder implements \SeQura\Core\BusinessLogic\Domain\Ord
     private function getPlatform(): array
     {
         $connectionData = $this->deploymentConfig->get(
-            ConfigOptionsListConstants::CONFIG_PATH_DB_CONNECTION_DEFAULT, []
+            ConfigOptionsListConstants::CONFIG_PATH_DB_CONNECTION_DEFAULT,
+            []
         );
 
         return [

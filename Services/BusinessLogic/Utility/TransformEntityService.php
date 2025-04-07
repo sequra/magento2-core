@@ -233,8 +233,7 @@ class TransformEntityService
      */
     private static function isTaxedAfterDiscount(MagentoOrder\Item $orderItem): bool
     {
-        if (
-            !$orderItem->getTaxAmount() || !$orderItem->getTaxPercent() ||
+        if (!$orderItem->getTaxAmount() || !$orderItem->getTaxPercent() ||
             self::transformPrice($orderItem->getTaxAmount()) === 0 ||
             self::transformPrice($orderItem->getTaxPercent()) === 0
         ) {
