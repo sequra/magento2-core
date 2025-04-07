@@ -1,0 +1,5 @@
+#!/bin/bash
+DIR="$(dirname $(realpath $0))"
+"$DIR/phpcs-bin/install"
+BASEDIR="$DIR/.."
+docker run $@ --rm -v "${BASEDIR}":/app -w /app -u $(id -u):$(id -g) php:cli-alpine php bin/phpcs-bin/vendor/bin/phpcs $@ --standard=.phpcs.xml.dist .
