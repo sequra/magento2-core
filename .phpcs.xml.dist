@@ -41,4 +41,7 @@
 	<rule ref="PHPCompatibility">
 		<exclude-pattern>Tests/</exclude-pattern>
 	</rule>
+	<rule ref="Magento2.SQL.RawQuery.FoundRawSql">
+		<exclude-pattern>.docker/magento/HelperModule/Sequra/Helper/</exclude-pattern>
+	</rule>
 </ruleset>
