@@ -50,4 +50,7 @@
 	<rule ref="Magento2.Functions.DiscouragedFunction.Discouraged">
 		<exclude-pattern>.docker/magento/HelperModule/Sequra/Helper/</exclude-pattern>
 	</rule>
+	<rule ref="Magento2.Exceptions.DirectThrow.FoundDirectThrow">
+		<exclude-pattern>.docker/magento/HelperModule/Sequra/Helper/</exclude-pattern>
+	</rule>
 </ruleset>
