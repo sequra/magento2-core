@@ -11,7 +11,6 @@ use Sequra\Core\Services\Bootstrap;
  *
  * Class ServiceRegisterObserver
  *
- * @package Sequra\Core\Observer
  */
 class ServiceRegisterObserver implements ObserverInterface
 {
@@ -20,6 +19,11 @@ class ServiceRegisterObserver implements ObserverInterface
      */
     private $bootstrap;
 
+    /**
+     * Constructor
+     *
+     * @param Bootstrap $bootstrap
+     */
     public function __construct(Bootstrap $bootstrap)
     {
         $this->bootstrap = $bootstrap;

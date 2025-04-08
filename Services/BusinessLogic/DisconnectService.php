@@ -6,11 +6,6 @@ use Magento\Framework\App\ResourceConnection;
 use SeQura\Core\BusinessLogic\Domain\Integration\Disconnect\DisconnectServiceInterface;
 use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
 
-/**
- * Class DisconnectService
- *
- * @package Sequra\Core\Services\BusinessLogic
- */
 class DisconnectService implements DisconnectServiceInterface
 {
     /**
@@ -48,6 +43,8 @@ class DisconnectService implements DisconnectServiceInterface
     {
         $connection = $this->resource->getConnection();
         $tableName = $this->resource->getTableName($tableName);
+        // TODO: Possible raw SQL statement "delete from $tableName where $contextColumn = " detected
+        // phpcs:ignore Magento2.SQL.RawQuery.FoundRawSql
         $sql = "delete from $tableName where $contextColumn = " . StoreContext::getInstance()->getStoreId();
         $connection->query($sql);
     }

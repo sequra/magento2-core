@@ -31,8 +31,7 @@ class WidgetsDataProvider extends BaseConfigurationController
         PaymentMethodsService $paymentMethodsService,
         Context $context,
         JsonFactory $jsonFactory
-    )
-    {
+    ) {
         parent::__construct($context, $jsonFactory);
 
         $this->allowedActions = ['getData'];
@@ -41,6 +40,8 @@ class WidgetsDataProvider extends BaseConfigurationController
     }
 
     /**
+     * Get the data for the widget configuration.
+     *
      * @return Json
      *
      * @throws HttpRequestException

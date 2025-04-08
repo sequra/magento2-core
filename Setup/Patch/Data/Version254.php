@@ -14,11 +14,6 @@ use SeQura\Core\Infrastructure\ORM\QueryFilter\QueryFilter;
 use SeQura\Core\Infrastructure\ORM\RepositoryRegistry;
 use DateTime;
 
-/**
- * Class Version254
- *
- * @package Sequra\Core\Setup\Patch\Data
- */
 class Version254 implements DataPatchInterface
 {
     private const SCHEDULE_TIME = '4 am';
@@ -41,6 +36,8 @@ class Version254 implements DataPatchInterface
     }
 
     /**
+     * Applies the data patch
+     *
      * @return $this|Version254
      *
      * @throws QueryFilterInvalidParamException
@@ -53,8 +50,7 @@ class Version254 implements DataPatchInterface
         foreach ($statisticalDataArray as $statisticalData) {
             $storeId = $statisticalData->getStoreId();
 
-            if (
-                $this->getSendReportForGivenStore($storeId) ||
+            if ($this->getSendReportForGivenStore($storeId) ||
                 !$statisticalData->getStatisticalData()->isSendStatisticalData()
             ) {
                 return $this;
@@ -67,6 +63,8 @@ class Version254 implements DataPatchInterface
     }
 
     /**
+     * Get all statistical data entities for all stores
+     *
      * @return StatisticalDataEntity[]
      *
      * @throws RepositoryNotRegisteredException
@@ -79,6 +77,8 @@ class Version254 implements DataPatchInterface
     }
 
     /**
+     * Get SendReport entity for a given store
+     *
      * @param string $storeId
      *
      * @return SendReportEntity|null
@@ -98,6 +98,10 @@ class Version254 implements DataPatchInterface
     }
 
     /**
+     * Save SendReport entity for a given store
+     *
+     * @param string $storeId Store ID for which to save the SendReport entity
+     *
      * @throws RepositoryNotRegisteredException
      */
     private function saveSendReport(string $storeId): void
@@ -116,6 +120,8 @@ class Version254 implements DataPatchInterface
     }
 
     /**
+     * Get SendReport repository
+     *
      * @return RepositoryInterface
      *
      * @throws RepositoryNotRegisteredException

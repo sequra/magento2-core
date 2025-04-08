@@ -14,15 +14,34 @@ class SeQuraTranslationProvider
      * @var Reader
      */
     private $moduleDirReader;
+
+    /**
+     * @var Csv
+     */
     private $csv;
+
+    /**
+     * @var Session
+     */
     private $session;
 
+    /**
+     * @var bool
+     */
     private $needsFallback = false;
+    
     /**
      * @var array
      */
     private static $englishTranslation;
 
+    /**
+     * Constructor for SeQuraTranslationProvider
+     *
+     * @param Reader $moduleDirReader
+     * @param Csv $csv
+     * @param Session $session
+     */
     public function __construct(Reader $moduleDirReader, Csv $csv, Session $session)
     {
         $this->session = $session;
@@ -43,6 +62,8 @@ class SeQuraTranslationProvider
         $locale = ($user = $this->session->getUser()) ? $user->getInterfaceLocale(): null;
         if ($locale && !self::$englishTranslation) {
             $filePath = $this->moduleDirReader->getModuleDir('i18n', 'Sequra_Core') . '/' . $locale . '.csv';
+            // TODO: The use of function file_exists() is discouraged
+            // phpcs:ignore Magento2.Functions.DiscouragedFunction.Discouraged
             if (!file_exists($filePath)) {
                 $filePath = $this->moduleDirReader->getModuleDir('i18n', 'Sequra_Core') . '/en_US.csv';
 

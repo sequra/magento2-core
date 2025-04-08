@@ -7,11 +7,6 @@ use Magento\Catalog\Model\ResourceModel\Category\Tree;
 use Magento\Framework\Exception\NoSuchEntityException;
 use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
 
-/**
- * Class ProductService
- *
- * @package Sequra\Core\Services\BusinessLogic
- */
 class ProductService
 {
     /**
@@ -40,6 +35,8 @@ class ProductService
     }
 
     /**
+     * Get all product categories
+     *
      * @param array $categoryIds
      *
      * @return array
@@ -62,6 +59,8 @@ class ProductService
     }
 
     /**
+     * Get trail of categories for a given category ID
+     *
      * @param string $categoryId
      *
      * @return array

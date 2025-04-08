@@ -7,11 +7,6 @@ use Magento\Framework\Controller\Result\Json;
 use Magento\Framework\Controller\Result\JsonFactory;
 use SeQura\Core\BusinessLogic\AdminAPI\AdminAPI;
 
-/**
- * Class Disconnect
- *
- * @package Sequra\Core\Controller\Adminhtml\Configuration
- */
 class Disconnect extends BaseConfigurationController
 {
     /**

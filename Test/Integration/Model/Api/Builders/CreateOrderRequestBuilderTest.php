@@ -52,7 +52,7 @@ class CreateOrderRequestBuilderTest extends TestCase
             'storeId' => (string)$this->quote->getStore()->getId(),
         ]);
         $order = $builder->build()->toArray();
-        self::assertEquals($order['delivery_method']['name'],'flatrate_flatrate');
+        self::assertEquals($order['delivery_method']['name'], 'flatrate_flatrate');
         self::assertEquals($order['cart']['order_total_with_tax'], 1000);
     }
 

@@ -15,11 +15,6 @@ use SeQura\Core\Infrastructure\ORM\QueryFilter\Operators;
 use SeQura\Core\Infrastructure\ORM\QueryFilter\QueryFilter;
 use SeQura\Core\Infrastructure\ORM\RepositoryRegistry;
 
-/**
- * Class PaymentMethods
- *
- * @package Sequra\Core\Controller\Adminhtml\Configuration
- */
 class PaymentMethods extends BaseConfigurationController
 {
     /**

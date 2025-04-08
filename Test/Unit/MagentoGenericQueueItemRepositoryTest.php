@@ -10,11 +10,6 @@ use SeQura\Core\Tests\Infrastructure\ORM\AbstractGenericQueueItemRepositoryTest;
 use Sequra\Core\Setup\DatabaseHandler;
 use Sequra\Core\Test\Unit\Repository\TestQueueItemRepository;
 
-/**
- * Class MagentoGenericQueueItemRepositoryTest
- *
- * @package Sequra\Core\Test\Unit
- */
 class MagentoGenericQueueItemRepositoryTest extends AbstractGenericQueueItemRepositoryTest
 {
     /**

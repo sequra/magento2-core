@@ -54,11 +54,6 @@ use Sequra\Core\Services\BusinessLogic\VersionService;
 use Sequra\Core\Services\BusinessLogic\Webhook\Repositories\OrderStatusMappingRepositoryOverride;
 use Sequra\Core\Services\Infrastructure\LoggerService;
 
-/**
- * Class Bootstrap
- *
- * @package Sequra\Core\Services
- */
 class Bootstrap extends BootstrapComponent
 {
     /**
@@ -108,6 +103,20 @@ class Bootstrap extends BootstrapComponent
      */
     private $orderServiceFactory;
 
+    /**
+     * Constructor for Bootstrap
+     *
+     * @param LoggerService $loggerService Logger service
+     * @param ConfigurationService $configurationService Configuration service
+     * @param StoreService $storeService Store service
+     * @param VersionService $versionService Version service
+     * @param SellingCountriesService $sellingCountriesService Selling countries service
+     * @param CategoryService $categoryService Category service
+     * @param DisconnectService $disconnectService Disconnect service
+     * @param OrderReportService $orderReportService Order report service
+     * @param Encryptor $encryptor Encryptor
+     * @param \Sequra\Core\Services\BusinessLogic\OrderServiceFactory $orderServiceFactory Order service factory
+     */
     public function __construct(
         LoggerService                                           $loggerService,
         ConfigurationService                                    $configurationService,
@@ -119,8 +128,7 @@ class Bootstrap extends BootstrapComponent
         OrderReportService                                      $orderReportService,
         Encryptor                                               $encryptor,
         \Sequra\Core\Services\BusinessLogic\OrderServiceFactory $orderServiceFactory
-    )
-    {
+    ) {
         $this->loggerService = $loggerService;
         $this->configurationService = $configurationService;
         $this->storeService = $storeService;
@@ -143,6 +151,8 @@ class Bootstrap extends BootstrapComponent
         self::init();
     }
 
+    // TODO: Static method cannot be intercepted and its use is discouraged.
+    // phpcs:disable Magento2.Functions.StaticFunction.StaticFunction
     /**
      * @inheritDoc
      */
@@ -295,4 +305,5 @@ class Bootstrap extends BootstrapComponent
             }
         );
     }
+    // phpcs:enable Magento2.Functions.StaticFunction.StaticFunction
 }

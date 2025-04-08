@@ -5,11 +5,6 @@ namespace Sequra\Core\Model\Api\CartProvider;
 use Magento\Quote\Api\CartRepositoryInterface;
 use Magento\Quote\Model\Quote;
 
-/**
- * Class CustomerCartProvider
- *
- * @package Sequra\Core\Model\Api\CartProvider
- */
 class CustomerCartProvider implements CartProvider
 {
     /**
@@ -27,6 +22,13 @@ class CustomerCartProvider implements CartProvider
         $this->quoteResotory = $quoteResotory;
     }
 
+    /**
+     * Gets the quote for a customer cart
+     *
+     * @param string $cartId Customer cart ID
+     *
+     * @return Quote Quote instance
+     */
     public function getQuote(string $cartId): Quote
     {
         /** @var Quote $quote */

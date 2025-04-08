@@ -10,12 +10,9 @@ use Magento\Store\Model\StoreManagerInterface;
 use SeQura\Core\BusinessLogic\AdminAPI\AdminAPI;
 use Sequra\Core\Services\BusinessLogic\WidgetConfigService;
 
-/**
- * Class ConfigProvider
- */
 class ConfigProvider implements ConfigProviderInterface
 {
-    const CODE = 'sequra_payment';
+    public const CODE = 'sequra_payment';
 
     /**
      * @var \Magento\Framework\App\ScopeResolverInterface
@@ -43,6 +40,15 @@ class ConfigProvider implements ConfigProviderInterface
      */
     private $formatter;
 
+    /**
+     * ConfigProvider constructor.
+     *
+     * @param \Magento\Framework\App\ScopeResolverInterface $scopeResolver
+     * @param \Magento\Framework\Locale\ResolverInterface $localeResolver
+     * @param StoreManagerInterface $storeManager
+     * @param WidgetConfigService $widgetConfigService
+     * @param UrlInterface $urlBuilder
+     */
     public function __construct(
         \Magento\Framework\App\ScopeResolverInterface $scopeResolver,
         \Magento\Framework\Locale\ResolverInterface   $localeResolver,
@@ -92,6 +98,11 @@ class ConfigProvider implements ConfigProviderInterface
         ];
     }
 
+    /**
+     * Get the formatter for the current locale and currency.
+     *
+     * @return \NumberFormatter
+     */
     private function getFormatter()
     {
         $localeCode = $this->localeResolver->getLocale();
@@ -102,11 +113,21 @@ class ConfigProvider implements ConfigProviderInterface
         );
     }
 
+    /**
+     * Get the decimal separator for the current locale and currency.
+     *
+     * @return string
+     */
     public function getDecimalSeparator()
     {
         return $this->formatter->getSymbol(\NumberFormatter::DECIMAL_SEPARATOR_SYMBOL);
     }
 
+    /**
+     * Get the thousands separator for the current locale and currency.
+     *
+     * @return string
+     */
     public function getThousandsSeparator()
     {
         return $this->formatter->getSymbol(\NumberFormatter::GROUPING_SEPARATOR_SYMBOL);

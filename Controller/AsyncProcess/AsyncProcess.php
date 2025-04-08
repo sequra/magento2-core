@@ -9,11 +9,6 @@ use SeQura\Core\Infrastructure\Logger\Logger;
 use SeQura\Core\Infrastructure\ServiceRegister;
 use SeQura\Core\Infrastructure\TaskExecution\Interfaces\AsyncProcessService;
 
-/**
- * Class AsyncProcess
- *
- * @package Sequra\Core\Controller\AsyncProcess
- */
 class AsyncProcess extends Action
 {
     /**
@@ -40,6 +35,8 @@ class AsyncProcess extends Action
 
     /**
      * Execute action based on request and return result.
+     *
+     * @return \Magento\Framework\Controller\Result\Json
      */
     public function execute()
     {
@@ -52,6 +49,8 @@ class AsyncProcess extends Action
     }
 
     /**
+     * Get the AsyncProcessService instance.
+     *
      * @return AsyncProcessService
      */
     private function getAsyncProcessService(): AsyncProcessService

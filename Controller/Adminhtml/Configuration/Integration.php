@@ -7,11 +7,6 @@ use Magento\Framework\Controller\Result\Json;
 use Magento\Framework\Controller\Result\JsonFactory;
 use SeQura\Core\BusinessLogic\AdminAPI\AdminAPI;
 
-/**
- * Class Integration
- *
- * @package Sequra\Core\Controller\Adminhtml\Configuration
- */
 class Integration extends BaseConfigurationController
 {
     /**
@@ -52,7 +47,6 @@ class Integration extends BaseConfigurationController
 
         return $this->result->setData($data->toArray());
     }
-
 
     /**
      * Returns the integration shop name.

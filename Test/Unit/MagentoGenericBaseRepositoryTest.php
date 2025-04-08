@@ -11,11 +11,6 @@ use SeQura\Core\Tests\Infrastructure\ORM\AbstractGenericStudentRepositoryTest;
 use Sequra\Core\Setup\DatabaseHandler;
 use Sequra\Core\Test\Unit\Repository\TestRepository;
 
-/**
- * Class MagentoGenericBaseRepositoryTest
- *
- * @package Sequra\Core\Test\Unit
- */
 class MagentoGenericBaseRepositoryTest extends AbstractGenericStudentRepositoryTest
 {
     /**

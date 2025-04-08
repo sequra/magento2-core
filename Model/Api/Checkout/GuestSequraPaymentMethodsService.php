@@ -4,11 +4,6 @@ namespace Sequra\Core\Model\Api\Checkout;
 
 use Sequra\Core\Api\Checkout\GuestSequraPaymentMethodsInterface;
 
-/**
- * Class GuestSequraPaymentMethodsService
- *
- * @package Sequra\Core\Model\Api\Checkout
- */
 class GuestSequraPaymentMethodsService implements GuestSequraPaymentMethodsInterface
 {
     /**
@@ -25,11 +20,25 @@ class GuestSequraPaymentMethodsService implements GuestSequraPaymentMethodsInter
         $this->paymentMethodsService = $paymentMethodsService;
     }
 
+    /**
+     * Returns available payment methods for the given guest cart
+     *
+     * @param string $cartId Guest cart ID
+     *
+     * @return array Available payment methods
+     */
     public function getAvailablePaymentMethods(string $cartId): array
     {
         return $this->paymentMethodsService->getAvailablePaymentMethods($cartId);
     }
 
+    /**
+     * Gets the payment form for the given guest cart
+     *
+     * @param string $cartId Guest cart ID
+     *
+     * @return string Payment form HTML
+     */
     public function getForm(string $cartId): string
     {
         return $this->paymentMethodsService->getForm($cartId);

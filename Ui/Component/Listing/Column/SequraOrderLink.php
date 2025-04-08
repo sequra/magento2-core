@@ -13,13 +13,11 @@ use SeQura\Core\Infrastructure\ServiceRegister;
 use Sequra\Core\Services\BusinessLogic\Utility\SeQuraTranslationProvider;
 use Sequra\Core\Helper\UrlHelper;
 
-/**
- * Class SequraOrderLink
- *
- * @package Sequra\Core\Ui\Component\Listing\Column
- */
 class SequraOrderLink extends Column
 {
+    /**
+     * @var Repository
+     */
     private $assetRepository;
     /**
      * @var SeQuraTranslationProvider
@@ -35,6 +33,7 @@ class SequraOrderLink extends Column
      * @param UiComponentFactory $uiComponentFactory
      * @param Repository $assetRepository
      * @param SeQuraTranslationProvider $translationProvider
+     * @param UrlHelper $urlHelper
      * @param array $components
      * @param array $data
      */
@@ -46,8 +45,7 @@ class SequraOrderLink extends Column
         UrlHelper                 $urlHelper,
         array                     $components = [],
         array                     $data = []
-    )
-    {
+    ) {
         $this->assetRepository = $assetRepository;
         $this->translationProvider = $translationProvider;
         $this->urlHelper = $urlHelper;
@@ -114,7 +112,7 @@ class SequraOrderLink extends Column
     /**
      * Generates a button link html for a provided order reference.
      *
-     * @param string $orderReference
+     * @param string $url
      *
      * @return string
      */
@@ -122,13 +120,16 @@ class SequraOrderLink extends Column
     {
         $imagePath = $this->assetRepository->getUrl('Sequra_Core::images/sequra-logo.png');
 
+        // TODO: Use an alternative to html_entity_decode
+        // phpcs:ignore Magento2.Functions.DiscouragedFunction.Discouraged
         return html_entity_decode(
             '<a class="sequra-link" href="' . $url . '" target="_blank" onclick="event.stopPropagation()">
                         <button class="sequra-preview">
                             <img class="sequra-logo" src=' . $imagePath . ' alt="sequra-logo">
                                 ' . $this->translationProvider->translate("sequra.viewOnSequra") . '
                         </button>
-                   </a>');
+                   </a>'
+        );
     }
 
     /**

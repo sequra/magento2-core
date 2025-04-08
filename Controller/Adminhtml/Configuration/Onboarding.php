@@ -9,11 +9,6 @@ use SeQura\Core\BusinessLogic\AdminAPI\AdminAPI;
 use SeQura\Core\BusinessLogic\AdminAPI\Connection\Requests\ConnectionRequest;
 use SeQura\Core\BusinessLogic\AdminAPI\Connection\Requests\OnboardingRequest;
 
-/**
- * Class Onboarding
- *
- * @package Sequra\Core\Controller\Adminhtml\Configuration
- */
 class Onboarding extends BaseConfigurationController
 {
     /**

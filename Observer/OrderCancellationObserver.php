@@ -18,11 +18,6 @@ use SeQura\Core\Infrastructure\ServiceRegister;
 use Sequra\Core\Model\Ui\ConfigProvider;
 use Sequra\Core\Services\BusinessLogic\Utility\SeQuraTranslationProvider;
 
-/**
- * Class OrderCancellationObserver
- *
- * @package Sequra\Core\Observer
- */
 class OrderCancellationObserver implements ObserverInterface
 {
     /**
@@ -83,7 +78,8 @@ class OrderCancellationObserver implements ObserverInterface
                 $orderData->getIncrementId(),
                 new SeQuraCart($orderData->getOrderCurrencyCode()),
                 new SeQuraCart($orderData->getOrderCurrencyCode()),
-                null, null
+                null,
+                null
             )
         ]);
     }

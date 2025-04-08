@@ -6,11 +6,6 @@ use SeQura\Core\Infrastructure\ORM\Configuration\EntityConfiguration;
 use SeQura\Core\Infrastructure\ORM\Configuration\IndexMap;
 use SeQura\Core\Infrastructure\ORM\Entity;
 
-/**
- * Class PaymentMethod
- *
- * @package Sequra\Core\DataAccess\Entities
- */
 class PaymentMethod extends Entity
 {
 
@@ -124,6 +119,8 @@ class PaymentMethod extends Entity
     }
 
     /**
+     * Get product identifier.
+     *
      * @return string|null
      */
     public function getProduct(): ?string
@@ -132,7 +129,10 @@ class PaymentMethod extends Entity
     }
 
     /**
+     * Set product identifier.
+     *
      * @param string $product
+     *
      * @return void
      */
     public function setProduct(string $product): void
@@ -141,6 +141,8 @@ class PaymentMethod extends Entity
     }
 
     /**
+     * Get payment method title.
+     *
      * @return string|null
      */
     public function getTitle(): ?string
@@ -149,7 +151,10 @@ class PaymentMethod extends Entity
     }
 
     /**
+     * Set payment method title.
+     *
      * @param string $title
+     *
      * @return void
      */
     public function setTitle(string $title): void
@@ -158,6 +163,8 @@ class PaymentMethod extends Entity
     }
 
     /**
+     * Get long title of the payment method.
+     *
      * @return string|null
      */
     public function getLongTitle(): ?string
@@ -166,7 +173,10 @@ class PaymentMethod extends Entity
     }
 
     /**
+     * Set long title of the payment method.
+     *
      * @param string $longTitle
+     *
      * @return void
      */
     public function setLongTitle(string $longTitle): void
@@ -175,6 +185,8 @@ class PaymentMethod extends Entity
     }
 
     /**
+     * Get start date of payment method availability.
+     *
      * @return string|null
      */
     public function getStartsAt(): ?string
@@ -183,7 +195,10 @@ class PaymentMethod extends Entity
     }
 
     /**
+     * Set start date of payment method availability.
+     *
      * @param string $startsAt
+     *
      * @return void
      */
     public function setStartsAt(string $startsAt): void
@@ -192,6 +207,8 @@ class PaymentMethod extends Entity
     }
 
     /**
+     * Get end date of payment method availability.
+     *
      * @return string|null
      */
     public function getEndsAt(): ?string
@@ -200,7 +217,10 @@ class PaymentMethod extends Entity
     }
 
     /**
+     * Set end date of payment method availability.
+     *
      * @param string $endsAt
+     *
      * @return void
      */
     public function setEndsAt(string $endsAt): void
@@ -209,6 +229,8 @@ class PaymentMethod extends Entity
     }
 
     /**
+     * Get campaign identifier.
+     *
      * @return string|null
      */
     public function getCampaign(): ?string
@@ -217,7 +239,10 @@ class PaymentMethod extends Entity
     }
 
     /**
+     * Set campaign identifier.
+     *
      * @param string $campaign
+     *
      * @return void
      */
     public function setCampaign(string $campaign): void
@@ -226,6 +251,8 @@ class PaymentMethod extends Entity
     }
 
     /**
+     * Get payment claim text.
+     *
      * @return string|null
      */
     public function getClaim(): ?string
@@ -234,7 +261,10 @@ class PaymentMethod extends Entity
     }
 
     /**
+     * Set payment claim text.
+     *
      * @param string $claim
+     *
      * @return void
      */
     public function setClaim(string $claim): void
@@ -243,6 +273,8 @@ class PaymentMethod extends Entity
     }
 
     /**
+     * Get payment method description.
+     *
      * @return string|null
      */
     public function getDescription(): ?string
@@ -251,7 +283,10 @@ class PaymentMethod extends Entity
     }
 
     /**
+     * Set payment method description.
+     *
      * @param string $description
+     *
      * @return void
      */
     public function setDescription(string $description): void
@@ -260,6 +295,8 @@ class PaymentMethod extends Entity
     }
 
     /**
+     * Get payment method icon URL.
+     *
      * @return string|null
      */
     public function getIcon(): ?string
@@ -268,7 +305,10 @@ class PaymentMethod extends Entity
     }
 
     /**
+     * Set payment method icon URL.
+     *
      * @param string $icon
+     *
      * @return void
      */
     public function setIcon(string $icon): void
@@ -277,6 +317,8 @@ class PaymentMethod extends Entity
     }
 
     /**
+     * Get cost description text.
+     *
      * @return string|null
      */
     public function getCostDescription(): ?string
@@ -285,7 +327,10 @@ class PaymentMethod extends Entity
     }
 
     /**
+     * Set cost description text.
+     *
      * @param string $costDescription
+     *
      * @return void
      */
     public function setCostDescription(string $costDescription): void
@@ -294,6 +339,8 @@ class PaymentMethod extends Entity
     }
 
     /**
+     * Get minimum amount for payment method.
+     *
      * @return int|null
      */
     public function getMinAmount(): ?int
@@ -302,7 +349,10 @@ class PaymentMethod extends Entity
     }
 
     /**
+     * Set minimum amount for payment method.
+     *
      * @param int $minAmount
+     *
      * @return void
      */
     public function setMinAmount(int $minAmount): void
@@ -311,6 +361,8 @@ class PaymentMethod extends Entity
     }
 
     /**
+     * Get maximum amount for payment method.
+     *
      * @return int|null
      */
     public function getMaxAmount(): ?int
@@ -319,7 +371,10 @@ class PaymentMethod extends Entity
     }
 
     /**
+     * Set maximum amount for payment method.
+     *
      * @param int $maxAmount
+     *
      * @return void
      */
     public function setMaxAmount(int $maxAmount): void

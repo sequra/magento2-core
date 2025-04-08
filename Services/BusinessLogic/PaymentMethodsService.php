@@ -13,11 +13,6 @@ use SeQura\Core\Infrastructure\ORM\QueryFilter\QueryFilter;
 use SeQura\Core\Infrastructure\ORM\RepositoryRegistry;
 use SeQura\Core\Infrastructure\ServiceRegister;
 
-/**
- * Class PaymentMethodsService
- *
- * @package Sequra\Core\Services\BusinessLogic
- */
 class PaymentMethodsService
 {
     /**
@@ -96,6 +91,8 @@ class PaymentMethodsService
     }
 
     /**
+     * Get store service instance.
+     *
      * @return StoreServiceInterface
      */
     private function getStoreService(): StoreServiceInterface

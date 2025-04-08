@@ -5,11 +5,6 @@ namespace Sequra\Core\Services\BusinessLogic\Utility;
 use SeQura\Core\BusinessLogic\Utility\EncryptorInterface;
 use Magento\Framework\Encryption\EncryptorInterface as MagentoEncryptorInterface;
 
-/**
- * Class Encryptor
- *
- * @package Sequra\Core\Services\BusinessLogic\Utility
- */
 class Encryptor implements EncryptorInterface
 {
     /**

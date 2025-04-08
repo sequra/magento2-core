@@ -4,29 +4,44 @@ namespace Sequra\Core\Setup;
 
 use Magento\Framework\DB\Ddl\Table;
 
-/**
- * Class DatabaseHandler
- *
- * @package Sequra\Core\Setup
- */
 class DatabaseHandler
 {
     public const SEQURA_ENTITY_TABLE = 'sequra_entity';
     public const SEQURA_QUEUE_TABLE = 'sequra_queue';
     public const SEQURA_ORDER_TABLE = 'sequra_order';
 
+    /**
+     * @var mixed
+     */
     private $installer;
 
+    /**
+     * Constructor for DatabaseHandler
+     *
+     * @param mixed $installer The installer
+     */
     public function __construct($installer)
     {
         $this->installer = $installer;
     }
 
+    /**
+     * Get the installer instance
+     *
+     * @return mixed The installer instance
+     */
     public function getInstaller()
     {
         return $this->installer;
     }
 
+    /**
+     * Creates entity table in the database
+     *
+     * @param string $tableName Name of the table to create
+     *
+     * @return void
+     */
     public function createEntityTable(string $tableName): void
     {
         $entityTable = $this->installer->getTable($tableName);
@@ -142,8 +157,10 @@ class DatabaseHandler
     }
 
     /**
-     * @param string $tableName
-     * @param string $columnName
+     * Removes a column from a table if it exists.
+     *
+     * @param string $tableName The name of the table
+     * @param string $columnName The name of the column to remove
      *
      * @return void
      */

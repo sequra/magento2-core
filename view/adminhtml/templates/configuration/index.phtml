@@ -1,5 +1,7 @@
 <?php
 /** @var Sequra\Core\Block\Adminhtml\Configuration\Index $block */
+// TODO: Unescaped output detected
+// phpcs:disable Magento2.Security.XssTemplate.FoundUnescaped
 ?>
 
 <div id="sequra-page">
@@ -14,50 +16,50 @@
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         SequraFE.translations = {
-            default: <?php echo $block->getTranslations()['default']; ?>,
-            current: <?php echo $block->getTranslations()['current']; ?>
+            default: <?= $block->getTranslations()['default']; ?>,
+            current: <?= $block->getTranslations()['current']; ?>
         };
 
-        SequraFE.adminLanguage = "<?php echo $block->getAdminLanguage(); ?>";
+        SequraFE.adminLanguage = "<?= $block->getAdminLanguage(); ?>";
 
         SequraFE.utilities.showLoader();
 
         const onboardingPageConfig = {
-            validateConnectionDataUrl: "<?php echo $block->getControllerUrl('Onboarding', '{storeId}','validateConnectionData'); ?>",
-            getConnectionDataUrl: "<?php echo $block->getControllerUrl('Onboarding', '{storeId}','getConnectionData'); ?>",
-            saveConnectionDataUrl: "<?php echo $block->getControllerUrl('Onboarding', '{storeId}','setConnectionData'); ?>",
-            getSellingCountriesUrl: "<?php echo $block->getControllerUrl('CountrySettings', '{storeId}','getSellingCountries'); ?>",
-            getCountrySettingsUrl: "<?php echo $block->getControllerUrl('CountrySettings', '{storeId}','getCountrySettings'); ?>",
-            saveCountrySettingsUrl: "<?php echo $block->getControllerUrl('CountrySettings', '{storeId}','setCountrySettings'); ?>",
-            getWidgetSettingsUrl: "<?php echo $block->getControllerUrl('WidgetSettings', '{storeId}', 'getWidgetSettings'); ?>",
-            saveWidgetSettingsUrl: "<?php echo $block->getControllerUrl('WidgetSettings', '{storeId}', 'setWidgetSettings'); ?>",
-            getPaymentMethodsUrl: "<?php echo $block->getControllerUrl('PaymentMethods','{storeId}', 'getPaymentMethods', '{merchantId}'); ?>",
+            validateConnectionDataUrl: "<?= $block->getControllerUrl('Onboarding', '{storeId}', 'validateConnectionData'); ?>",
+            getConnectionDataUrl: "<?= $block->getControllerUrl('Onboarding', '{storeId}', 'getConnectionData'); ?>",
+            saveConnectionDataUrl: "<?= $block->getControllerUrl('Onboarding', '{storeId}', 'setConnectionData'); ?>",
+            getSellingCountriesUrl: "<?= $block->getControllerUrl('CountrySettings', '{storeId}', 'getSellingCountries'); ?>",
+            getCountrySettingsUrl: "<?= $block->getControllerUrl('CountrySettings', '{storeId}', 'getCountrySettings'); ?>",
+            saveCountrySettingsUrl: "<?= $block->getControllerUrl('CountrySettings', '{storeId}', 'setCountrySettings'); ?>",
+            getWidgetSettingsUrl: "<?= $block->getControllerUrl('WidgetSettings', '{storeId}', 'getWidgetSettings'); ?>",
+            saveWidgetSettingsUrl: "<?= $block->getControllerUrl('WidgetSettings', '{storeId}', 'setWidgetSettings'); ?>",
+            getPaymentMethodsUrl: "<?= $block->getControllerUrl('PaymentMethods', '{storeId}', 'getPaymentMethods', '{merchantId}'); ?>",
         }
 
         const pageConfiguration = {
             onboarding: onboardingPageConfig,
             settings: {
                 ...onboardingPageConfig,
-                getShopCategoriesUrl: "<?php echo $block->getControllerUrl('GeneralSettings','{storeId}', 'getShopCategories'); ?>",
-                getGeneralSettingsUrl: "<?php echo $block->getControllerUrl('GeneralSettings','{storeId}', 'getGeneralSettings'); ?>",
-                saveGeneralSettingsUrl: "<?php echo $block->getControllerUrl('GeneralSettings','{storeId}', 'setGeneralSettings'); ?>",
-                disconnectUrl: "<?php echo $block->getControllerUrl('Disconnect','{storeId}', 'disconnect'); ?>"
+                getShopCategoriesUrl: "<?= $block->getControllerUrl('GeneralSettings', '{storeId}', 'getShopCategories'); ?>",
+                getGeneralSettingsUrl: "<?= $block->getControllerUrl('GeneralSettings', '{storeId}', 'getGeneralSettings'); ?>",
+                saveGeneralSettingsUrl: "<?= $block->getControllerUrl('GeneralSettings', '{storeId}', 'setGeneralSettings'); ?>",
+                disconnectUrl: "<?= $block->getControllerUrl('Disconnect', '{storeId}', 'disconnect'); ?>"
             },
             payment: {
-                getPaymentMethodsUrl: "<?php echo $block->getControllerUrl('PaymentMethods','{storeId}', 'getPaymentMethods', '{merchantId}'); ?>",
-                getSellingCountriesUrl: "<?php echo $block->getControllerUrl('CountrySettings','{storeId}', 'getSellingCountries'); ?>",
-                getCountrySettingsUrl: "<?php echo $block->getControllerUrl('CountrySettings','{storeId}', 'getCountrySettings'); ?>",
-                getConnectionDataUrl: "<?php echo $block->getControllerUrl('Onboarding','{storeId}', 'getConnectionData'); ?>",
-                validateConnectionDataUrl: "<?php echo $block->getControllerUrl('Onboarding', '{storeId}','validateConnectionData'); ?>"
+                getPaymentMethodsUrl: "<?= $block->getControllerUrl('PaymentMethods', '{storeId}', 'getPaymentMethods', '{merchantId}'); ?>",
+                getSellingCountriesUrl: "<?= $block->getControllerUrl('CountrySettings', '{storeId}', 'getSellingCountries'); ?>",
+                getCountrySettingsUrl: "<?= $block->getControllerUrl('CountrySettings', '{storeId}', 'getCountrySettings'); ?>",
+                getConnectionDataUrl: "<?= $block->getControllerUrl('Onboarding', '{storeId}', 'getConnectionData'); ?>",
+                validateConnectionDataUrl: "<?= $block->getControllerUrl('Onboarding', '{storeId}', 'validateConnectionData'); ?>"
             }
         };
 
         SequraFE.state = new SequraFE.StateController({
-            storesUrl: "<?php echo $block->getControllerUrl('Stores', '{storeId}','getStores'); ?>",
-            currentStoreUrl: "<?php echo $block->getControllerUrl('Stores', '{storeId}','getCurrentStore'); ?>",
-            stateUrl: "<?php echo $block->getControllerUrl('Integration', '{storeId}','getState'); ?>",
-            versionUrl: "<?php echo $block->getControllerUrl('Integration', '{storeId}','getVersion'); ?>",
-            shopNameUrl: "<?php echo $block->getControllerUrl('Integration', '{storeId}','getShopName'); ?>",
+            storesUrl: "<?= $block->getControllerUrl('Stores', '{storeId}', 'getStores'); ?>",
+            currentStoreUrl: "<?= $block->getControllerUrl('Stores', '{storeId}', 'getCurrentStore'); ?>",
+            stateUrl: "<?= $block->getControllerUrl('Integration', '{storeId}', 'getState'); ?>",
+            versionUrl: "<?= $block->getControllerUrl('Integration', '{storeId}', 'getVersion'); ?>",
+            shopNameUrl: "<?= $block->getControllerUrl('Integration', '{storeId}', 'getShopName'); ?>",
             pageConfiguration: pageConfiguration
         });
 

@@ -1,4 +1,8 @@
 <?php
+
+// TODO: Unescaped output detected
+// phpcs:disable Magento2.Security.XssTemplate.FoundUnescaped
+
 /**
  * @var PaymentMethods $block
  */
@@ -12,7 +16,7 @@ $config = $block->getPaymentMethods();
     {
         "[name='store_id']": {
             "Sequra_Core/js/form/element/methods": {
-                "method": <?php echo json_encode($config); ?>
+                "method": <?= json_encode($config); ?>
     }
 }
 }

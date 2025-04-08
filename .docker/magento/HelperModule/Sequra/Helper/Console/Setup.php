@@ -18,12 +18,13 @@ class Setup extends Command
     /**
      *  Command name
      */
-    const NAME = 'sequra-helper:setup';
+    public const NAME = 'sequra-helper:setup';
+    
    /**
-     * Initialize triggerreport command
-     *
-     * @return void
-     */
+    * Initialize triggerreport command
+    *
+    * @return void
+    */
     protected function configure()
     {
         $this->setName(self::NAME)
@@ -41,8 +42,8 @@ class Setup extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        if(empty(getenv('M2_SAMPLE_DATA'))){
-            $output->writeln("Skip setup, M2_SAMPLE_DATA is not set"); 
+        if (empty(getenv('M2_SAMPLE_DATA'))) {
+            $output->writeln("Skip setup, M2_SAMPLE_DATA is not set");
             return 0;
         }
 
@@ -60,14 +61,14 @@ class Setup extends Command
             $address->setCountryId('ES');
             $address->setTelephone('666666666');
             $regionFactory = $objectManager->create(\Magento\Directory\Model\RegionFactory::class);
-            $region = $regionFactory->create()->loadByName('Barcelona','ES');
+            $region = $regionFactory->create()->loadByName('Barcelona', 'ES');
             if ($region->getId()) {
                 $address->setRegionId($region->getId());
             }
         }
        
         $customerRepository->save($customer);
-        $output->writeln("Dirección actualizada correctamente"); 
+        $output->writeln("Dirección actualizada correctamente");
         return 0;
     }
 }
