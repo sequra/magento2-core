@@ -38,24 +38,24 @@ jobs:
           chmod +x ./bin/phpcs
           ./bin/phpcs -q
 
-      # - name: Run the setup
-      #   env:
-      #     M2_COMPOSER_REPO_KEY: ${{ secrets.M2_COMPOSER_REPO_KEY }}
-      #     M2_COMPOSER_REPO_SECRET: ${{ secrets.M2_COMPOSER_REPO_SECRET }}
-      #     # GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #   run: |
-      #     cp .env.sample .env
-      #     sed -i "s/^M2_SAMPLE_DATA=.*/#M2_SAMPLE_DATA=&/" .env
-      #     sed -i "s/^M2_COMPOSER_REPO_KEY=.*/M2_COMPOSER_REPO_KEY=$M2_COMPOSER_REPO_KEY/" .env
-      #     sed -i "s/^M2_COMPOSER_REPO_SECRET=.*/M2_COMPOSER_REPO_SECRET=$M2_COMPOSER_REPO_SECRET/" .env
-      #     echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u sequra --password-stdin || (echo "❌ Can't log in to the GitHub Container Registry" && exit 1)
-      #     ./setup.sh
+      - name: Run the setup
+        env:
+          M2_COMPOSER_REPO_KEY: ${{ secrets.M2_COMPOSER_REPO_KEY }}
+          M2_COMPOSER_REPO_SECRET: ${{ secrets.M2_COMPOSER_REPO_SECRET }}
+          # GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cp .env.sample .env
+          sed -i "s/^M2_SAMPLE_DATA=.*/#M2_SAMPLE_DATA=&/" .env
+          sed -i "s/^M2_COMPOSER_REPO_KEY=.*/M2_COMPOSER_REPO_KEY=$M2_COMPOSER_REPO_KEY/" .env
+          sed -i "s/^M2_COMPOSER_REPO_SECRET=.*/M2_COMPOSER_REPO_SECRET=$M2_COMPOSER_REPO_SECRET/" .env
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u sequra --password-stdin || (echo "❌ Can't log in to the GitHub Container Registry" && exit 1)
+          ./setup.sh
 
-      # - name: PHPStan
-      #   run: |
-      #     chmod +x ./bin/phpstan
-      #     ./bin/phpstan --error-format=github --no-progress
+      - name: PHPStan
+        run: |
+          chmod +x ./bin/phpstan
+          ./bin/phpstan --error-format=github --no-progress
       
-      # - name: Teardown Environment
-      #   if: always()
-      #   run: ./teardown.sh
+      - name: Teardown Environment
+        if: always()
+        run: ./teardown.sh
