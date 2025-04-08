@@ -39,7 +39,7 @@ class Teaser extends Template implements BlockInterface
     protected $localeResolver;
 
     /**
-     * @var \Magento\Framework\Locale\ResolverInterface
+     * @var \NumberFormatter
      */
     protected $formatter;
 
@@ -81,12 +81,23 @@ class Teaser extends Template implements BlockInterface
     {
         if (!$this->widgetSettings) {
             try {
-                $this->widgetSettings = StoreContext::doWithStore(
-                    $this->scopeResolver->getScope()->getStoreId(),
-                    function () {
-                        return ServiceRegister::getService(WidgetSettingsService::class)->getWidgetSettings();
-                    }
-                );
+                $storeId = (string) $this->_storeManager->getStore()->getId();
+                /**
+                 * @var ?WidgetSettings $widgetSettings
+                 */
+                $widgetSettings = StoreContext::doWithStore($storeId, function () {
+                    /**
+                     * @var WidgetSettingsService $service
+                     */
+                    $service = ServiceRegister::getService(WidgetSettingsService::class);
+                    return $service->getWidgetSettings();
+                });
+
+                if (!$widgetSettings) {
+                    return null;
+                }
+
+                $this->widgetSettings = $widgetSettings;
 
                 // TODO: Log error
                 // phpcs:ignore Magento2.CodeAnalysis.EmptyBlock.DetectedCatch
@@ -105,11 +116,21 @@ class Teaser extends Template implements BlockInterface
     {
         if (!$this->countrySettings) {
             try {
-                $storeId = $this->scopeResolver->getScope()->getStoreId();
-                $this->countrySettings = StoreContext::doWithStore($storeId, function () {
+                $storeId = (string) $this->_storeManager->getStore()->getId();
+                /**
+                 * @var ?CountryConfiguration[] $countrySettings
+                 */
+                $countrySettings = StoreContext::doWithStore($storeId, function () {
+                    /**
+                     * @var CountryConfigurationService $settings
+                     */
                     $settings = ServiceRegister::getService(CountryConfigurationService::class);
                     return $settings->getCountryConfiguration();
                 });
+                if (!$countrySettings) {
+                    return null;
+                }
+                $this->countrySettings = $countrySettings;
                 // TODO: Log error
                 // phpcs:ignore Magento2.CodeAnalysis.EmptyBlock.DetectedCatch
             } catch (\Throwable $e) {
@@ -127,11 +148,21 @@ class Teaser extends Template implements BlockInterface
     {
         if (!$this->connectionSettings) {
             try {
-                $storeId = $this->scopeResolver->getScope()->getStoreId();
-                $this->connectionSettings = StoreContext::doWithStore($storeId, function () {
+                $storeId = (string) $this->_storeManager->getStore()->getId();
+                /**
+                 * @var ?ConnectionData $connectionSettings
+                 */
+                $connectionSettings = StoreContext::doWithStore($storeId, function () {
+                    /**
+                     * @var ConnectionService $service
+                     */
                     $service = ServiceRegister::getService(ConnectionService::class);
                     return $service->getConnectionData();
                 });
+                if (!$connectionSettings) {
+                    return null;
+                }
+                $this->connectionSettings = $connectionSettings;
                 // TODO: Log error
                 // phpcs:ignore Magento2.CodeAnalysis.EmptyBlock.DetectedCatch
             } catch (\Throwable $e) {
@@ -149,7 +180,7 @@ class Teaser extends Template implements BlockInterface
      * @param CurrencyValidator $currencyValidator
      * @param IpAddressValidator $ipAddressValidator
      * @param ProductWidgetAvailabilityValidator $productValidator
-     * @param array $data
+     * @param mixed[] $data
      */
     public function __construct(
         \Magento\Framework\App\ScopeResolverInterface $scopeResolver,
@@ -179,7 +210,7 @@ class Teaser extends Template implements BlockInterface
     protected function _toHtml()
     {
         $currency = $this->scopeResolver->getScope()->getCurrentCurrency();
-        $storeId = $this->scopeResolver->getScope()->getStoreId();
+        $storeId = $this->_storeManager->getStore()->getId();
         $subject = ['currency' => $currency->getCode(), 'storeId' => $storeId];
 
         if (!$this->currencyValidator->validate($subject)->isValid()) {
@@ -402,7 +433,7 @@ class Teaser extends Template implements BlockInterface
      */
     private function getPaymentMethods($merchantId)
     {
-        $storeId = $this->scopeResolver->getScope()->getStoreId();
+        $storeId = $this->_storeManager->getStore()->getId();
         $payment_methods = [];
         try {
             $payment_methods = StoreContext::doWithStore($storeId, function () use ($merchantId) {

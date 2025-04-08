@@ -28,6 +28,8 @@ class Hpp extends Template
 
     /**
      * Get the configuration for the HPP block
+     *
+     * @return string|false
      */
     public function getConfig()
     {

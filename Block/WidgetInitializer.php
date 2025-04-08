@@ -66,7 +66,7 @@ class WidgetInitializer extends Template
         if (!$this->widgetSettings) {
             try {
                 $this->widgetSettings = StoreContext::doWithStore(
-                    $this->scopeResolver->getScope()->getStoreId(),
+                    $this->_storeManager->getStore()->getId(),
                     function () {
                         return ServiceRegister::getService(WidgetSettingsService::class)->getWidgetSettings();
                     }
@@ -88,7 +88,7 @@ class WidgetInitializer extends Template
     {
         if (!$this->connectionSettings) {
             try {
-                $storeId = $this->scopeResolver->getScope()->getStoreId();
+                $storeId = $this->_storeManager->getStore()->getId();
                 $this->connectionSettings = StoreContext::doWithStore($storeId, function () {
                     $service = ServiceRegister::getService(ConnectionService::class);
                     return $service->getConnectionData();
@@ -185,7 +185,7 @@ class WidgetInitializer extends Template
     public function getProducts()
     {
         $paymentMethods = [];
-        $storeId = $this->scopeResolver->getScope()->getStoreId();
+        $storeId = $this->_storeManager->getStore()->getId();
         $merchantId = $this->getMerchantId();
         if (!$merchantId) {
             // TODO: Log Merchant ID not found
@@ -257,7 +257,7 @@ class WidgetInitializer extends Template
     {
         $quote = $this->session->getQuote();
         $shippingCountry = $quote->getShippingAddress()->getCountryId();
-        $storeId = $this->scopeResolver->getScope()->getStoreId();
+        $storeId = $this->_storeManager->getStore()->getId();
         $data = AdminAPI::get()->countryConfiguration($storeId)->getCountryConfigurations();
         if (!$data->isSuccessful()) {
             return '';
