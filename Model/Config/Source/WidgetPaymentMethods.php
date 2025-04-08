@@ -19,6 +19,8 @@ class WidgetPaymentMethods implements OptionSourceInterface
 
     /**
      * Constructor
+     *
+     * @param ScopeResolverInterface $scopeResolver Scope resolver for getting current store scope
      */
     public function __construct(ScopeResolverInterface $scopeResolver)
     {

@@ -50,6 +50,7 @@ class OrderDetails
      * @param UrlInterface $urlBuilder
      * @param Currency $currencyModel
      * @param SeQuraTranslationProvider $translation
+     * @param UrlHelper $urlHelper
      */
     public function __construct(
         UrlInterface $urlBuilder,

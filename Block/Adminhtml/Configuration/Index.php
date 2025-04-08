@@ -45,6 +45,7 @@ class Index extends Template
      * @param string $controllerName Name of the configuration controller.
      * @param string $storeId Store id.
      * @param string $action Controller action.
+     * @param string|null $identifier Optional identifier parameter.
      *
      * @return string URL to backend configuration controller.
      *

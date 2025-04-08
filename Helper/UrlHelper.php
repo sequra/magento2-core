@@ -43,9 +43,11 @@ class UrlHelper
     /**
      * UrlHelper constructor.
      *
-     * @param StoreManagerInterface $storeManager
-     * @param MagentoUrl $urlHelper
-     * @param MagentoBackendUrl $backendUrlHelper
+     * @param StoreManagerInterface $storeManager Store manager
+     * @param MagentoUrl $urlHelper URL helper
+     * @param MagentoBackendUrl $backendUrlHelper Backend URL helper
+     * @param OrderFactory $orderFactory Order factory
+     * @param UrlInterface $urlBuilder URL builder
      */
     public function __construct(
         StoreManagerInterface $storeManager,

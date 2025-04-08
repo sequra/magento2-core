@@ -92,6 +92,8 @@ class Version254 implements DataPatchInterface
     }
 
     /**
+     * @param string $storeId Store ID for which to save the SendReport entity
+     *
      * @throws RepositoryNotRegisteredException
      */
     private function saveSendReport(string $storeId): void

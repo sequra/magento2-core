@@ -170,6 +170,13 @@ class Initializer implements DataPatchInterface
     }
 
     /**
+     * @param string|null $defaultUsername Default username from global configuration
+     * @param string|null $defaultPassword Default password from global configuration
+     * @param string|null $defaultMerchantId Default merchant ID from global configuration
+     * @param string|null $defaultAssetsKey Default assets key from global configuration
+     * @param string|null $defaultTestIps Default test IPs from global configuration
+     * @param string|null $defaultEndpoint Default endpoint from global configuration
+     *
      * @return void
      *
      * @throws InvalidEnvironmentException

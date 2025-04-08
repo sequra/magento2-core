@@ -167,8 +167,8 @@ class WidgetConfigService
     }
 
     /**
-     * @param string|null $code
-     * @param bool $isPreview
+     * @param string|null $code Country code
+     * @param bool $isPreview Whether this is a preview mode request
      *
      * @return string
      */

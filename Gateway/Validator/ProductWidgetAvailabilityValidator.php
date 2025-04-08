@@ -82,6 +82,8 @@ class ProductWidgetAvailabilityValidator extends AbstractValidator
     }
 
     /**
+     * @param string $storeId The store ID for which to get widget settings
+     *
      * @return WidgetSettings|null
      */
     private function getWidgetSettings($storeId)
@@ -92,6 +94,8 @@ class ProductWidgetAvailabilityValidator extends AbstractValidator
     }
 
     /**
+     * @param string $storeId The store ID for which to get general settings
+     *
      * @return GeneralSettings|null
      *
      * @throws NoSuchEntityException
