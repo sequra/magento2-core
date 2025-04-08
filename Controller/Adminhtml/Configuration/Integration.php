@@ -48,7 +48,6 @@ class Integration extends BaseConfigurationController
         return $this->result->setData($data->toArray());
     }
 
-
     /**
      * Returns the integration shop name.
      *

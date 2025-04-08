@@ -13,14 +13,6 @@ use SeQura\Core\Infrastructure\ORM\Utility\IndexHelper;
 
 class SequraEntity extends AbstractDb
 {
-    /**
-     * Resource model initialization.
-     *
-     * @return void
-     */
-    protected function _construct()
-    {
-    }
 
     /**
      * Set resource model table name.

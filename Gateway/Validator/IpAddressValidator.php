@@ -30,8 +30,13 @@ class IpAddressValidator extends \Magento\Payment\Gateway\Validator\AbstractVali
         return $this->createResult($isValid);
     }
 
+    /**
+     * Get the customer IP address.
+     */
     private function getCustomerIpAddress(): string
     {
+        // TODO: Direct use of $_SERVER Superglobal detected.
+        // phpcs:disable Magento2.Security.Superglobal.SuperglobalUsageWarning
         if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
             return $_SERVER['HTTP_CLIENT_IP'];
         }
@@ -41,5 +46,6 @@ class IpAddressValidator extends \Magento\Payment\Gateway\Validator\AbstractVali
         }
 
         return $_SERVER['REMOTE_ADDR'];
+        // phpcs:enable Magento2.Security.Superglobal.SuperglobalUsageWarning
     }
 }

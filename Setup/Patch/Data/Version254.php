@@ -36,6 +36,8 @@ class Version254 implements DataPatchInterface
     }
 
     /**
+     * Applies the data patch
+     *
      * @return $this|Version254
      *
      * @throws QueryFilterInvalidParamException
@@ -61,6 +63,8 @@ class Version254 implements DataPatchInterface
     }
 
     /**
+     * Get all statistical data entities for all stores
+     *
      * @return StatisticalDataEntity[]
      *
      * @throws RepositoryNotRegisteredException
@@ -73,6 +77,8 @@ class Version254 implements DataPatchInterface
     }
 
     /**
+     * Get SendReport entity for a given store
+     *
      * @param string $storeId
      *
      * @return SendReportEntity|null
@@ -92,6 +98,8 @@ class Version254 implements DataPatchInterface
     }
 
     /**
+     * Save SendReport entity for a given store
+     *
      * @param string $storeId Store ID for which to save the SendReport entity
      *
      * @throws RepositoryNotRegisteredException
@@ -112,6 +120,8 @@ class Version254 implements DataPatchInterface
     }
 
     /**
+     * Get SendReport repository
+     *
      * @return RepositoryInterface
      *
      * @throws RepositoryNotRegisteredException

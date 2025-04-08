@@ -5,7 +5,7 @@
         <input type="radio"
                name="payment[method]"
                class="radio"
-               data-bind="attr: {'id': 'sequra_' + product}, value: 'sequra_' + product, checked: 'sequra_' + $parent.getSelectedProduct(), click: $parent.selectProduct"/>
+               data-bind="attr: {'id': 'sequra_' + product}, value: 'sequra_' + product, checked: 'sequra_' + $parent.getSelectedProduct(), click: $parent.selectProduct">
         <label class="label" data-bind="attr: {'for': 'sequra_' + product}">
             <!-- ko if: $parent.showLogo() -->
             <div class="payment-icon sequra_logo" data-bind="html: icon"></div>

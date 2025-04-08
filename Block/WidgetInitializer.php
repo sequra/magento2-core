@@ -56,24 +56,32 @@ class WidgetInitializer extends Template
      */
     protected $scopeResolver;
 
-     /**
-      * @return WidgetSettings|null
-      */
+    /**
+     * Get the widget settings
+     *
+     * @return WidgetSettings|null
+     */
     private function getWidgetSettings()
     {
         if (!$this->widgetSettings) {
             try {
-                $this->widgetSettings = StoreContext::doWithStore($this->scopeResolver->getScope()->getStoreId(), function () {
-                    return ServiceRegister::getService(WidgetSettingsService::class)->getWidgetSettings();
-                });
-            } catch (\Throwable $e) {
+                $this->widgetSettings = StoreContext::doWithStore(
+                    $this->scopeResolver->getScope()->getStoreId(),
+                    function () {
+                        return ServiceRegister::getService(WidgetSettingsService::class)->getWidgetSettings();
+                    }
+                );
                 // TODO: Log error
+                // phpcs:ignore Magento2.CodeAnalysis.EmptyBlock.DetectedCatch
+            } catch (\Throwable $e) {
             }
         }
         return $this->widgetSettings;
     }
 
     /**
+     * Get connection settings
+     *
      * @return ConnectionData|null
      */
     private function getConnectionSettings()
@@ -85,24 +93,21 @@ class WidgetInitializer extends Template
                     $service = ServiceRegister::getService(ConnectionService::class);
                     return $service->getConnectionData();
                 });
-            } catch (\Throwable $e) {
                 // TODO: Log error
+                // phpcs:ignore Magento2.CodeAnalysis.EmptyBlock.DetectedCatch
+            } catch (\Throwable $e) {
             }
         }
         return $this->connectionSettings;
     }
 
     /**
-     * @param WidgetConfigService $widgetConfigService
-     * @param Http $request
-     * @param ProductRepository $productRepository
-     * @param Cart $cart
-     * @param ProductService $productService
-     * @param PriceCurrencyInterface $priceCurrency
-     * @param ScopeConfigInterface $scopeConfig
-     * @param StoreManagerInterface $storeManager
-     * @param Data $catalogHelper
+     * Constructor
+     *
      * @param Context $context
+     * @param \Magento\Framework\App\ScopeResolverInterface $scopeResolver
+     * @param \Magento\Framework\Locale\ResolverInterface $localeResolver
+     * @param Session $checkoutSession
      * @param array $data
      */
     public function __construct(
@@ -119,6 +124,11 @@ class WidgetInitializer extends Template
         $this->session = $checkoutSession;
     }
 
+    /**
+     * Get formatter for currency
+     *
+     * @return \NumberFormatter
+     */
     private function getFormatter()
     {
         $localeCode = $this->localeResolver->getLocale();
@@ -129,21 +139,38 @@ class WidgetInitializer extends Template
         );
     }
 
+    /**
+     * Get decimal separator
+     *
+     * @return string
+     */
     public function getDecimalSeparator()
     {
         return $this->formatter->getSymbol(\NumberFormatter::DECIMAL_SEPARATOR_SYMBOL);
     }
 
+    /**
+     * Get thousands separator
+     *
+     * @return string
+     */
     public function getThousandsSeparator()
     {
         return $this->formatter->getSymbol(\NumberFormatter::GROUPING_SEPARATOR_SYMBOL);
     }
 
+    /**
+     * Get the script URI for the widget
+     *
+     * @return string
+     */
     public function getScriptUri()
     {
         $settings = $this->getConnectionSettings();
-
-        return !$settings || !$settings->getEnvironment() ? '' : "https://{$settings->getEnvironment()}.sequracdn.com/assets/sequra-checkout.min.js";
+        if (!$settings || !$settings->getEnvironment()) {
+            return '';
+        }
+        return "https://{$settings->getEnvironment()}.sequracdn.com/assets/sequra-checkout.min.js";
     }
 
     /**
@@ -187,14 +214,21 @@ class WidgetInitializer extends Template
         $payment_methods = [];
         try {
             $payment_methods = StoreContext::doWithStore($storeId, function () use ($merchantId) {
-                return ServiceRegister::getService(PaymentMethodsService::class)->getMerchantsPaymentMethods($merchantId);
+                $service = ServiceRegister::getService(PaymentMethodsService::class);
+                return $service->getMerchantsPaymentMethods($merchantId);
             });
-        } catch (\Throwable $e) {
             // TODO: Log error
+            // phpcs:ignore Magento2.CodeAnalysis.EmptyBlock.DetectedCatch
+        } catch (\Throwable $e) {
         }
         return $payment_methods;
     }
 
+    /**
+     * Get the widget settings key
+     *
+     * @return string
+     */
     public function getAssetsKey()
     {
         $settings = $this->getWidgetSettings();
@@ -202,6 +236,11 @@ class WidgetInitializer extends Template
         return !$settings ? '' : $settings->getAssetsKey();
     }
 
+    /**
+     * Get current country code
+     *
+     * @return string
+     */
     private function getCurrentCountry()
     {
         $parts = explode('_', $this->localeResolver->getLocale());
@@ -209,6 +248,11 @@ class WidgetInitializer extends Template
         return strtoupper(count($parts) > 1 ? $parts[1] : $parts[0]);
     }
 
+    /**
+     * Get the merchant ID for the current store
+     *
+     * @return string
+     */
     public function getMerchantId()
     {
         $quote = $this->session->getQuote();
@@ -233,6 +277,11 @@ class WidgetInitializer extends Template
         return '';
     }
 
+    /**
+     * Get locale
+     *
+     * @return string
+     */
     public function getLocale()
     {
         return str_replace('_', '-', $this->localeResolver->getLocale());

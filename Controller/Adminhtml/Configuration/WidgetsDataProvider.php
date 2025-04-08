@@ -40,6 +40,8 @@ class WidgetsDataProvider extends BaseConfigurationController
     }
 
     /**
+     * Get the data for the widget configuration.
+     *
      * @return Json
      *
      * @throws HttpRequestException

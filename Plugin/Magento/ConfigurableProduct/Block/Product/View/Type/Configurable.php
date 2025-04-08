@@ -27,8 +27,10 @@ class Configurable
     }
 
     /**
+     * Encodes the JSON configuration for the configurable product
+     *
      * @param ConfigurableProduct $subject
-     * @param $result
+     * @param string $result
      *
      * @return string
      *
@@ -58,6 +60,8 @@ class Configurable
     }
 
     /**
+     * Get the general settings
+     *
      * @return GeneralSettings|null
      */
     private function getGeneralSettings(): ?GeneralSettings

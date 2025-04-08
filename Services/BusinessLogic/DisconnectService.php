@@ -43,6 +43,8 @@ class DisconnectService implements DisconnectServiceInterface
     {
         $connection = $this->resource->getConnection();
         $tableName = $this->resource->getTableName($tableName);
+        // TODO: Possible raw SQL statement "delete from $tableName where $contextColumn = " detected
+        // phpcs:ignore Magento2.SQL.RawQuery.FoundRawSql
         $sql = "delete from $tableName where $contextColumn = " . StoreContext::getInstance()->getStoreId();
         $connection->query($sql);
     }

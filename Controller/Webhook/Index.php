@@ -123,8 +123,10 @@ class Index extends Action
         $this->getResponse()->sendResponse();
     }
 
+    // TODO: Fix this, static method cannot be intercepted and its use is discouraged
+    // phpcs:disable Magento2.Functions.StaticFunction.StaticFunction
     /**
-     * Gets the static variable value;
+     * Is webhook processing
      *
      * @return bool
      */
@@ -144,6 +146,8 @@ class Index extends Action
     {
         self::$isWebhookProcessing = $isWebhookProcessing;
     }
+    // TODO: Fix this, static method cannot be intercepted and its use is discouraged
+    // phpcs:enable Magento2.Functions.StaticFunction.StaticFunction
 
     /**
      * Creates an invoice for the order.

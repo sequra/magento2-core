@@ -98,6 +98,11 @@ class UrlHelper
         return $this->backendUrlHelper->getUrl($routePath, $routeParams);
     }
 
+    /**
+     * Returns the URL for the Sequra order in the backend.
+     *
+     * @param string $orderReference The order reference.
+     */
     public function getBackendUrlForSequraOrder(string $orderReference): string
     {
         $storeId = $this->getOrderStoreId($orderReference);

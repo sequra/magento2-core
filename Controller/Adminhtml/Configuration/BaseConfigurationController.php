@@ -70,6 +70,8 @@ class BaseConfigurationController extends Action
             return $this->result->setData(
                 [
                     'success' => false,
+                    // TODO: The use of function _() is discouraged; use AdapterInterface::translate() instead
+                    // phpcs:ignore Magento2.Functions.DiscouragedFunction.DiscouragedWithAlternative
                     'message' => _('Wrong action requested.'),
                 ]
             );
@@ -89,6 +91,8 @@ class BaseConfigurationController extends Action
      */
     protected function getSequraPostData(): array
     {
+        // TODO: The use of function file_get_contents() is discouraged
+        // phpcs:ignore Magento2.Functions.DiscouragedFunction.Discouraged
         return json_decode(file_get_contents('php://input'), true);
     }
 

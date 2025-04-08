@@ -129,7 +129,9 @@ class Initializer implements DataPatchInterface
 
             $storeViews = $this->storeManager->getStores();
             $defaultUsername = $this->scopeConfig->getValue('sequra/core/user_name');
-            $defaultPassword = $this->getEncryptor()->decrypt($this->scopeConfig->getValue('sequra/core/user_secret') ?? '');
+            $defaultPassword = $this->getEncryptor()->decrypt(
+                $this->scopeConfig->getValue('sequra/core/user_secret') ?? ''
+            );
             $defaultMerchantId = $this->scopeConfig->getValue('sequra/core/merchant_ref');
             $defaultAssetsKey = $this->scopeConfig->getValue('sequra/core/assets_key');
             $defaultTestIps = $this->scopeConfig->getValue('sequra/core/test_ip');
@@ -173,6 +175,8 @@ class Initializer implements DataPatchInterface
     }
 
     /**
+     * Initializes the task runner status.
+     *
      * @return void
      *
      * @throws TaskRunnerStatusStorageUnavailableException
@@ -185,6 +189,8 @@ class Initializer implements DataPatchInterface
     }
 
     /**
+     * Migrates credentials from the old configuration to the new one.
+     *
      * @param string|null $defaultUsername Default username from global configuration
      * @param string|null $defaultPassword Default password from global configuration
      * @param string|null $defaultMerchantId Default merchant ID from global configuration
@@ -319,6 +325,8 @@ class Initializer implements DataPatchInterface
     }
 
     /**
+     * Validates the credentials for the Sequra API.
+     *
      * @param string $endpoint
      * @param string $username
      * @param string $password
@@ -343,6 +351,8 @@ class Initializer implements DataPatchInterface
     }
 
     /**
+     * Saves the connection data to the database.
+     *
      * @param string $endpoint
      * @param string $username
      * @param string $password
@@ -362,6 +372,8 @@ class Initializer implements DataPatchInterface
     }
 
     /**
+     * Saves the countries configuration to the database.
+     *
      * @param SellingCountry[] $sellingCountries
      * @param string $merchantId
      *
@@ -381,6 +393,8 @@ class Initializer implements DataPatchInterface
     }
 
     /**
+     * Saves the widget settings to the database.
+     *
      * @param string $assetsKey
      *
      * @return void
@@ -424,9 +438,9 @@ class Initializer implements DataPatchInterface
         $connection->delete('sales_order_status', "status like '%sequra%'");
     }
 
-    //<editor-fold desc="Service getters" defaultstate="collapsed">
-
     /**
+     * Gets the connection service.
+     *
      * @return ConnectionService
      */
     private function getConnectionService(): ConnectionService
@@ -439,6 +453,8 @@ class Initializer implements DataPatchInterface
     }
 
     /**
+     * Gets the general settings service.
+     *
      * @return GeneralSettingsService
      */
     private function getGeneralSettingsService(): GeneralSettingsService
@@ -451,6 +467,8 @@ class Initializer implements DataPatchInterface
     }
 
     /**
+     * Gets the widget settings service.
+     *
      * @return WidgetSettingsService
      */
     private function getWidgetSettingsService(): WidgetSettingsService
@@ -459,6 +477,8 @@ class Initializer implements DataPatchInterface
     }
 
     /**
+     * Get the selling countries service.
+     *
      * @return SellingCountriesService
      */
     private function getSellingCountriesService(): SellingCountriesService
@@ -471,6 +491,8 @@ class Initializer implements DataPatchInterface
     }
 
     /**
+     * Gets the country configuration service.
+     *
      * @return CountryConfigurationService
      */
     private function getCountryConfigService(): CountryConfigurationService
@@ -483,11 +505,12 @@ class Initializer implements DataPatchInterface
     }
 
     /**
+     * Get the encryptor service.
+     *
      * @return EncryptorInterface
      */
     private function getEncryptor(): EncryptorInterface
     {
         return ServiceRegister::getService(EncryptorInterface::class);
     }
-    //</editor-fold>
 }

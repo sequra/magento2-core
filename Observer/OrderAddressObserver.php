@@ -31,11 +31,15 @@ class OrderAddressObserver implements ObserverInterface
     private $transformService;
 
     /**
+     * Constructor
+     *
      * @param SeQuraTranslationProvider $translationProvider
      * @param TransformEntityService $transformService
      */
-    public function __construct(SeQuraTranslationProvider $translationProvider, TransformEntityService $transformService)
-    {
+    public function __construct(
+        SeQuraTranslationProvider $translationProvider,
+        TransformEntityService $transformService
+    ) {
         $this->translationProvider = $translationProvider;
         $this->transformService = $transformService;
     }

@@ -66,7 +66,8 @@ class WidgetPaymentMethods implements OptionSourceInterface
     /**
      * Encode payment method value to be used as option value
      *
-     * @param array<string, string> $value Payment method value
+     * @param string[] $value Payment method value
+     *
      * @return string Encoded value
      */
     public function encodePaymentMethodValue($value)
@@ -99,7 +100,9 @@ class WidgetPaymentMethods implements OptionSourceInterface
 
     /**
      * Get available countries configurations
+     *
      * @param string $storeId
+     *
      * @return CountryConfiguration[]
      */
     private function getAvailableCountries($storeId)
@@ -109,16 +112,19 @@ class WidgetPaymentMethods implements OptionSourceInterface
             $countries = StoreContext::doWithStore($storeId, function () {
                 return ServiceRegister::getService(CountryConfigurationService::class)->getCountryConfiguration();
             });
-        } catch (\Throwable $e) {
             // TODO: Log error
+            // phpcs:ignore Magento2.CodeAnalysis.EmptyBlock.DetectedCatch    
+        } catch (\Throwable $e) {
         }
         return $countries;
     }
 
     /**
      * Get payment methods for a given merchant using the current store context
+     *
      * @param string $storeId
      * @param string $merchantId
+     *
      * @return SeQuraPaymentMethod[]
      */
     private function getPaymentMethods($storeId, $merchantId)
@@ -126,10 +132,13 @@ class WidgetPaymentMethods implements OptionSourceInterface
         $payment_methods = [];
         try {
             $payment_methods = StoreContext::doWithStore($storeId, function () use ($merchantId) {
-                return ServiceRegister::getService(PaymentMethodsService::class)->getMerchantsPaymentMethods($merchantId);
+                return ServiceRegister::getService(PaymentMethodsService::class)->getMerchantsPaymentMethods(
+                    $merchantId
+                );
             });
-        } catch (\Throwable $e) {
             // TODO: Log error
+            // phpcs:ignore Magento2.CodeAnalysis.EmptyBlock.DetectedCatch 
+        } catch (\Throwable $e) {
         }
         return $payment_methods;
     }
@@ -138,6 +147,7 @@ class WidgetPaymentMethods implements OptionSourceInterface
      * Convert country code to flag emoji
      *
      * @param string $countryCode ISO 3166-1 alpha-2 country code
+     *
      * @return string Flag emoji
      */
     private function getCountryFlag($countryCode)

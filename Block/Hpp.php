@@ -12,6 +12,12 @@ class Hpp extends Template
      */
     private $defaultConfigProvider;
 
+    /**
+     * Constructor for Hpp block
+     *
+     * @param Template\Context $context
+     * @param DefaultConfigProvider $defaultConfigProvider
+     */
     public function __construct(
         Template\Context $context,
         DefaultConfigProvider $defaultConfigProvider
@@ -20,6 +26,9 @@ class Hpp extends Template
         $this->defaultConfigProvider = $defaultConfigProvider;
     }
 
+    /**
+     * Get the configuration for the HPP block
+     */
     public function getConfig()
     {
         return json_encode($this->defaultConfigProvider->getConfig());

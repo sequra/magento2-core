@@ -91,6 +91,8 @@ class PaymentMethodsService
     }
 
     /**
+     * Get store service instance.
+     *
      * @return StoreServiceInterface
      */
     private function getStoreService(): StoreServiceInterface

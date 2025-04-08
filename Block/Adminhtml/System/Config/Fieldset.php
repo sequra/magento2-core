@@ -37,11 +37,25 @@ class Fieldset extends MagentoFieldset
         $this->translationProvider = $translationProvider;
     }
 
+    /**
+     * Get frontend class for fieldset
+     *
+     * @param \Magento\Framework\Data\Form\Element\AbstractElement $element
+     *
+     * @return string
+     */
     protected function _getFrontendClass($element)
     {
         return parent::_getFrontendClass($element) . ' with-button enabled';
     }
 
+    /**
+     * Get header title html
+     *
+     * @param \Magento\Framework\Data\Form\Element\AbstractElement $element
+     *
+     * @return string
+     */
     protected function _getHeaderTitleHtml($element)
     {
         $html = '<div class="config-heading" >';
@@ -59,6 +73,8 @@ class Fieldset extends MagentoFieldset
     }
 
     /**
+     * Get config button element html
+     *
      * @return string
      */
     public function getConfigButtonElementHtml()
@@ -82,6 +98,7 @@ class Fieldset extends MagentoFieldset
      * Get collapsed state on-load
      *
      * @param \Magento\Framework\Data\Form\Element\AbstractElement $element
+     *
      * @return false
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */

@@ -49,6 +49,8 @@ class AsyncProcess extends Action
     }
 
     /**
+     * Get the AsyncProcessService instance.
+     *
      * @return AsyncProcessService
      */
     private function getAsyncProcessService(): AsyncProcessService

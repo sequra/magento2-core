@@ -40,7 +40,7 @@ class OrderDetails
      */
     private $orderService;
 
-    private const statusMap = [
+    private const STATUS_MAP = [
         OrderRequestStates::CONFIRMED => 'sequra.status.paid',
         OrderRequestStates::ON_HOLD => 'sequra.status.pendingReview',
         OrderRequestStates::CANCELLED => 'sequra.status.cancelled',
@@ -68,8 +68,8 @@ class OrderDetails
      * Modifies the "order_payment_additional" html element in order to inject addition SeQura payment information.
      *
      * @param Info $subject
-     * @param $result
-     * @param $childName
+     * @param string $result
+     * @param string $childName
      *
      * @return string
      */
@@ -103,6 +103,8 @@ class OrderDetails
 
         $viewOnSeQuraButton = '';
         if ($order->getState() === OrderRequestStates::CONFIRMED) {
+            // TODO: Look for an alternative to html_entity_decode
+            // phpcs:ignore Magento2.Functions.DiscouragedFunction.Discouraged
             $viewOnSeQuraButton = html_entity_decode('
                 <a class="sequra-link" href="' . $sequraLink . '" target="_blank">
                   <button class="sequra-preview">' . $this->translation->translate("sequra.viewOnSequra") . '</button>
@@ -110,6 +112,8 @@ class OrderDetails
             ');
         }
 
+        // TODO: Look for an alternative to html_entity_decode
+        // phpcs:ignore Magento2.Functions.DiscouragedFunction.Discouraged
         return html_entity_decode('
             <table class="sequra-table">
               <tr>
@@ -126,7 +130,9 @@ class OrderDetails
 
             <div class="sequra-info-field">
               <div class="sequra-title">' . $this->translation->translate("sequra.status") . '</div>
-              <div>' . $this->translation->translate("sequra.order") . ' ' . $this->translation->translate(self::statusMap[$order->getState()]) . '</div>
+              <div>' . $this->translation->translate("sequra.order") . ' ' . $this->translation->translate(
+                  self::STATUS_MAP[$order->getState()]
+              ) . '</div>
             </div>
 
             <div class="sequra-info-field">

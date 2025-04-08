@@ -19,6 +19,11 @@ class StoreService implements StoreServiceInterface
      */
     private $storeManager;
 
+    /**
+     * StoreService constructor.
+     *
+     * @param StoreManagerInterface $storeManager
+     */
     public function __construct(StoreManagerInterface $storeManager)
     {
         $this->storeManager = $storeManager;
@@ -99,6 +104,8 @@ class StoreService implements StoreServiceInterface
     }
 
     /**
+     * Get repository instance.
+     *
      * @return RepositoryInterface
      *
      * @throws RepositoryNotRegisteredException

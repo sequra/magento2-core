@@ -30,6 +30,8 @@ class Index extends Action
     }
 
     /**
+     * Execute action based on request and return result
+     *
      * @return ResultInterface|Page
      */
     public function execute()
@@ -42,6 +44,8 @@ class Index extends Action
     }
 
     /**
+     * Get TaskRunnerWakeup service.
+     *
      * @return TaskRunnerWakeup
      */
     private function getTaskRunnerWakeupService(): TaskRunnerWakeup

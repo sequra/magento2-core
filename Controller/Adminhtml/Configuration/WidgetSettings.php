@@ -22,6 +22,14 @@ class WidgetSettings extends BaseConfigurationController
      */
     private $storeManager;
 
+    /**
+     * WidgetSettings constructor.
+     *
+     * @param Context $context
+     * @param JsonFactory $jsonFactory
+     * @param StoreConfigManagerInterface $storeConfigManager
+     * @param StoreManagerInterface $storeManager
+     */
     public function __construct(
         Context $context,
         JsonFactory $jsonFactory,

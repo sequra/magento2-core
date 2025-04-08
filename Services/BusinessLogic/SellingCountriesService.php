@@ -21,6 +21,12 @@ class SellingCountriesService implements SellingCountriesServiceInterface
      */
     private $storeManager;
 
+    /**
+     * SellingCountriesService constructor.
+     *
+     * @param AllowedCountries $country
+     * @param StoreManagerInterface $storeManager
+     */
     public function __construct(AllowedCountries $country, StoreManagerInterface $storeManager)
     {
         $this->country = $country;

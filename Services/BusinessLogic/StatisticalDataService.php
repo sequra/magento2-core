@@ -12,7 +12,9 @@ class StatisticalDataService extends CoreStatisticalDataService
     private const SCHEDULE_TIME_NEXT_DAY = '4 am +1 day';
 
     /**
-     * @inheirtDoc
+     * Save statistical data and schedule report sending if needed.
+     *
+     * @param StatisticalData $statisticalData
      */
     public function saveStatisticalData(StatisticalData $statisticalData): void
     {
@@ -34,7 +36,7 @@ class StatisticalDataService extends CoreStatisticalDataService
     }
 
     /**
-     * @inheirtDoc
+     * Set the report sending time to the next day at 4 am.
      */
     public function setSendReportTime(): void
     {

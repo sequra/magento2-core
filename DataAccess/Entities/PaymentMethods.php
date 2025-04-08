@@ -87,17 +87,29 @@ class PaymentMethods extends Entity
         return $data;
     }
 
+    /**
+     * Get store ID
+     *
+     * @return string
+     */
     public function getStoreId(): string
     {
         return $this->storeId;
     }
 
+    /**
+     * Set store ID
+     *
+     * @param string $storeId
+     */
     public function setStoreId(string $storeId): void
     {
         $this->storeId = $storeId;
     }
 
     /**
+     * Get merchant ID
+     *
      * @return string|null
      */
     public function getMerchantId(): ?string
@@ -106,6 +118,8 @@ class PaymentMethods extends Entity
     }
 
     /**
+     * Set merchant ID
+     *
      * @param string $merchantId
      * @return void
      */
@@ -115,6 +129,8 @@ class PaymentMethods extends Entity
     }
 
     /**
+     * Get payment methods
+     *
      * @return PaymentMethod[]
      */
     public function getPaymentMethods(): array
@@ -123,6 +139,8 @@ class PaymentMethods extends Entity
     }
 
     /**
+     * Set payment methods
+     *
      * @param PaymentMethod[] $paymentMethods
      */
     public function setPaymentMethods(array $paymentMethods): void

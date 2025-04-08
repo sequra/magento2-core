@@ -35,6 +35,8 @@ class ProductService
     }
 
     /**
+     * Get all product categories
+     *
      * @param array $categoryIds
      *
      * @return array
@@ -57,6 +59,8 @@ class ProductService
     }
 
     /**
+     * Get trail of categories for a given category ID
+     *
      * @param string $categoryId
      *
      * @return array

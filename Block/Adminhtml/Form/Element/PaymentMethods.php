@@ -17,19 +17,6 @@ class PaymentMethods extends Template
     protected $_template = 'Sequra_Core::form/element/methods.phtml';
 
     /**
-     * PaymentMethods constructor.
-     *
-     * @param Context $context
-     * @param array $data
-     */
-    public function __construct(
-        Context $context,
-        array   $data = []
-    ) {
-        parent::__construct($context, $data);
-    }
-
-    /**
      * Retrieves all payment methods configured for all connected stores.
      *
      * @return array
@@ -42,6 +29,8 @@ class PaymentMethods extends Template
     }
 
     /**
+     * Get the payment method service.
+     *
      * @return PaymentMethodsService
      */
     private function getPaymentMethodsService(): PaymentMethodsService

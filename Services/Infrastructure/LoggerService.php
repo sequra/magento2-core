@@ -77,12 +77,15 @@ class LoggerService extends Singleton implements ShopLoggerAdapter
             $message .= '
             Context data: [';
             foreach ($context as $item) {
+                // TODO: The use of function print_r() is discouraged
+                // phpcs:ignore Magento2.Functions.DiscouragedFunction.Discouraged
                 $message .= '"' . $item->getName() . '" => "' . print_r($item->getValue(), true) . '", ';
             }
 
             $message .= ']';
         }
-
+        // TODO: The use of function call_user_func() is discouraged
+        // phpcs:ignore Magento2.Functions.DiscouragedFunction.Discouraged
         \call_user_func([$this->logger, self::$logLevelName[$logLevel]], $message);
     }
 }

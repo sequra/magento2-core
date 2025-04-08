@@ -266,6 +266,8 @@ class CreateOrderRequestBuilder implements \SeQura\Core\BusinessLogic\Domain\Ord
 
         // Only for development environment. Replace local shop domain with ngrok.
         if (defined('SEQURA_NGROK_URL') && !empty(SEQURA_NGROK_URL)) {
+            // TODO: The use of function parse_url() is discouraged
+            // phpcs:ignore Magento2.Functions.DiscouragedFunction.Discouraged
             $localShopDomain = parse_url($webhookUrl, PHP_URL_HOST);
             $webhookUrl = str_replace(
                 ['http://', 'https://', $localShopDomain],
@@ -440,6 +442,8 @@ class CreateOrderRequestBuilder implements \SeQura\Core\BusinessLogic\Domain\Ord
             'logged_in' => !$this->quote->getCustomerIsGuest(),
             'language_code' => $this->quote->getStore()->getConfig('general/locale/code'),
             'ip_number' => $this->getCustomerIpAddress(),
+            // TODO: Direct use of $_SERVER Superglobal detected.
+            // phpcs:ignore Magento2.Security.Superglobal.SuperglobalUsageWarning
             'user_agent' => $_SERVER["HTTP_USER_AGENT"],
             'date_of_birth' => $this->quote->getCustomer()->getDob(),
             'company' => $this->quote->getBillingAddress()->getCompany(),
@@ -451,7 +455,9 @@ class CreateOrderRequestBuilder implements \SeQura\Core\BusinessLogic\Domain\Ord
     }
 
     /**
-     * @param $customerId
+     * Get previous orders for a customer
+     *
+     * @param int $customerId
      *
      * @return array
      */
@@ -484,6 +490,8 @@ class CreateOrderRequestBuilder implements \SeQura\Core\BusinessLogic\Domain\Ord
     }
 
     /**
+     * Maps the payment method name to a Sequra-compatible format
+     *
      * @param string $name
      *
      * @return string
@@ -514,6 +522,8 @@ class CreateOrderRequestBuilder implements \SeQura\Core\BusinessLogic\Domain\Ord
     }
 
     /**
+     * Maps the order status to a Sequra-compatible format
+     *
      * @param string $magentoStatus
      *
      * @return string
@@ -531,7 +541,9 @@ class CreateOrderRequestBuilder implements \SeQura\Core\BusinessLogic\Domain\Ord
     }
 
     /**
-     * @param $price
+     * Formats the price to an integer value in cents
+     *
+     * @param float $price
      *
      * @return int
      */
@@ -541,7 +553,7 @@ class CreateOrderRequestBuilder implements \SeQura\Core\BusinessLogic\Domain\Ord
             return 0;
         }
 
-        return intval(round(100 * $price));
+        return (int) round(100 * $price);
     }
 
     /**
@@ -568,6 +580,8 @@ class CreateOrderRequestBuilder implements \SeQura\Core\BusinessLogic\Domain\Ord
     }
 
     /**
+     * Get merchant ID based on the shipping country
+     *
      * @return string|null
      */
     private function getMerchantId(): ?string
@@ -616,6 +630,8 @@ class CreateOrderRequestBuilder implements \SeQura\Core\BusinessLogic\Domain\Ord
      */
     private function getCustomerIpAddress(): string
     {
+        // TODO: Direct use of $_SERVER Superglobal detected
+        // phpcs:disable Magento2.Security.Superglobal.SuperglobalUsageWarning
         if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
             return $_SERVER['HTTP_CLIENT_IP'];
         }
@@ -625,5 +641,6 @@ class CreateOrderRequestBuilder implements \SeQura\Core\BusinessLogic\Domain\Ord
         }
 
         return $_SERVER['REMOTE_ADDR'];
+        // phpcs:enable Magento2.Security.Superglobal.SuperglobalUsageWarning
     }
 }

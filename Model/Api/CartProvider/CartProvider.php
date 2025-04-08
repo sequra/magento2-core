@@ -4,6 +4,8 @@ namespace Sequra\Core\Model\Api\CartProvider;
 
 use Magento\Quote\Model\Quote;
 
+// TODO: Interface should have name that ends with "Interface" suffix.
+// phpcs:disable Magento2.NamingConvention.InterfaceName.WrongInterfaceName
 /**
  * Interface CartProviderInterface
  *

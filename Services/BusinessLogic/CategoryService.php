@@ -28,6 +28,13 @@ class CategoryService implements CategoryServiceInterface
      */
     private $storeManager;
 
+    /**
+     * CategoryService constructor.
+     *
+     * @param CategoryRepository $categoryRepository
+     * @param CategoryCollectionFactory $collectionFactory
+     * @param StoreManagerInterface $storeManager
+     */
     public function __construct(
         CategoryRepository $categoryRepository,
         CategoryCollectionFactory $collectionFactory,

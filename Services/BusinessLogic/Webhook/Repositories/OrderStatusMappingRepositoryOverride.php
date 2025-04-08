@@ -10,6 +10,9 @@ use SeQura\Core\BusinessLogic\Domain\OrderStatusSettings\RepositoryContracts\Ord
 class OrderStatusMappingRepositoryOverride implements OrderStatusSettingsRepositoryInterface
 {
 
+    /**
+     * Get the order status mapping
+     */
     public function getOrderStatusMapping(): array
     {
         return [
@@ -19,8 +22,16 @@ class OrderStatusMappingRepositoryOverride implements OrderStatusSettingsReposit
         ];
     }
 
+    // phpcs:disable Magento2.CodeAnalysis.EmptyBlock.DetectedFunction
+    /**
+     * Set the order status mapping
+     *
+     * @param array $orderStatusMapping The order status mapping
+     */
     public function setOrderStatusMapping(array $orderStatusMapping): void
     {
-        // Intentionally left blank. Magento has strict order status transition therefore merchants do not set order map.
+        // Intentionally left blank.
+        // Magento has strict order status transition therefore merchants do not set order map.
     }
+    // phpcs:enable Magento2.CodeAnalysis.EmptyBlock.DetectedFunction
 }

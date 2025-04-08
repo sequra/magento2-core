@@ -14,11 +14,24 @@ class VersionService implements VersionServiceInterface
     private const SEQURA_MAGENTO_REPOSITORY_URL = 'https://repo.packagist.org/p/sequra/magento2-core.json';
     private const SEQURA_MAGENTO_DOWNLOAD_URL = 'https://github.com/sequra/magento2-core/releases';
 
+    /**
+     * @var ModuleList
+     */
     private $moduleList;
+    
+    /**
+     * @var Client
+     */
     private $client;
+    
+    /**
+     * @var Uri
+     */
     private $hubUri;
 
     /**
+     * Constructor.
+     *
      * @param ModuleList $moduleList
      * @param Client $client
      */
