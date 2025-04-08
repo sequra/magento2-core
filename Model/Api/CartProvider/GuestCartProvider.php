@@ -33,6 +33,14 @@ class GuestCartProvider implements CartProvider
         $this->cartRepository = $cartRepository;
     }
 
+    /**
+     * Gets the quote for a guest cart
+     *
+     * @param string $cartId Guest cart ID
+     *
+     * @return Quote Quote instance
+     * @throws NoSuchEntityException If cart is not found or not active
+     */
     public function getQuote(string $cartId): Quote
     {
         /** @var Quote $quote */

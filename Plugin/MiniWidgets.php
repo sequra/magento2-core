@@ -159,6 +159,13 @@ class MiniWidgets
         return $result;
     }
 
+    /**
+     * Gets the country code from store configuration
+     *
+     * @param StoreConfigInterface $storeConfig Store configuration
+     *
+     * @return string Country code
+     */
     private function getCountry(StoreConfigInterface $storeConfig)
     {
         return $this->scopeConfig->getValue(
@@ -232,6 +239,11 @@ class MiniWidgets
         return $merchantId;
     }
 
+    /**
+     * Gets customer IP address from server globals
+     *
+     * @return string Customer IP address
+     */
     private function getCustomerIpAddress(): string
     {
         if (!empty($_SERVER['HTTP_CLIENT_IP'])) {

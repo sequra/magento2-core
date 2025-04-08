@@ -76,6 +76,21 @@ class CreateOrderRequestBuilder implements \SeQura\Core\BusinessLogic\Domain\Ord
      */
     private $orderFactory;
 
+    /**
+     * Constructor for CreateOrderRequestBuilder
+     *
+     * @param CartRepositoryInterface $quoteRepository
+     * @param ProductMetadataInterface $productMetadata
+     * @param ResourceInterface $moduleResource
+     * @param DeploymentConfig $deploymentConfig
+     * @param SqlVersionProvider $sqlVersionProvider
+     * @param ScopeConfigInterface $scopeConfig
+     * @param UrlInterface $urlBuilder
+     * @param string $cartId
+     * @param string $storeId
+     * @param ProductService $productService
+     * @param OrderFactory $orderFactory
+     */
     public function __construct(
         CartRepositoryInterface $quoteRepository,
         ProductMetadataInterface $productMetadata,
@@ -102,6 +117,12 @@ class CreateOrderRequestBuilder implements \SeQura\Core\BusinessLogic\Domain\Ord
         $this->orderFactory = $orderFactory;
     }
 
+    /**
+     * Builds the CreateOrderRequest object
+     *
+     * @return CreateOrderRequest The order request object
+     * @throws NoSuchEntityException If the quote cannot be found
+     */
     public function build(): CreateOrderRequest
     {
         try {
@@ -177,6 +198,11 @@ class CreateOrderRequestBuilder implements \SeQura\Core\BusinessLogic\Domain\Ord
         }
     }
 
+    /**
+     * Generates the CreateOrderRequest object with all necessary data
+     *
+     * @return CreateOrderRequest Fully populated order request
+     */
     private function generateCreateOrderRequest(): CreateOrderRequest
     {
         //@var string
@@ -228,6 +254,11 @@ class CreateOrderRequestBuilder implements \SeQura\Core\BusinessLogic\Domain\Ord
         ]);
     }
 
+    /**
+     * Gets merchant data for the order request
+     *
+     * @return array Merchant information including URLs and identification
+     */
     private function getMerchantData(): array
     {
         $signature = $this->getSignature();
@@ -263,6 +294,11 @@ class CreateOrderRequestBuilder implements \SeQura\Core\BusinessLogic\Domain\Ord
         ];
     }
 
+    /**
+     * Gets cart data for the order request
+     *
+     * @return array Cart information including totals, currency and items
+     */
     private function getCart(): array
     {
         return [
@@ -276,6 +312,11 @@ class CreateOrderRequestBuilder implements \SeQura\Core\BusinessLogic\Domain\Ord
         ];
     }
 
+    /**
+     * Gets all order items including products, shipping and discounts
+     *
+     * @return array Array of order items
+     */
     private function getOrderItems(): array
     {
         $items = [];
@@ -318,6 +359,11 @@ class CreateOrderRequestBuilder implements \SeQura\Core\BusinessLogic\Domain\Ord
         return $items;
     }
 
+    /**
+     * Calculates the total discount amount for the order
+     *
+     * @return int Total discount amount in cents (negative value)
+     */
     private function getTotalDiscountAmount(): int
     {
         $totalDiscount = 0;
@@ -349,6 +395,13 @@ class CreateOrderRequestBuilder implements \SeQura\Core\BusinessLogic\Domain\Ord
         return -1 * $totalDiscount;
     }
 
+    /**
+     * Formats an address into the required format for Sequra
+     *
+     * @param Address $address The Magento address object
+     *
+     * @return array Formatted address data
+     */
     private function getAddress(Address $address): array
     {
         return [
@@ -365,6 +418,11 @@ class CreateOrderRequestBuilder implements \SeQura\Core\BusinessLogic\Domain\Ord
         ];
     }
 
+    /**
+     * Gets customer information for the order request
+     *
+     * @return array Customer details including personal information and order history
+     */
     private function getCustomer(): array
     {
         $email = $this->quote->getCustomer()->getEmail();
@@ -486,6 +544,11 @@ class CreateOrderRequestBuilder implements \SeQura\Core\BusinessLogic\Domain\Ord
         return intval(round(100 * $price));
     }
 
+    /**
+     * Gets platform information for the order request
+     *
+     * @return array Platform details including version information
+     */
     private function getPlatform(): array
     {
         $connectionData = $this->deploymentConfig->get(
@@ -525,6 +588,12 @@ class CreateOrderRequestBuilder implements \SeQura\Core\BusinessLogic\Domain\Ord
         return $merchantId;
     }
 
+    /**
+     * Gets the signature for secure communication with Sequra
+     *
+     * @return string HMAC signature
+     * @throws \RuntimeException If merchant configuration cannot be found
+     */
     private function getSignature(): string
     {
         $data = AdminAPI::get()->connection($this->storeId)->getConnectionSettings();
@@ -540,6 +609,11 @@ class CreateOrderRequestBuilder implements \SeQura\Core\BusinessLogic\Domain\Ord
         );
     }
 
+    /**
+     * Gets the customer's IP address from server variables
+     *
+     * @return string IP address
+     */
     private function getCustomerIpAddress(): string
     {
         if (!empty($_SERVER['HTTP_CLIENT_IP'])) {

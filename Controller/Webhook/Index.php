@@ -21,15 +21,51 @@ use SeQura\Core\Infrastructure\ServiceRegister;
 
 class Index extends Action
 {
+    /**
+     * @var string
+     */
     private const PREFIX = 'm_';
+    
+    /**
+     * @var bool
+     */
     private static $isWebhookProcessing = false;
 
+    /**
+     * @var InvoiceService
+     */
     protected $invoiceService;
+    
+    /**
+     * @var InvoiceRepository
+     */
     protected $invoiceRepository;
+    
+    /**
+     * @var TransactionFactory
+     */
     protected $transactionFactory;
+    
+    /**
+     * @var SearchCriteriaBuilder
+     */
     protected $searchCriteriaBuilder;
+    
+    /**
+     * @var OrderRepositoryInterface
+     */
     protected $orderRepository;
 
+    /**
+     * Constructor for Index controller
+     *
+     * @param Context $context
+     * @param InvoiceService $invoiceService
+     * @param InvoiceRepository $invoiceRepository
+     * @param TransactionFactory $transactionFactory
+     * @param SearchCriteriaBuilder $searchCriteriaBuilder
+     * @param OrderRepositoryInterface $orderRepository
+     */
     public function __construct(
         Context                  $context,
         InvoiceService           $invoiceService,
@@ -46,6 +82,11 @@ class Index extends Action
         $this->orderRepository = $orderRepository;
     }
 
+    /**
+     * Execute webhook endpoint
+     *
+     * @return void
+     */
     public function execute(): void
     {
         if (!$this->getRequest()->isPost()) {

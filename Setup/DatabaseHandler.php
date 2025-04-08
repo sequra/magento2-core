@@ -10,18 +10,38 @@ class DatabaseHandler
     public const SEQURA_QUEUE_TABLE = 'sequra_queue';
     public const SEQURA_ORDER_TABLE = 'sequra_order';
 
+    /**
+     * @var mixed
+     */
     private $installer;
 
+    /**
+     * Constructor for DatabaseHandler
+     *
+     * @param mixed $installer The installer
+     */
     public function __construct($installer)
     {
         $this->installer = $installer;
     }
 
+    /**
+     * Get the installer instance
+     *
+     * @return mixed The installer instance
+     */
     public function getInstaller()
     {
         return $this->installer;
     }
 
+    /**
+     * Creates entity table in the database
+     *
+     * @param string $tableName Name of the table to create
+     *
+     * @return void
+     */
     public function createEntityTable(string $tableName): void
     {
         $entityTable = $this->installer->getTable($tableName);

@@ -22,6 +22,13 @@ class CustomerCartProvider implements CartProvider
         $this->quoteResotory = $quoteResotory;
     }
 
+    /**
+     * Gets the quote for a customer cart
+     *
+     * @param string $cartId Customer cart ID
+     *
+     * @return Quote Quote instance
+     */
     public function getQuote(string $cartId): Quote
     {
         /** @var Quote $quote */

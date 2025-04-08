@@ -58,6 +58,13 @@ class BaseSequraPaymentMethodsService
         $this->translationProvider = $translationProvider;
     }
 
+    /**
+     * Returns available payment methods for the given cart
+     *
+     * @param string $cartId Cart ID to get payment methods for
+     *
+     * @return array Available payment methods
+     */
     public function getAvailablePaymentMethods(string $cartId): array
     {
         $quote = $this->cartProvider->getQuote($cartId);
@@ -88,6 +95,14 @@ class BaseSequraPaymentMethodsService
         return $response->toArray()['availablePaymentMethods'];
     }
 
+    /**
+     * Gets the payment form for given cart ID
+     *
+     * @param string $cartId Cart ID to get form for
+     *
+     * @return string Payment form HTML
+     * @throws LocalizedException If form cannot be retrieved
+     */
     public function getForm(string $cartId): string
     {
         $quote = $this->cartProvider->getQuote($cartId);
@@ -108,8 +123,10 @@ class BaseSequraPaymentMethodsService
             $payload = $this->jsonSerializer->unserialize($this->request->getContent());
         }
 
-        $product = !empty($payload['product_data']['sequra_product']) ? $payload['product_data']['sequra_product'] : null;
-        $campaign = !empty($payload['product_data']['sequra_campaign']) ? $payload['product_data']['sequra_campaign'] : null;
+        $product = !empty($payload['product_data']['sequra_product']) ?
+            $payload['product_data']['sequra_product'] : null;
+        $campaign = !empty($payload['product_data']['sequra_campaign']) ?
+            $payload['product_data']['sequra_campaign'] : null;
 
         $formResponse = CheckoutAPI::get()
             ->solicitation((string)$quote->getStore()->getId())

@@ -14,9 +14,22 @@ use Sequra\Core\Model\Config\Source\WidgetPaymentMethods;
  */
 class Version260 implements DataPatchInterface
 {
+    /**
+     * @var ModuleDataSetupInterface
+     */
     private ModuleDataSetupInterface $moduleDataSetup;
+    
+    /**
+     * @var WidgetPaymentMethods
+     */
     private WidgetPaymentMethods $widgetPaymentMethods;
 
+    /**
+     * Constructor for Version260 data patch
+     *
+     * @param ModuleDataSetupInterface $moduleDataSetup
+     * @param WidgetPaymentMethods $widgetPaymentMethods
+     */
     public function __construct(ModuleDataSetupInterface $moduleDataSetup, WidgetPaymentMethods $widgetPaymentMethods)
     {
         $this->moduleDataSetup = $moduleDataSetup;
