@@ -15,11 +15,12 @@ class QueueItemRepository extends BaseRepository implements QueueItemRepositoryI
     /**
      * Fully qualified name of this class.
      */
-    const THIS_CLASS_NAME = __CLASS__;
+    public const THIS_CLASS_NAME = __CLASS__;
+    
     /**
      * Name of the base entity table in database.
      */
-    const TABLE_NAME = 'sequra_queue';
+    public const TABLE_NAME = 'sequra_queue';
 
     /**
      * Finds list of earliest queued queue items per queue. Following list of criteria for searching must be satisfied:
@@ -35,18 +36,16 @@ class QueueItemRepository extends BaseRepository implements QueueItemRepositoryI
      */
     public function findOldestQueuedItems($priority, $limit = 10)
     {
-        $queuedItems = [];
         $entity = new $this->entityClass;
 
         try {
             $records = $this->resourceEntity->findOldestQueuedItems($entity, $priority, $limit);
             /** @var QueueItem[] $queuedItems */
-            $queuedItems = $this->deserializeEntities($records);
+            return $this->deserializeEntities($records);
         } catch (LocalizedException $e) {
             // In case of exception return empty result set.
+            return [];
         }
-
-        return $queuedItems;
     }
 
     /**

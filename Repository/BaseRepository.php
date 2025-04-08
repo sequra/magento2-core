@@ -9,28 +9,34 @@ use SeQura\Core\Infrastructure\ORM\Interfaces\RepositoryInterface;
 use SeQura\Core\Infrastructure\ORM\QueryFilter\QueryFilter;
 use Sequra\Core\ResourceModel\SequraEntity;
 
+// TODO: Remove static methods
+// phpcs:disable Magento2.Functions.StaticFunction.StaticFunction
 class BaseRepository implements RepositoryInterface
 {
     /**
      * Fully qualified name of this class.
      */
-    const THIS_CLASS_NAME = __CLASS__;
+    public const THIS_CLASS_NAME = __CLASS__;
+    
     /**
      * Number of indexes in Sequra entity table.
      */
-    const NUMBER_OF_INDEXES = 7;
+    public const NUMBER_OF_INDEXES = 7;
+    
     /**
      * @var string
      */
     protected $entityClass;
+    
     /**
      * @var SequraEntity
      */
     protected $resourceEntity;
+    
     /**
      * Name of the base entity table in database.
      */
-    const TABLE_NAME = 'sequra_entity';
+    public const TABLE_NAME = 'sequra_entity';
 
     /**
      * Returns full class name.

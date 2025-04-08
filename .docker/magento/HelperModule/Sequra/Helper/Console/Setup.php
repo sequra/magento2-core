@@ -18,7 +18,8 @@ class Setup extends Command
     /**
      *  Command name
      */
-    const NAME = 'sequra-helper:setup';
+    public const NAME = 'sequra-helper:setup';
+    
    /**
     * Initialize triggerreport command
     *

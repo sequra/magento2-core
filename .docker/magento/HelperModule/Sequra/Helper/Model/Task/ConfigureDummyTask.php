@@ -19,18 +19,25 @@ class ConfigureDummyTask extends Task
 
     /**
      * Check if dummy merchant configuration is in use
+     *
+     * @param bool $widgets
      */
     private function isDummyConfigInUse(bool $widgets): bool
     {
         $expected_rows = $widgets ? 2 : 1;
         $table_name = DatabaseHandler::SEQURA_ENTITY_TABLE;
-        $query      = "SELECT * FROM $table_name WHERE (`type` = 'ConnectionData' AND `data` LIKE '%\"username\":\"dummy_automated_tests\"%') OR (`type` = 'WidgetSettings' AND `data` LIKE '%\"displayOnProductPage\":true%')";
+        $query      = "SELECT * FROM $table_name 
+        WHERE (`type` = 'ConnectionData' 
+        AND `data` LIKE '%\"username\":\"dummy_automated_tests\"%') 
+        OR (`type` = 'WidgetSettings' AND `data` LIKE '%\"displayOnProductPage\":true%')";
         $result     = $this->conn->getConnection()->fetchAll($query);
         return is_array($result) && count($result) === $expected_rows;
     }
 
     /**
      * Set configuration for dummy merchant
+     *
+     * @param bool $widgets
      */
     private function setDummyConfig(bool $widgets): void
     {
@@ -134,6 +141,8 @@ class ConfigureDummyTask extends Task
 
     /**
      * Execute the task
+     *
+     * @param array $args Arguments for the task
      *
      * @throws \Exception If the task fails
      */

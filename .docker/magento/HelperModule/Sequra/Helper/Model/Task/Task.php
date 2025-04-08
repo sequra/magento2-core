@@ -18,12 +18,22 @@ class Task
 
     /**
      * Resource connection
+     *
+     * @var ResourceConnection
      */
     protected $conn;
+
+    /**
+     * Database handler
+     *
+     * @var DatabaseHandler
+     */
     protected $dbHandler;
 
     /**
      * Constructor
+     *
+     * @param ResourceConnection $resourceConnection Resource connection
      */
     public function __construct(ResourceConnection $resourceConnection)
     {
@@ -33,6 +43,8 @@ class Task
 
     /**
      * Execute the task
+     *
+     * @param array $args Arguments for the task
      *
      * @throws \Exception If the task fails
      */
@@ -56,6 +68,11 @@ class Task
         );
     }
 
+    /**
+     * Time to string
+     *
+     * @param int $timestamp Timestamp to convert
+     */
     protected function timeToString(int $timestamp): string
     {
         $time = (string) $timestamp;
@@ -68,6 +85,9 @@ class Task
 
     /**
      * Response with an error message
+     *
+     * @param string $message Error message
+     * @param int $error_code Error code
      */
     public function httpErrorResponse(string $message, int $error_code)
     {
