@@ -14,6 +14,17 @@ use SeQura\Core\Infrastructure\ORM\Utility\IndexHelper;
 class SequraEntity extends AbstractDb
 {
 
+    // phpcs:disable Magento2.CodeAnalysis.EmptyBlock.DetectedFunction
+    /**
+     * Resource model initialization.
+     *
+     * @return void
+     */
+    protected function _construct()
+    {
+    }
+    // phpcs:enable
+    
     /**
      * Set resource model table name.
      *

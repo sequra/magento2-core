@@ -10,6 +10,20 @@ use Sequra\Core\Services\BusinessLogic\PaymentMethodsService;
 
 class PaymentMethods extends Template
 {
+
+    // phpcs:disable Generic.CodeAnalysis.UselessOverridingMethod.Found
+    /**
+     * PaymentMethods constructor.
+     *
+     * @param Context $context
+     * @param array $data
+     */
+    public function __construct(Context $context, array $data = [])
+    {
+        parent::__construct($context, $data);
+    }
+    // phpcs:enable
+
     /**
      *
      * @var string
