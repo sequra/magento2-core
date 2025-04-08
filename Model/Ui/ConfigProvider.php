@@ -12,7 +12,7 @@ use Sequra\Core\Services\BusinessLogic\WidgetConfigService;
 
 class ConfigProvider implements ConfigProviderInterface
 {
-    const CODE = 'sequra_payment';
+    public const CODE = 'sequra_payment';
 
     /**
      * @var \Magento\Framework\App\ScopeResolverInterface

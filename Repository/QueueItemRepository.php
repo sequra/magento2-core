@@ -49,7 +49,8 @@ class QueueItemRepository extends BaseRepository implements QueueItemRepositoryI
     }
 
     /**
-     * @inheridoc
+     * Batch update the status of multiple queue items
+     *
      * @param array $ids IDs of queue items to update
      * @param mixed $status Status to set for the items
      */

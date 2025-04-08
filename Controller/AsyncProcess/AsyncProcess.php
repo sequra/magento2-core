@@ -35,6 +35,8 @@ class AsyncProcess extends Action
 
     /**
      * Execute action based on request and return result.
+     *
+     * @return \Magento\Framework\Controller\Result\Json
      */
     public function execute()
     {

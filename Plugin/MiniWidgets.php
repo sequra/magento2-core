@@ -35,7 +35,7 @@ use Sequra\Core\Services\BusinessLogic\ProductService;
 
 class MiniWidgets
 {
-    const MINI_WIDGET_PRODUCTS = ['sp1', 'pp3', 'pp6', 'pp9'];
+    public const MINI_WIDGET_PRODUCTS = ['sp1', 'pp3', 'pp6', 'pp9'];
 
     /**
      * @var StoreManagerInterface

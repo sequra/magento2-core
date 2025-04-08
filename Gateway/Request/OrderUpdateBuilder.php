@@ -8,6 +8,12 @@ use Magento\Sales\Model\Order\Payment;
 class OrderUpdateBuilder implements BuilderInterface
 {
 
+    /**
+     * Builds the request data for order updates
+     *
+     * @param array $buildSubject The data provided for the builder
+     * @return array The request data array
+     */
     public function build(array $buildSubject): array
     {
         $order = null;
