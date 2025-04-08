@@ -19,7 +19,14 @@ use SeQura\Core\BusinessLogic\Domain\PaymentMethod\Models\SeQuraPaymentMethod;
 
 class Teaser extends Template implements BlockInterface
 {
+    /**
+     * @var string
+     */
     protected static $paymentCode;
+    
+    /**
+     * @var string
+     */
     protected $_template = "widget/teaser.phtml";
     /**
      * @var \Magento\Framework\App\ScopeResolverInterface
@@ -144,12 +151,13 @@ class Teaser extends Template implements BlockInterface
         $this->productWidgetAvailabilityValidator = $productValidator;
     }
     
+    // phpcs:disable PSR2.Methods.MethodDeclaration.Underscore
+    
     /**
      * Validate before producing html
      *
      * @return string
      */
-    // phpcs:disable PSR2.Methods.MethodDeclaration.Underscore
     protected function _toHtml()
     {
         $currency = $this->scopeResolver->getScope()->getCurrentCurrency();
@@ -175,6 +183,11 @@ class Teaser extends Template implements BlockInterface
     }
     // phpcs:enable
 
+    /**
+     * Get formatter instance.
+     *
+     * @return \NumberFormatter
+     */
     private function getFormatter()
     {
         $localeCode = $this->localeResolver->getLocale();
@@ -185,16 +198,31 @@ class Teaser extends Template implements BlockInterface
         );
     }
 
+    /**
+     * Get decimal separator symbol.
+     *
+     * @return string
+     */
     public function getDecimalSeparator()
     {
         return $this->formatter->getSymbol(\NumberFormatter::DECIMAL_SEPARATOR_SYMBOL);
     }
 
+    /**
+     * Get thousands separator symbol.
+     *
+     * @return string
+     */
     public function getThousandsSeparator()
     {
         return $this->formatter->getSymbol(\NumberFormatter::GROUPING_SEPARATOR_SYMBOL);
     }
 
+    /**
+     * Get script URI for the Sequra CDN.
+     *
+     * @return string
+     */
     public function getScriptUri()
     {
         $settings = $this->getConnectionSettings();
@@ -220,6 +248,11 @@ class Teaser extends Template implements BlockInterface
         );
     }
 
+    /**
+     * Get product list from payment methods data.
+     *
+     * @return array
+     */
     public function getProduct()
     {
         $products = [];
@@ -234,18 +267,33 @@ class Teaser extends Template implements BlockInterface
         return $products;
     }
 
+    /**
+     * Get assets key from widget settings.
+     *
+     * @return string
+     */
     public function getAssetsKey()
     {
         $settings = $this->getWidgetSettings();
         return !$settings ? '' : $settings->getAssetsKey();
     }
 
+    /**
+     * Get current country code from locale.
+     *
+     * @return string
+     */
     private function getCurrentCountry()
     {
         $parts = explode('_', $this->localeResolver->getLocale());
         return strtoupper(count($parts) > 1 ? $parts[1] : $parts[0]);
     }
 
+    /**
+     * Get merchant ID for current country.
+     *
+     * @return string
+     */
     private function getMerchantId()
     {
         $country = $this->getCurrentCountry();
@@ -260,6 +308,11 @@ class Teaser extends Template implements BlockInterface
         return '';
     }
 
+    /**
+     * Get formatted locale for widget.
+     *
+     * @return string
+     */
     public function getLocale()
     {
         return str_replace('_', '-', $this->localeResolver->getLocale());

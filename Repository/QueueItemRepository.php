@@ -53,6 +53,8 @@ class QueueItemRepository extends BaseRepository implements QueueItemRepositoryI
      *
      * @param array $ids IDs of queue items to update
      * @param mixed $status Status to set for the items
+     *
+     * @return void
      */
     public function batchStatusUpdate(array $ids, $status): void
     {
