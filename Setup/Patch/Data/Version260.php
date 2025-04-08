@@ -44,7 +44,6 @@ class Version260 implements DataPatchInterface
         return [];
     }
 
-
     /**
      * @inheritDoc
      */

@@ -66,7 +66,9 @@ class QueueItemRepository extends BaseRepository implements QueueItemRepositoryI
     }
 
     /**
-     * Creates or updates given queue item. If queue item id is not set, new queue item will be created otherwise
+     * Creates or updates given queue item.
+     *
+     * If queue item id is not set, new queue item will be created otherwise
      * update will be performed.
      *
      * @param QueueItem $queueItem Item to save

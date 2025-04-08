@@ -95,16 +95,31 @@ class Initializer implements DataPatchInterface
         $bootstrap->initInstance();
     }
 
+    /**
+     * Gets the dependencies for this patch.
+     *
+     * @return string[]
+     */
     public static function getDependencies(): array
     {
         return [];
     }
 
+    /**
+     * Gets the aliases for this patch.
+     *
+     * @return string[]
+     */
     public function getAliases(): array
     {
         return [];
     }
 
+    /**
+     * Applies the data patch.
+     *
+     * @return void
+     */
     public function apply()
     {
         try {
@@ -383,6 +398,11 @@ class Initializer implements DataPatchInterface
         $this->getWidgetSettingsService()->setWidgetSettings($widgetSettings);
     }
 
+    /**
+     * Removes obsolete configuration from the database.
+     *
+     * @return void
+     */
     private function removeObsoleteConfig()
     {
         $installer = $this->databaseHandler->getInstaller();
@@ -391,6 +411,11 @@ class Initializer implements DataPatchInterface
         $connection->delete('core_config_data', "path like '%sequra%'");
     }
 
+    /**
+     * Removes obsolete statuses from the database.
+     *
+     * @return void
+     */
     private function removeObsoleteStatuses()
     {
         $installer = $this->databaseHandler->getInstaller();

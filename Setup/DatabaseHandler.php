@@ -157,8 +157,10 @@ class DatabaseHandler
     }
 
     /**
-     * @param string $tableName
-     * @param string $columnName
+     * Removes a column from a table if it exists.
+     *
+     * @param string $tableName The name of the table
+     * @param string $columnName The name of the column to remove
      *
      * @return void
      */
