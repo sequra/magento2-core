@@ -4,8 +4,9 @@ namespace Sequra\Core\Services\BusinessLogic;
 
 use Exception;
 use SeQura\Core\BusinessLogic\AdminAPI\AdminAPI;
-use SeQura\Core\BusinessLogic\AdminAPI\PaymentMethods\Requests\GetAvailablePaymentMethodsRequest;
-use SeQura\Core\BusinessLogic\AdminAPI\PaymentMethods\Responses\PaymentMethodsResponse;
+use SeQura\Core\BusinessLogic\CheckoutAPI\CheckoutAPI;
+use SeQura\Core\BusinessLogic\CheckoutAPI\PaymentMethods\Requests\GetCachedPaymentMethodsRequest;
+use SeQura\Core\BusinessLogic\CheckoutAPI\PaymentMethods\Responses\CachedPaymentMethodsResponse;
 use SeQura\Core\BusinessLogic\Domain\Integration\Store\StoreServiceInterface;
 use SeQura\Core\Infrastructure\Http\Exceptions\HttpRequestException;
 use SeQura\Core\Infrastructure\ServiceRegister;
@@ -45,10 +46,9 @@ class PaymentMethodsService
                 continue;
             }
 
-            /** @var PaymentMethodsResponse $paymentMethods */
-            $paymentMethods = AdminAPI::get()->paymentMethods($storeId)->getCachedPaymentMethods(
-                new GetAvailablePaymentMethodsRequest($firstConfig['merchantId'])
-            );
+            /** @var CachedPaymentMethodsResponse $paymentMethods */
+            $paymentMethods = CheckoutAPI::get()->cachedPaymentMethods($storeId)
+                ->getCachedPaymentMethods(new GetCachedPaymentMethodsRequest($firstConfig['merchantId']));
 
             if (!$paymentMethods->isSuccessful()) {
                 continue;

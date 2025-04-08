@@ -13,16 +13,18 @@ use Magento\Framework\View\Element\Template\Context;
 use Magento\Store\Model\StoreManagerInterface;
 use Magento\Checkout\Model\Session;
 use SeQura\Core\BusinessLogic\AdminAPI\AdminAPI;
+use SeQura\Core\BusinessLogic\CheckoutAPI\CheckoutAPI;
+use SeQura\Core\BusinessLogic\CheckoutAPI\PaymentMethods\Requests\GetCachedPaymentMethodsRequest;
+use SeQura\Core\BusinessLogic\CheckoutAPI\PaymentMethods\Responses\CachedPaymentMethodsResponse;
 use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
 use SeQura\Core\BusinessLogic\Domain\PromotionalWidgets\Models\WidgetSettings;
 use SeQura\Core\BusinessLogic\Domain\PromotionalWidgets\Services\WidgetSettingsService;
+use SeQura\Core\Infrastructure\Logger\Logger;
 use SeQura\Core\Infrastructure\ServiceRegister;
 use Sequra\Core\Services\BusinessLogic\ProductService;
 use Sequra\Core\Services\BusinessLogic\WidgetConfigService;
 use SeQura\Core\BusinessLogic\Domain\Connection\Models\ConnectionData;
 use SeQura\Core\BusinessLogic\Domain\Connection\Services\ConnectionService;
-use SeQura\Core\BusinessLogic\Domain\PaymentMethod\Services\PaymentMethodsService;
-use SeQura\Core\BusinessLogic\Domain\PaymentMethod\Models\SeQuraPaymentMethod;
 
 /**
  * Class WidgetInitializer
@@ -160,54 +162,39 @@ class WidgetInitializer extends Template
      *
      * @return array<string>
      */
-    public function getProducts()
+    public function getProducts(): array
     {
         $paymentMethods = [];
         $storeId = $this->scopeResolver->getScope()->getStoreId();
         $merchantId = $this->getMerchantId();
         if (!$merchantId) {
-            // TODO: Log Merchant ID not found
+            Logger::logInfo('Merchant id not found for storeId: ' . $storeId  . ' when fetching products');
+
             return $paymentMethods;
         }
 
-        foreach ($this->getPaymentMethods($storeId, $merchantId) as $paymentMethod) {
+        /** @var CachedPaymentMethodsResponse $cachedPaymentMethods */
+        $cachedPaymentMethods = CheckoutAPI::get()->cachedPaymentMethods($storeId)
+            ->getCachedPaymentMethods(new GetCachedPaymentMethodsRequest($merchantId));
+
+        foreach ($cachedPaymentMethods->toArray() as $paymentMethod) {
             // Check if supports widgets
-            if (in_array($paymentMethod->getProduct(), array('i1', 'pp5', 'pp3', 'pp6', 'pp9', 'sp1'), true)) {
-                $paymentMethods[] = $paymentMethod->getProduct();
+            if (in_array($paymentMethod['product'], ['i1', 'pp5', 'pp3', 'pp6', 'pp9', 'sp1'], true)) {
+                $paymentMethods[] = $paymentMethod['product'];
             }
         }
+
         return $paymentMethods;
     }
 
-    /**
-     * Get payment methods for a given merchant using the current store context
-     *
-     * @param string $storeId
-     * @param string $merchantId
-     *
-     * @return SeQuraPaymentMethod[]
-     */
-    private function getPaymentMethods($storeId, $merchantId)
-    {
-        $payment_methods = [];
-        try {
-            $payment_methods = StoreContext::doWithStore($storeId, function () use ($merchantId) {
-                return ServiceRegister::getService(PaymentMethodsService::class)->getMerchantsPaymentMethods($merchantId);
-            });
-        } catch (\Throwable $e) {
-            // TODO: Log error
-        }
-        return $payment_methods;
-    }
-
-    public function getAssetsKey()
+    public function getAssetsKey(): string
     {
         $settings = $this->getWidgetSettings();
 
         return !$settings ? '' : $settings->getAssetsKey();
     }
 
-    private function getCurrentCountry()
+    private function getCurrentCountry(): string
     {
         $parts = explode('_', $this->localeResolver->getLocale());
 

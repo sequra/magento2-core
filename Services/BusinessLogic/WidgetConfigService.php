@@ -12,8 +12,9 @@ use Magento\Store\Api\StoreConfigManagerInterface;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
 use SeQura\Core\BusinessLogic\AdminAPI\AdminAPI;
-use SeQura\Core\BusinessLogic\AdminAPI\PaymentMethods\Requests\GetAvailablePaymentMethodsRequest;
-use SeQura\Core\BusinessLogic\AdminAPI\PaymentMethods\Responses\PaymentMethodsResponse;
+use SeQura\Core\BusinessLogic\CheckoutAPI\CheckoutAPI;
+use SeQura\Core\BusinessLogic\CheckoutAPI\PaymentMethods\Requests\GetCachedPaymentMethodsRequest;
+use SeQura\Core\BusinessLogic\CheckoutAPI\PaymentMethods\Responses\CachedPaymentMethodsResponse;
 use SeQura\Core\BusinessLogic\DataAccess\PromotionalWidgets\Entities\WidgetSettings as WidgetSettingsEntity;
 use SeQura\Core\BusinessLogic\Domain\Connection\Models\ConnectionData;
 use SeQura\Core\BusinessLogic\Domain\Connection\Services\ConnectionService;
@@ -141,10 +142,9 @@ class WidgetConfigService
             return [];
         }
 
-        /** @var PaymentMethodsResponse $paymentMethods */
-        $paymentMethods = AdminAPI::get()->paymentMethods(StoreContext::getInstance()->getStoreId())->getCachedPaymentMethods(
-            new GetAvailablePaymentMethodsRequest($merchantId)
-        );
+        /** @var CachedPaymentMethodsResponse $paymentMethods */
+        $paymentMethods = CheckoutAPI::get()->cachedPaymentMethods(StoreContext::getInstance()->getStoreId())
+            ->getCachedPaymentMethods(new GetCachedPaymentMethodsRequest($merchantId));
 
         if(!$paymentMethods->isSuccessful()) {
             return [];
