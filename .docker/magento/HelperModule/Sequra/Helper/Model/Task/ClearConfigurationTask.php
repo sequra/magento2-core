@@ -16,9 +16,9 @@ class ClearConfigurationTask extends Task
     /**
      * Execute the task
      *
-     * @param array $args Arguments for the task
+     * @param string[] $args Arguments for the task
      *
-     * @return array
+     * @return array<string, mixed>
      *
      * @throws \Exception If the task fails
      */

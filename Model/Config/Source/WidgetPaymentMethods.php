@@ -1,7 +1,7 @@
 <?php
 namespace Sequra\Core\Model\Config\Source;
 
-use Magento\Framework\App\ScopeResolverInterface;
+use Magento\Store\Model\StoreManagerInterface;
 use Magento\Framework\Data\OptionSourceInterface;
 use SeQura\Core\Infrastructure\ServiceRegister;
 use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
@@ -13,18 +13,18 @@ use SeQura\Core\BusinessLogic\Domain\CountryConfiguration\Services\CountryConfig
 class WidgetPaymentMethods implements OptionSourceInterface
 {
     /**
-     * @var ScopeResolverInterface
+     * @var StoreManagerInterface
      */
-    private $scopeResolver;
+    private $storeManager;
 
     /**
      * Constructor
      *
-     * @param ScopeResolverInterface $scopeResolver Scope resolver for getting current store scope
+     * @param StoreManagerInterface $storeManager Store manager
      */
-    public function __construct(ScopeResolverInterface $scopeResolver)
+    public function __construct(StoreManagerInterface $storeManager)
     {
-        $this->scopeResolver = $scopeResolver;
+        $this->storeManager = $storeManager;
     }
 
     /**
@@ -38,7 +38,7 @@ class WidgetPaymentMethods implements OptionSourceInterface
     public function getPaymentMethodValues()
     {
         $values = [];
-        $storeId = $this->scopeResolver->getScope()->getStoreId();
+        $storeId = $this->storeManager->getStore()->getId();
         $countries = $this->getAvailableCountries($storeId);
         foreach ($countries as $country) {
             if (!$country->getMerchantId()) {

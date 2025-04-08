@@ -41,8 +41,11 @@ class ConfigureDummyTask extends Task
      */
     private function setDummyConfig(bool $widgets): void
     {
+        /**
+         * @var EncryptorInterface $encryptor
+         */
         $encryptor = ObjectManager::getInstance()->get(EncryptorInterface::class);
-        $password = $encryptor->encrypt(getenv('SQ_USER_SECRET'));
+        $password = $encryptor->encrypt((string) getenv('SQ_USER_SECRET'));
 
         $table_name = DatabaseHandler::SEQURA_ENTITY_TABLE;
         $conn = $this->conn->getConnection();
@@ -142,7 +145,9 @@ class ConfigureDummyTask extends Task
     /**
      * Execute the task
      *
-     * @param array $args Arguments for the task
+     * @param string[] $args Arguments for the task
+     *
+     * @return array<string, mixed>
      *
      * @throws \Exception If the task fails
      */
