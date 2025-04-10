@@ -12,11 +12,6 @@ use SeQura\Core\Infrastructure\ORM\Exceptions\RepositoryNotRegisteredException;
 use SeQura\Core\Infrastructure\ORM\Interfaces\RepositoryInterface;
 use SeQura\Core\Infrastructure\ORM\RepositoryRegistry;
 
-/**
- * Class StoreService
- *
- * @package Sequra\Core\Services\BusinessLogic
- */
 class StoreService implements StoreServiceInterface
 {
     /**
@@ -24,6 +19,11 @@ class StoreService implements StoreServiceInterface
      */
     private $storeManager;
 
+    /**
+     * StoreService constructor.
+     *
+     * @param StoreManagerInterface $storeManager
+     */
     public function __construct(StoreManagerInterface $storeManager)
     {
         $this->storeManager = $storeManager;
@@ -104,6 +104,8 @@ class StoreService implements StoreServiceInterface
     }
 
     /**
+     * Get repository instance.
+     *
      * @return RepositoryInterface
      *
      * @throws RepositoryNotRegisteredException

@@ -26,6 +26,7 @@
 	<exclude-pattern>*.js</exclude-pattern>
 	<exclude-pattern>*.md</exclude-pattern>
 	<exclude-pattern>*.sh</exclude-pattern>
+	<exclude-pattern>*.less</exclude-pattern>
 	<!-- How to scan -->
 	<!-- Usage instructions: https://github.com/squizlabs/PHP_CodeSniffer/wiki/Usage -->
 	<!-- Annotated ruleset: https://github.com/squizlabs/PHP_CodeSniffer/wiki/Annotated-ruleset.xml -->
@@ -40,5 +41,28 @@
     <rule ref="Magento2"/>
 	<rule ref="PHPCompatibility">
 		<exclude-pattern>Tests/</exclude-pattern>
+	</rule>
+	<rule ref="Magento2.SQL.RawQuery.FoundRawSql">
+		<exclude-pattern>.docker/magento/HelperModule/Sequra/Helper/</exclude-pattern>
+	</rule>
+	<rule ref="Generic.Files.LineLength.TooLong">
+		<exclude-pattern>.docker/magento/HelperModule/Sequra/Helper/</exclude-pattern>
+		<exclude-pattern>*.xml</exclude-pattern>
+		<exclude-pattern>*.phtml</exclude-pattern>
+	</rule>
+	<rule ref="Magento2.Functions.DiscouragedFunction.Discouraged">
+		<exclude-pattern>.docker/magento/HelperModule/Sequra/Helper/</exclude-pattern>
+	</rule>
+	<rule ref="Magento2.Exceptions.DirectThrow.FoundDirectThrow">
+		<exclude-pattern>.docker/magento/HelperModule/Sequra/Helper/</exclude-pattern>
+	</rule>
+	<rule ref="Magento2.Security.Superglobal.SuperglobalUsageError">
+		<exclude-pattern>.docker/magento/HelperModule/Sequra/Helper/</exclude-pattern>
+	</rule>
+	<rule ref="Generic.Classes.DuplicateClassName.Found">
+		<exclude-pattern>Test/</exclude-pattern>
+	</rule>
+	<rule ref="Magento2.Security.InsecureFunction.Found">
+		<exclude-pattern>Test/</exclude-pattern>
 	</rule>
 </ruleset>

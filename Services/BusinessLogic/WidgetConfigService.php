@@ -80,8 +80,7 @@ class WidgetConfigService
         \Magento\Framework\Locale\ResolverInterface   $localeResolver,
         StoreConfigManagerInterface $storeConfigManager,
         ScopeConfigInterface $scopeConfig
-    )
-    {
+    ) {
         $this->storeManager = $storeManager;
         $this->scopeResolver = $scopeResolver;
         $this->localeResolver = $localeResolver;
@@ -91,6 +90,8 @@ class WidgetConfigService
     }
 
     /**
+     * Get data
+     *
      * @param string $storeId
      *
      * @return array[]
@@ -117,6 +118,10 @@ class WidgetConfigService
     }
 
     /**
+     * Get configuration data
+     *
+     * @param bool $isPreview Whether this is a preview mode request
+     *
      * @return array[]
      *
      * @throws HttpRequestException
@@ -176,8 +181,10 @@ class WidgetConfigService
     }
 
     /**
-     * @param string|null $code
-     * @param bool $isPreview
+     * Get merchant ID
+     *
+     * @param string|null $code Country code
+     * @param bool $isPreview Whether this is a preview mode request
      *
      * @return string
      */
@@ -203,6 +210,13 @@ class WidgetConfigService
         return $merchantId;
     }
 
+    /**
+     * Get country code
+     *
+     * @param StoreConfigInterface $storeConfig
+     *
+     * @return string
+     */
     private function getCountry(StoreConfigInterface $storeConfig)
     {
         return $this->scopeConfig->getValue(
@@ -213,6 +227,8 @@ class WidgetConfigService
     }
 
     /**
+     * Get country configuration
+     *
      * @return CountryConfiguration[]|null
      */
     private function getCountryConfiguration(): ?array
@@ -221,6 +237,8 @@ class WidgetConfigService
     }
 
     /**
+     * Get connection settings
+     *
      * @return ConnectionData|null
      */
     private function getConnectionSettings(): ?ConnectionData
@@ -229,6 +247,8 @@ class WidgetConfigService
     }
 
     /**
+     * Get widget settings
+     *
      * @return WidgetSettings|null
      *
      * @throws Exception
@@ -249,6 +269,8 @@ class WidgetConfigService
     }
 
     /**
+     * Get the default store
+     *
      * @return Store|null
      *
      * @throws RepositoryNotRegisteredException
@@ -269,6 +291,8 @@ class WidgetConfigService
     }
 
     /**
+     * Get enabled stores
+     *
      * @return array
      *
      * @throws Exception
@@ -292,6 +316,8 @@ class WidgetConfigService
     }
 
     /**
+     * Get the store service
+     *
      * @return StoreServiceInterface
      */
     private function getStoreService(): StoreServiceInterface
@@ -300,6 +326,8 @@ class WidgetConfigService
     }
 
     /**
+     * Get the widget settings service
+     *
      * @return WidgetSettingsService
      */
     private function getWidgetSettingsService(): WidgetSettingsService
@@ -308,6 +336,8 @@ class WidgetConfigService
     }
 
     /**
+     * Get the connection service
+     *
      * @return ConnectionService
      */
     private function getConnectionService(): ConnectionService
@@ -316,6 +346,8 @@ class WidgetConfigService
     }
 
     /**
+     * Get the country configuration service
+     *
      * @return CountryConfigurationService
      */
     private function getCountryConfigService(): CountryConfigurationService

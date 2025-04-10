@@ -4,20 +4,34 @@ namespace Sequra\Core\Setup\Patch\Data;
 
 use Magento\Framework\Setup\Patch\DataPatchInterface;
 use Magento\Framework\Setup\ModuleDataSetupInterface;
+use Sequra\Core\Block\Widget\Teaser;
 use Sequra\Core\Model\Config\Source\WidgetPaymentMethods;
 
 /**
  * Class Version260
- * 
- * Migration script to transition from the widgets based on the PageBuilder block to the new widgets based on the Teaser block.
  *
- * @package Sequra\Core\Setup\Patch\Data
+ * Migration script to transition from the widgets based on the PageBuilder block
+ * to the new widgets based on the Teaser block.
+ *
  */
 class Version260 implements DataPatchInterface
 {
+    /**
+     * @var ModuleDataSetupInterface
+     */
     private ModuleDataSetupInterface $moduleDataSetup;
+    
+    /**
+     * @var WidgetPaymentMethods
+     */
     private WidgetPaymentMethods $widgetPaymentMethods;
 
+    /**
+     * Constructor for Version260 data patch
+     *
+     * @param ModuleDataSetupInterface $moduleDataSetup
+     * @param WidgetPaymentMethods $widgetPaymentMethods
+     */
     public function __construct(ModuleDataSetupInterface $moduleDataSetup, WidgetPaymentMethods $widgetPaymentMethods)
     {
         $this->moduleDataSetup = $moduleDataSetup;
@@ -31,7 +45,6 @@ class Version260 implements DataPatchInterface
     {
         return [];
     }
-
 
     /**
      * @inheritDoc
@@ -51,17 +64,6 @@ class Version260 implements DataPatchInterface
         $cms_block = $this->moduleDataSetup->getTable('cms_block');
         $cms_block_store = $this->moduleDataSetup->getTable('cms_block_store');
         $widget_instance = $this->moduleDataSetup->getTable('widget_instance');
-
-       // Steps:
-       // 1. Read all rows from cms_block table having content like %data-content-type="sequra_core"%
-       // 2. For each row:
-       //   2.1. Save payment_method in a variable by reading the content of the block and getting data-payment-method="..." values if any. Otherwise use pp3 as the value
-       //   2.2. Save the title in a variable.
-       //   2.3. Query the widget_instance table to get every row containing widget_parameters = {"block_id":"$title"}
-       //   2.4. For each row:
-       //     2.4.1. Update the value of the column instance_type to Sequra\Core\Block\Widget\Teaser
-       //     2.4.2. Update the value of the column widget_parameters
-       //   2.2 Remove the row from cms_block and from cms_block_store tables
 
         $query = $connection->select()
             ->from($cms_block)
@@ -85,7 +87,7 @@ class Version260 implements DataPatchInterface
                 $connection->update(
                     $widget_instance,
                     [
-                        'instance_type' => 'Sequra\Core\Block\Widget\Teaser',
+                        'instance_type' => Teaser::class,
                         'widget_parameters' => json_encode(
                             [
                                 'price_sel' => '.product-info-main .price',
@@ -109,7 +111,7 @@ class Version260 implements DataPatchInterface
 
     /**
      * Get the payment methods parameters
-     * 
+     *
      * @param string[] $paymentMethods
      * @return string[]
      */
@@ -117,9 +119,9 @@ class Version260 implements DataPatchInterface
     {
         $paymentMethodsParams = [];
         foreach ($paymentMethods as $paymentMethod) {
-            foreach($this->widgetPaymentMethods->getPaymentMethodValues() as $paymentMethodValue) {
-                if($paymentMethodValue['product'] === $paymentMethod) {
-                    $paymentMethodsParams[] = $this->widgetPaymentMethods->encodePaymentMethodValue($paymentMethodValue);
+            foreach ($this->widgetPaymentMethods->getPaymentMethodValues() as $value) {
+                if ($value['product'] === $paymentMethod) {
+                    $paymentMethodsParams[] = $this->widgetPaymentMethods->encodePaymentMethodValue($value);
                     break;
                 }
             }

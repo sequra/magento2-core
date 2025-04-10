@@ -34,17 +34,24 @@ class OrderUpdateTransaction implements ClientInterface
     private $orderService;
 
     /**
+     * Constructor
+     *
      * @param SeQuraTranslationProvider $translationProvider
      * @param TransformEntityService $transformService
      */
-    public function __construct(SeQuraTranslationProvider $translationProvider, TransformEntityService $transformService)
-    {
+    public function __construct(
+        SeQuraTranslationProvider $translationProvider,
+        TransformEntityService $transformService
+    ) {
         $this->translationProvider = $translationProvider;
         $this->transformService = $transformService;
     }
 
     /**
+     * Place request
+     *
      * @param TransferInterface $transferObject
+     *
      * @return array
      */
     public function placeRequest(TransferInterface $transferObject): array

@@ -8,10 +8,6 @@ use Magento\Backend\Model\Auth\Session;
 use Magento\Framework\Exception\LocalizedException;
 use Sequra\Core\Helper\UrlHelper;
 
-/**
- * Class Index
- *
- */
 class Index extends Template
 {
     /**
@@ -49,6 +45,7 @@ class Index extends Template
      * @param string $controllerName Name of the configuration controller.
      * @param string $storeId Store id.
      * @param string $action Controller action.
+     * @param string|null $identifier Optional identifier parameter.
      *
      * @return string URL to backend configuration controller.
      *
@@ -59,8 +56,7 @@ class Index extends Template
         string $storeId,
         string $action,
         string $identifier = null
-    ): string
-    {
+    ): string {
         $routeParams = [
             'storeId' => $storeId,
             'action' => $action,
@@ -80,11 +76,17 @@ class Index extends Template
     public function getTranslations(): array
     {
         $currentLocale = substr($this->authSession->getUser()->getInterfaceLocale(), 0, 2);
+        // TODO: The use of function file_get_contents() is discouraged
+        // phpcs:ignore Magento2.Functions.DiscouragedFunction.Discouraged
         $default = json_decode(file_get_contents(__DIR__ . '/../../../view/adminhtml/web/lang/en.json'), false);
         $current = [];
 
+        // TODO: The use of function file_exists() is discouraged
+        // phpcs:ignore Magento2.Functions.DiscouragedFunction.Discouraged
         if (file_exists(__DIR__ . '/../../../view/adminhtml/web/lang/' . $currentLocale . '.json')) {
             $current = json_decode(
+                // TODO: The use of function file_get_contents() is discouraged
+                // phpcs:ignore Magento2.Functions.DiscouragedFunction.Discouraged
                 file_get_contents(__DIR__ . '/../../../view/adminhtml/web/lang/' . $currentLocale . '.json'),
                 false
             );
@@ -96,6 +98,11 @@ class Index extends Template
         ];
     }
 
+    /**
+     * Get the admin language
+     *
+     * @return string
+     */
     public function getAdminLanguage(): string
     {
         return strtoupper(substr($this->authSession->getUser()->getInterfaceLocale(), 0, 2));

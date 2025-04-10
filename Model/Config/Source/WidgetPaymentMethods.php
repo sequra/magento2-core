@@ -22,6 +22,8 @@ class WidgetPaymentMethods implements OptionSourceInterface
 
     /**
      * Constructor
+     *
+     * @param ScopeResolverInterface $scopeResolver Scope resolver for getting current store scope
      */
     public function __construct(ScopeResolverInterface $scopeResolver)
     {
@@ -36,7 +38,7 @@ class WidgetPaymentMethods implements OptionSourceInterface
      *
      * @return array<array<string, string>> Array of payment method values
      */
-    public function getPaymentMethodValues(): array
+    public function getPaymentMethodValues()
     {
         $values = [];
         $storeId = $this->scopeResolver->getScope()->getStoreId();
@@ -69,11 +71,11 @@ class WidgetPaymentMethods implements OptionSourceInterface
     /**
      * Encode payment method value to be used as option value
      *
-     * @param array<string, string> $value Payment method value
+     * @param string[] $value Payment method value
      *
      * @return string Encoded value
      */
-    public function encodePaymentMethodValue(array $value): string
+    public function encodePaymentMethodValue($value)
     {
         return base64_encode(json_encode($value));
     }
@@ -108,15 +110,16 @@ class WidgetPaymentMethods implements OptionSourceInterface
      *
      * @return CountryConfiguration[]
      */
-    private function getAvailableCountries(string $storeId): array
+    private function getAvailableCountries($storeId)
     {
         $countries = [];
         try {
             $countries = StoreContext::doWithStore($storeId, function () {
                 return ServiceRegister::getService(CountryConfigurationService::class)->getCountryConfiguration();
             });
-        } catch (\Throwable $e) {
             // TODO: Log error
+            // phpcs:ignore Magento2.CodeAnalysis.EmptyBlock.DetectedCatch
+        } catch (\Throwable $e) {
         }
         return $countries;
     }
@@ -128,7 +131,7 @@ class WidgetPaymentMethods implements OptionSourceInterface
      *
      * @return string Flag emoji
      */
-    private function getCountryFlag(string $countryCode): string
+    private function getCountryFlag($countryCode)
     {
         if (empty($countryCode) || strlen($countryCode) !== 2) {
             return '';

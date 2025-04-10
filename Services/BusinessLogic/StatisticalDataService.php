@@ -6,18 +6,15 @@ use SeQura\Core\BusinessLogic\Domain\SendReport\Models\SendReport;
 use SeQura\Core\BusinessLogic\Domain\StatisticalData\Models\StatisticalData;
 use SeQura\Core\BusinessLogic\Domain\StatisticalData\Services\StatisticalDataService as CoreStatisticalDataService;
 
-/**
- * Class StatisticalDataService
- *
- * @package Sequra\Core\Services\BusinessLogic
- */
 class StatisticalDataService extends CoreStatisticalDataService
 {
     private const SCHEDULE_TIME = '4 am';
     private const SCHEDULE_TIME_NEXT_DAY = '4 am +1 day';
 
     /**
-     * @inheirtDoc
+     * Save statistical data and schedule report sending if needed.
+     *
+     * @param StatisticalData $statisticalData
      */
     public function saveStatisticalData(StatisticalData $statisticalData): void
     {
@@ -39,7 +36,7 @@ class StatisticalDataService extends CoreStatisticalDataService
     }
 
     /**
-     * @inheirtDoc
+     * Set the report sending time to the next day at 4 am.
      */
     public function setSendReportTime(): void
     {

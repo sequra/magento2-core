@@ -8,11 +8,6 @@ use Magento\Framework\Controller\Result\JsonFactory;
 use SeQura\Core\BusinessLogic\AdminAPI\AdminAPI;
 use SeQura\Core\BusinessLogic\AdminAPI\GeneralSettings\Requests\GeneralSettingsRequest;
 
-/**
- * Class GeneralSettings
- *
- * @package Sequra\Core\Controller\Adminhtml\Configuration
- */
 class GeneralSettings extends BaseConfigurationController
 {
     /**

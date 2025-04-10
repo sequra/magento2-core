@@ -19,22 +19,53 @@ use SeQura\Core\BusinessLogic\WebhookAPI\WebhookAPI;
 use SeQura\Core\Infrastructure\Logger\Logger;
 use SeQura\Core\Infrastructure\ServiceRegister;
 
-/**
- * Class Index
- *
- * @package Sequra\Core\Controller\Webhook
- */
 class Index extends Action
 {
+    /**
+     * @var string
+     */
     private const PREFIX = 'm_';
+    
+    /**
+     * @var bool
+     */
     private static $isWebhookProcessing = false;
 
+    /**
+     * @var InvoiceService
+     */
     protected $invoiceService;
+    
+    /**
+     * @var InvoiceRepository
+     */
     protected $invoiceRepository;
+    
+    /**
+     * @var TransactionFactory
+     */
     protected $transactionFactory;
+    
+    /**
+     * @var SearchCriteriaBuilder
+     */
     protected $searchCriteriaBuilder;
+    
+    /**
+     * @var OrderRepositoryInterface
+     */
     protected $orderRepository;
 
+    /**
+     * Constructor for Index controller
+     *
+     * @param Context $context
+     * @param InvoiceService $invoiceService
+     * @param InvoiceRepository $invoiceRepository
+     * @param TransactionFactory $transactionFactory
+     * @param SearchCriteriaBuilder $searchCriteriaBuilder
+     * @param OrderRepositoryInterface $orderRepository
+     */
     public function __construct(
         Context                  $context,
         InvoiceService           $invoiceService,
@@ -42,8 +73,7 @@ class Index extends Action
         TransactionFactory       $transactionFactory,
         SearchCriteriaBuilder    $searchCriteriaBuilder,
         OrderRepositoryInterface $orderRepository
-    )
-    {
+    ) {
         parent::__construct($context);
         $this->invoiceService = $invoiceService;
         $this->invoiceRepository = $invoiceRepository;
@@ -52,6 +82,11 @@ class Index extends Action
         $this->orderRepository = $orderRepository;
     }
 
+    /**
+     * Execute webhook endpoint
+     *
+     * @return void
+     */
     public function execute(): void
     {
         if (!$this->getRequest()->isPost()) {
@@ -88,8 +123,10 @@ class Index extends Action
         $this->getResponse()->sendResponse();
     }
 
+    // TODO: Fix this, static method cannot be intercepted and its use is discouraged
+    // phpcs:disable Magento2.Functions.StaticFunction.StaticFunction
     /**
-     * Gets the static variable value;
+     * Is webhook processing
      *
      * @return bool
      */
@@ -109,6 +146,8 @@ class Index extends Action
     {
         self::$isWebhookProcessing = $isWebhookProcessing;
     }
+    // TODO: Fix this, static method cannot be intercepted and its use is discouraged
+    // phpcs:enable Magento2.Functions.StaticFunction.StaticFunction
 
     /**
      * Creates an invoice for the order.

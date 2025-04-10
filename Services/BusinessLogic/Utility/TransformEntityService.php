@@ -101,7 +101,9 @@ class TransformEntityService
             $shippedQty = $orderItem->getQtyShipped() ? (int)$orderItem->getQtyShipped() : 0;
             $refundedQty = $orderItem->getQtyRefunded() ? (int)$orderItem->getQtyRefunded() : 0;
             if (($shippedQty + $refundedQty) > $orderedQty) {
-                throw new LocalizedException($this->translationProvider->translate('sequra.error.invalidShipRefundQuantity'));
+                throw new LocalizedException(
+                    $this->translationProvider->translate('sequra.error.invalidShipRefundQuantity')
+                );
             }
 
             $quantity = $isShipped ? $shippedQty : $orderedQty - $shippedQty - $refundedQty;
@@ -130,7 +132,8 @@ class TransformEntityService
             ]);
         }
 
-        $refundedShippingAmount = $orderData->getShippingRefunded() ? self::transformPrice($orderData->getShippingRefunded()) : 0;
+        $refundedShippingAmount = $orderData->getShippingRefunded() ?
+        self::transformPrice($orderData->getShippingRefunded()) : 0;
         $shippingAmount = $orderData->getShippingInclTax() ? self::transformPrice($orderData->getShippingInclTax()) : 0;
         $totalShipmentCost = $shippingAmount - $refundedShippingAmount;
         $orderItemsTotal += $shippingAmount;
@@ -143,7 +146,8 @@ class TransformEntityService
             ]);
         }
 
-        $refundedDiscountAmount = $orderData->getDiscountRefunded() ? self::getTotalDiscountAmount($orderData, true) : 0;
+        $refundedDiscountAmount = $orderData->getDiscountRefunded() ?
+        self::getTotalDiscountAmount($orderData, true) : 0;
         $discountAmount = $orderData->getDiscountAmount() ? self::getTotalDiscountAmount($orderData) : 0;
         $totalDiscount = $discountAmount - $refundedDiscountAmount;
         $orderItemsTotal += $discountAmount;
@@ -185,6 +189,9 @@ class TransformEntityService
         return $items;
     }
 
+    // TODO: Static method cannot be intercepted and its use is discouraged.
+    // phpcs:disable Magento2.Functions.StaticFunction.StaticFunction
+    
     /**
      * Transform price to format.
      *
@@ -233,15 +240,16 @@ class TransformEntityService
      */
     private static function isTaxedAfterDiscount(MagentoOrder\Item $orderItem): bool
     {
-        if (
-            !$orderItem->getTaxAmount() || !$orderItem->getTaxPercent() ||
+        if (!$orderItem->getTaxAmount() || !$orderItem->getTaxPercent() ||
             self::transformPrice($orderItem->getTaxAmount()) === 0 ||
             self::transformPrice($orderItem->getTaxPercent()) === 0
         ) {
             return false;
         }
 
-        return self::transformPrice($orderItem->getRowTotalInclTax()) !== (self::transformPrice($orderItem->getTaxAmount()) * 100) / $orderItem->getTaxPercent();
+        $totalIncludingTax = self::transformPrice($orderItem->getRowTotalInclTax());
+        $taxAmount = self::transformPrice($orderItem->getTaxAmount());
+        return $totalIncludingTax !== ($taxAmount * 100) / $orderItem->getTaxPercent();
     }
 
     /**
@@ -272,4 +280,6 @@ class TransformEntityService
             return $item->getType() === ItemType::TYPE_PRODUCT;
         }));
     }
+
+    // phpcs:enable Magento2.Functions.StaticFunction.StaticFunction
 }

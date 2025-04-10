@@ -9,21 +9,29 @@ use Magento\Framework\Module\ModuleList;
 use SeQura\Core\BusinessLogic\Domain\Integration\Version\VersionServiceInterface;
 use SeQura\Core\BusinessLogic\Domain\Version\Models\Version;
 
-/**
- * Class VersionService
- *
- * @package Sequra\Core\Services\BusinessLogic
- */
 class VersionService implements VersionServiceInterface
 {
     private const SEQURA_MAGENTO_REPOSITORY_URL = 'https://repo.packagist.org/p/sequra/magento2-core.json';
     private const SEQURA_MAGENTO_DOWNLOAD_URL = 'https://github.com/sequra/magento2-core/releases';
 
+    /**
+     * @var ModuleList
+     */
     private $moduleList;
+    
+    /**
+     * @var Client
+     */
     private $client;
+    
+    /**
+     * @var Uri
+     */
     private $hubUri;
 
     /**
+     * Constructor.
+     *
      * @param ModuleList $moduleList
      * @param Client $client
      */

@@ -14,11 +14,6 @@ use SeQura\Core\BusinessLogic\Domain\Connection\Services\ConnectionService;
 use SeQura\Core\BusinessLogic\Domain\Order\RepositoryContracts\SeQuraOrderRepositoryInterface;
 use SeQura\Core\Infrastructure\ServiceRegister;
 
-/**
- * Class UrlHelper
- *
- * @package Sequra\Core\Helper
- */
 class UrlHelper
 {
     public const SEQURA_PORTAL_SANDBOX_URL = 'https://simbox.sequrapi.com/orders/';
@@ -48,9 +43,11 @@ class UrlHelper
     /**
      * UrlHelper constructor.
      *
-     * @param StoreManagerInterface $storeManager
-     * @param MagentoUrl $urlHelper
-     * @param MagentoBackendUrl $backendUrlHelper
+     * @param StoreManagerInterface $storeManager Store manager
+     * @param MagentoUrl $urlHelper URL helper
+     * @param MagentoBackendUrl $backendUrlHelper Backend URL helper
+     * @param OrderFactory $orderFactory Order factory
+     * @param UrlInterface $urlBuilder URL builder
      */
     public function __construct(
         StoreManagerInterface $storeManager,
@@ -58,8 +55,7 @@ class UrlHelper
         MagentoBackendUrl     $backendUrlHelper,
         OrderFactory          $orderFactory,
         UrlInterface          $urlBuilder
-    )
-    {
+    ) {
         $this->storeManager = $storeManager;
         $this->urlHelper = $urlHelper;
         $this->backendUrlHelper = $backendUrlHelper;
@@ -102,6 +98,11 @@ class UrlHelper
         return $this->backendUrlHelper->getUrl($routePath, $routeParams);
     }
 
+    /**
+     * Returns the URL for the Sequra order in the backend.
+     *
+     * @param string $orderReference The order reference.
+     */
     public function getBackendUrlForSequraOrder(string $orderReference): string
     {
         $storeId = $this->getOrderStoreId($orderReference);
@@ -116,7 +117,7 @@ class UrlHelper
         );
         $baseUrl = $connectionSettings && $connectionSettings->getEnvironment() === BaseProxy::LIVE_MODE ?
             self::SEQURA_PORTAL_URL : self::SEQURA_PORTAL_SANDBOX_URL;
-        return $this->urlBuilder->getUrl( $baseUrl . $orderReference );
+        return $this->urlBuilder->getUrl($baseUrl . $orderReference);
     }
 
     /**

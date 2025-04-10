@@ -34,11 +34,13 @@ class ProductWidgetAvailabilityValidator extends AbstractValidator
      */
     private $productService;
 
-
     /**
      * Constructor
      *
      * @param ResultInterfaceFactory $resultFactory
+     * @param Http $request
+     * @param ProductRepository $productRepository
+     * @param ProductService $productService
      */
     public function __construct(
         ResultInterfaceFactory $resultFactory,
@@ -57,8 +59,9 @@ class ProductWidgetAvailabilityValidator extends AbstractValidator
      */
     public function validate(array $validationSubject)
     {
-        try{
-            if($this->request->getFullActionName() !== 'catalog_product_view' || !isset($validationSubject['storeId'])){
+        try {
+            if ($this->request->getFullActionName() !== 'catalog_product_view'
+            || !isset($validationSubject['storeId'])) {
                 return $this->createResult(false);
             }
 
@@ -76,12 +79,16 @@ class ProductWidgetAvailabilityValidator extends AbstractValidator
                 return $this->createResult(false);
             }
             return $this->createResult(true);
-        }catch(\Throwable $e){
+        } catch (\Throwable $e) {
             return $this->createResult(false);
         }
     }
 
     /**
+     * Get widget settings for the given store ID
+     *
+     * @param string $storeId The store ID for which to get widget settings
+     *
      * @return WidgetSettings|null
      */
     private function getWidgetSettings($storeId)
@@ -92,6 +99,10 @@ class ProductWidgetAvailabilityValidator extends AbstractValidator
     }
 
     /**
+     * Get general settings for the given store ID
+     *
+     * @param string $storeId The store ID for which to get general settings
+     *
      * @return GeneralSettings|null
      *
      * @throws NoSuchEntityException
@@ -105,6 +116,8 @@ class ProductWidgetAvailabilityValidator extends AbstractValidator
     }
 
     /**
+     * Is widget enabled for the given product
+     *
      * @param Product $product
      * @param GeneralSettings|null $settings
      *

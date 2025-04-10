@@ -28,11 +28,6 @@ use Sequra\Core\Model\Api\Builders\CreateOrderRequestBuilderFactory;
 use Sequra\Core\Services\BusinessLogic\Utility\SeQuraTranslationProvider;
 use Magento\Sales\Model\ResourceModel\Order\CollectionFactory as OrderCollectionFactory;
 
-/**
- * Class OrderService
- *
- * @package Sequra\Core\Services\BusinessLogic
- */
 class OrderService implements ShopOrderService
 {
     /**
@@ -81,6 +76,19 @@ class OrderService implements ShopOrderService
      */
     private $createOrderRequestBuilderFactory;
 
+    /**
+     * Constructor for OrderService
+     *
+     * @param SearchCriteriaBuilder $searchOrderCriteriaBuilder
+     * @param OrderCollectionFactory $collectionFactory
+     * @param OrderRepositoryInterface $shopOrderRepository
+     * @param OrderManagementInterface $orderManagement
+     * @param CartManagementInterface $cartManagement
+     * @param SeQuraOrderRepositoryInterface $seQuraOrderRepository
+     * @param SeQuraTranslationProvider $translationProvider
+     * @param CartRepositoryInterface $cartProvider
+     * @param CreateOrderRequestBuilderFactory $createOrderRequestBuilderFactory
+     */
     public function __construct(
         SearchCriteriaBuilder            $searchOrderCriteriaBuilder,
         OrderCollectionFactory           $collectionFactory,
@@ -91,8 +99,7 @@ class OrderService implements ShopOrderService
         SeQuraTranslationProvider        $translationProvider,
         CartRepositoryInterface          $cartProvider,
         CreateOrderRequestBuilderFactory $createOrderRequestBuilderFactory
-    )
-    {
+    ) {
         $this->searchOrderCriteriaBuilder = $searchOrderCriteriaBuilder;
         $this->collectionFactory = $collectionFactory;
         $this->shopOrderRepository = $shopOrderRepository;
@@ -105,7 +112,12 @@ class OrderService implements ShopOrderService
     }
 
     /**
-     * @inheritdoc
+     * Gets the order IDs for the report.
+     *
+     * @param int $page The page number.
+     * @param int $limit The number of order IDs to retrieve.
+     *
+     * @return array The order IDs.
      */
     public function getReportOrderIds(int $page, int $limit = 5000): array
     {
@@ -113,7 +125,12 @@ class OrderService implements ShopOrderService
     }
 
     /**
-     * @inheritdoc
+     * Get the order IDs for statistics.
+     *
+     * @param int $page The page number.
+     * @param int $limit The number of order IDs to retrieve.
+     *
+     * @return array The order IDs.
      */
     public function getStatisticsOrderIds(int $page, int $limit = 5000): array
     {
@@ -136,16 +153,21 @@ class OrderService implements ShopOrderService
     }
 
     /**
+     * Updates the order status based on the webhook data.
+     *
      * @param Webhook $webhook
      * @param string $status
      * @param int|null $reasonCode
      * @param string|null $message
-     * @inheritdoc
      *
      * @throws Exception
      */
-    public function updateStatus(Webhook $webhook, string $status, ?int $reasonCode = null, ?string $message = null): void
-    {
+    public function updateStatus(
+        Webhook $webhook,
+        string $status,
+        ?int $reasonCode = null,
+        ?string $message = null
+    ): void {
         switch ($status) {
             case Order::STATE_PENDING_PAYMENT:
             case Order::STATE_PAYMENT_REVIEW:
@@ -157,13 +179,22 @@ class OrderService implements ShopOrderService
         }
     }
 
+    /**
+     * Get the order URL.
+     *
+     * @param string $merchantReference
+     *
+     * @return string
+     */
     public function getOrderUrl(string $merchantReference): string
     {
         return '';
     }
 
     /**
-     * @inheritDoc
+     * Get the order reference.
+     *
+     * @param string $orderReference
      *
      * @throws NoSuchEntityException
      */
@@ -194,7 +225,10 @@ class OrderService implements ShopOrderService
     {
         $order = $this->getOrder($webhook);
         $order ? $this->updateSeQuraOrderStatus($webhook) : $order = $this->createOrder($webhook);
-        $order->addCommentToStatusHistory($this->translationProvider->translate('sequra.orderRefSent', $order->getIncrementId()), $status);
+        $order->addCommentToStatusHistory($this->translationProvider->translate(
+            'sequra.orderRefSent',
+            $order->getIncrementId()
+        ), $status);
         $this->shopOrderRepository->save($order);
     }
 
@@ -329,7 +363,10 @@ class OrderService implements ShopOrderService
     }
 
     /**
+     * Get the order by increment ID.
+     *
      * @param string $orderIncrementId
+     *
      * @return Order|null
      */
     protected function getOrderByIncrementId(string $orderIncrementId): ?Order
@@ -343,7 +380,10 @@ class OrderService implements ShopOrderService
     }
 
     /**
+     * Get the order by ID.
+     *
      * @param int $orderId
+     *
      * @return Order|null
      */
     protected function getOrderById(int $orderId): ?Order

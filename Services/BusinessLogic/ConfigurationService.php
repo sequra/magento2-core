@@ -6,11 +6,6 @@ use Magento\Framework\Exception\NoSuchEntityException;
 use Sequra\Core\Helper\UrlHelper;
 use SeQura\Core\Infrastructure\Configuration\Configuration;
 
-/**
- * Class ConfigurationService
- *
- * @package Sequra\Core\Services\BusinessLogic
- */
 class ConfigurationService extends Configuration
 {
     public const MIN_LOG_LEVEL = 1;

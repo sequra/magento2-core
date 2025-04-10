@@ -6,15 +6,10 @@ use Magento\Payment\Observer\AbstractDataAssignObserver;
 use Magento\Framework\Event\Observer;
 use Magento\Quote\Api\Data\PaymentInterface;
 
-/**
- * Class DataAssignObserver
- *
- * @package Sequra\Core\Observer
- */
 class DataAssignObserver extends AbstractDataAssignObserver
 {
-    const SEQURA_PRODUCT_KEY = 'sequra_product';
-    const SEQURA_CAMPAIGN_KEY = 'sequra_campaign';
+    public const SEQURA_PRODUCT_KEY = 'sequra_product';
+    public const SEQURA_CAMPAIGN_KEY = 'sequra_campaign';
 
     /**
      * @var array
@@ -25,6 +20,8 @@ class DataAssignObserver extends AbstractDataAssignObserver
     ];
 
     /**
+     * Observes execution of payment data assignment
+     *
      * @param Observer $observer
      * @return void
      */

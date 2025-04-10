@@ -36,11 +36,6 @@ use Sequra\Core\Services\Bootstrap;
 use Sequra\Core\Services\BusinessLogic\ConfigurationService;
 use Sequra\Core\Setup\DatabaseHandler;
 
-/**
- * Class Initializer
- *
- * @package Sequra\Core\Setup\Patch\Data
- */
 class Initializer implements DataPatchInterface
 {
     /**
@@ -91,8 +86,7 @@ class Initializer implements DataPatchInterface
         ScopeConfigInterface     $scopeConfig,
         StoreManagerInterface    $storeManager,
         Bootstrap                $bootstrap
-    )
-    {
+    ) {
         $this->moduleDataSetup = $moduleDataSetup;
         $this->scopeConfig = $scopeConfig;
         $this->storeManager = $storeManager;
@@ -101,16 +95,31 @@ class Initializer implements DataPatchInterface
         $bootstrap->initInstance();
     }
 
+    /**
+     * Gets the dependencies for this patch.
+     *
+     * @return string[]
+     */
     public static function getDependencies(): array
     {
         return [];
     }
 
+    /**
+     * Gets the aliases for this patch.
+     *
+     * @return string[]
+     */
     public function getAliases(): array
     {
         return [];
     }
 
+    /**
+     * Applies the data patch.
+     *
+     * @return void
+     */
     public function apply()
     {
         try {
@@ -120,7 +129,9 @@ class Initializer implements DataPatchInterface
 
             $storeViews = $this->storeManager->getStores();
             $defaultUsername = $this->scopeConfig->getValue('sequra/core/user_name');
-            $defaultPassword = $this->getEncryptor()->decrypt($this->scopeConfig->getValue('sequra/core/user_secret') ?? '');
+            $defaultPassword = $this->getEncryptor()->decrypt(
+                $this->scopeConfig->getValue('sequra/core/user_secret') ?? ''
+            );
             $defaultMerchantId = $this->scopeConfig->getValue('sequra/core/merchant_ref');
             $defaultAssetsKey = $this->scopeConfig->getValue('sequra/core/assets_key');
             $defaultTestIps = $this->scopeConfig->getValue('sequra/core/test_ip');
@@ -164,6 +175,8 @@ class Initializer implements DataPatchInterface
     }
 
     /**
+     * Initializes the task runner status.
+     *
      * @return void
      *
      * @throws TaskRunnerStatusStorageUnavailableException
@@ -176,6 +189,15 @@ class Initializer implements DataPatchInterface
     }
 
     /**
+     * Migrates credentials from the old configuration to the new one.
+     *
+     * @param string|null $defaultUsername Default username from global configuration
+     * @param string|null $defaultPassword Default password from global configuration
+     * @param string|null $defaultMerchantId Default merchant ID from global configuration
+     * @param string|null $defaultAssetsKey Default assets key from global configuration
+     * @param string|null $defaultTestIps Default test IPs from global configuration
+     * @param string|null $defaultEndpoint Default endpoint from global configuration
+     *
      * @return void
      *
      * @throws InvalidEnvironmentException
@@ -188,8 +210,7 @@ class Initializer implements DataPatchInterface
         ?string $defaultAssetsKey,
         ?string $defaultTestIps,
         ?string $defaultEndpoint
-    )
-    {
+    ) {
         $storeId = StoreContext::getInstance()->getStoreId();
         $store = $this->storeManager->getStore($storeId);
         $websiteId = $store->getWebsiteId();
@@ -304,6 +325,8 @@ class Initializer implements DataPatchInterface
     }
 
     /**
+     * Validates the credentials for the Sequra API.
+     *
      * @param string $endpoint
      * @param string $username
      * @param string $password
@@ -328,6 +351,8 @@ class Initializer implements DataPatchInterface
     }
 
     /**
+     * Saves the connection data to the database.
+     *
      * @param string $endpoint
      * @param string $username
      * @param string $password
@@ -347,6 +372,8 @@ class Initializer implements DataPatchInterface
     }
 
     /**
+     * Saves the countries configuration to the database.
+     *
      * @param SellingCountry[] $sellingCountries
      * @param string $merchantId
      *
@@ -366,6 +393,8 @@ class Initializer implements DataPatchInterface
     }
 
     /**
+     * Saves the widget settings to the database.
+     *
      * @param string $assetsKey
      *
      * @return void
@@ -383,6 +412,11 @@ class Initializer implements DataPatchInterface
         $this->getWidgetSettingsService()->setWidgetSettings($widgetSettings);
     }
 
+    /**
+     * Removes obsolete configuration from the database.
+     *
+     * @return void
+     */
     private function removeObsoleteConfig()
     {
         $installer = $this->databaseHandler->getInstaller();
@@ -391,6 +425,11 @@ class Initializer implements DataPatchInterface
         $connection->delete('core_config_data', "path like '%sequra%'");
     }
 
+    /**
+     * Removes obsolete statuses from the database.
+     *
+     * @return void
+     */
     private function removeObsoleteStatuses()
     {
         $installer = $this->databaseHandler->getInstaller();
@@ -399,9 +438,9 @@ class Initializer implements DataPatchInterface
         $connection->delete('sales_order_status', "status like '%sequra%'");
     }
 
-    //<editor-fold desc="Service getters" defaultstate="collapsed">
-
     /**
+     * Gets the connection service.
+     *
      * @return ConnectionService
      */
     private function getConnectionService(): ConnectionService
@@ -414,6 +453,8 @@ class Initializer implements DataPatchInterface
     }
 
     /**
+     * Gets the general settings service.
+     *
      * @return GeneralSettingsService
      */
     private function getGeneralSettingsService(): GeneralSettingsService
@@ -426,6 +467,8 @@ class Initializer implements DataPatchInterface
     }
 
     /**
+     * Gets the widget settings service.
+     *
      * @return WidgetSettingsService
      */
     private function getWidgetSettingsService(): WidgetSettingsService
@@ -434,6 +477,8 @@ class Initializer implements DataPatchInterface
     }
 
     /**
+     * Get the selling countries service.
+     *
      * @return SellingCountriesService
      */
     private function getSellingCountriesService(): SellingCountriesService
@@ -446,6 +491,8 @@ class Initializer implements DataPatchInterface
     }
 
     /**
+     * Gets the country configuration service.
+     *
      * @return CountryConfigurationService
      */
     private function getCountryConfigService(): CountryConfigurationService
@@ -458,11 +505,12 @@ class Initializer implements DataPatchInterface
     }
 
     /**
+     * Get the encryptor service.
+     *
      * @return EncryptorInterface
      */
     private function getEncryptor(): EncryptorInterface
     {
         return ServiceRegister::getService(EncryptorInterface::class);
     }
-    //</editor-fold>
 }

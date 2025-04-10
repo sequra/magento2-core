@@ -10,11 +10,6 @@ use SeQura\Core\BusinessLogic\AdminAPI\PaymentMethods\Requests\GetPaymentMethods
 use SeQura\Core\Infrastructure\Http\Exceptions\HttpRequestException;
 use SeQura\Core\Infrastructure\ORM\Exceptions\RepositoryNotRegisteredException;
 
-/**
- * Class PaymentMethods
- *
- * @package Sequra\Core\Controller\Adminhtml\Configuration
- */
 class PaymentMethods extends BaseConfigurationController
 {
     /**

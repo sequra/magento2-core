@@ -6,16 +6,17 @@ use Magento\Payment\Gateway\Validator\ResultInterfaceFactory;
 
 class GeneralResponseValidator extends AbstractValidator
 {
+    // phpcs:disable Generic.CodeAnalysis.UselessOverridingMethod.Found
     /**
      * Constructor
      *
      * @param ResultInterfaceFactory $resultFactory
      */
-    public function __construct(
-        ResultInterfaceFactory $resultFactory
-    ) {
+    public function __construct(ResultInterfaceFactory $resultFactory)
+    {
         parent::__construct($resultFactory);
     }
+    // phpcs:enable
 
     /**
      * @inheritdoc

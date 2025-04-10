@@ -36,44 +36,53 @@ class Configure extends Command
     /**
      *  Command name
      */
-    const NAME = 'sequra:configure';
+    public const NAME = 'sequra:configure';
+
     /**
      * Names of input arguments or options
      */
-    const INPUT_KEY_MERCHANT_REF = 'merchant_ref';
-    /**
-     * Values of input arguments or options
-     */
-    const INPUT_KEY_USERNAME = 'username';
-    /**
-     * Values of input arguments or options
-     */
-    const INPUT_KEY_ASSETS_KEY = 'assets_key';
-    /**
-     * Values of input arguments or options
-     */
-    const INPUT_KEY_ENDPOINT = 'endpoint';
-    /**
-     * Values of input arguments or options
-     */
-    const INPUT_KEY_PASSWORD = 'password';
-    /**
-     * Values of input arguments or options
-     */
-    const INPUT_KEY_STOREID = 'store_id';
+    public const INPUT_KEY_MERCHANT_REF = 'merchant_ref';
 
+    /**
+     * Values of input arguments or options
+     */
+    public const INPUT_KEY_USERNAME = 'username';
+
+    /**
+     * Values of input arguments or options
+     */
+    public const INPUT_KEY_ASSETS_KEY = 'assets_key';
+
+    /**
+     * Values of input arguments or options
+     */
+    public const INPUT_KEY_ENDPOINT = 'endpoint';
+
+    /**
+     * Values of input arguments or options
+     */
+    public const INPUT_KEY_PASSWORD = 'password';
+
+    /**
+     * Values of input arguments or options
+     */
+    public const INPUT_KEY_STOREID = 'store_id';
+    
     /**
      * @var ConnectionService
      */
     private $connectionService;
+
     /**
      * @var GeneralSettingsService
      */
     private $generalSettingsService;
+
     /**
      * @var SellingCountriesService
      */
     private $sellingCountriesService;
+
     /**
      * @var CountryConfigurationService
      */
@@ -82,9 +91,7 @@ class Configure extends Command
     /**
      * @param Bootstrap $bootstrap
      */
-    public function __construct(
-        Bootstrap                $bootstrap
-    )
+    public function __construct(Bootstrap $bootstrap)
     {
         parent::__construct();
         $bootstrap->initInstance();
@@ -146,7 +153,6 @@ class Configure extends Command
      * @param InputInterface  $input  InputInterface
      * @param OutputInterface $output OutputInterface
      *
-     * @return                                        void
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
     protected function execute(InputInterface $input, OutputInterface $output)
@@ -154,6 +160,8 @@ class Configure extends Command
         $storeIds = $this->getStoreIds($input);
         foreach ($storeIds as $storeId) {
             try {
+                // TODO: Use of echo language construct is discouraged.
+                // phpcs:ignore Magento2.Security.LanguageConstruct.DirectOutput
                 echo "Saving configuration to store Id " . $storeId;
                 Logger::logError('Saving configuration to store Id ' . $storeId);
                 StoreContext::doWithStore(
@@ -170,7 +178,15 @@ class Configure extends Command
         return 0;
     }
 
-    protected function getStoreIds($input){
+    /**
+     * Get store ids from input
+     *
+     * @param InputInterface $input
+     *
+     * @return array
+     */
+    protected function getStoreIds($input)
+    {
         $storeIds = explode(',', $input->getOption(self::INPUT_KEY_STOREID)??1);
         if (count($storeIds) < 1) {
             $storeIds = [1];
@@ -178,7 +194,13 @@ class Configure extends Command
         return $storeIds;
     }
 
-    protected function safeConfigDataForStore($input){
+    /**
+     * Save configuration data for store
+     *
+     * @param InputInterface $input
+     */
+    protected function safeConfigDataForStore($input)
+    {
         $this->saveConnectionData(
             $input->getOption(self::INPUT_KEY_ENDPOINT),
             $input->getOption(self::INPUT_KEY_USERNAME),
@@ -200,11 +222,11 @@ class Configure extends Command
     }
 
     /**
+     * Save connection data
+     *
      * @param string $endpoint
      * @param string $username
      * @param string $password
-     *
-     * @return void
      *
      * @throws InvalidEnvironmentException
      */
@@ -217,7 +239,10 @@ class Configure extends Command
         );
         $this->getConnectionService()->saveConnectionData($connectionData);
     }
+
     /**
+     * Get connection service
+     *
      * @return ConnectionService
      */
     private function getConnectionService(): ConnectionService
@@ -228,7 +253,10 @@ class Configure extends Command
 
         return $this->connectionService;
     }
+
     /**
+     * Get general settings service
+     *
      * @return GeneralSettingsService
      */
     private function getGeneralSettingsService(): GeneralSettingsService
@@ -239,7 +267,10 @@ class Configure extends Command
 
         return $this->generalSettingsService;
     }
+
     /**
+     * Save countries configuration
+     *
      * @param SellingCountry[] $sellingCountries
      * @param string $merchantId
      *
@@ -257,7 +288,10 @@ class Configure extends Command
 
         $this->getCountryConfigService()->saveCountryConfiguration($countryConfiguration);
     }
+
     /**
+     * Get country configuration service
+     *
      * @return CountryConfigurationService
      */
     private function getCountryConfigService(): CountryConfigurationService
@@ -268,7 +302,10 @@ class Configure extends Command
 
         return $this->countryConfigService;
     }
-     /**
+
+    /**
+     * Get selling countries service
+     *
      * @return SellingCountriesService
      */
     private function getSellingCountriesService(): SellingCountriesService
@@ -281,6 +318,8 @@ class Configure extends Command
     }
 
     /**
+     * Save widget settings
+     *
      * @param string $assetsKey
      *
      * @return void
@@ -297,7 +336,10 @@ class Configure extends Command
         $widgetSettings = new WidgetSettings(false, $assetsKey);
         $this->getWidgetSettingsService()->setWidgetSettings($widgetSettings);
     }
+
     /**
+     * Get widget settings service
+     *
      * @return WidgetSettingsService
      */
     private function getWidgetSettingsService(): WidgetSettingsService

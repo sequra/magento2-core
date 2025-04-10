@@ -1,6 +1,7 @@
 <?php
 use Magento\Framework\App\Bootstrap;
 use Magento\Framework\App\Cron;
+
 // Load magento's booststrap
 require __DIR__ . '/../../../../../app/bootstrap.php';
 

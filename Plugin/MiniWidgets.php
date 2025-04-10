@@ -35,7 +35,7 @@ use Sequra\Core\Services\BusinessLogic\ProductService;
  */
 class MiniWidgets
 {
-    const MINI_WIDGET_PRODUCTS = ['sp1', 'pp3', 'pp6', 'pp9'];
+    public const MINI_WIDGET_PRODUCTS = ['sp1', 'pp3', 'pp6', 'pp9'];
 
     /**
      * @var StoreManagerInterface
@@ -71,12 +71,12 @@ class MiniWidgets
      * @param PriceCurrencyInterface $priceCurrency
      */
     public function __construct(
-        StoreManagerInterface $storeManager,
+        StoreManagerInterface       $storeManager,
         StoreConfigManagerInterface $storeConfigManager,
-        ProductRepository $productRepository,
-        ProductService $productService,
-        ScopeConfigInterface $scopeConfig,
-        PriceCurrencyInterface $priceCurrency
+        ProductRepository           $productRepository,
+        ProductService              $productService,
+        ScopeConfigInterface        $scopeConfig,
+        PriceCurrencyInterface      $priceCurrency
     ) {
         $this->storeManager = $storeManager;
         $this->storeConfigManager = $storeConfigManager;
@@ -87,8 +87,10 @@ class MiniWidgets
     }
 
     /**
+     * Runs after the toHtml method
+     *
      * @param Amount $subject
-     * @param $result
+     * @param string $result
      *
      * @return string
      *
@@ -112,6 +114,8 @@ class MiniWidgets
     }
 
     /**
+     * Get the HTML
+     *
      * @param int $amount
      * @param StoreInterface $store
      * @param SaleableInterface $product
@@ -171,6 +175,13 @@ class MiniWidgets
         return $result;
     }
 
+    /**
+     * Gets the country code from store configuration
+     *
+     * @param StoreConfigInterface $storeConfig Store configuration
+     *
+     * @return string Country code
+     */
     private function getCountry(StoreConfigInterface $storeConfig)
     {
         return $this->scopeConfig->getValue(
@@ -181,6 +192,8 @@ class MiniWidgets
     }
 
     /**
+     * Checks if the widget is enabled for the product
+     *
      * @param SaleableInterface $saleable
      * @param GeneralSettings|null $generalSettings
      *
@@ -200,6 +213,8 @@ class MiniWidgets
     }
 
     /**
+     * Get the widget HTML
+     *
      * @param WidgetSettings $widgetConfig
      * @param StoreConfigInterface $storeConfig
      * @param string $product
@@ -225,6 +240,8 @@ class MiniWidgets
     }
 
     /**
+     * Gets the merchant ID from the country configuration
+     *
      * @param string|null $code
      *
      * @return string
@@ -247,8 +264,15 @@ class MiniWidgets
         return $merchantId;
     }
 
+    /**
+     * Gets customer IP address from server globals
+     *
+     * @return string Customer IP address
+     */
     private function getCustomerIpAddress(): string
     {
+        // TODO: Look for an alternative to $_SERVER as it is not recommended to use it directly
+        // phpcs:disable Magento2.Security.Superglobal.SuperglobalUsageWarning
         if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
             return $_SERVER['HTTP_CLIENT_IP'];
         }
@@ -258,9 +282,12 @@ class MiniWidgets
         }
 
         return $_SERVER['REMOTE_ADDR'];
+        // phpcs:enable Magento2.Security.Superglobal.SuperglobalUsageWarning
     }
 
     /**
+     * Gets the country configuration
+     *
      * @return CountryConfiguration[]|null
      */
     private function getCountryConfiguration(): ?array
@@ -269,6 +296,8 @@ class MiniWidgets
     }
 
     /**
+     * Gets the general settings
+     *
      * @return GeneralSettings|null
      */
     private function getGeneralSettings(): ?GeneralSettings
@@ -276,9 +305,9 @@ class MiniWidgets
         return $this->getSettingsService()->getGeneralSettings();
     }
 
-    //<editor-fold desc="Service getters" defaultstate="collapsed">
-
     /**
+     * Gets the country configuration service
+     *
      * @return CountryConfigurationService
      */
     private function getCountryConfigService(): CountryConfigurationService
@@ -287,6 +316,8 @@ class MiniWidgets
     }
 
     /**
+     * Gets the widget settings service
+     *
      * @return WidgetSettingsService
      */
     private function getWidgetSettingsService(): WidgetSettingsService
@@ -295,11 +326,12 @@ class MiniWidgets
     }
 
     /**
+     * Get the general settings service
+     *
      * @return GeneralSettingsService
      */
     private function getSettingsService(): GeneralSettingsService
     {
         return ServiceRegister::getService(GeneralSettingsService::class);
     }
-    //</editor-fold>
 }

@@ -11,13 +11,10 @@ use SeQura\Core\Infrastructure\ORM\QueryFilter\QueryCondition;
 use SeQura\Core\Infrastructure\ORM\QueryFilter\QueryFilter;
 use SeQura\Core\Infrastructure\ORM\Utility\IndexHelper;
 
-/**
- * Class SequraEntity
- *
- * @package Sequra\Core\ResourceModel
- */
 class SequraEntity extends AbstractDb
 {
+
+    // phpcs:disable Magento2.CodeAnalysis.EmptyBlock.DetectedFunction
     /**
      * Resource model initialization.
      *
@@ -26,7 +23,8 @@ class SequraEntity extends AbstractDb
     protected function _construct()
     {
     }
-
+    // phpcs:enable
+    
     /**
      * Set resource model table name.
      *

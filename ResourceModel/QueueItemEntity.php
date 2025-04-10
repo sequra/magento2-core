@@ -10,11 +10,6 @@ use SeQura\Core\Infrastructure\ORM\Utility\IndexHelper;
 use SeQura\Core\Infrastructure\TaskExecution\Exceptions\QueueItemSaveException;
 use SeQura\Core\Infrastructure\TaskExecution\QueueItem;
 
-/**
- * Class QueueItemEntity
- *
- * @package Sequra\Core\ResourceModel
- */
 class QueueItemEntity extends SequraEntity
 {
     /**
@@ -101,6 +96,8 @@ class QueueItemEntity extends SequraEntity
             $condition .= sprintf(' AND ' . $queueNameIndex . ' NOT IN (%s)', implode(', ', $quotedNames));
         }
 
+        // TODO: Possible raw SQL statement detected
+        // phpcs:disable Magento2.SQL.RawQuery.FoundRawSql
         $query = 'SELECT queueTable.id, queueTable.index_1, queueTable.index_7, queueTable.data '
             . 'FROM ( '
             . 'SELECT ' . $queueNameIndex . ', MIN(id) AS id '
@@ -111,6 +108,7 @@ class QueueItemEntity extends SequraEntity
             . ' ) AS queueView '
             . 'INNER JOIN ' . $this->getMainTable() . ' AS queueTable '
             . 'ON queueView.id = queueTable.id';
+        // phpcs:enable
 
         $records = $this->getConnection()->fetchAll($query);
 
@@ -135,8 +133,9 @@ class QueueItemEntity extends SequraEntity
     }
 
     /**
-     * Creates or updates given queue item. If queue item id is not set, new queue item will be created otherwise
-     * update will be performed.
+     * Creates or updates given queue item.
+     *
+     * If queue item id is not set, new queue item will be created otherwise update will be performed.
      *
      * @param QueueItem $queueItem Item to save
      * @param array $additionalWhere List of key/value pairs that must be satisfied upon saving queue item. Key is

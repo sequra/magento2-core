@@ -9,7 +9,6 @@ use Sequra\Core\Model\Api\Checkout\BaseSequraPaymentMethodsService;
 /**
  * Class SequraPaymentMethodsService
  *
- * @package Sequra\Core\Model\Api
  */
 class FormValidationSequraPaymentMethodsService
 {
@@ -22,6 +21,7 @@ class FormValidationSequraPaymentMethodsService
      * @var Validator
      */
     protected $formKeyValidator;
+
     /**
      * @var BaseSequraPaymentMethodsService
      */
@@ -29,6 +29,7 @@ class FormValidationSequraPaymentMethodsService
 
     /**
      * AbstractInternalApiController constructor.
+     *
      * @param Http $request
      * @param Validator $formKeyValidator
      * @param BaseSequraPaymentMethodsService $paymentMethodsService
@@ -43,6 +44,12 @@ class FormValidationSequraPaymentMethodsService
         $this->paymentMethodsService = $paymentMethodsService;
     }
 
+    /**
+     * Get available payment methods for a given cart ID and form key
+     *
+     * @param string $cartId Cart identifier
+     * @param string $formKey Form key for CSRF protection
+     */
     public function getAvailablePaymentMethods(string $cartId, string $formKey): array
     {
         $this->validateRequest($formKey);
@@ -50,6 +57,12 @@ class FormValidationSequraPaymentMethodsService
         return $this->paymentMethodsService->getAvailablePaymentMethods($cartId);
     }
 
+    /**
+     * Get the form for a given cart ID and form key
+     *
+     * @param string $cartId Cart identifier
+     * @param string $formKey Form key for CSRF protection
+     */
     public function getForm(string $cartId, string $formKey): string
     {
         $this->validateRequest($formKey);
@@ -58,8 +71,12 @@ class FormValidationSequraPaymentMethodsService
     }
 
     /**
-     * @param $formKey
+     * Validate the request
+     *
+     * @param string $formKey
+     *
      * @return bool
+     *
      * @throws \Exception
      */
     public function validateRequest($formKey): bool
@@ -69,10 +86,9 @@ class FormValidationSequraPaymentMethodsService
         $formKeyValid = $this->formKeyValidator->validate($this->request->setPostValue('form_key', $formKey));
 
         if (!$isAjax || !$formKeyValid) {
-            throw new \Exception(
-                'Invalid request',
-                401
-            );
+            // TODO: Direct throw of generic Exception is discouraged. Use context specific instead
+            // phpcs:ignore Magento2.Exceptions.DirectThrow.FoundDirectThrow
+            throw new \Exception('Invalid request', 401);
         }
 
         return true;
