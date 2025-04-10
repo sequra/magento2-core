@@ -201,6 +201,8 @@ class WidgetInitializer extends Template
     }
 
     /**
+     * Gets assets key from widget settings.
+     *
      * @return string
      */
     public function getAssetsKey(): string

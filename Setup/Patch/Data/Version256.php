@@ -23,6 +23,8 @@ class Version256 implements DataPatchInterface
     }
 
     /**
+     * Returns array of dependencies.
+     *
      * @return string[]
      */
     public static function getDependencies(): array
@@ -31,6 +33,8 @@ class Version256 implements DataPatchInterface
     }
 
     /**
+     * Returns array of aliases.
+     *
      * @return string[]
      */
     public function getAliases(): array
@@ -39,6 +43,8 @@ class Version256 implements DataPatchInterface
     }
 
     /**
+     * Apply migration.
+     *
      * @return void
      */
     public function apply()

@@ -254,6 +254,8 @@ class WidgetConfigService
     }
 
     /**
+     * Fetch number formatter.
+     *
      * @return \NumberFormatter
      */
     private function getFormatter(): \NumberFormatter
