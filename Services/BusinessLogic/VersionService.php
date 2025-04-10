@@ -11,19 +11,19 @@ use SeQura\Core\BusinessLogic\Domain\Version\Models\Version;
 
 class VersionService implements VersionServiceInterface
 {
-    private const SEQURA_MAGENTO_REPOSITORY_URL = 'https://repo.packagist.org/p/sequra/magento2-core.json';
+    private const SEQURA_MAGENTO_REPOSITORY_URL = 'https://repo.packagist.org/p2/sequra/magento2-core.json';
     private const SEQURA_MAGENTO_DOWNLOAD_URL = 'https://github.com/sequra/magento2-core/releases';
 
     /**
      * @var ModuleList
      */
     private $moduleList;
-    
+
     /**
      * @var Client
      */
     private $client;
-    
+
     /**
      * @var Uri
      */
@@ -80,24 +80,26 @@ class VersionService implements VersionServiceInterface
         }
 
         $hubResponse = json_decode($hubResponse->getBody()->getContents(), true);
-        $latestVersionInfo = $this->getLatestVersionFromInfoResponse($hubResponse);
 
-        return $latestVersionInfo['version'] ?? null;
+        return $this->getLatestVersionFromInfoResponse($hubResponse);
     }
 
     /**
-     * Filters out non-version entities from the response.
+     * Filter latest tag version.
      *
      * @param array $response
      *
-     * @return array
+     * @return null|string
      */
-    private function getLatestVersionFromInfoResponse(array $response): array
+    private function getLatestVersionFromInfoResponse(array $response): ?string
     {
-        $filteredArray = array_filter($response['packages']['sequra/magento2-core'], static function ($key) {
-            return strpos($key, 'dev') !== 0;
-        }, ARRAY_FILTER_USE_KEY);
+        $filteredArray = array_map(
+            static function ($module) {
+                return $module['version'];
+            },
+            $response['packages']['sequra/magento2-core']
+        );
 
-        return end($filteredArray);
+        return reset($filteredArray) ?? null;
     }
 }
