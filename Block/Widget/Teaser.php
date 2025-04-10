@@ -1,8 +1,12 @@
 <?php
+
 namespace Sequra\Core\Block\Widget;
 
 use Magento\Framework\View\Element\Template;
 use Magento\Widget\Block\BlockInterface;
+use SeQura\Core\BusinessLogic\CheckoutAPI\CheckoutAPI;
+use SeQura\Core\BusinessLogic\CheckoutAPI\PaymentMethods\Requests\GetCachedPaymentMethodsRequest;
+use SeQura\Core\BusinessLogic\CheckoutAPI\PaymentMethods\Responses\CachedPaymentMethodsResponse;
 use Sequra\Core\Gateway\Validator\CurrencyValidator;
 use Sequra\Core\Gateway\Validator\IpAddressValidator;
 use Sequra\Core\Gateway\Validator\ProductWidgetAvailabilityValidator;
@@ -14,8 +18,6 @@ use SeQura\Core\BusinessLogic\Domain\PromotionalWidgets\Models\WidgetSettings;
 use SeQura\Core\BusinessLogic\Domain\PromotionalWidgets\Services\WidgetSettingsService;
 use SeQura\Core\BusinessLogic\Domain\CountryConfiguration\Models\CountryConfiguration;
 use SeQura\Core\BusinessLogic\Domain\CountryConfiguration\Services\CountryConfigurationService;
-use SeQura\Core\BusinessLogic\Domain\PaymentMethod\Services\PaymentMethodsService;
-use SeQura\Core\BusinessLogic\Domain\PaymentMethod\Models\SeQuraPaymentMethod;
 
 class Teaser extends Template implements BlockInterface
 {
@@ -23,7 +25,7 @@ class Teaser extends Template implements BlockInterface
      * @var string
      */
     protected static $paymentCode;
-    
+
     /**
      * @var string
      */
@@ -168,9 +170,9 @@ class Teaser extends Template implements BlockInterface
         $this->ipAddressValidator = $ipAddressValidator;
         $this->productWidgetAvailabilityValidator = $productValidator;
     }
-    
+
     // phpcs:disable PSR2.Methods.MethodDeclaration.Underscore
-    
+
     /**
      * Validate before producing html
      *
@@ -186,7 +188,7 @@ class Teaser extends Template implements BlockInterface
             // TODO: Log currency error
             return '';
         }
-        
+
         if (!$this->ipAddressValidator->validate($subject)->isValid()) {
             // TODO: Log IP error
             return '';
@@ -196,7 +198,7 @@ class Teaser extends Template implements BlockInterface
             // TODO: Log product is not eligible for widgets
             return '';
         }
-        
+
         return parent::_toHtml();
     }
     // phpcs:enable
@@ -245,9 +247,9 @@ class Teaser extends Template implements BlockInterface
     {
         $settings = $this->getConnectionSettings();
         return !$settings || !$settings->getEnvironment() ?
-         '' : "https://{$settings->getEnvironment()}.sequracdn.com/assets/sequra-checkout.min.js";
+            '' : "https://{$settings->getEnvironment()}.sequracdn.com/assets/sequra-checkout.min.js";
     }
-    
+
     /**
      * Return the list of payment methods selected in the widget settings
      * Each element is an array with the following:
@@ -354,8 +356,9 @@ class Teaser extends Template implements BlockInterface
         }
 
         $currentCountry = $this->getCurrentCountry();
-        $paymentMethods = $this->getPaymentMethods($merchantId);
-        // TODO: The use of function addslashes() is discouraged
+        /** @var CachedPaymentMethodsResponse $cachedPaymentMethods */
+        $cachedPaymentMethods = CheckoutAPI::get()->cachedPaymentMethods($this->scopeResolver->getScope()->getStoreId())
+            ->getCachedPaymentMethods(new GetCachedPaymentMethodsRequest($merchantId));
         // phpcs:ignore Magento2.Functions.DiscouragedFunction.Discouraged
         $priceSelector = addslashes($this->getData('price_sel') ?: '');
         $theme = $this->getData('theme') ?: $this->getWidgetSettings()->getWidgetConfig();
@@ -370,49 +373,26 @@ class Teaser extends Template implements BlockInterface
                 continue;
             }
 
-            foreach ($paymentMethods as $paymentMethod) {
-                if ($paymentMethod->getProduct() !== $paymentMethodData['product']
-                || $paymentMethod->getCampaign() !== $paymentMethodData['campaign']) {
+            foreach ($cachedPaymentMethods->toArray() as $paymentMethod) {
+                if ($paymentMethod['product'] !== $paymentMethodData['product'] ||
+                    $paymentMethod['campaign'] !== $paymentMethodData['campaign']) {
                     continue;
                 }
 
                 $widgets[] = [
-                    'product' => $paymentMethod->getProduct(),
-                    'campaign' => $paymentMethod->getCampaign() ?? '',
+                    'product' => $paymentMethod['product'],
+                    'campaign' => $paymentMethod['campaign'] ?? '',
                     'priceSel' => $priceSelector,
                     'dest' => $destinationSelector,
                     'theme' => $theme,
                     'reverse' => "0",
-                    'minAmount' => $paymentMethod->getMinAmount() ?? 0,
-                    'maxAmount' => $paymentMethod->getMaxAmount() ?? null,
+                    'minAmount' => $paymentMethod['minAmount'] ?? 0,
+                    'maxAmount' => $paymentMethod['maxAmount'] ?? null,
                 ];
 
                 break;
             }
         }
         return $widgets;
-    }
-
-    /**
-     * Get payment methods for a given merchant using the current store context
-     *
-     * @param string $merchantId
-     *
-     * @return SeQuraPaymentMethod[]
-     */
-    private function getPaymentMethods($merchantId)
-    {
-        $storeId = $this->scopeResolver->getScope()->getStoreId();
-        $payment_methods = [];
-        try {
-            $payment_methods = StoreContext::doWithStore($storeId, function () use ($merchantId) {
-                return ServiceRegister::getService(PaymentMethodsService::class)
-                ->getMerchantsPaymentMethods($merchantId);
-            });
-            // TODO: Log error
-            // phpcs:ignore Magento2.CodeAnalysis.EmptyBlock.DetectedCatch
-        } catch (\Throwable $e) {
-        }
-        return $payment_methods;
     }
 }

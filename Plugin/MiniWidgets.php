@@ -14,22 +14,17 @@ use Magento\Store\Api\Data\StoreInterface;
 use Magento\Store\Api\StoreConfigManagerInterface;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
+use SeQura\Core\BusinessLogic\CheckoutAPI\CheckoutAPI;
+use SeQura\Core\BusinessLogic\CheckoutAPI\PaymentMethods\Requests\GetCachedPaymentMethodsRequest;
+use SeQura\Core\BusinessLogic\CheckoutAPI\PaymentMethods\Responses\CachedPaymentMethodsResponse;
 use SeQura\Core\BusinessLogic\Domain\CountryConfiguration\Models\CountryConfiguration;
 use SeQura\Core\BusinessLogic\Domain\CountryConfiguration\Services\CountryConfigurationService;
 use SeQura\Core\BusinessLogic\Domain\GeneralSettings\Models\GeneralSettings;
 use SeQura\Core\BusinessLogic\Domain\GeneralSettings\Services\GeneralSettingsService;
 use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
-use SeQura\Core\BusinessLogic\Domain\PaymentMethod\Services\PaymentMethodsService;
 use SeQura\Core\BusinessLogic\Domain\PromotionalWidgets\Models\WidgetSettings;
 use SeQura\Core\BusinessLogic\Domain\PromotionalWidgets\Services\WidgetSettingsService;
-use Sequra\Core\DataAccess\Entities\PaymentMethod;
-use Sequra\Core\DataAccess\Entities\PaymentMethods as PaymentMethodsEntity;
 use SeQura\Core\Infrastructure\Http\Exceptions\HttpRequestException;
-use SeQura\Core\Infrastructure\ORM\Exceptions\QueryFilterInvalidParamException;
-use SeQura\Core\Infrastructure\ORM\Exceptions\RepositoryNotRegisteredException;
-use SeQura\Core\Infrastructure\ORM\QueryFilter\Operators;
-use SeQura\Core\Infrastructure\ORM\QueryFilter\QueryFilter;
-use SeQura\Core\Infrastructure\ORM\RepositoryRegistry;
 use SeQura\Core\Infrastructure\ServiceRegister;
 use Sequra\Core\Services\BusinessLogic\ProductService;
 
@@ -150,14 +145,26 @@ class MiniWidgets
             return $result;
         }
 
-        $paymentMethods = $this->getPaymentMethods($merchantId);
+        /** @var CachedPaymentMethodsResponse $paymentMethods */
+        $paymentMethods = CheckoutAPI::get()->cachedPaymentMethods($this->storeManager->getStore()->getId())
+            ->getCachedPaymentMethods(new GetCachedPaymentMethodsRequest($merchantId));
 
-        foreach ($paymentMethods as $paymentMethod) {
-            if (!in_array($paymentMethod->getProduct(), self::MINI_WIDGET_PRODUCTS)) {
+        if (!$paymentMethods->isSuccessful()) {
+            return $result;
+        }
+
+        foreach ($paymentMethods->toArray() as $paymentMethod) {
+            if (!in_array($paymentMethod['product'], self::MINI_WIDGET_PRODUCTS)) {
                 continue;
             }
 
-            $result .= $this->getWidgetHtml($widgetConfig, $storeConfig, $paymentMethod, $amount);
+            $result .= $this->getWidgetHtml(
+                $widgetConfig,
+                $storeConfig,
+                $paymentMethod['product'] ?? '',
+                $paymentMethod['minAmount'] ?? 0,
+                $amount
+            );
         }
 
         return $result;
@@ -205,23 +212,25 @@ class MiniWidgets
      *
      * @param WidgetSettings $widgetConfig
      * @param StoreConfigInterface $storeConfig
-     * @param PaymentMethod $paymentMethod
+     * @param string $product
+     * @param int $minAmount
      * @param int $amount
      *
      * @return string
      */
     private function getWidgetHtml(
-        WidgetSettings       $widgetConfig,
+        WidgetSettings $widgetConfig,
         StoreConfigInterface $storeConfig,
-        PaymentMethod        $paymentMethod,
-        int                  $amount
+        string $product,
+        int $minAmount,
+        int $amount
     ): string {
         $message = $widgetConfig->getWidgetLabels()->getMessages()[$storeConfig->getLocale()] ?? '';
         $belowLimit = $widgetConfig->getWidgetLabels()->getMessagesBelowLimit()[$storeConfig->getLocale()] ?? '';
 
         return "<div class=\"sequra-educational-popup\" data-content-type=\"sequra_core\" data-amount=\""
-            . $amount . "\" data-product=\"" . $paymentMethod->getProduct() . "\"
-                data-min-amount='" . $paymentMethod->getMinAmount() . "' data-label='" . $message . "'
+            . $amount . "\" data-product=\"" . $product . "\"
+                data-min-amount='" . $minAmount . "' data-label='" . $message . "'
                 data-below-limit='" . $belowLimit . "'></div>";
     }
 
@@ -272,34 +281,6 @@ class MiniWidgets
     }
 
     /**
-     * Get Payment Methods
-     *
-     * @param string $merchantId
-     *
-     * @return PaymentMethod[]
-     *
-     * @throws QueryFilterInvalidParamException
-     * @throws RepositoryNotRegisteredException
-     */
-    private function getPaymentMethods(string $merchantId): array
-    {
-        $paymentMethodsRepository = RepositoryRegistry::getRepository(PaymentMethodsEntity::CLASS_NAME);
-
-        $filter = new QueryFilter();
-        $filter->where('storeId', Operators::EQUALS, $this->storeManager->getStore()->getId())
-            ->where('merchantId', Operators::EQUALS, $merchantId);
-
-        /** @var PaymentMethodsEntity $paymentMethods */
-        $paymentMethods = $paymentMethodsRepository->selectOne($filter);
-
-        if ($paymentMethods === null) {
-            return [];
-        }
-
-        return $paymentMethods->getPaymentMethods();
-    }
-
-    /**
      * Gets the country configuration
      *
      * @return CountryConfiguration[]|null
@@ -337,16 +318,6 @@ class MiniWidgets
     private function getWidgetSettingsService(): WidgetSettingsService
     {
         return ServiceRegister::getService(WidgetSettingsService::class);
-    }
-
-    /**
-     * Get the payment methods service
-     *
-     * @return PaymentMethodsService
-     */
-    private function getPaymentMethodsService(): PaymentMethodsService
-    {
-        return ServiceRegister::getService(PaymentMethodsService::class);
     }
 
     /**
