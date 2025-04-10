@@ -2,15 +2,8 @@
 
 namespace Sequra\Core\Block;
 
-use Magento\Catalog\Helper\Data;
-use Magento\Catalog\Model\ProductRepository;
-use Magento\Checkout\Block\Cart;
-use Magento\Framework\App\Config\ScopeConfigInterface;
-use Magento\Framework\App\Request\Http;
-use Magento\Framework\Pricing\PriceCurrencyInterface;
 use Magento\Framework\View\Element\Template;
 use Magento\Framework\View\Element\Template\Context;
-use Magento\Store\Model\StoreManagerInterface;
 use Magento\Checkout\Model\Session;
 use SeQura\Core\BusinessLogic\AdminAPI\AdminAPI;
 use SeQura\Core\BusinessLogic\CheckoutAPI\CheckoutAPI;
@@ -21,16 +14,9 @@ use SeQura\Core\BusinessLogic\Domain\PromotionalWidgets\Models\WidgetSettings;
 use SeQura\Core\BusinessLogic\Domain\PromotionalWidgets\Services\WidgetSettingsService;
 use SeQura\Core\Infrastructure\Logger\Logger;
 use SeQura\Core\Infrastructure\ServiceRegister;
-use Sequra\Core\Services\BusinessLogic\ProductService;
-use Sequra\Core\Services\BusinessLogic\WidgetConfigService;
 use SeQura\Core\BusinessLogic\Domain\Connection\Models\ConnectionData;
 use SeQura\Core\BusinessLogic\Domain\Connection\Services\ConnectionService;
 
-/**
- * Class WidgetInitializer
- *
- * @package Sequra\Core\Block
- */
 class WidgetInitializer extends Template
 {
      /**
@@ -214,6 +200,9 @@ class WidgetInitializer extends Template
         return $paymentMethods;
     }
 
+    /**
+     * @return string
+     */
     public function getAssetsKey(): string
     {
         $settings = $this->getWidgetSettings();

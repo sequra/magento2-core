@@ -359,6 +359,7 @@ class Teaser extends Template implements BlockInterface
         /** @var CachedPaymentMethodsResponse $cachedPaymentMethods */
         $cachedPaymentMethods = CheckoutAPI::get()->cachedPaymentMethods($this->scopeResolver->getScope()->getStoreId())
             ->getCachedPaymentMethods(new GetCachedPaymentMethodsRequest($merchantId));
+        // phpcs:ignore Magento2.Functions.DiscouragedFunction.Discouraged
         $priceSelector = addslashes($this->getData('price_sel') ?: '');
         $theme = $this->getData('theme') ?: $this->getWidgetSettings()->getWidgetConfig();
         // TODO: The use of function addslashes() is discouraged

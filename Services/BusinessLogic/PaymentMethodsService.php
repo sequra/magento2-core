@@ -11,11 +11,6 @@ use SeQura\Core\BusinessLogic\Domain\Integration\Store\StoreServiceInterface;
 use SeQura\Core\Infrastructure\Http\Exceptions\HttpRequestException;
 use SeQura\Core\Infrastructure\ServiceRegister;
 
-/**
- * Class PaymentMethodsService
- *
- * @package Sequra\Core\Services\BusinessLogic
- */
 class PaymentMethodsService
 {
     /**

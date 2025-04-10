@@ -28,11 +28,6 @@ use SeQura\Core\Infrastructure\Http\Exceptions\HttpRequestException;
 use SeQura\Core\Infrastructure\ServiceRegister;
 use Sequra\Core\Services\BusinessLogic\ProductService;
 
-/**
- * Class MiniWidgets
- *
- * @package Sequra\Core\Plugin
- */
 class MiniWidgets
 {
     public const MINI_WIDGET_PRODUCTS = ['sp1', 'pp3', 'pp6', 'pp9'];

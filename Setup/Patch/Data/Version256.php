@@ -7,11 +7,6 @@ use Magento\Framework\Setup\Patch\DataPatchInterface;
 use SeQura\Core\Infrastructure\Logger\Logger;
 use SeQura\Core\Infrastructure\TaskExecution\Exceptions\TaskRunnerStatusStorageUnavailableException;
 
-/**
- * Class Initializer
- *
- * @package Sequra\Core\Setup\Patch\Data
- */
 class Version256 implements DataPatchInterface
 {
     /**
@@ -27,16 +22,25 @@ class Version256 implements DataPatchInterface
         $this->moduleDataSetup = $moduleDataSetup;
     }
 
+    /**
+     * @return string[]
+     */
     public static function getDependencies(): array
     {
         return [];
     }
 
+    /**
+     * @return string[]
+     */
     public function getAliases(): array
     {
         return [];
     }
 
+    /**
+     * @return void
+     */
     public function apply()
     {
         try {

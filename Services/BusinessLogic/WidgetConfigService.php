@@ -31,11 +31,6 @@ use SeQura\Core\Infrastructure\ORM\Exceptions\RepositoryNotRegisteredException;
 use SeQura\Core\Infrastructure\ORM\RepositoryRegistry;
 use SeQura\Core\Infrastructure\ServiceRegister;
 
-/**
- * Class WidgetConfigService
- *
- * @package Sequra\Core\Services\BusinessLogic
- */
 class WidgetConfigService
 {
     public const TEST_SCRIPT_URL = 'https://sandbox.sequracdn.com/assets/sequra-checkout.min.js';
@@ -75,9 +70,9 @@ class WidgetConfigService
      * @param ScopeConfigInterface $scopeConfig
      */
     public function __construct(
-        StoreManagerInterface                         $storeManager,
+        StoreManagerInterface $storeManager,
         \Magento\Framework\App\ScopeResolverInterface $scopeResolver,
-        \Magento\Framework\Locale\ResolverInterface   $localeResolver,
+        \Magento\Framework\Locale\ResolverInterface $localeResolver,
         StoreConfigManagerInterface $storeConfigManager,
         ScopeConfigInterface $scopeConfig
     ) {
@@ -151,7 +146,7 @@ class WidgetConfigService
         $paymentMethods = CheckoutAPI::get()->cachedPaymentMethods(StoreContext::getInstance()->getStoreId())
             ->getCachedPaymentMethods(new GetCachedPaymentMethodsRequest($merchantId));
 
-        if(!$paymentMethods->isSuccessful()) {
+        if (!$paymentMethods->isSuccessful()) {
             return [];
         }
         $formattedProducts = [];
@@ -258,6 +253,9 @@ class WidgetConfigService
         return $this->getWidgetSettingsService()->getWidgetSettings();
     }
 
+    /**
+     * @return \NumberFormatter
+     */
     private function getFormatter(): \NumberFormatter
     {
         $localeCode = $this->localeResolver->getLocale();
