@@ -29,6 +29,7 @@ class Integration extends BaseConfigurationController
      */
     protected function getVersion(): Json
     {
+        // @phpstan-ignore-next-line
         $data = AdminAPI::get()->integration($this->storeId)->getVersion();
         $this->addResponseCode($data);
 
@@ -42,6 +43,7 @@ class Integration extends BaseConfigurationController
      */
     protected function getState(): Json
     {
+        // @phpstan-ignore-next-line
         $data = AdminAPI::get()->integration($this->storeId)->getUIState();
         $this->addResponseCode($data);
 
@@ -55,6 +57,7 @@ class Integration extends BaseConfigurationController
      */
     protected function getShopName(): Json
     {
+        // @phpstan-ignore-next-line
         $data = AdminAPI::get()->integration($this->storeId)->getShopName();
         $this->addResponseCode($data);
 

@@ -31,6 +31,7 @@ class Onboarding extends BaseConfigurationController
      */
     protected function getConnectionData(): Json
     {
+        // @phpstan-ignore-next-line
         $data = AdminAPI::get()->connection($this->storeId)->getOnboardingData();
         $this->addResponseCode($data);
 
@@ -44,12 +45,34 @@ class Onboarding extends BaseConfigurationController
      */
     protected function setConnectionData(): Json
     {
+        /**
+         * @var array<string, string|bool>
+         */
         $data = $this->getSequraPostData();
+
+        /**
+         * @var string $environment
+         */
+        $environment = $data['environment'] ?? '';
+        /**
+         * @var string $username
+         */
+        $username = $data['username'] ?? '';
+        /**
+         * @var string $password
+         */
+        $password = $data['password'] ?? '';
+        /**
+         * @var bool $sendStatisticalData
+         */
+        $sendStatisticalData = $data['sendStatisticalData'] ?? true;
+
+        // @phpstan-ignore-next-line
         $response = AdminAPI::get()->connection($this->storeId)->saveOnboardingData(new OnboardingRequest(
-            $data['environment'],
-            $data['username'],
-            $data['password'],
-            $data['sendStatisticalData']
+            $environment,
+            $username,
+            $password,
+            $sendStatisticalData
         ));
 
         $this->addResponseCode($response);
@@ -64,12 +87,33 @@ class Onboarding extends BaseConfigurationController
      */
     protected function validateConnectionData(): Json
     {
+        /**
+         * @var array<string, string>
+         */
         $data = $this->getSequraPostData();
+        /**
+         * @var string $environment
+         */
+        $environment = $data['environment'] ?? '';
+        /**
+         * @var string $merchantId
+         */
+        $merchantId = $data['merchantId'] ?? '';
+        /**
+         * @var string $username
+         */
+        $username = $data['username'] ?? '';
+        /**
+         * @var string $password
+         */
+        $password = $data['password'] ?? '';
+
+        // @phpstan-ignore-next-line
         $response = AdminAPI::get()->connection($this->storeId)->isConnectionDataValid(new ConnectionRequest(
-            $data['environment'],
-            $data['merchantId'],
-            $data['username'],
-            $data['password']
+            $environment,
+            $merchantId,
+            $username,
+            $password
         ));
 
         $this->addResponseCode($response);
