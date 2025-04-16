@@ -170,7 +170,7 @@ class Configure extends Command
                         $this->safeConfigDataForStore($input);
                     }
                 );
-            } catch (Exception $e) {
+            } catch (\Exception $e) {
                 Logger::logError('Configuration could not be saved for store Id ' .
                     $storeId . ' because ' . $e->getMessage());
             }
@@ -183,13 +183,17 @@ class Configure extends Command
      *
      * @param InputInterface $input
      *
-     * @return array
+     * @return string[]
      */
     protected function getStoreIds($input)
     {
-        $storeIds = explode(',', $input->getOption(self::INPUT_KEY_STOREID)??1);
+        /**
+         * @var string $storeIdOpt
+         */
+        $storeIdOpt = $input->getOption(self::INPUT_KEY_STOREID) ?? '1';
+        $storeIds = explode(',', $storeIdOpt);
         if (count($storeIds) < 1) {
-            $storeIds = [1];
+            $storeIds = ['1'];
         }
         return $storeIds;
     }
@@ -198,27 +202,37 @@ class Configure extends Command
      * Save configuration data for store
      *
      * @param InputInterface $input
+     *
+     * @return void
      */
     protected function safeConfigDataForStore($input)
     {
-        $this->saveConnectionData(
-            $input->getOption(self::INPUT_KEY_ENDPOINT),
-            $input->getOption(self::INPUT_KEY_USERNAME),
-            $input->getOption(self::INPUT_KEY_PASSWORD)
-        );
-        $this->saveCountriesConfig(
-            $this->getSellingCountriesService()->getSellingCountries(),
-            $input->getOption(self::INPUT_KEY_MERCHANT_REF)
-        );
-        $generalSettings = new GeneralSettings(
-            false,
-            true,
-            [],
-            [],
-            []
-        );
+        /**
+         * @var string $endpoint
+         */
+        $endpoint = $input->getOption(self::INPUT_KEY_ENDPOINT);
+        /**
+         * @var string $username
+         */
+        $username = $input->getOption(self::INPUT_KEY_USERNAME);
+        /**
+         * @var string $password
+         */
+        $password = $input->getOption(self::INPUT_KEY_PASSWORD);
+        /**
+         * @var string $merchantId
+         */
+        $merchantId = $input->getOption(self::INPUT_KEY_MERCHANT_REF);
+        /**
+         * @var string $assetsKey
+         */
+        $assetsKey = $input->getOption(self::INPUT_KEY_ASSETS_KEY);
+
+        $this->saveConnectionData($endpoint, $username, $password);
+        $this->saveCountriesConfig($this->getSellingCountriesService()->getSellingCountries(), $merchantId);
+        $generalSettings = new GeneralSettings(false, true, [], [], []);
         $this->getGeneralSettingsService()->saveGeneralSettings($generalSettings);
-        $this->saveWidgetSettings($input->getOption(self::INPUT_KEY_ASSETS_KEY));
+        $this->saveWidgetSettings($assetsKey);
     }
 
     /**
@@ -228,7 +242,9 @@ class Configure extends Command
      * @param string $username
      * @param string $password
      *
-     * @throws InvalidEnvironmentException
+     * @throws \SeQura\Core\BusinessLogic\Domain\Connection\Exceptions\InvalidEnvironmentException
+     *
+     * @return void
      */
     private function saveConnectionData(string $endpoint, string $username, string $password)
     {
@@ -324,8 +340,8 @@ class Configure extends Command
      *
      * @return void
      *
-     * @throws HttpRequestException
-     * @throws Exception
+     * @throws \SeQura\Core\Infrastructure\Http\Exceptions\HttpRequestException
+     * @throws \Exception
      */
     private function saveWidgetSettings(string $assetsKey)
     {
