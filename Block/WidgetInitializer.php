@@ -32,24 +32,24 @@ class WidgetInitializer extends Template
     protected $localeResolver;
 
     /**
-     * @var \Magento\Framework\Locale\ResolverInterface
+     * @var \NumberFormatter
      */
     protected $formatter;
 
     /**
-     * @var ConnectionData
+     * @var ConnectionData|null
      */
     private $connectionSettings;
 
     /**
-     * @var WidgetSettings
+     * @var WidgetSettings|null
      */
     private $widgetSettings;
 
     /**
      * @var Session
      */
-    private Session $session;
+    private $session;
 
     /**
      * @var \Magento\Framework\App\ScopeResolverInterface
@@ -65,12 +65,16 @@ class WidgetInitializer extends Template
     {
         if (!$this->widgetSettings) {
             try {
-                $this->widgetSettings = StoreContext::doWithStore(
-                    $this->_storeManager->getStore()->getId(),
+                /**
+                 * @var WidgetSettings|null $widgetSettings
+                 */
+                $widgetSettings = StoreContext::doWithStore(
+                    (string) $this->_storeManager->getStore()->getId(),
                     function () {
                         return ServiceRegister::getService(WidgetSettingsService::class)->getWidgetSettings();
                     }
                 );
+                $this->widgetSettings = $widgetSettings;
                 // TODO: Log error
                 // phpcs:ignore Magento2.CodeAnalysis.EmptyBlock.DetectedCatch
             } catch (\Throwable $e) {
@@ -89,10 +93,14 @@ class WidgetInitializer extends Template
         if (!$this->connectionSettings) {
             try {
                 $storeId = $this->_storeManager->getStore()->getId();
-                $this->connectionSettings = StoreContext::doWithStore($storeId, function () {
+                /**
+                 * @var ConnectionData|null $connectionSettings
+                 */
+                $connectionSettings = StoreContext::doWithStore((string) $storeId, function () {
                     $service = ServiceRegister::getService(ConnectionService::class);
                     return $service->getConnectionData();
                 });
+                $this->connectionSettings = $connectionSettings;
                 // TODO: Log error
                 // phpcs:ignore Magento2.CodeAnalysis.EmptyBlock.DetectedCatch
             } catch (\Throwable $e) {
@@ -108,7 +116,7 @@ class WidgetInitializer extends Template
      * @param \Magento\Framework\App\ScopeResolverInterface $scopeResolver
      * @param \Magento\Framework\Locale\ResolverInterface $localeResolver
      * @param Session $checkoutSession
-     * @param array $data
+     * @param array<string, mixed> $data
      */
     public function __construct(
         Template\Context $context,
@@ -132,7 +140,11 @@ class WidgetInitializer extends Template
     private function getFormatter()
     {
         $localeCode = $this->localeResolver->getLocale();
-        $currency = $this->scopeResolver->getScope()->getCurrentCurrency();
+        /**
+         * @var \Magento\Store\Model\Store $store
+         */
+        $store = $this->scopeResolver->getScope();
+        $currency = $store->getCurrentCurrency();
         return new \NumberFormatter(
             $localeCode . '@currency=' . $currency->getCode(),
             \NumberFormatter::CURRENCY
@@ -185,13 +197,12 @@ class WidgetInitializer extends Template
     public function getProducts()
     {
         $paymentMethods = [];
-        $storeId = $this->_storeManager->getStore()->getId();
         $merchantId = $this->getMerchantId();
         if (!$merchantId) {
             // TODO: Log Merchant ID not found
             return $paymentMethods;
         }
-
+        $storeId = (string) $this->_storeManager->getStore()->getId();
         foreach ($this->getPaymentMethods($storeId, $merchantId) as $paymentMethod) {
             // Check if supports widgets
             if (in_array($paymentMethod->getProduct(), ['i1', 'pp5', 'pp3', 'pp6', 'pp9', 'sp1'], true)) {
@@ -213,9 +224,12 @@ class WidgetInitializer extends Template
     {
         $payment_methods = [];
         try {
+            /**
+             * @var SeQuraPaymentMethod[] $payment_methods
+             */
             $payment_methods = StoreContext::doWithStore($storeId, function () use ($merchantId) {
-                $service = ServiceRegister::getService(PaymentMethodsService::class);
-                return $service->getMerchantsPaymentMethods($merchantId);
+                return ServiceRegister::getService(PaymentMethodsService::class)
+                ->getMerchantsPaymentMethods($merchantId);
             });
             // TODO: Log error
             // phpcs:ignore Magento2.CodeAnalysis.EmptyBlock.DetectedCatch
@@ -257,7 +271,8 @@ class WidgetInitializer extends Template
     {
         $quote = $this->session->getQuote();
         $shippingCountry = $quote->getShippingAddress()->getCountryId();
-        $storeId = $this->_storeManager->getStore()->getId();
+        $storeId = (string) $this->_storeManager->getStore()->getId();
+        // @phpstan-ignore-next-line
         $data = AdminAPI::get()->countryConfiguration($storeId)->getCountryConfigurations();
         if (!$data->isSuccessful()) {
             return '';
