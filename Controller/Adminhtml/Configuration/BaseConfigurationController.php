@@ -95,7 +95,7 @@ class BaseConfigurationController extends Action
     /**
      * Returns post data from Sequra request.
      *
-     * @return array<string, mixed>
+     * @return array<int, array<string, string>>
      */
     protected function getSequraPostData(): array
     {
