@@ -58,9 +58,13 @@ class CountrySettings extends BaseConfigurationController
      */
     protected function setCountrySettings(): Json
     {
+        /**
+         * @var array<int, array<string, string>>
+         */
+        $data = $this->getSequraPostData();
         // @phpstan-ignore-next-line
         $response = AdminAPI::get()->countryConfiguration($this->storeId)->saveCountryConfigurations(
-            new CountryConfigurationRequest($this->getSequraPostData())
+            new CountryConfigurationRequest($data)
         );
 
         $this->addResponseCode($response);
