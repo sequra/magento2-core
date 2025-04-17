@@ -9,7 +9,8 @@ class IpAddressValidator extends \Magento\Payment\Gateway\Validator\AbstractVali
     /**
      * @inheritdoc
      *
-     * @param array<string, mixed> $validationSubject
+     * @param array $validationSubject
+     * @phpstan-param array<string, mixed> $validationSubject
      */
     public function validate(array $validationSubject)
     {

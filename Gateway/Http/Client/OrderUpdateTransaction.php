@@ -87,7 +87,10 @@ class OrderUpdateTransaction implements ClientInterface
             /**
             * @var \SeQura\Core\BusinessLogic\Domain\Order\Models\SeQuraOrder $sequraOrder
             */
-            $sequraOrder = StoreContext::doWithStore((string) $order->getStoreId(), [$this->getOrderService(), 'updateOrder'], [
+            $sequraOrder = StoreContext::doWithStore(
+                (string) $order->getStoreId(),
+                [$this->getOrderService(), 'updateOrder'],
+                [
                 new OrderUpdateData(
                     $order->getIncrementId(),
                     $shippedCart,
@@ -95,7 +98,8 @@ class OrderUpdateTransaction implements ClientInterface
                     null,
                     null
                 )
-            ]);
+                ]
+            );
         } catch (\Exception $exception) {
             Logger::logError(
                 'Order synchronization for refund failed. Order update request failed.',

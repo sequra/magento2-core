@@ -57,7 +57,8 @@ class ProductWidgetAvailabilityValidator extends AbstractValidator
     /**
      * @inheritdoc
      *
-     * @param array<string, string|int> $validationSubject
+     * @param array $validationSubject
+     * @phpstan-param array<string, string|int> $validationSubject
      */
     public function validate(array $validationSubject)
     {

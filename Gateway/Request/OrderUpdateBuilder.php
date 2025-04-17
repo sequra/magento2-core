@@ -11,7 +11,9 @@ class OrderUpdateBuilder implements BuilderInterface
     /**
      * Builds the request data for order updates
      *
-     * @param array<string, Payment> $buildSubject The data provided for the builder
+     * @param array $buildSubject The data provided for the builder
+     * @phpstan-param array<string, Payment> $buildSubject
+     *
      * @return array<string, mixed> The request data array
      */
     public function build(array $buildSubject): array

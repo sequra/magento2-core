@@ -116,7 +116,8 @@ class WidgetInitializer extends Template
      * @param \Magento\Framework\App\ScopeResolverInterface $scopeResolver
      * @param \Magento\Framework\Locale\ResolverInterface $localeResolver
      * @param Session $checkoutSession
-     * @param array<string, mixed> $data
+     * @param array $data
+     * @phpstan-param array<string, mixed> $data
      */
     public function __construct(
         Template\Context $context,

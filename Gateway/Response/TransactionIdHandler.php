@@ -11,8 +11,11 @@ class TransactionIdHandler implements HandlerInterface
     /**
      * Handles response
      *
-     * @param array<string, mixed> $handlingSubject
-     * @param array<string, mixed> $response
+     * @param array $handlingSubject
+     * @param array $response
+     * @phpstan-param array<string, mixed> $handlingSubject
+     * @phpstan-param array<string, mixed> $response
+     *
      * @return void
      */
     public function handle(array $handlingSubject, array $response)

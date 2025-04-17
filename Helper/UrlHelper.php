@@ -67,7 +67,8 @@ class UrlHelper
      * Returns front-end controller URL.
      *
      * @param string $routePath Path.
-     * @param array<string, mixed>|null $routeParams Parameters.
+     * @param array|null $routeParams Parameters.
+     * @phpstan-param array<string, mixed>|null $routeParams
      *
      * @return string Publicly visible URL of the requested front-end controller.
      *
@@ -89,7 +90,8 @@ class UrlHelper
      * Returns back-end controller URL.
      *
      * @param string $routePath Path.
-     * @param array<string, mixed>|null $routeParams Parameters.
+     * @param array|null $routeParams Parameters.
+     * @phpstan-param array<string, mixed>|null $routeParams
      *
      * @return string Publicly visible URL of the requested back-end controller.
      */

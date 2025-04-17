@@ -21,7 +21,8 @@ class GeneralResponseValidator extends AbstractValidator
     /**
      * @inheritdoc
      *
-     * @param array<string, array<string,string>> $validationSubject
+     * @param array $validationSubject
+     * @phpstan-param array<string, array<string, string>> $validationSubject
      */
     public function validate(array $validationSubject)
     {
