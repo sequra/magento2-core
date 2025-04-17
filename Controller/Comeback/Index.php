@@ -106,9 +106,11 @@ class Index extends Onepage
      */
     public function execute()
     {
-        $quote = $this->quoteRepository->get(
-            $this->getRequest()->getParam('cartId')
-        );
+        /**
+         * @var int $cartId
+         */
+        $cartId = $this->getRequest()->getParam('cartId');
+        $quote = $this->quoteRepository->get($cartId);
         $order = $this->orderFactory->create()->loadByIncrementId($quote->getReservedOrderId());
         if (!$order->getId()) {
             $this->manager->addWarningMessage(
@@ -120,6 +122,8 @@ class Index extends Onepage
         $session = $this->getOnepage()->getCheckout();
         // prepare session to success or cancellation page
         $session->clearHelperData();
+        // TODO: Call to an undefined method Magento\Checkout\Model\Session::setLastQuoteId()
+        // @phpstan-ignore-next-line
         $session->setLastQuoteId($quote->getId())
             ->setLastSuccessQuoteId($quote->getId())
             ->setLastOrderId($order->getId())
@@ -129,11 +133,11 @@ class Index extends Onepage
             ->createPublicCookieMetadata()
             ->setPath('/');
         $sectiondata = json_decode($this->cookieManager->getCookie('section_data_ids') ?: '');
-        if ($sectiondata) {
+        if (is_object($sectiondata) && isset($sectiondata->cart)) {
             $sectiondata->cart += 1000;
             $this->cookieManager->setPublicCookie(
                 'section_data_ids',
-                json_encode($sectiondata),
+                (string) json_encode($sectiondata),
                 $metadata
             );
         }
