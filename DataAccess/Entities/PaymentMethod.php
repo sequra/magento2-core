@@ -81,18 +81,20 @@ class PaymentMethod extends Entity
     {
         parent::inflate($data);
 
-        $this->product = $data['product'];
-        $this->title = $data['title'];
-        $this->longTitle = $data['longTitle'];
-        $this->startsAt = $data['startsAt'];
-        $this->endsAt = $data['endsAt'];
-        $this->campaign = $data['campaign'];
-        $this->claim = $data['claim'];
-        $this->description = $data['description'];
-        $this->icon = $data['icon'];
-        $this->costDescription = $data['costDescription'];
-        $this->minAmount = $data['minAmount'];
-        $this->maxAmount = $data['maxAmount'];
+        $this->product = isset($data['product']) && is_string($data['product']) ? $data['product'] : '';
+        $this->title =  isset($data['title']) && is_string($data['title']) ? $data['title'] : '';
+        $this->longTitle = isset($data['longTitle']) && is_string($data['longTitle']) ? $data['longTitle'] : '';
+        $this->startsAt = isset($data['startsAt']) && is_string($data['startsAt']) ? $data['startsAt'] : '';
+        $this->endsAt = isset($data['endsAt']) && is_string($data['endsAt']) ? $data['endsAt'] : '';
+        $this->campaign = isset($data['campaign']) && is_string($data['campaign']) ? $data['campaign'] : '';
+        $this->claim = isset($data['claim']) && is_string($data['claim']) ? $data['claim'] : '';
+        $this->description = isset($data['description'])
+        && is_string($data['description']) ? $data['description'] : '';
+        $this->icon = isset($data['icon']) && is_string($data['icon']) ? $data['icon'] : '';
+        $this->costDescription = isset($data['costDescription'])
+        && is_string($data['costDescription']) ? $data['costDescription'] : '';
+        $this->minAmount = isset($data['minAmount']) && is_int($data['minAmount']) ? $data['minAmount'] : 0;
+        $this->maxAmount = isset($data['maxAmount']) && is_int($data['maxAmount']) ? $data['maxAmount'] : 0;
     }
 
     /**
