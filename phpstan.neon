@@ -21,3 +21,9 @@ parameters:
         - /var/www/html/vendor/sequra/magento2-core/Services/
         - /var/www/html/vendor/sequra/magento2-core/Setup/
         - /var/www/html/vendor/sequra/magento2-core/Ui/
+    ignoreErrors:
+        - '#unknown class Magento\\Sales\\Model\\OrderFactory#i'
+        - '#unknown class Magento\\Framework\\DB\\TransactionFactory#i'
+        - '#invalid type Magento\\Framework\\DB\\TransactionFactory#i'
+        - '#invalid type Magento\\Sales\\Model\\OrderFactory#i'
+        - '#invalid type Magento\\Framework\\Controller\\Result\\RawFactory#i'
