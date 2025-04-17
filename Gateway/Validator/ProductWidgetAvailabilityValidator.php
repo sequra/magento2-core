@@ -56,6 +56,8 @@ class ProductWidgetAvailabilityValidator extends AbstractValidator
 
     /**
      * @inheritdoc
+     *
+     * @param array<string, string|int> $validationSubject
      */
     public function validate(array $validationSubject)
     {
@@ -65,14 +67,22 @@ class ProductWidgetAvailabilityValidator extends AbstractValidator
                 return $this->createResult(false);
             }
 
-            $widgetSettings = $this->getWidgetSettings($validationSubject['storeId']);
-            $settings = $this->getGeneralSettings($validationSubject['storeId']);
+            $storeId = (string) $validationSubject['storeId'];
+
+            $widgetSettings = $this->getWidgetSettings($storeId);
+            $settings = $this->getGeneralSettings($storeId);
 
             if (empty($widgetSettings) || !$widgetSettings->isEnabled() || !$widgetSettings->isDisplayOnProductPage()) {
                 return $this->createResult(false);
             }
 
+            /**
+             * @var int $productId
+             */
             $productId = $this->request->getParam('id');
+            /**
+             * @var \Magento\Catalog\Model\Product $product
+             */
             $product = $this->productRepository->getById($productId);
 
             if (!$this->isWidgetEnabledForProduct($product, $settings)) {
@@ -93,9 +103,13 @@ class ProductWidgetAvailabilityValidator extends AbstractValidator
      */
     private function getWidgetSettings($storeId)
     {
-        return StoreContext::doWithStore($storeId, function () {
+        /**
+         * @var WidgetSettings|null $settings
+         */
+        $settings = StoreContext::doWithStore($storeId, function () {
             return ServiceRegister::getService(WidgetSettingsService::class)->getWidgetSettings();
         });
+        return $settings;
     }
 
     /**
@@ -110,9 +124,13 @@ class ProductWidgetAvailabilityValidator extends AbstractValidator
      */
     private function getGeneralSettings($storeId): ?GeneralSettings
     {
-        return StoreContext::doWithStore($storeId, function () {
+        /**
+         * @var GeneralSettings|null $settings
+         */
+        $settings = StoreContext::doWithStore($storeId, function () {
             return ServiceRegister::getService(GeneralSettingsService::class)->getGeneralSettings();
         });
+        return $settings;
     }
 
     /**
@@ -127,12 +145,27 @@ class ProductWidgetAvailabilityValidator extends AbstractValidator
      */
     private function isWidgetEnabledForProduct(Product $product, ?GeneralSettings $settings): bool
     {
+
+        if ($product->getIsVirtual() || $product->getTypeId() === 'grouped') {
+            return false;
+        }
+
         $categoryIds = $product->getCategoryIds();
         $trail = $this->productService->getAllProductCategories($categoryIds);
+        $excludedProducts = $settings ? $settings->getExcludedProducts() : [];
+        if (!is_array($excludedProducts)) {
+            $excludedProducts = [];
+        }
 
-        return !in_array($product->getData('sku'), $settings ? $settings->getExcludedProducts() : [])
-            && !in_array($product->getSku(), $settings ? $settings->getExcludedProducts() : [])
-            && empty(array_intersect($trail, $settings ? $settings->getExcludedCategories() : []))
-            && !$product->getIsVirtual() && $product->getTypeId() !== 'grouped';
+        if (in_array($product->getData('sku'), $excludedProducts) || in_array($product->getSku(), $excludedProducts)) {
+            return false;
+        }
+
+        $excludedCategories = $settings ? $settings->getExcludedCategories() : [];
+        if (!is_array($excludedCategories)) {
+            $excludedCategories = [];
+        }
+
+        return empty(array_intersect($trail, $excludedCategories));
     }
 }
