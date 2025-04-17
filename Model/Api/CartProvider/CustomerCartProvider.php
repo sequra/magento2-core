@@ -10,16 +10,16 @@ class CustomerCartProvider implements CartProvider
     /**
      * @var CartRepositoryInterface
      */
-    private $quoteResotory;
+    private $quoteRepository;
 
     /**
      * CustomerCartProvider constructor.
      *
-     * @param CartRepositoryInterface $quoteResotory
+     * @param CartRepositoryInterface $quoteRepository
      */
-    public function __construct(CartRepositoryInterface $quoteResotory)
+    public function __construct(CartRepositoryInterface $quoteRepository)
     {
-        $this->quoteResotory = $quoteResotory;
+        $this->quoteRepository = $quoteRepository;
     }
 
     /**
@@ -32,7 +32,7 @@ class CustomerCartProvider implements CartProvider
     public function getQuote(string $cartId): Quote
     {
         /** @var Quote $quote */
-        $quote = $this->quoteResotory->getActive($cartId);
+        $quote = $this->quoteRepository->getActive((int) $cartId);
 
         return $quote;
     }
