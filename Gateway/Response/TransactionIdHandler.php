@@ -11,15 +11,21 @@ class TransactionIdHandler implements HandlerInterface
     /**
      * Handles response
      *
-     * @param array $handlingSubject
-     * @param array $response
+     * @param array<string, mixed> $handlingSubject
+     * @param array<string, mixed> $response
      * @return void
      */
     public function handle(array $handlingSubject, array $response)
     {
         $paymentDO = $handlingSubject['payment'];
+        // TODO: Cannot call method getPayment() on mixed
+        // @phpstan-ignore-next-line
         if ($paymentDO->getPayment() instanceof Payment) {
-            /** @var Payment $orderPayment */
+            /**
+             * TODO: Cannot call method getPayment() on mixed
+             * @var Payment $orderPayment
+             * @phpstan-ignore-next-line
+             **/
             $orderPayment = $paymentDO->getPayment();
             /** @var SeQuraOrder $sequraOrder */
             $sequraOrder = $response['data'];

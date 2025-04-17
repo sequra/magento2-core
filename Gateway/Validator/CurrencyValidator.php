@@ -8,9 +8,13 @@ class CurrencyValidator extends \Magento\Payment\Gateway\Validator\AbstractValid
 
     /**
      * @inheritdoc
+     *
+     * @param array<string, mixed> $validationSubject
      */
     public function validate(array $validationSubject)
     {
-        return $this->createResult(in_array($validationSubject['currency'], ['EUR'], true));
+        $currency = isset($validationSubject['currency'])
+        && is_string($validationSubject['currency']) ? $validationSubject['currency'] : '';
+        return $this->createResult(in_array($currency, ['EUR'], true));
     }
 }
