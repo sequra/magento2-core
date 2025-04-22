@@ -64,7 +64,7 @@ class OrderService implements ShopOrderService
      */
     private $translationProvider;
     /**
-     * @var SeQuraOrderService
+     * @var SeQuraOrderService|null
      */
     private $sequraOrderService;
     /**
@@ -117,7 +117,7 @@ class OrderService implements ShopOrderService
      * @param int $page The page number.
      * @param int $limit The number of order IDs to retrieve.
      *
-     * @return array The order IDs.
+     * @return array<int> The order IDs.
      */
     public function getReportOrderIds(int $page, int $limit = 5000): array
     {
@@ -130,7 +130,7 @@ class OrderService implements ShopOrderService
      * @param int $page The page number.
      * @param int $limit The number of order IDs to retrieve.
      *
-     * @return array The order IDs.
+     * @return array<int> The order IDs.
      */
     public function getStatisticsOrderIds(int $page, int $limit = 5000): array
     {
@@ -201,10 +201,15 @@ class OrderService implements ShopOrderService
     public function getCreateOrderRequest(string $orderReference): CreateOrderRequest
     {
         $seQuraOrder = $this->seQuraOrderRepository->getByOrderReference($orderReference);
-        $quote = $this->cartRepository->get($seQuraOrder->getCartId());
+        if (!$seQuraOrder) {
+            throw new NoSuchEntityException();
+        }
+        $quote = $this->cartRepository->get((int) $seQuraOrder->getCartId());
 
         $builder = $this->createOrderRequestBuilderFactory->create([
             'cartId' => $quote->getId(),
+            // TODO: Call to an undefined method Magento\Quote\Api\Data\CartInterface::getStore()
+            // @phpstan-ignore-next-line
             'storeId' => (string)$quote->getStore()->getId(),
         ]);
 
@@ -250,12 +255,15 @@ class OrderService implements ShopOrderService
         }
 
         $this->updateSeQuraOrderStatus($webhook);
-
+        /**
+         * @var int $orderId
+         */
+        $orderId = $order->getId();
         if ($order->canUnhold()) {
-            $this->orderManagement->unHold($order->getId());
+            $this->orderManagement->unHold($orderId);
         }
 
-        $this->orderManagement->cancel($order->getId());
+        $this->orderManagement->cancel($orderId);
     }
 
     /**
@@ -273,7 +281,7 @@ class OrderService implements ShopOrderService
 
         /** @var Order $order */
         $order = $this->getOrderById(
-            $this->cartManagement->placeOrder($seQuraOrder->getCartId())
+            $this->cartManagement->placeOrder((int) $seQuraOrder->getCartId())
         );
 
         $updatedSeQuraOrder = (new CreateOrderRequest(
@@ -376,7 +384,11 @@ class OrderService implements ShopOrderService
             ->create();
         $orderList = $this->shopOrderRepository->getList($searchCriteria)->getItems();
 
-        return array_pop($orderList);
+        /**
+         * @var Order|null $order
+         */
+        $order = array_pop($orderList);
+        return $order;
     }
 
     /**
@@ -414,7 +426,12 @@ class OrderService implements ShopOrderService
                         $category->getTitle() :
                         $method->getTitle();
 
-                    return new PaymentMethod($paymentMethodId, $name, $method->getIcon());
+                    /**
+                     * TODO: Parameter #3 $icon of class PaymentMethod constructor expects string, string|null given
+                     * @var string $icon
+                     */
+                    $icon = $method->getIcon() ?? '';
+                    return new PaymentMethod($paymentMethodId, $name, $icon);
                 }
             }
         }
