@@ -92,7 +92,8 @@ class WidgetConfigService
      *
      * @param string $storeId
      *
-     * @return array[]
+     * @return array
+     * @phpstan-return array<string, mixed[]|bool|string|null>
      *
      * @throws Exception
      */
@@ -110,9 +111,13 @@ class WidgetConfigService
             return [];
         }
 
-        return StoreContext::doWithStore($store->getStoreId(), function () use ($isPreview) {
+        /**
+         * @var array<string, mixed[]|bool|string|null> $data
+         */
+        $data = StoreContext::doWithStore($store->getStoreId(), function () use ($isPreview) {
             return $this->getConfigData($isPreview);
         });
+        return $data;
     }
 
     /**
@@ -120,7 +125,8 @@ class WidgetConfigService
      *
      * @param bool $isPreview Whether this is a preview mode request
      *
-     * @return array[]
+     * @return array
+     * @phpstan-return array<string, mixed[]|bool|string|null>
      *
      * @throws HttpRequestException
      * @throws NoSuchEntityException
@@ -211,11 +217,15 @@ class WidgetConfigService
      */
     private function getCountry(StoreConfigInterface $storeConfig)
     {
-        return $this->scopeConfig->getValue(
+        /**
+         * @var string $value
+         */
+        $value = $this->scopeConfig->getValue(
             'general/country/default',
             ScopeInterface::SCOPE_STORE,
             $storeConfig->getId()
         );
+        return $value;
     }
 
     /**
@@ -286,7 +296,11 @@ class WidgetConfigService
     private function getFormatter(): \NumberFormatter
     {
         $localeCode = $this->localeResolver->getLocale();
-        $currency = $this->scopeResolver->getScope()->getCurrentCurrency();
+         /**
+         * @var \Magento\Store\Model\Store $store
+         */
+        $store = $this->scopeResolver->getScope();
+        $currency = $store->getCurrentCurrency();
         return new \NumberFormatter(
             $localeCode . '@currency=' . $currency->getCode(),
             \NumberFormatter::CURRENCY
@@ -318,16 +332,22 @@ class WidgetConfigService
     /**
      * Get enabled stores
      *
-     * @return array
+     * @return array<string>
      *
      * @throws Exception
      */
     private function getEnabledStores(): array
     {
-        $stores = $this->getStoreService()->getConnectedStores();
+        /**
+         * TODO: getConnectedStores() should be moved to StoreServiceInterface
+         * @var \Sequra\Core\Services\BusinessLogic\StoreService $storeService
+         */
+        $storeService = $this->getStoreService();
+        $stores = $storeService->getConnectedStores();
         $result = [];
 
         foreach ($stores as $store) {
+            // @phpstan-ignore-next-line
             $widgetsConfig = AdminAPI::get()->widgetConfiguration($store)->getWidgetSettings()->toArray();
 
             if (isset($widgetsConfig['errorCode']) || !$widgetsConfig['useWidgets']) {
