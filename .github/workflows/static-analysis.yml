@@ -53,7 +53,8 @@ jobs:
 
       - name: PHPStan
         run: |
-          chmod +x ./bin/phpstan
+          chmod +x ./bin/phpstan ./bin/update-sequra
+          ./bin/update-sequra
           ./bin/phpstan --error-format=github
       
       - name: Teardown Environment
