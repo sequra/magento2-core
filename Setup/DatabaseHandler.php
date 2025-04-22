@@ -28,7 +28,7 @@ class DatabaseHandler
     /**
      * Get the installer instance
      *
-     * @return mixed The installer instance
+     * @return \Magento\Framework\Setup\ModuleDataSetupInterface The installer instance
      */
     public function getInstaller()
     {
