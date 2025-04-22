@@ -2,6 +2,7 @@ parameters:
     level: 9
     errorFormat: table
     treatPhpDocTypesAsCertain: false
+    reportUnmatchedIgnoredErrors: false
     paths:
         - /var/www/html/vendor/sequra/magento2-core/registration.php
         - /var/www/html/app/code/Sequra/Helper/
