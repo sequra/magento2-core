@@ -40,9 +40,17 @@ class TransformEntityService
      */
     public function transformAddressToSeQuraOrderAddress($address): SeQuraAddress
     {
+        $addressLine1 = $address->getStreet();
+        if (is_array($addressLine1)) {
+            $addressLine1 = implode("\n", $addressLine1);
+        } elseif ($addressLine1 === null) {
+            $addressLine1 = '';
+        } elseif (!is_string($addressLine1)) {
+            $addressLine1 = (string)$addressLine1;
+        }
         return new SeQuraAddress(
             $address->getCompany() ?? '',
-            $address->getStreet() ? implode("\n", $address->getStreet()) : ($address->getStreet() ?? ''),
+            $addressLine1,
             '',
             $address->getPostcode(),
             $address->getCity(),
@@ -72,7 +80,7 @@ class TransformEntityService
     public function transformOrderCartToSeQuraCart(MagentoOrder $orderData, bool $isShipped): SeQuraCart
     {
         return new SeQuraCart(
-            $orderData->getOrderCurrencyCode(),
+            ($orderData->getOrderCurrencyCode() ?? ''),
             false,
             $this->transformOrderItemsToSeQuraCartItems($orderData, $isShipped)
         );
@@ -96,7 +104,7 @@ class TransformEntityService
         $isUnshippedOrFullyShipped = true;
         /** @var MagentoOrder\Item $orderItem */
         foreach ($orderData->getAllVisibleItems() as $orderItem) {
-            $orderItemsTotal += self::transformPrice($orderItem->getRowTotalInclTax());
+            $orderItemsTotal += self::transformPrice($orderItem->getRowTotalInclTax() ?? 0);
             $orderedQty = $orderItem->getQtyOrdered() ? (int)$orderItem->getQtyOrdered() : 0;
             $shippedQty = $orderItem->getQtyShipped() ? (int)$orderItem->getQtyShipped() : 0;
             $refundedQty = $orderItem->getQtyRefunded() ? (int)$orderItem->getQtyRefunded() : 0;
@@ -121,9 +129,9 @@ class TransformEntityService
                 'type' => ItemType::TYPE_PRODUCT,
                 'reference' => $orderItem->getSku(),
                 'name' => $orderItem->getName(),
-                'price_with_tax' => self::transformPrice($orderItem->getPriceInclTax()),
+                'price_with_tax' => self::transformPrice($orderItem->getPriceInclTax() ?? 0),
                 'quantity' => $quantity,
-                'total_with_tax' => self::transformPrice($orderItem->getPriceInclTax()) * $quantity,
+                'total_with_tax' => self::transformPrice($orderItem->getPriceInclTax() ?? 0) * $quantity,
                 'downloadable' => (bool)$orderItem->getIsVirtual(),
                 'description' => $orderItem->getDescription(),
                 'category' => ($product && $product->getCategory()) ? $product->getCategory()->getName() : '',
@@ -178,6 +186,9 @@ class TransformEntityService
             $items[] = new HandlingItem('additional_handling', 'surcharge', $diff);
         }
 
+        /**
+         * @var float $cartTotal
+         */
         $cartTotal = array_reduce($items, static function ($sum, $item) {
             return $sum + $item->getTotalWithTax();
         }, 0);
@@ -225,7 +236,7 @@ class TransformEntityService
                 $discount *= (1 + $item->getTaxPercent() / 100);
             }
 
-            $totalDiscount += self::transformPrice($discount);
+            $totalDiscount += self::transformPrice($discount ?? 0);
         }
 
         return -1 * $totalDiscount;
@@ -247,7 +258,7 @@ class TransformEntityService
             return false;
         }
 
-        $totalIncludingTax = self::transformPrice($orderItem->getRowTotalInclTax());
+        $totalIncludingTax = self::transformPrice($orderItem->getRowTotalInclTax() ?? 0);
         $taxAmount = self::transformPrice($orderItem->getTaxAmount());
         return $totalIncludingTax !== ($taxAmount * 100) / $orderItem->getTaxPercent();
     }
@@ -262,9 +273,9 @@ class TransformEntityService
     private static function doesPriceIncludeTax(MagentoOrder $order): bool
     {
         return self::transformPrice($order->getGrandTotal()) -
-            self::transformPrice($order->getSubtotalInclTax()) -
-            self::transformPrice($order->getShippingInclTax()) -
-            self::transformPrice($order->getDiscountAmount()) === 0;
+            self::transformPrice($order->getSubtotalInclTax() ?? 0) -
+            self::transformPrice($order->getShippingInclTax() ?? 0) -
+            self::transformPrice($order->getDiscountAmount() ?? 0) === 0;
     }
 
     /**
