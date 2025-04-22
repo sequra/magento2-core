@@ -38,7 +38,7 @@ class SequraEntity extends AbstractDb
     /**
      * Selects all records from Sequra entity table.
      *
-     * @return array Sequra entity records.
+     * @return Entity[] Sequra entity records.
      *
      * @throws \Magento\Framework\Exception\LocalizedException
      */
@@ -56,7 +56,7 @@ class SequraEntity extends AbstractDb
     /**
      * Performs a select query over a specific type of entity with given Sequra query filter.
      *
-     * @param QueryFilter $filter Sequra query filter.
+     * @param QueryFilter|null $filter Sequra query filter.
      * @param Entity $entity Sequra entity.
      *
      * @return array Array of selected records.
