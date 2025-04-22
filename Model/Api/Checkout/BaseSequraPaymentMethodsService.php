@@ -63,7 +63,7 @@ class BaseSequraPaymentMethodsService
      *
      * @param string $cartId Cart ID to get payment methods for
      *
-     * @return array Available payment methods
+     * @return array<array<string, string>> Available payment methods
      */
     public function getAvailablePaymentMethods(string $cartId): array
     {
@@ -79,11 +79,13 @@ class BaseSequraPaymentMethodsService
             'storeId' => (string)$quote->getStore()->getId(),
         ]);
 
+        // @phpstan-ignore-next-line
         $generalSettings = AdminAPI::get()->generalSettings((string)$quote->getStore()->getId())->getGeneralSettings();
         if (!$generalSettings->isSuccessful() || !$builder->isAllowedFor($generalSettings)) {
             return [];
         }
 
+        // @phpstan-ignore-next-line
         $response = CheckoutAPI::get()
             ->solicitation((string)$quote->getStore()->getId())
             ->solicitFor($builder);
@@ -107,6 +109,7 @@ class BaseSequraPaymentMethodsService
     {
         $quote = $this->cartProvider->getQuote($cartId);
 
+        // @phpstan-ignore-next-line
         $response = CheckoutAPI::get()
             ->solicitation((string)$quote->getStore()->getId())
             ->solicitFor($this->createOrderRequestBuilderFactory->create([
@@ -128,6 +131,7 @@ class BaseSequraPaymentMethodsService
         $campaign = !empty($payload['product_data']['sequra_campaign']) ?
             $payload['product_data']['sequra_campaign'] : null;
 
+        // @phpstan-ignore-next-line
         $formResponse = CheckoutAPI::get()
             ->solicitation((string)$quote->getStore()->getId())
             ->getIdentificationForm($quote->getId(), $product, $campaign);

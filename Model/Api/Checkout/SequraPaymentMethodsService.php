@@ -25,7 +25,7 @@ class SequraPaymentMethodsService implements SequraPaymentMethodsInterface
      *
      * @param string $cartId Cart ID
      *
-     * @return array Available payment methods
+     * @return array<array<string, string>> Available payment methods
      */
     public function getAvailablePaymentMethods(string $cartId): array
     {

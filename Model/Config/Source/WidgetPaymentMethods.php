@@ -33,12 +33,12 @@ class WidgetPaymentMethods implements OptionSourceInterface
      * - product: Payment method product code
      * - campaign: Payment method campaign code
      *
-     * @return array<array<string, string>> Array of payment method values
+     * @return array<int<0, max>, array<string, string|null>> Array of payment method values
      */
     public function getPaymentMethodValues()
     {
         $values = [];
-        $storeId = $this->storeManager->getStore()->getId();
+        $storeId = (string) $this->storeManager->getStore()->getId();
         $countries = $this->getAvailableCountries($storeId);
         foreach ($countries as $country) {
             if (!$country->getMerchantId()) {
@@ -66,19 +66,22 @@ class WidgetPaymentMethods implements OptionSourceInterface
     /**
      * Encode payment method value to be used as option value
      *
-     * @param string[] $value Payment method value
+     * @param array $value Payment method value
+     * @phpstan-param array<string, string|null> $value
      *
      * @return string Encoded value
      */
     public function encodePaymentMethodValue($value)
     {
-        return base64_encode(json_encode($value));
+        $json = json_encode($value);
+        return is_string($json) ? base64_encode($json) : '';
     }
 
     /**
      * Get options array
      *
-     * @return array
+     * @phpstan-return array<int, array{value: string, label: string}>
+     * @return array<int<0, max>, array<string, string>> Options array
      */
     public function toOptionArray()
     {
@@ -109,6 +112,9 @@ class WidgetPaymentMethods implements OptionSourceInterface
     {
         $countries = [];
         try {
+            /**
+             * @var CountryConfiguration[] $countries
+             */
             $countries = StoreContext::doWithStore($storeId, function () {
                 return ServiceRegister::getService(CountryConfigurationService::class)->getCountryConfiguration();
             });
@@ -131,6 +137,9 @@ class WidgetPaymentMethods implements OptionSourceInterface
     {
         $payment_methods = [];
         try {
+            /**
+             * @var SeQuraPaymentMethod[] $payment_methods
+             */
             $payment_methods = StoreContext::doWithStore($storeId, function () use ($merchantId) {
                 return ServiceRegister::getService(PaymentMethodsService::class)->getMerchantsPaymentMethods(
                     $merchantId
@@ -146,7 +155,7 @@ class WidgetPaymentMethods implements OptionSourceInterface
     /**
      * Convert country code to flag emoji
      *
-     * @param string $countryCode ISO 3166-1 alpha-2 country code
+     * @param string|null $countryCode ISO 3166-1 alpha-2 country code
      *
      * @return string Flag emoji
      */
