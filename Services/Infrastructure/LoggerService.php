@@ -22,7 +22,7 @@ class LoggerService extends Singleton implements ShopLoggerAdapter
     /**
      * Log level names for corresponding log level codes.
      *
-     * @var array
+     * @var array<string>
      */
     private static $logLevelName = [
         Logger::ERROR => 'error',
@@ -86,6 +86,6 @@ class LoggerService extends Singleton implements ShopLoggerAdapter
         }
         // TODO: The use of function call_user_func() is discouraged
         // phpcs:ignore Magento2.Functions.DiscouragedFunction.Discouraged
-        \call_user_func([$this->logger, self::$logLevelName[$logLevel]], $message);
+        \call_user_func([$this->logger, self::$logLevelName[$logLevel]], $message); // @phpstan-ignore-line
     }
 }
