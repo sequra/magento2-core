@@ -51,6 +51,9 @@ class OrderShipmentObserver implements ObserverInterface
      */
     public function execute(Observer $observer): void
     {
+        /**
+         * @var MagentoShipment $shipmentData
+         */
         $shipmentData = $observer->getData('data_object');
 
         try {
@@ -72,8 +75,9 @@ class OrderShipmentObserver implements ObserverInterface
     private function handleShipment(MagentoShipment $shipmentData): void
     {
         $orderData = $shipmentData->getOrder();
+        $payment = $orderData->getPayment();
 
-        if ($orderData->getPayment()->getMethod() !== ConfigProvider::CODE) {
+        if (!$payment || $payment->getMethod() !== ConfigProvider::CODE) {
             return;
         }
 
@@ -84,11 +88,15 @@ class OrderShipmentObserver implements ObserverInterface
         $unshippedCart = $this->transformService->transformOrderCartToSeQuraCart($orderData, false);
         $shippedCart = $this->transformService->transformOrderCartToSeQuraCart($orderData, true);
 
-        $orderService = StoreContext::doWithStore($orderData->getStoreId(), function () {
+        $storeId = (string) $orderData->getStoreId();
+        /**
+         * @var OrderService $orderService
+         */
+        $orderService = StoreContext::doWithStore($storeId, function () {
             return ServiceRegister::getService(OrderService::class);
         });
 
-        StoreContext::doWithStore($orderData->getStoreId(), [$orderService, 'updateOrder'], [
+        StoreContext::doWithStore($storeId, [$orderService, 'updateOrder'], [
             new OrderUpdateData(
                 $orderData->getIncrementId(),
                 $shippedCart,
