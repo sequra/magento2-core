@@ -56,6 +56,7 @@ class Initializer implements DataPatchInterface
     private $generalSettingsService;
     /**
      * @var WidgetSettingsService
+     * @phpstan-ignore-next-line
      */
     private $widgetSettingsService;
     /**
@@ -128,19 +129,36 @@ class Initializer implements DataPatchInterface
             $this->initializerTaskRunner();
 
             $storeViews = $this->storeManager->getStores();
+            /**
+             * @var string $defaultUsername
+             */
             $defaultUsername = $this->scopeConfig->getValue('sequra/core/user_name');
-            $defaultPassword = $this->getEncryptor()->decrypt(
-                $this->scopeConfig->getValue('sequra/core/user_secret') ?? ''
-            );
+            /**
+             * @var string $defaultPassword
+             */
+            $defaultPassword = $this->scopeConfig->getValue('sequra/core/user_secret') ?? '';
+            $defaultPassword = $this->getEncryptor()->decrypt($defaultPassword);
+            /**
+             * @var string $defaultMerchantId
+             */
             $defaultMerchantId = $this->scopeConfig->getValue('sequra/core/merchant_ref');
+            /**
+             * @var string $defaultAssetsKey
+             */
             $defaultAssetsKey = $this->scopeConfig->getValue('sequra/core/assets_key');
+            /**
+             * @var string $defaultTestIps
+             */
             $defaultTestIps = $this->scopeConfig->getValue('sequra/core/test_ip');
+            /**
+             * @var string $defaultEndpoint
+             */
             $defaultEndpoint = $this->scopeConfig->getValue('sequra/core/endpoint');
 
             foreach ($storeViews as $storeView) {
                 try {
                     StoreContext::doWithStore(
-                        $storeView->getId(),
+                        (string) $storeView->getId(),
                         function () use (
                             $defaultUsername,
                             $defaultPassword,
@@ -215,31 +233,50 @@ class Initializer implements DataPatchInterface
         $store = $this->storeManager->getStore($storeId);
         $websiteId = $store->getWebsiteId();
 
+        /**
+         * @var string $username
+         */
         $username = $this->scopeConfig->getValue(
             'sequra/core/user_name',
             ScopeInterface::SCOPE_STORES,
             $storeId
         );
-        $password = $this->getEncryptor()->decrypt($this->scopeConfig->getValue(
+        /**
+         * @var string $password
+         */
+        $password = $this->scopeConfig->getValue(
             'sequra/core/user_secret',
             ScopeInterface::SCOPE_STORES,
             $storeId
-        ) ?? '');
+        ) ?? '';
+        $password = $this->getEncryptor()->decrypt($password);
+        /**
+         * @var string $merchantId
+         */
         $merchantId = $this->scopeConfig->getValue(
             'sequra/core/merchant_ref',
             ScopeInterface::SCOPE_STORES,
             $storeId
         );
+        /**
+         * @var string $assetsKey
+         */
         $assetsKey = $this->scopeConfig->getValue(
             'sequra/core/assets_key',
             ScopeInterface::SCOPE_STORES,
             $storeId
         );
+        /**
+         * @var string $testIps
+         */
         $testIps = $this->scopeConfig->getValue(
             'sequra/core/test_ip',
             ScopeInterface::SCOPE_STORES,
             $storeId
         );
+        /**
+         * @var string $endpoint
+         */
         $endpoint = $this->scopeConfig->getValue(
             'sequra/core/endpoint',
             ScopeInterface::SCOPE_STORES,
@@ -249,31 +286,50 @@ class Initializer implements DataPatchInterface
 
         if (empty($username) || empty($password) || empty($merchantId) ||
             empty($assetsKey) || empty($endpoint)) {
+            /**
+             * @var string $username
+             */
             $username = $this->scopeConfig->getValue(
                 'sequra/core/user_name',
                 ScopeInterface::SCOPE_WEBSITES,
                 $websiteId
             );
-            $password = $this->getEncryptor()->decrypt($this->scopeConfig->getValue(
+            /**
+             * @var string $password
+             */
+            $password = $this->scopeConfig->getValue(
                 'sequra/core/user_secret',
                 ScopeInterface::SCOPE_WEBSITES,
                 $websiteId
-            ) ?? '');
+            ) ?? '';
+            $password = $this->getEncryptor()->decrypt($password);
+            /**
+             * @var string $merchantId
+             */
             $merchantId = $this->scopeConfig->getValue(
                 'sequra/core/merchant_ref',
                 ScopeInterface::SCOPE_WEBSITES,
                 $websiteId
             );
+            /**
+             * @var string $assetsKey
+             */
             $assetsKey = $this->scopeConfig->getValue(
                 'sequra/core/assets_key',
                 ScopeInterface::SCOPE_WEBSITES,
                 $websiteId
             );
+            /**
+             * @var string $testIps
+             */
             $testIps = $this->scopeConfig->getValue(
                 'sequra/core/test_ip',
                 ScopeInterface::SCOPE_WEBSITES,
                 $websiteId
             );
+            /**
+             * @var string $endpoint
+             */
             $endpoint = $this->scopeConfig->getValue(
                 'sequra/core/endpoint',
                 ScopeInterface::SCOPE_WEBSITES,
@@ -283,11 +339,29 @@ class Initializer implements DataPatchInterface
 
         if (empty($username) || empty($password) || empty($merchantId) ||
             empty($assetsKey) || empty($endpoint)) {
+            /**
+             * @var string $username
+             */
             $username = $defaultUsername;
+            /**
+             * @var string $password
+             */
             $password = $defaultPassword;
+            /**
+             * @var string $merchantId
+             */
             $merchantId = $defaultMerchantId;
+            /**
+             * @var string $assetsKey
+             */
             $assetsKey = $defaultAssetsKey;
+            /**
+             * @var string $testIps
+             */
             $testIps = $defaultTestIps;
+            /**
+             * @var string $endpoint
+             */
             $endpoint = $defaultEndpoint;
         }
 
@@ -305,7 +379,7 @@ class Initializer implements DataPatchInterface
 
         $this->saveCountriesConfig($sellingCountries, $merchantId);
 
-        $ipAddresses = $testIps ? explode(',', $testIps) : [];
+        $ipAddresses = is_string($testIps) ? explode(',', $testIps) : [];
 
         foreach ($ipAddresses as $key => $address) {
             if (!filter_var($address, FILTER_VALIDATE_IP)) {
