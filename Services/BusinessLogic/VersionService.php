@@ -81,25 +81,24 @@ class VersionService implements VersionServiceInterface
 
         $hubResponse = json_decode($hubResponse->getBody()->getContents(), true);
 
-        return $this->getLatestVersionFromInfoResponse($hubResponse);
+        return is_array($hubResponse) ? $this->getLatestVersionFromInfoResponse($hubResponse) : null;
     }
 
     /**
      * Filter latest tag version.
      *
      * @param array $response
+     * @phpstan-param array<string, array<string, array<string, string>>> $response
      *
      * @return null|string
      */
     private function getLatestVersionFromInfoResponse(array $response): ?string
     {
-        $filteredArray = array_map(
-            static function ($module) {
-                return $module['version'];
-            },
-            $response['packages']['sequra/magento2-core']
-        );
-
-        return reset($filteredArray) ?? null;
+        if (!isset($response['packages']['sequra/magento2-core'])
+        || !is_array($response['packages']['sequra/magento2-core'])) {
+            return null;
+        }
+        $module = reset($response['packages']['sequra/magento2-core']);
+        return $module['version'] ?? null;
     }
 }
