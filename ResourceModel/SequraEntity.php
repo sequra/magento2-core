@@ -29,6 +29,8 @@ class SequraEntity extends AbstractDb
      * Set resource model table name.
      *
      * @param string $tableName Name of the database table.
+     *
+     * @return void
      */
     public function setTableName($tableName)
     {
@@ -45,6 +47,9 @@ class SequraEntity extends AbstractDb
     public function selectAll()
     {
         $connection = $this->getConnection();
+        if (!$connection) {
+            return [];
+        }
         $select = $connection->select()
             ->from($this->getMainTable());
 
@@ -60,6 +65,7 @@ class SequraEntity extends AbstractDb
      * @param Entity $entity Sequra entity.
      *
      * @return array Array of selected records.
+     * @phpstan-return array<int, array{data: string, id: int}>
      *
      * @throws QueryFilterInvalidParamException
      * @throws \Magento\Framework\Exception\LocalizedException
@@ -67,6 +73,9 @@ class SequraEntity extends AbstractDb
     public function selectEntities($filter, $entity)
     {
         $connection = $this->getConnection();
+        if (!$connection) {
+            return [];
+        }
 
         $select = $connection->select()
             ->from($this->getMainTable())
@@ -103,6 +112,9 @@ class SequraEntity extends AbstractDb
     public function saveEntity($entity)
     {
         $connection = $this->getConnection();
+        if (!$connection) {
+            return 0;
+        }
 
         $indexes = IndexHelper::transformFieldsToIndexes($entity);
         $data = $this->prepareDataForInsertOrUpdate($entity, $indexes);
@@ -125,6 +137,9 @@ class SequraEntity extends AbstractDb
     public function updateEntity($entity)
     {
         $connection = $this->getConnection();
+        if (!$connection) {
+            return false;
+        }
 
         $indexes = IndexHelper::transformFieldsToIndexes($entity);
         $data = $this->prepareDataForInsertOrUpdate($entity, $indexes);
@@ -147,6 +162,9 @@ class SequraEntity extends AbstractDb
     public function deleteEntity($id)
     {
         $connection = $this->getConnection();
+        if (!$connection) {
+            return false;
+        }
 
         $rows = $connection->delete(
             $this->getMainTable(),
@@ -163,8 +181,10 @@ class SequraEntity extends AbstractDb
      *
      * @param Entity $entity Sequra entity object.
      * @param array $indexes Array of index values.
+     * @phpstan-param array<string, mixed> $indexes
      *
      * @return array Prepared record for inserting or updating.
+     * @phpstan-return array<string, mixed>
      */
     protected function prepareDataForInsertOrUpdate(Entity $entity, array $indexes)
     {
@@ -183,11 +203,15 @@ class SequraEntity extends AbstractDb
      * @param string $property Property name.
      * @param string $entityType Entity type.
      *
-     * @return string Index column in Sequra entity table.
+     * @return string|null Index column in Sequra entity table.
      */
     protected function getIndexMapping($property, $entityType)
     {
-        $indexMapping = IndexHelper::mapFieldsToIndexes(new $entityType);
+        $entity = new $entityType;
+        if (!$entity instanceof Entity) {
+            return null;
+        }
+        $indexMapping = IndexHelper::mapFieldsToIndexes($entity);
 
         if (array_key_exists($property, $indexMapping)) {
             return 'index_' . $indexMapping[$property];
@@ -201,6 +225,7 @@ class SequraEntity extends AbstractDb
      *
      * @param QueryFilter $filter Sequra query filter.
      * @param array $fieldIndexMap Array of index mappings.
+     * @phpstan-param array<string, int> $fieldIndexMap
      *
      * @return string WHERE part of SELECT query.
      *
@@ -215,7 +240,7 @@ class SequraEntity extends AbstractDb
                     $whereCondition .= ' ' . $condition->getChainOperator() . ' ';
                 }
 
-                if ($condition->getColumn() === 'id') {
+                if ($condition->getColumn() === 'id' && $this->getConnection()) {
                     $whereCondition .= 'id = ' . $this->getConnection()->quote($condition->getValue());
                     continue;
                 }
@@ -238,6 +263,7 @@ class SequraEntity extends AbstractDb
      *
      * @param QueryCondition $condition Query condition object.
      * @param array $indexMap Map of property indexes.
+     * @phpstan-param array<string, int> $indexMap
      *
      * @return string A single WHERE condition.
      */
@@ -246,28 +272,40 @@ class SequraEntity extends AbstractDb
         $column = $condition->getColumn();
         $columnName = $column === 'id' ? 'id' : 'index_' . $indexMap[$column];
         if ($column === 'id') {
-            $conditionValue = (int)$condition->getValue();
+            $conditionValue = (int)$condition->getValue(); // @phpstan-ignore-line
         } else {
             $conditionValue = IndexHelper::castFieldValue($condition->getValue(), $condition->getValueType());
         }
 
         if (in_array($condition->getOperator(), [Operators::NOT_IN, Operators::IN], true)) {
+            /**
+             * @var array<int, string|int|float> $arr
+             */
+            $arr = $condition->getValue();
             $values = array_map(static function ($item) {
                 if (is_string($item)) {
                     return "'$item'";
                 }
 
                 if (is_int($item)) {
+                    /**
+                     * @var int $val
+                     */
                     $val = IndexHelper::castFieldValue($item, 'integer');
                     return "'{$val}'";
                 }
 
+                /**
+                 * @var float $val
+                 */
                 $val = IndexHelper::castFieldValue($item, 'double');
 
                 return "'{$val}'";
-            }, $condition->getValue());
+            }, $arr);
             $conditionValue = '(' . implode(',', $values) . ')';
         } else {
+            // TODO: Part $conditionValue (array|int|string|null) of encapsed string cannot be cast to string.
+            // @phpstan-ignore-next-line
             $conditionValue = "'$conditionValue'";
         }
 
@@ -283,6 +321,7 @@ class SequraEntity extends AbstractDb
      * @param Select $select Magento SELECT query object.
      * @param QueryFilter $filter Sequra query filter.
      * @param array $fieldIndexMap Array of index mappings.
+     * @phpstan-param array<string, int> $fieldIndexMap
      *
      * @return Select Updated Magento SELECT query object.
      *
@@ -320,6 +359,6 @@ class SequraEntity extends AbstractDb
      */
     private function serializeEntity(Entity $entity)
     {
-        return json_encode($entity->toArray());
+        return (string) json_encode($entity->toArray());
     }
 }
