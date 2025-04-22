@@ -103,6 +103,9 @@ class OrderReportService implements OrderReportServiceInterface
      */
     public function getPlatform(): Platform
     {
+        /**
+         * @var array<string, string> $connectionData
+         */
         $connectionData = $this->deploymentConfig->get(
             ConfigOptionsListConstants::CONFIG_PATH_DB_CONNECTION_DEFAULT,
             []
@@ -123,6 +126,7 @@ class OrderReportService implements OrderReportServiceInterface
      * Creates an instance of OrderStatistics from magento Order.
      *
      * @param array $orderInfo
+     * @phpstan-param array<string, string|float|int> $orderInfo
      *
      * @return OrderStatistics
      */
@@ -133,7 +137,7 @@ class OrderReportService implements OrderReportServiceInterface
         return OrderStatistics::fromArray([
             'completed_at' => $orderInfo['created_at'] ?? '',
             'currency' => $orderInfo['order_currency_code'] ?? '',
-            'amount' => TransformEntityService::transformPrice($amount),
+            'amount' => TransformEntityService::transformPrice((float) $amount),
             'merchant_reference' => [
                 'order_ref_1' => $orderInfo['increment_id'] ?? ''
             ],
