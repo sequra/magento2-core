@@ -38,3 +38,5 @@ parameters:
         - '#Magento\\Sales\\Model\\Order\\Interceptor not found#i'
         - '#unknown class Sequra\\Core\\Services\\BusinessLogic\\OrderServiceFactory#i'
         - '#invalid type Sequra\\Core\\Services\\BusinessLogic\\OrderServiceFactory#i'
+        - '#unknown class Magento\\Catalog\\Model\\ResourceModel\\Category\\CollectionFactory#i'
+        - '#invalid type Magento\\Catalog\\Model\\ResourceModel\\Category\\CollectionFactory#i'

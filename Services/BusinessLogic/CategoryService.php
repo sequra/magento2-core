@@ -53,6 +53,10 @@ class CategoryService implements CategoryServiceInterface
      */
     public function getCategories(): array
     {
+        $categories = [];
+        /**
+         * @var \Magento\Store\Model\Store $store
+         */
         $store = $this->storeManager->getStore(StoreContext::getInstance()->getStoreId());
         $categoryCollection = $this->collectionFactory->create();
         $categoryCollection->addAttributeToSelect('*');
@@ -60,9 +64,16 @@ class CategoryService implements CategoryServiceInterface
         $categoryCollection->addIsActiveFilter();
 
         $rootCategory = $this->categoryRepository->get($store->getRootCategoryId());
-        $categories[] = new Category($rootCategory->getId(), $rootCategory->getName());
+
+        if ($rootCategory->getId() !== null && $rootCategory->getName() !== null) {
+            $categories[] = new Category((string) $rootCategory->getId(), $rootCategory->getName());
+        }
+
         foreach ($categoryCollection as $category) {
-            $categories[] = new Category($category->getId(), $category->getName());
+            if ($category->getId() === null || $category->getName() === null) {
+                continue;
+            }
+            $categories[] = new Category((string) $category->getId(), $category->getName());
         }
 
         return $categories;
