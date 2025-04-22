@@ -11,14 +11,14 @@ class DatabaseHandler
     public const SEQURA_ORDER_TABLE = 'sequra_order';
 
     /**
-     * @var \Magento\Framework\Setup\ModuleDataSetupInterface
+     * @var \Magento\Framework\Setup\SetupInterface
      */
     private $installer;
 
     /**
      * Constructor for DatabaseHandler
      *
-     * @param \Magento\Framework\Setup\ModuleDataSetupInterface $installer The installer
+     * @param \Magento\Framework\Setup\SetupInterface $installer The installer
      */
     public function __construct($installer)
     {
@@ -28,7 +28,7 @@ class DatabaseHandler
     /**
      * Get the installer instance
      *
-     * @return \Magento\Framework\Setup\ModuleDataSetupInterface The installer instance
+     * @return \Magento\Framework\Setup\SetupInterface The installer instance
      */
     public function getInstaller()
     {
