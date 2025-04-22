@@ -24,13 +24,6 @@ class Task
     protected $conn;
 
     /**
-     * Database handler
-     *
-     * @var DatabaseHandler
-     */
-    protected $dbHandler;
-
-    /**
      * Constructor
      *
      * @param ResourceConnection $resourceConnection Resource connection
@@ -38,7 +31,6 @@ class Task
     public function __construct(ResourceConnection $resourceConnection)
     {
         $this->conn = $resourceConnection;
-        $this->dbHandler = new DatabaseHandler($resourceConnection);
     }
 
     /**
