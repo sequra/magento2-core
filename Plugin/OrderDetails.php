@@ -36,7 +36,7 @@ class OrderDetails
     protected $translation;
 
     /**
-     * @var OrderService
+     * @var OrderService|null
      */
     private $orderService;
 
