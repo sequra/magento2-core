@@ -29,6 +29,11 @@ class SequraOrderLink extends Column
     private $urlHelper;
 
     /**
+     * @var OrderService|null
+     */
+    private $orderService;
+
+    /**
      * @param ContextInterface $context
      * @param UiComponentFactory $uiComponentFactory
      * @param Repository $assetRepository
@@ -36,6 +41,8 @@ class SequraOrderLink extends Column
      * @param UrlHelper $urlHelper
      * @param array $components
      * @param array $data
+     * @phpstan-param array<string, mixed> $components
+     * @phpstan-param array<string, mixed> $data
      */
     public function __construct(
         ContextInterface          $context,
@@ -56,8 +63,10 @@ class SequraOrderLink extends Column
      * Fills in data in the orders sequra columns.
      *
      * @param array $dataSource
+     * @phpstan-param array<string, array<string, array<string, string>>> $dataSource
      *
      * @return array
+     * @phpstan-return array<string, mixed>
      */
     public function prepareDataSource(array $dataSource): array
     {
@@ -95,6 +104,7 @@ class SequraOrderLink extends Column
      *
      * @param SeQuraOrder[] $orders
      * @return array
+     * @phpstan-return array<string, array{ref: string, isApproved: bool}>
      */
     private function createReferenceMap(array $orders): array
     {
