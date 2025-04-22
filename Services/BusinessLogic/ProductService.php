@@ -18,7 +18,7 @@ class ProductService
      */
     private $categoryRepository;
     /**
-     * @var array
+     * @var array<string, array<int>>
      */
     private $resolvedCategories = [];
 
@@ -37,9 +37,9 @@ class ProductService
     /**
      * Get all product categories
      *
-     * @param array $categoryIds
+     * @param array<string> $categoryIds
      *
-     * @return array
+     * @return array<int>
      *
      * @throws NoSuchEntityException
      */
@@ -63,7 +63,7 @@ class ProductService
      *
      * @param string $categoryId
      *
-     * @return array
+     * @return array<int>
      *
      * @throws NoSuchEntityException
      */
@@ -73,9 +73,11 @@ class ProductService
             return $this->resolvedCategories[$categoryId];
         }
 
-        $storeId = StoreContext::getInstance()->getStoreId();
-        $category = $this->categoryRepository->get($categoryId, $storeId);
-        $categoryTree = $this->categoryTree->setStoreId($storeId)->loadBreadcrumbsArray($category->getPath());
+        $storeId = (int) StoreContext::getInstance()->getStoreId();
+        $category = $this->categoryRepository->get((int) $categoryId, $storeId);
+        $categoryTree = $this->categoryTree
+        ->setStoreId($storeId)
+        ->loadBreadcrumbsArray($category->getPath() ?? '');
 
         $categoryTrailArray = [];
         foreach ($categoryTree as $eachCategory) {
