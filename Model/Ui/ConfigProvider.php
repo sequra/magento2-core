@@ -67,16 +67,19 @@ class ConfigProvider implements ConfigProviderInterface
     /**
      * Retrieve assoc array of checkout configuration
      *
-     * @return array
-     *
      * @throws NoSuchEntityException
      * @throws Exception
+     *
+     * @phpstan-return array<string, array<string, array<string, mixed>>>
+     * @return array
      */
     public function getConfig()
     {
         $currentStore = $this->storeManager->getStore();
-        $settings = $this->widgetConfigService->getData($currentStore->getId());
-        $generalSettingsResponse = AdminAPI::get()->generalSettings($currentStore->getId())->getGeneralSettings();
+        $storeId = (string) $currentStore->getId();
+        $settings = $this->widgetConfigService->getData($storeId);
+        // @phpstan-ignore-next-line
+        $generalSettingsResponse = AdminAPI::get()->generalSettings($storeId)->getGeneralSettings();
         $showFormAsHostedPage = false;
         if ($generalSettingsResponse->isSuccessful()) {
             $showFormAsHostedPage = $generalSettingsResponse->toArray()['showSeQuraCheckoutAsHostedPage'] ?? false;
@@ -106,6 +109,8 @@ class ConfigProvider implements ConfigProviderInterface
     private function getFormatter()
     {
         $localeCode = $this->localeResolver->getLocale();
+        // TODO: Call to an undefined method Magento\Framework\App\ScopeInterface::getCurrentCurrency()
+        // @phpstan-ignore-next-line
         $currency = $this->scopeResolver->getScope()->getCurrentCurrency();
         return new \NumberFormatter(
             $localeCode . '@currency=' . $currency->getCode(),
