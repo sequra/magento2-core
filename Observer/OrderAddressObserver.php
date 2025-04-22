@@ -55,6 +55,9 @@ class OrderAddressObserver implements ObserverInterface
             return;
         }
 
+        /**
+         * @var MagentoAddress $addressData
+         */
         $addressData = $observer->getData('data_object');
 
         try {
@@ -76,8 +79,9 @@ class OrderAddressObserver implements ObserverInterface
     private function handleAddressUpdate(MagentoAddress $magentoAddress): void
     {
         $magentoOrder = $magentoAddress->getOrder();
+        $payment = $magentoOrder->getPayment();
 
-        if ($magentoOrder->getPayment()->getMethod() !== ConfigProvider::CODE) {
+        if (!$payment || $payment->getMethod() !== ConfigProvider::CODE) {
             return;
         }
 
@@ -88,11 +92,14 @@ class OrderAddressObserver implements ObserverInterface
         $isShippingAddress = $magentoAddress->getAddressType() === 'shipping';
         $address = $this->transformService->transformAddressToSeQuraOrderAddress($magentoAddress);
 
-        $orderService = StoreContext::doWithStore($magentoOrder->getStoreId(), function () {
+        /**
+         * @var OrderService $orderService
+         */
+        $orderService = StoreContext::doWithStore((string) $magentoOrder->getStoreId(), function () {
             return ServiceRegister::getService(OrderService::class);
         });
 
-        StoreContext::doWithStore($magentoOrder->getStoreId(), [$orderService, 'updateOrder'], [
+        StoreContext::doWithStore((string) $magentoOrder->getStoreId(), [$orderService, 'updateOrder'], [
             new OrderUpdateData(
                 $magentoOrder->getIncrementId(),
                 null,
