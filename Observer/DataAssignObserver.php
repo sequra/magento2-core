@@ -12,7 +12,7 @@ class DataAssignObserver extends AbstractDataAssignObserver
     public const SEQURA_CAMPAIGN_KEY = 'sequra_campaign';
 
     /**
-     * @var array
+     * @var string[]
      */
     protected $additionalInformationList = [
         self::SEQURA_PRODUCT_KEY,
