@@ -40,11 +40,17 @@ class Configurable
     public function afterGetJsonConfig(ConfigurableProduct $subject, $result): string
     {
         $store = $this->storeManager->getStore();
-        $generalSettings = StoreContext::doWithStore($store->getId(), function () {
+        /**
+         * @var GeneralSettings|null $generalSettings
+         */
+        $generalSettings = StoreContext::doWithStore((string) $store->getId(), function () {
             return $this->getGeneralSettings();
         });
 
         $jsonResult = json_decode($result, true);
+        if (!is_array($jsonResult)) {
+            $jsonResult = [];
+        }
         $jsonResult['skus'] = [];
         $jsonResult['excludedProducts'] = [];
 
@@ -56,7 +62,7 @@ class Configurable
             $jsonResult['skus'][$simpleProduct->getId()] = $simpleProduct->getSku();
         }
 
-        return json_encode($jsonResult);
+        return (string) json_encode($jsonResult);
     }
 
     /**
