@@ -1,6 +1,6 @@
 <!-- ko foreach: sequraPaymentMethods -->
 <div class="payment-method" data-bind="css: {'_active': (product == $parent.getSelectedProduct())},
-                    afterRender: $parent.loadSeQuraScript">
+                    afterRender: Sequra.refreshComponents()">
     <div class="payment-method-title field choice">
         <input type="radio"
                name="payment[method]"
@@ -15,7 +15,6 @@
             <span class="sequra_partpayment_cost_description" data-bind="text: cost_description"></span>
             <!--/ko-->
             &nbsp;
-            <!-- ko if: $parent.showWidgets() -->
             <span class="sequra-educational-popup" style="z-index: 1;"
                   data-bind="
                     attr: {
@@ -24,7 +23,6 @@
                         'data-campaign': campaign
                     }
                 "> + info</span>
-            <!-- /ko -->
         </label>
     </div>
 

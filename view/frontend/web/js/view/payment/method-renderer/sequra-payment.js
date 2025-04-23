@@ -239,51 +239,5 @@ define([
         showLogo: function () {
             return window.checkoutConfig.payment.sequra_payment.showlogo;
         },
-
-        showWidgets: function () {
-            return window.checkoutConfig.payment.sequra_payment.showwidgets;
-        },
-
-        loadSeQuraScript: function () {
-            if (!window.checkoutConfig.payment.sequra_payment.widget_settings.hasOwnProperty('merchant')) {
-                return;
-            }
-
-            if (typeof Sequra === "undefined") {
-                let products = [];
-                window.checkoutConfig.payment.sequra_payment.widget_settings.products.forEach((product) => {
-                    products.push(product.id);
-                });
-                var sequraConfigParams = {
-                    merchant: window.checkoutConfig.payment.sequra_payment.widget_settings.merchant,
-                    assetKey: window.checkoutConfig.payment.sequra_payment.widget_settings.assetKey,
-                    products: products,
-                    scriptUri: window.checkoutConfig.payment.sequra_payment.widget_settings.scriptUri,
-                    decimalSeparator: window.checkoutConfig.payment.sequra_payment.widget_settings.decimalSeparator,
-                    thousandSeparator: window.checkoutConfig.payment.sequra_payment.widget_settings.thousandSeparator,
-                    locale: window.checkoutConfig.payment.sequra_payment.widget_settings.locale,
-                    currency: window.checkoutConfig.payment.sequra_payment.widget_settings.currency,
-                };
-
-                (
-                    function (i, s, o, g, r, a, m) {
-                        i["SequraConfiguration"] = g;
-                        i["SequraOnLoad"] = [];
-                        i[r] = {};
-                        i[r][a] = function (callback) {
-                            i["SequraOnLoad"].push(callback);
-                        };
-                        (a = s.createElement(o)),
-                            (m = s.getElementsByTagName(o)[0]);
-                        a.async = 1;
-                        a.src = g.scriptUri;
-                        m.parentNode.insertBefore(a, m);
-                    }
-                )
-                (window, document, "script", sequraConfigParams, "Sequra", "onLoad");
-            } else {
-                Sequra.refreshComponents?.();
-            }
-        }
     });
 });
