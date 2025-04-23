@@ -12,6 +12,9 @@ use Magento\Store\Api\StoreConfigManagerInterface;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
 use SeQura\Core\BusinessLogic\AdminAPI\AdminAPI;
+use SeQura\Core\BusinessLogic\CheckoutAPI\CheckoutAPI;
+use SeQura\Core\BusinessLogic\CheckoutAPI\PaymentMethods\Requests\GetCachedPaymentMethodsRequest;
+use SeQura\Core\BusinessLogic\CheckoutAPI\PaymentMethods\Responses\CachedPaymentMethodsResponse;
 use SeQura\Core\BusinessLogic\DataAccess\PromotionalWidgets\Entities\WidgetSettings as WidgetSettingsEntity;
 use SeQura\Core\BusinessLogic\Domain\Connection\Models\ConnectionData;
 use SeQura\Core\BusinessLogic\Domain\Connection\Services\ConnectionService;
@@ -19,18 +22,12 @@ use SeQura\Core\BusinessLogic\Domain\CountryConfiguration\Models\CountryConfigur
 use SeQura\Core\BusinessLogic\Domain\CountryConfiguration\Services\CountryConfigurationService;
 use SeQura\Core\BusinessLogic\Domain\Integration\Store\StoreServiceInterface;
 use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
-use SeQura\Core\BusinessLogic\Domain\PaymentMethod\Services\PaymentMethodsService;
 use SeQura\Core\BusinessLogic\Domain\PromotionalWidgets\Models\WidgetSettings;
 use SeQura\Core\BusinessLogic\Domain\PromotionalWidgets\Services\WidgetSettingsService;
 use SeQura\Core\BusinessLogic\Domain\Stores\Models\Store;
 use SeQura\Core\BusinessLogic\SeQuraAPI\BaseProxy;
-use Sequra\Core\DataAccess\Entities\PaymentMethod;
-use Sequra\Core\DataAccess\Entities\PaymentMethods as PaymentMethodsEntity;
 use SeQura\Core\Infrastructure\Http\Exceptions\HttpRequestException;
-use SeQura\Core\Infrastructure\ORM\Exceptions\QueryFilterInvalidParamException;
 use SeQura\Core\Infrastructure\ORM\Exceptions\RepositoryNotRegisteredException;
-use SeQura\Core\Infrastructure\ORM\QueryFilter\Operators;
-use SeQura\Core\Infrastructure\ORM\QueryFilter\QueryFilter;
 use SeQura\Core\Infrastructure\ORM\RepositoryRegistry;
 use SeQura\Core\Infrastructure\ServiceRegister;
 
@@ -73,9 +70,9 @@ class WidgetConfigService
      * @param ScopeConfigInterface $scopeConfig
      */
     public function __construct(
-        StoreManagerInterface                         $storeManager,
+        StoreManagerInterface $storeManager,
         \Magento\Framework\App\ScopeResolverInterface $scopeResolver,
-        \Magento\Framework\Locale\ResolverInterface   $localeResolver,
+        \Magento\Framework\Locale\ResolverInterface $localeResolver,
         StoreConfigManagerInterface $storeConfigManager,
         ScopeConfigInterface $scopeConfig
     ) {
@@ -151,13 +148,25 @@ class WidgetConfigService
             return [];
         }
 
-        $products = $this->getProducts($merchantId);
+        /**
+         * @var CachedPaymentMethodsResponse $paymentMethods
+         * @phpstan-ignore-next-line
+         */
+        $paymentMethods = CheckoutAPI::get()->cachedPaymentMethods(StoreContext::getInstance()->getStoreId())
+            ->getCachedPaymentMethods(new GetCachedPaymentMethodsRequest($merchantId));
+
+        if (!$paymentMethods->isSuccessful()) {
+            return [];
+        }
         $formattedProducts = [];
 
-        foreach ($products as $product) {
+        foreach ($paymentMethods->toArray() as $product) {
+            if (!is_array($product)) {
+                continue;
+            }
             $formattedProducts[] = [
-                'id' => $product->getProduct(),
-                'campaign' => $product->getCampaign(),
+                'id' => $product['product'] ?? '',
+                'campaign' => $product['campaign'] ?? '',
             ];
         }
 
@@ -261,35 +270,7 @@ class WidgetConfigService
     }
 
     /**
-     * Get products
-     *
-     * @param string $merchantId
-     *
-     * @return PaymentMethod[]
-     *
-     * @throws RepositoryNotRegisteredException
-     * @throws QueryFilterInvalidParamException
-     */
-    private function getProducts(string $merchantId): array
-    {
-        $paymentMethodsRepository = RepositoryRegistry::getRepository(PaymentMethodsEntity::CLASS_NAME);
-
-        $filter = new QueryFilter();
-        $filter->where('storeId', Operators::EQUALS, $this->storeManager->getStore()->getId())
-            ->where('merchantId', Operators::EQUALS, $merchantId);
-
-        /** @var PaymentMethodsEntity $paymentMethods */
-        $paymentMethods = $paymentMethodsRepository->selectOne($filter);
-
-        if ($paymentMethods === null) {
-            return [];
-        }
-
-        return $paymentMethods->getPaymentMethods();
-    }
-
-    /**
-     * Get the number formatter
+     * Fetch number formatter.
      *
      * @return \NumberFormatter
      */

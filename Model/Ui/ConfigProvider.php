@@ -125,7 +125,7 @@ class ConfigProvider implements ConfigProviderInterface
      */
     public function getDecimalSeparator()
     {
-        return $this->formatter->getSymbol(\NumberFormatter::DECIMAL_SEPARATOR_SYMBOL);
+        return (string) $this->formatter->getSymbol(\NumberFormatter::DECIMAL_SEPARATOR_SYMBOL);
     }
 
     /**
@@ -135,6 +135,6 @@ class ConfigProvider implements ConfigProviderInterface
      */
     public function getThousandsSeparator()
     {
-        return $this->formatter->getSymbol(\NumberFormatter::GROUPING_SEPARATOR_SYMBOL);
+        return (string) $this->formatter->getSymbol(\NumberFormatter::GROUPING_SEPARATOR_SYMBOL);
     }
 }

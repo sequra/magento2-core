@@ -1,12 +1,15 @@
 <?php
+
 namespace Sequra\Core\Model\Config\Source;
 
 use Magento\Store\Model\StoreManagerInterface;
 use Magento\Framework\Data\OptionSourceInterface;
+use SeQura\Core\BusinessLogic\CheckoutAPI\CheckoutAPI;
+use SeQura\Core\BusinessLogic\CheckoutAPI\PaymentMethods\Requests\GetCachedPaymentMethodsRequest;
+use SeQura\Core\BusinessLogic\CheckoutAPI\PaymentMethods\Responses\CachedPaymentMethodsResponse;
+use SeQura\Core\Infrastructure\Logger\Logger;
 use SeQura\Core\Infrastructure\ServiceRegister;
 use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
-use SeQura\Core\BusinessLogic\Domain\PaymentMethod\Services\PaymentMethodsService;
-use SeQura\Core\BusinessLogic\Domain\PaymentMethod\Models\SeQuraPaymentMethod;
 use SeQura\Core\BusinessLogic\Domain\CountryConfiguration\Models\CountryConfiguration;
 use SeQura\Core\BusinessLogic\Domain\CountryConfiguration\Services\CountryConfigurationService;
 
@@ -42,21 +45,29 @@ class WidgetPaymentMethods implements OptionSourceInterface
         $countries = $this->getAvailableCountries($storeId);
         foreach ($countries as $country) {
             if (!$country->getMerchantId()) {
-                // TODO: Log Merchant ID not found
+                Logger::logInfo('Merchant id not found for storeId: ' . $storeId . ' when fetching products');
+
                 continue;
             }
 
-            $payment_methods = $this->getPaymentMethods($storeId, $country->getMerchantId());
-            foreach ($payment_methods as $payment_method) {
-                // Check if supports widgets
-                if (!in_array($payment_method->getProduct(), [ 'i1', 'pp5', 'pp3', 'pp6', 'pp9', 'sp1' ], true)) {
+            /** @var CachedPaymentMethodsResponse $cachedPaymentMethods */
+            $cachedPaymentMethods = CheckoutAPI::get()->cachedPaymentMethods($storeId)
+                ->getCachedPaymentMethods(new GetCachedPaymentMethodsRequest($country->getMerchantId()));
+            foreach ($cachedPaymentMethods->toArray() as $paymentMethod) {
+                if (!is_array($paymentMethod) ||
+                    (
+                        isset($paymentMethod['product']) &&
+                        !in_array($paymentMethod['product'], ['i1', 'pp5', 'pp3', 'pp6', 'pp9', 'sp1'], true)
+                    )
+                ) {
                     continue;
                 }
 
                 $values[] = [
                     'countryCode' => $country->getCountryCode(),
-                    'product' => $payment_method->getProduct(),
-                    'campaign' => $payment_method->getCampaign()
+                    'product' => $paymentMethod['product'],
+                    'campaign' => isset($paymentMethod['campaign']) &&
+                        is_string($paymentMethod['campaign']) ? $paymentMethod['campaign'] : null,
                 ];
             }
         }
@@ -83,7 +94,7 @@ class WidgetPaymentMethods implements OptionSourceInterface
      * @phpstan-return array<int, array{value: string, label: string}>
      * @return array<int<0, max>, array<string, string>> Options array
      */
-    public function toOptionArray()
+    public function toOptionArray(): array
     {
         $options = [];
         foreach ($this->getPaymentMethodValues() as $value) {
@@ -119,37 +130,10 @@ class WidgetPaymentMethods implements OptionSourceInterface
                 return ServiceRegister::getService(CountryConfigurationService::class)->getCountryConfiguration();
             });
             // TODO: Log error
-            // phpcs:ignore Magento2.CodeAnalysis.EmptyBlock.DetectedCatch    
+            // phpcs:ignore Magento2.CodeAnalysis.EmptyBlock.DetectedCatch
         } catch (\Throwable $e) {
         }
         return $countries;
-    }
-
-    /**
-     * Get payment methods for a given merchant using the current store context
-     *
-     * @param string $storeId
-     * @param string $merchantId
-     *
-     * @return SeQuraPaymentMethod[]
-     */
-    private function getPaymentMethods($storeId, $merchantId)
-    {
-        $payment_methods = [];
-        try {
-            /**
-             * @var SeQuraPaymentMethod[] $payment_methods
-             */
-            $payment_methods = StoreContext::doWithStore($storeId, function () use ($merchantId) {
-                return ServiceRegister::getService(PaymentMethodsService::class)->getMerchantsPaymentMethods(
-                    $merchantId
-                );
-            });
-            // TODO: Log error
-            // phpcs:ignore Magento2.CodeAnalysis.EmptyBlock.DetectedCatch 
-        } catch (\Throwable $e) {
-        }
-        return $payment_methods;
     }
 
     /**
@@ -164,14 +148,14 @@ class WidgetPaymentMethods implements OptionSourceInterface
         if (empty($countryCode) || strlen($countryCode) !== 2) {
             return '';
         }
-        
+
         // Convert each letter to their regional indicator symbol
         // Regional indicator symbols are 127397 (0x1F1E6) higher than ASCII uppercase letters
         $letterOffset = 127397; // 0x1F1E6 - 'A'
-        
+
         $firstLetter = mb_ord(mb_strtoupper($countryCode[0])) + $letterOffset;
         $secondLetter = mb_ord(mb_strtoupper($countryCode[1])) + $letterOffset;
-        
+
         return mb_chr($firstLetter) . mb_chr($secondLetter);
     }
 }
