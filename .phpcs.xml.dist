@@ -5,9 +5,12 @@
     <file>.docker/magento/HelperModule/Sequra/Helper</file>
 
     <exclude-pattern>.docker/magento/(?!HelperModule/Sequra/Helper).*</exclude-pattern>
+    <exclude-pattern>.docker/magento/HelperModule/Sequra/Helper/vendor</exclude-pattern>
     <exclude-pattern>.docker/(?!magento).*</exclude-pattern>
 	<exclude-pattern>.github/</exclude-pattern>
 	<exclude-pattern>.vscode/</exclude-pattern>
+	<exclude-pattern>.history/</exclude-pattern>
+	<exclude-pattern>.magento-src/</exclude-pattern>
 	<exclude-pattern>bin/</exclude-pattern>
 	<exclude-pattern>etc/</exclude-pattern>
 	<exclude-pattern>i18n/</exclude-pattern>

@@ -5,12 +5,14 @@ parameters:
     reportUnmatchedIgnoredErrors: false
     paths:
         - /var/www/html/vendor/sequra/magento2-core/registration.php
-        - /var/www/html/app/code/Sequra/Helper/
+        - /var/www/html/app/code/Sequra/Helper/Api
+        - /var/www/html/app/code/Sequra/Helper/Console
+        - /var/www/html/app/code/Sequra/Helper/Model
+        - /var/www/html/app/code/Sequra/Helper/registration.php
         - /var/www/html/vendor/sequra/magento2-core/Api/
         - /var/www/html/vendor/sequra/magento2-core/Block/
         - /var/www/html/vendor/sequra/magento2-core/Console/
         - /var/www/html/vendor/sequra/magento2-core/Controller/
-        - /var/www/html/vendor/sequra/magento2-core/DataAccess/
         - /var/www/html/vendor/sequra/magento2-core/Gateway/
         - /var/www/html/vendor/sequra/magento2-core/Helper/
         - /var/www/html/vendor/sequra/magento2-core/i18n/
@@ -41,3 +43,4 @@ parameters:
         - '#invalid type Sequra\\Core\\Services\\BusinessLogic\\OrderServiceFactory#i'
         - '#unknown class Magento\\Catalog\\Model\\ResourceModel\\Category\\CollectionFactory#i'
         - '#invalid type Magento\\Catalog\\Model\\ResourceModel\\Category\\CollectionFactory#i'
+        - '#Call to an undefined method SeQura\\Core\\BusinessLogic\\Bootstrap\\Aspect\\Aspects::#i'
