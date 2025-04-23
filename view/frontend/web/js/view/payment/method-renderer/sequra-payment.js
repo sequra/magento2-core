@@ -98,8 +98,16 @@ define([
         loadSequraPaymentMethods: function (paymentMethodsResponse) {
             var self = this;
 
-            self.sequraPaymentMethods(paymentMethodsResponse);
-            sequraPaymentMethods(paymentMethodsResponse);
+            var enrichedPaymentMethods = paymentMethodsResponse.map(function (method) {
+                return Object.assign({}, method, {
+                    getCode: function () {
+                        return 'sequra_payment';
+                    }
+                });
+            });
+
+            self.sequraPaymentMethods(enrichedPaymentMethods);
+            sequraPaymentMethods(enrichedPaymentMethods);
 
             fullScreenLoader.stopLoader();
         },
