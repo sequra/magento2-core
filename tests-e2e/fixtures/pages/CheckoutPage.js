@@ -28,6 +28,7 @@ export default class CheckoutPage extends BaseCheckoutPage {
             submitCheckout: () => this.page.locator('.payment-method._active .action.checkout'),
             orderRowStatus: orderNumber => this.page.locator(`.data-row:has(td:has-text("${orderNumber}")) td:nth-child(9)`),
             orderNumber: () => this.page.locator('.checkout-success p>span'),
+            paymentMethodEducationalLink: options => this.page.locator(`label[for="sequra_${options.product}"] .sequra-educational-popup`),
         };
     }
 
@@ -171,6 +172,17 @@ export default class CheckoutPage extends BaseCheckoutPage {
             default:
                 throw new Error(`Unknown product ${options.product}`);
         }
+    }
+
+    /**
+     * Find "+ info" link and click it
+     * @param {Object} options
+     * @param {string} options.product seQura product (i1, pp3, etc)
+     * @returns {Promise<void>}
+     */
+    async openAndCloseEducationalPopup(options) {
+        await this.locators.paymentMethodEducationalLink(options).click();
+        await this.page.frameLocator('iframe').locator('button[data-testid="close-popup"]').click();
     }
 
     /**
