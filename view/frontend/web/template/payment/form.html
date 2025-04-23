@@ -1,6 +1,6 @@
 <!-- ko foreach: sequraPaymentMethods -->
 <div class="payment-method" data-bind="css: {'_active': (product == $parent.getSelectedProduct())},
-                    afterRender: Sequra.refreshComponents()">
+                    afterRender: Sequra.refreshComponents">
     <div class="payment-method-title field choice">
         <input type="radio"
                name="payment[method]"
