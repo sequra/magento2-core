@@ -39,7 +39,7 @@ class Teaser extends Template implements BlockInterface
     protected $localeResolver;
 
     /**
-     * @var \Magento\Framework\Locale\ResolverInterface
+     * @var \NumberFormatter
      */
     protected $formatter;
 
@@ -81,12 +81,23 @@ class Teaser extends Template implements BlockInterface
     {
         if (!$this->widgetSettings) {
             try {
-                $this->widgetSettings = StoreContext::doWithStore(
-                    $this->scopeResolver->getScope()->getStoreId(),
-                    function () {
-                        return ServiceRegister::getService(WidgetSettingsService::class)->getWidgetSettings();
-                    }
-                );
+                $storeId = (string) $this->_storeManager->getStore()->getId();
+                /**
+                 * @var ?WidgetSettings $widgetSettings
+                 */
+                $widgetSettings = StoreContext::doWithStore($storeId, function () {
+                    /**
+                     * @var WidgetSettingsService $service
+                     */
+                    $service = ServiceRegister::getService(WidgetSettingsService::class);
+                    return $service->getWidgetSettings();
+                });
+
+                if (!$widgetSettings) {
+                    return null;
+                }
+
+                $this->widgetSettings = $widgetSettings;
 
                 // TODO: Log error
                 // phpcs:ignore Magento2.CodeAnalysis.EmptyBlock.DetectedCatch
@@ -105,11 +116,21 @@ class Teaser extends Template implements BlockInterface
     {
         if (!$this->countrySettings) {
             try {
-                $storeId = $this->scopeResolver->getScope()->getStoreId();
-                $this->countrySettings = StoreContext::doWithStore($storeId, function () {
+                $storeId = (string) $this->_storeManager->getStore()->getId();
+                /**
+                 * @var ?CountryConfiguration[] $countrySettings
+                 */
+                $countrySettings = StoreContext::doWithStore($storeId, function () {
+                    /**
+                     * @var CountryConfigurationService $settings
+                     */
                     $settings = ServiceRegister::getService(CountryConfigurationService::class);
                     return $settings->getCountryConfiguration();
                 });
+                if (!$countrySettings) {
+                    return null;
+                }
+                $this->countrySettings = $countrySettings;
                 // TODO: Log error
                 // phpcs:ignore Magento2.CodeAnalysis.EmptyBlock.DetectedCatch
             } catch (\Throwable $e) {
@@ -127,11 +148,21 @@ class Teaser extends Template implements BlockInterface
     {
         if (!$this->connectionSettings) {
             try {
-                $storeId = $this->scopeResolver->getScope()->getStoreId();
-                $this->connectionSettings = StoreContext::doWithStore($storeId, function () {
+                $storeId = (string) $this->_storeManager->getStore()->getId();
+                /**
+                 * @var ?ConnectionData $connectionSettings
+                 */
+                $connectionSettings = StoreContext::doWithStore($storeId, function () {
+                    /**
+                     * @var ConnectionService $service
+                     */
                     $service = ServiceRegister::getService(ConnectionService::class);
                     return $service->getConnectionData();
                 });
+                if (!$connectionSettings) {
+                    return null;
+                }
+                $this->connectionSettings = $connectionSettings;
                 // TODO: Log error
                 // phpcs:ignore Magento2.CodeAnalysis.EmptyBlock.DetectedCatch
             } catch (\Throwable $e) {
@@ -149,7 +180,7 @@ class Teaser extends Template implements BlockInterface
      * @param CurrencyValidator $currencyValidator
      * @param IpAddressValidator $ipAddressValidator
      * @param ProductWidgetAvailabilityValidator $productValidator
-     * @param array $data
+     * @param mixed[] $data
      */
     public function __construct(
         \Magento\Framework\App\ScopeResolverInterface $scopeResolver,
@@ -178,9 +209,11 @@ class Teaser extends Template implements BlockInterface
      */
     protected function _toHtml()
     {
-        $currency = $this->scopeResolver->getScope()->getCurrentCurrency();
-        $storeId = $this->scopeResolver->getScope()->getStoreId();
-        $subject = ['currency' => $currency->getCode(), 'storeId' => $storeId];
+        /**
+         * @var \Magento\Store\Model\Store $store
+         */
+        $store = $this->scopeResolver->getScope();
+        $subject = ['currency' => $store->getCurrentCurrency()->getCode(), 'storeId' => $store->getId()];
 
         if (!$this->currencyValidator->validate($subject)->isValid()) {
             // TODO: Log currency error
@@ -208,8 +241,12 @@ class Teaser extends Template implements BlockInterface
      */
     private function getFormatter()
     {
+        /**
+         * @var \Magento\Store\Model\Store $store
+         */
+        $store = $this->scopeResolver->getScope();
+        $currency = $store->getCurrentCurrency();
         $localeCode = $this->localeResolver->getLocale();
-        $currency = $this->scopeResolver->getScope()->getCurrentCurrency();
         return new \NumberFormatter(
             $localeCode . '@currency=' . $currency->getCode(),
             \NumberFormatter::CURRENCY
@@ -255,34 +292,42 @@ class Teaser extends Template implements BlockInterface
      * - product
      * - campaign
      *
-     * @return array<string, string>
+     * @return array<int, mixed>
      */
     private function getPaymentMethodsData()
     {
+        /**
+         * @var string $data
+         */
+        $data = $this->getData('payment_methods');
         return array_map(
             function ($value) {
                 // TODO: The use of function base64_decode() is discouraged
                 // phpcs:ignore Magento2.Functions.DiscouragedFunction.Discouraged
                 return json_decode(base64_decode($value), true);
             },
-            explode(',', $this->getData('payment_methods'))
+            explode(',', $data)
         );
     }
 
     /**
      * Get product list from payment methods data.
      *
-     * @return array
+     * @return mixed[]
      */
     public function getProduct()
     {
         $products = [];
-        $payment_methods = explode(',', $this->getData('payment_methods'));
+        /**
+         * @var string $data
+         */
+        $data = $this->getData('payment_methods');
+        $payment_methods = explode(',', $data);
         foreach ($payment_methods as $value) {
             // TODO: The use of function base64_decode() is discouraged
             // phpcs:ignore Magento2.Functions.DiscouragedFunction.Discouraged
             $decoded = json_decode(base64_decode($value), true);
-            if (isset($decoded['product'])) {
+            if (is_array($decoded) && isset($decoded['product'])) {
                 $products[] = $decoded['product'];
             }
         }
@@ -344,7 +389,7 @@ class Teaser extends Template implements BlockInterface
     /**
      * Prepare the list of available widgets to show in the frontend based on the configuration and the current context
      *
-     * @return array
+     * @return array<int<0, max>, array<string, int|string|null>>
      */
     public function getAvailableWidgets()
     {
@@ -355,17 +400,37 @@ class Teaser extends Template implements BlockInterface
 
         $currentCountry = $this->getCurrentCountry();
         $paymentMethods = $this->getPaymentMethods($merchantId);
+        /**
+         * @var string $priceSelData
+         */
+        $priceSelData = $this->getData('price_sel') ?: '';
         // TODO: The use of function addslashes() is discouraged
         // phpcs:ignore Magento2.Functions.DiscouragedFunction.Discouraged
-        $priceSelector = addslashes($this->getData('price_sel') ?: '');
-        $theme = $this->getData('theme') ?: $this->getWidgetSettings()->getWidgetConfig();
+        $priceSelector = addslashes($priceSelData);
+
+        /**
+         * @var string|null $theme
+         */
+        $theme = $this->getData('theme');
+        if (!isset($theme)) {
+            $settings = $this->getWidgetSettings();
+            if ($settings) {
+                $theme = $settings->getWidgetConfig();
+            }
+        }
+
+        /**
+         * @var string $destSelData
+         */
+        $destSelData = $this->getData('dest_sel') ?: '';
         // TODO: The use of function addslashes() is discouraged
         // phpcs:ignore Magento2.Functions.DiscouragedFunction.Discouraged
-        $destinationSelector = addslashes($this->getData('dest_sel') ?: '');
+        $destinationSelector = addslashes($destSelData);
 
         $widgets = [];
         foreach ($this->getPaymentMethodsData() as $paymentMethodData) {
-            if (!isset($paymentMethodData['countryCode'], $paymentMethodData['product'])
+            if (!is_array($paymentMethodData)
+            || !isset($paymentMethodData['countryCode'], $paymentMethodData['product'])
             || $paymentMethodData['countryCode'] !== $currentCountry) {
                 continue;
             }
@@ -402,10 +467,13 @@ class Teaser extends Template implements BlockInterface
      */
     private function getPaymentMethods($merchantId)
     {
-        $storeId = $this->scopeResolver->getScope()->getStoreId();
+        $storeId = $this->_storeManager->getStore()->getId();
         $payment_methods = [];
         try {
-            $payment_methods = StoreContext::doWithStore($storeId, function () use ($merchantId) {
+            /**
+             * @var SeQuraPaymentMethod[] $payment_methods
+             */
+            $payment_methods = StoreContext::doWithStore((string) $storeId, function () use ($merchantId) {
                 return ServiceRegister::getService(PaymentMethodsService::class)
                 ->getMerchantsPaymentMethods($merchantId);
             });

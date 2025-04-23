@@ -48,6 +48,9 @@ class Setup extends Command
         }
 
         $objectManager = \Magento\Framework\App\ObjectManager::getInstance();
+        /**
+         * @var \Magento\Customer\Api\CustomerRepositoryInterface $customerRepository
+         */
         $customerRepository = $objectManager->create(\Magento\Customer\Api\CustomerRepositoryInterface::class);
     
         $customer = $customerRepository->getById(1);
@@ -60,10 +63,14 @@ class Setup extends Command
             $address->setPostcode('08010');
             $address->setCountryId('ES');
             $address->setTelephone('666666666');
+            /**
+             * @var \Magento\Directory\Model\RegionFactory $regionFactory
+             */
             $regionFactory = $objectManager->create(\Magento\Directory\Model\RegionFactory::class);
             $region = $regionFactory->create()->loadByName('Barcelona', 'ES');
-            if ($region->getId()) {
-                $address->setRegionId($region->getId());
+            $regionId = $region->getId();
+            if ($regionId && is_numeric($regionId)) {
+                $address->setRegionId((int) $regionId);
             }
         }
        

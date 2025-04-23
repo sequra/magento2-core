@@ -31,7 +31,7 @@ class SeQuraTranslationProvider
     private $needsFallback = false;
     
     /**
-     * @var array
+     * @var array<string>
      */
     private static $englishTranslation;
 
@@ -54,6 +54,7 @@ class SeQuraTranslationProvider
      *
      * @param string $text
      * @param array $arguments
+     * @phpstan-param array<string, mixed> $arguments
      *
      * @return Phrase
      */

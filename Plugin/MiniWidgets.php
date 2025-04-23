@@ -19,7 +19,6 @@ use SeQura\Core\BusinessLogic\Domain\CountryConfiguration\Services\CountryConfig
 use SeQura\Core\BusinessLogic\Domain\GeneralSettings\Models\GeneralSettings;
 use SeQura\Core\BusinessLogic\Domain\GeneralSettings\Services\GeneralSettingsService;
 use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
-use SeQura\Core\BusinessLogic\Domain\PaymentMethod\Services\PaymentMethodsService;
 use SeQura\Core\BusinessLogic\Domain\PromotionalWidgets\Models\WidgetSettings;
 use SeQura\Core\BusinessLogic\Domain\PromotionalWidgets\Services\WidgetSettingsService;
 use Sequra\Core\DataAccess\Entities\PaymentMethod;
@@ -103,10 +102,12 @@ class MiniWidgets
             return $result;
         }
         $store = $this->storeManager->getStore();
+        // TODO: Call to an undefined method Magento\Framework\Pricing\Price\PriceInterface::getProduct()
+        // @phpstan-ignore-next-line
         $product = $subject->getPrice()->getProduct();
 
         $amount = (int)round($subject->getPrice()->getAmount()->getValue() * 100);
-        $result .= StoreContext::doWithStore($store->getId(), function () use ($amount, $store, $product) {
+        $result .= StoreContext::doWithStore((string) $store->getId(), function () use ($amount, $store, $product) {
             return $this->getHtml($amount, $store, $product);
         });
 
@@ -131,6 +132,8 @@ class MiniWidgets
 
         $storeConfig = $this->storeConfigManager->getStoreConfigs([$store->getCode()])[0];
 
+        // TODO: Call to an undefined method Magento\Framework\Model\AbstractModel::getCurrencyCode()
+        // @phpstan-ignore-next-line
         if ($this->priceCurrency->getCurrency()->getCurrencyCode() !== 'EUR') {
             return $result;
         }
@@ -172,11 +175,15 @@ class MiniWidgets
      */
     private function getCountry(StoreConfigInterface $storeConfig)
     {
-        return $this->scopeConfig->getValue(
+        /**
+         * @var string $value
+         */
+        $value = $this->scopeConfig->getValue(
             'general/country/default',
             ScopeInterface::SCOPE_STORE,
             $storeConfig->getId()
         );
+        return $value;
     }
 
     /**
@@ -191,12 +198,21 @@ class MiniWidgets
      */
     private function isWidgetEnabledForProduct(SaleableInterface $saleable, ?GeneralSettings $generalSettings): bool
     {
+        /**
+         * @var \Magento\Catalog\Model\Product $product
+         */
         $product = $this->productRepository->getById($saleable->getId());
         $categoryIds = $product->getCategoryIds();
         $trail = $this->productService->getAllProductCategories($categoryIds);
+        $excludedProducts = [];
+        $excludedCategories = [];
+        if ($generalSettings) {
+            $excludedProducts = $generalSettings->getExcludedProducts() ?? [];
+            $excludedCategories = $generalSettings->getExcludedCategories() ?? [];
+        }
 
-        return !in_array($product->getData('sku'), $generalSettings ? $generalSettings->getExcludedProducts() : [])
-            && empty(array_intersect($trail, $generalSettings ? $generalSettings->getExcludedCategories() : []))
+        return !in_array($product->getData('sku'), $excludedProducts)
+            && empty(array_intersect($trail, $excludedCategories))
             && !$product->isVirtual() && $product->getTypeId() !== 'grouped';
     }
 
@@ -216,8 +232,14 @@ class MiniWidgets
         PaymentMethod        $paymentMethod,
         int                  $amount
     ): string {
-        $message = $widgetConfig->getWidgetLabels()->getMessages()[$storeConfig->getLocale()] ?? '';
-        $belowLimit = $widgetConfig->getWidgetLabels()->getMessagesBelowLimit()[$storeConfig->getLocale()] ?? '';
+
+        $widgetLabels = $widgetConfig->getWidgetLabels();
+        if (!$widgetLabels) {
+            return '';
+        }
+
+        $message = $widgetLabels->getMessages()[$storeConfig->getLocale()] ?? '';
+        $belowLimit = $widgetLabels->getMessagesBelowLimit()[$storeConfig->getLocale()] ?? '';
 
         return "<div class=\"sequra-educational-popup\" data-content-type=\"sequra_core\" data-amount=\""
             . $amount . "\" data-product=\"" . $paymentMethod->getProduct() . "\"
@@ -337,16 +359,6 @@ class MiniWidgets
     private function getWidgetSettingsService(): WidgetSettingsService
     {
         return ServiceRegister::getService(WidgetSettingsService::class);
-    }
-
-    /**
-     * Get the payment methods service
-     *
-     * @return PaymentMethodsService
-     */
-    private function getPaymentMethodsService(): PaymentMethodsService
-    {
-        return ServiceRegister::getService(PaymentMethodsService::class);
     }
 
     /**

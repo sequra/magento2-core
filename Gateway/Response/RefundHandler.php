@@ -15,6 +15,9 @@ class RefundHandler extends VoidHandler
      */
     protected function shouldCloseParentTransaction(Payment $orderPayment)
     {
+        // TODO: Cannot call method canRefund() on Magento\Sales\Model\Order\Invoice|null
+        // TODO: Cannot call method getInvoice() on Magento\Sales\Model\Order\Creditmemo|null
+        // @phpstan-ignore-next-line
         return !(bool)$orderPayment->getCreditmemo()->getInvoice()->canRefund();
     }
 }

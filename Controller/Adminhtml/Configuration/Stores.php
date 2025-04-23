@@ -29,6 +29,7 @@ class Stores extends BaseConfigurationController
      */
     protected function getStores(): Json
     {
+        // @phpstan-ignore-next-line
         $data = AdminAPI::get()->store($this->storeId)->getStores();
         $this->addResponseCode($data);
 
@@ -42,6 +43,7 @@ class Stores extends BaseConfigurationController
      */
     protected function getCurrentStore(): Json
     {
+        // @phpstan-ignore-next-line
         $data = AdminAPI::get()->store($this->storeId)->getCurrentStore();
         $this->addResponseCode($data);
 

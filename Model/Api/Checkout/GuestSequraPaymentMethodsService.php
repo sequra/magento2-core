@@ -25,7 +25,7 @@ class GuestSequraPaymentMethodsService implements GuestSequraPaymentMethodsInter
      *
      * @param string $cartId Guest cart ID
      *
-     * @return array Available payment methods
+     * @return array<array<string, string>> Available payment methods
      */
     public function getAvailablePaymentMethods(string $cartId): array
     {

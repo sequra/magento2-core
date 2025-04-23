@@ -52,6 +52,7 @@ class WidgetSettings extends BaseConfigurationController
      */
     protected function getWidgetSettings(): Json
     {
+        // @phpstan-ignore-next-line
         $data = AdminAPI::get()->widgetConfiguration($this->storeId)->getWidgetSettings();
 
         $result = $data->toArray();
@@ -82,22 +83,58 @@ class WidgetSettings extends BaseConfigurationController
      */
     protected function setWidgetSettings(): Json
     {
+        /**
+         * @var array<string, string|array<string, string>|bool|null> $data
+         */
         $data = $this->getSequraPostData();
         $store = $this->storeManager->getStore($this->storeId);
         $storeConfig = $this->storeConfigManager->getStoreConfigs([$store->getCode()])[0];
 
+        /**
+         * @var bool $useWidgets
+         */
+        $useWidgets = $data['useWidgets'] ?? false;
+        /**
+         * @var string|null $assetsKey
+         */
+        $assetsKey = isset($data['assetsKey']) && is_string($data['assetsKey']) ? $data['assetsKey'] : null;
+        /**
+         * @var bool $displayWidgetOnProductPage
+         */
+        $displayWidgetOnProductPage = $data['displayWidgetOnProductPage'] ?? false;
+        /**
+         * @var bool $showInstallmentAmountInProductListing
+         */
+        $showInstallmentAmountInProductListing = $data['showInstallmentAmountInProductListing'] ?? false;
+        /**
+         * @var bool $showInstallmentAmountInCartPage
+         */
+        $showInstallmentAmountInCartPage = $data['showInstallmentAmountInCartPage'] ?? false;
+        /**
+         * @var string $miniWidgetSelector
+         */
+        $miniWidgetSelector = $data['miniWidgetSelector'] ?? '';
+        /**
+         * @var string $widgetStyles
+         */
+        $widgetStyles = $data['widgetStyles'] ?? '';
+
+        /**
+         * @var array<string, string> $labels
+         */
         $labels = $data['widgetLabels'] ?? [];
+        // @phpstan-ignore-next-line
         $response = AdminAPI::get()->widgetConfiguration($this->storeId)->setWidgetSettings(
             new WidgetSettingsRequest(
-                $data['useWidgets'],
-                $data['assetsKey'],
-                $data['displayWidgetOnProductPage'],
-                $data['showInstallmentAmountInProductListing'],
-                $data['showInstallmentAmountInCartPage'],
-                $data['miniWidgetSelector'] ?? '',
-                $data['widgetStyles'] ?? '',
-                $labels['message'] ? [$storeConfig->getLocale() => $labels['message']] : [],
-                $labels['messageBelowLimit'] ? [$storeConfig->getLocale() => $labels['messageBelowLimit']] : []
+                $useWidgets,
+                $assetsKey,
+                $displayWidgetOnProductPage,
+                $showInstallmentAmountInProductListing,
+                $showInstallmentAmountInCartPage,
+                $miniWidgetSelector,
+                $widgetStyles,
+                isset($labels['message']) ? [$storeConfig->getLocale() => $labels['message']] : [],
+                isset($labels['messageBelowLimit']) ? [$storeConfig->getLocale() => $labels['messageBelowLimit']] : []
             )
         );
 

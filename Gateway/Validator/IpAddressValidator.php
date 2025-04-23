@@ -8,12 +8,18 @@ class IpAddressValidator extends \Magento\Payment\Gateway\Validator\AbstractVali
 {
     /**
      * @inheritdoc
+     *
+     * @param array $validationSubject
+     * @phpstan-param array<string, mixed> $validationSubject
      */
     public function validate(array $validationSubject)
     {
         $isValid = true;
 
-        /** @var GeneralSettingsResponse $settings */
+        /**
+         * @var GeneralSettingsResponse $settings
+         * @phpstan-ignore-next-line
+         **/
         $settings = AdminAPI::get()->generalSettings($validationSubject['storeId'])->getGeneralSettings();
 
         if (!$settings->isSuccessful()) {

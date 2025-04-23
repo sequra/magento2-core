@@ -20,6 +20,9 @@ class GeneralResponseValidator extends AbstractValidator
 
     /**
      * @inheritdoc
+     *
+     * @param array $validationSubject
+     * @phpstan-param array<string, array<string, string>> $validationSubject
      */
     public function validate(array $validationSubject)
     {
@@ -30,7 +33,7 @@ class GeneralResponseValidator extends AbstractValidator
         $errorCodes = [];
         if (!empty($response['errorMessage'])) {
             $isValid = false;
-            $errorMessages[] = $validationSubject['response']['errorMessage'];
+            $errorMessages[] = $response['errorMessage'];
         }
 
         return $this->createResult($isValid, $errorMessages, $errorCodes);

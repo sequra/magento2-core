@@ -8,6 +8,7 @@ use Magento\Framework\Controller\Result\JsonFactory;
 use SeQura\Core\Infrastructure\Logger\Logger;
 use SeQura\Core\Infrastructure\ServiceRegister;
 use SeQura\Core\Infrastructure\TaskExecution\Interfaces\AsyncProcessService;
+use SeQura\Core\Infrastructure\Logger\LogContextData;
 
 class AsyncProcess extends Action
 {
@@ -40,8 +41,11 @@ class AsyncProcess extends Action
      */
     public function execute()
     {
+        /**
+         * @var string $guid
+         */
         $guid = $this->_request->getParam('guid');
-        Logger::logInfo('Received async process request.', 'Integration', ['guid' => $guid]);
+        Logger::logInfo('Received async process request.', 'Integration', [new LogContextData('guid', $guid)]);
 
         $this->getAsyncProcessService()->runProcess($guid);
 

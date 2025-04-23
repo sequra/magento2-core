@@ -24,13 +24,6 @@ class Task
     protected $conn;
 
     /**
-     * Database handler
-     *
-     * @var DatabaseHandler
-     */
-    protected $dbHandler;
-
-    /**
      * Constructor
      *
      * @param ResourceConnection $resourceConnection Resource connection
@@ -38,13 +31,14 @@ class Task
     public function __construct(ResourceConnection $resourceConnection)
     {
         $this->conn = $resourceConnection;
-        $this->dbHandler = new DatabaseHandler($resourceConnection);
     }
 
     /**
      * Execute the task
      *
-     * @param array $args Arguments for the task
+     * @param string[] $args Arguments for the task
+     *
+     * @return string[]
      *
      * @throws \Exception If the task fails
      */
@@ -88,6 +82,10 @@ class Task
      *
      * @param string $message Error message
      * @param int $error_code Error code
+     *
+     * @throws Exception
+     *
+     * @return void
      */
     public function httpErrorResponse(string $message, int $error_code)
     {
@@ -96,6 +94,8 @@ class Task
 
     /**
      * Response with an error message
+     *
+     * @return array<string, mixed>
      */
     public function httpSuccessResponse()
     {

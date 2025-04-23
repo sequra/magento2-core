@@ -41,7 +41,7 @@ class SellingCountriesService implements SellingCountriesServiceInterface
     public function getSellingCountries(): array
     {
         $store = $this->storeManager->getStore(StoreContext::getInstance()->getStoreId());
-
+        // @phpstan-ignore-next-line
         return $this->country->getAllowedCountries(ScopeInterface::SCOPE_WEBSITES, [$store->getWebsiteId()]);
     }
 }

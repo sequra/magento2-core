@@ -46,7 +46,7 @@ class StoreService implements StoreServiceInterface
         try {
             $magentoStores = $this->storeManager->getStores();
             foreach ($magentoStores as $store) {
-                $stores[] = new Store($store->getId(), $store->getName());
+                $stores[] = new Store((string) $store->getId(), $store->getName());
             }
         } catch (EmptyStoreParameterException $e) {
             return [];
@@ -63,7 +63,7 @@ class StoreService implements StoreServiceInterface
         $defaultStore = $this->storeManager->getDefaultStoreView();
 
         try {
-            return $defaultStore ? new Store($defaultStore->getId(), $defaultStore->getName()) : null;
+            return $defaultStore ? new Store((string) $defaultStore->getId(), $defaultStore->getName()) : null;
         } catch (EmptyStoreParameterException $e) {
             return null;
         }
@@ -77,7 +77,7 @@ class StoreService implements StoreServiceInterface
         try {
             $store = $this->storeManager->getStore($id);
 
-            return new Store($store->getId(), $store->getName());
+            return new Store((string) $store->getId(), $store->getName());
         } catch (NoSuchEntityException|EmptyStoreParameterException $e) {
             return null;
         }
@@ -86,7 +86,7 @@ class StoreService implements StoreServiceInterface
     /**
      * Retrieves connected store ids.
      *
-     * @return array
+     * @return array<string>
      *
      * @throws RepositoryNotRegisteredException
      */

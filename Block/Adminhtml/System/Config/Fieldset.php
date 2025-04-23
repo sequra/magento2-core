@@ -22,7 +22,7 @@ class Fieldset extends MagentoFieldset
      * @param Context $context
      * @param Session $authSession
      * @param Js $jsHelper
-     * @param array $data
+     * @param mixed[] $data
      * @param SecureHtmlRenderer|null $secureRenderer
      */
     public function __construct(
@@ -61,9 +61,11 @@ class Fieldset extends MagentoFieldset
         $html = '<div class="config-heading" >';
 
         $html .= '<div class="button-container">' . $this->getConfigButtonElementHtml() . '</div>';
-        $html .= '<div class="heading"><strong>' . $element->getLegend() . '</strong>';
+        if (method_exists($element, 'getLegend')) {
+            $html .= '<div class="heading"><strong>' . $element->getLegend() . '</strong>';
+        }
 
-        if ($element->getComment()) {
+        if (method_exists($element, 'getComment') && $element->getComment()) {
             $html .= '<span class="heading-intro">' . $element->getComment() . '</span>';
         }
         $html .= '<div class="config-alt"></div>';

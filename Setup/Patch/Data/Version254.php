@@ -73,7 +73,11 @@ class Version254 implements DataPatchInterface
     {
         $statisticalDataRepository = RepositoryRegistry::getRepository(StatisticalDataEntity::getClassName());
 
-        return $statisticalDataRepository->select();
+        /**
+         * @var StatisticalDataEntity[] $entities
+         */
+        $entities = $statisticalDataRepository->select();
+        return $entities;
     }
 
     /**

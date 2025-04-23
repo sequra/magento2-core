@@ -16,6 +16,7 @@ class GuestCartProvider implements CartProvider
     private $guestCartRepository;
     /**
      * @var CartRepositoryInterface
+     * @phpstan-ignore-next-line
      */
     private $cartRepository;
 

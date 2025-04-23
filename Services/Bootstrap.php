@@ -99,7 +99,7 @@ class Bootstrap extends BootstrapComponent
      */
     private $encryptor;
     /**
-     * @var BusinessLogic\OrderServiceFactory
+     * @var \Sequra\Core\Services\BusinessLogic\OrderServiceFactory
      */
     private $orderServiceFactory;
 

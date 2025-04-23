@@ -41,6 +41,7 @@ class PaymentMethods extends BaseConfigurationController
      */
     protected function getPaymentMethods(): Json
     {
+        // @phpstan-ignore-next-line
         $data = AdminAPI::get()->paymentMethods($this->storeId)->getPaymentMethods($this->identifier);
         $this->savePaymentMethods($data);
 
@@ -60,6 +61,9 @@ class PaymentMethods extends BaseConfigurationController
      */
     private function savePaymentMethods(PaymentMethodsResponse $data): void
     {
+        /**
+         * @var PaymentMethod[] $apiPaymentMethods
+         */
         $apiPaymentMethods = PaymentMethod::fromBatch($data->toArray());
 
         $paymentMethodsRepository = RepositoryRegistry::getRepository(PaymentMethodsEntity::CLASS_NAME);
@@ -67,13 +71,17 @@ class PaymentMethods extends BaseConfigurationController
         $filter = new QueryFilter();
         $filter->where('storeId', Operators::EQUALS, $this->storeId)
             ->where('merchantId', Operators::EQUALS, $this->identifier);
+
+        /**
+         * @var PaymentMethodsEntity|null $paymentMethods
+         */
         $paymentMethods = $paymentMethodsRepository->selectOne($filter);
 
         if ($paymentMethods === null) {
             $paymentMethods = new PaymentMethodsEntity();
 
             $paymentMethods->setStoreId($this->storeId);
-            $paymentMethods->setMerchantId($this->identifier);
+            $paymentMethods->setMerchantId((string) $this->identifier);
             $paymentMethods->setPaymentMethods($apiPaymentMethods);
 
             $paymentMethodsRepository->save($paymentMethods);

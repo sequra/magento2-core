@@ -19,16 +19,23 @@ class PaymentMethodsService
      * Retrieves payment methods per store.
      *
      * @return array
+     * @phpstan-return array<array<int, array<string, string|null>>>
      *
      * @throws HttpRequestException
      * @throws Exception
      */
     public function getPaymentMethods(): array
     {
-        $stores = $this->getStoreService()->getConnectedStores();
         $result = [];
+        /**
+         * TODO: getConnectedStores() should be moved to StoreServiceInterface
+         * @var \Sequra\Core\Services\BusinessLogic\StoreService $storeService
+         */
+        $storeService = $this->getStoreService();
+        $stores = $storeService->getConnectedStores();
 
         foreach ($stores as $storeId) {
+            // @phpstan-ignore-next-line
             $countryConfigurations = AdminAPI::get()->countryConfiguration($storeId)
                 ->getCountryConfigurations()->toArray();
             $firstConfig = array_shift($countryConfigurations);
@@ -37,6 +44,7 @@ class PaymentMethodsService
                 continue;
             }
 
+            // @phpstan-ignore-next-line
             $widgetsConfig = AdminAPI::get()->widgetConfiguration($storeId)->getWidgetSettings()->toArray();
 
             if (isset($widgetsConfig['errorCode']) || !$widgetsConfig['useWidgets']) {

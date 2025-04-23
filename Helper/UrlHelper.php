@@ -68,6 +68,7 @@ class UrlHelper
      *
      * @param string $routePath Path.
      * @param array|null $routeParams Parameters.
+     * @phpstan-param array<string, mixed>|null $routeParams
      *
      * @return string Publicly visible URL of the requested front-end controller.
      *
@@ -90,6 +91,7 @@ class UrlHelper
      *
      * @param string $routePath Path.
      * @param array|null $routeParams Parameters.
+     * @phpstan-param array<string, mixed>|null $routeParams
      *
      * @return string Publicly visible URL of the requested back-end controller.
      */
@@ -109,8 +111,11 @@ class UrlHelper
         if (!$storeId) {
             return '#';
         }
+        /**
+         * @var \SeQura\Core\BusinessLogic\Domain\Connection\Models\ConnectionData|null $connectionSettings
+         */
         $connectionSettings = StoreContext::doWithStore(
-            $storeId,
+            (string) $storeId,
             function () {
                 return ServiceRegister::getService(ConnectionService::class)->getConnectionData();
             }

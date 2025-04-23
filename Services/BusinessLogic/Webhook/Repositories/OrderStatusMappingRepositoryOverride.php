@@ -12,6 +12,8 @@ class OrderStatusMappingRepositoryOverride implements OrderStatusSettingsReposit
 
     /**
      * Get the order status mapping
+     *
+     * @return array<OrderStatusMapping> The order status mapping
      */
     public function getOrderStatusMapping(): array
     {
@@ -26,7 +28,7 @@ class OrderStatusMappingRepositoryOverride implements OrderStatusSettingsReposit
     /**
      * Set the order status mapping
      *
-     * @param array $orderStatusMapping The order status mapping
+     * @param array<OrderStatusMapping> $orderStatusMapping The order status mapping
      */
     public function setOrderStatusMapping(array $orderStatusMapping): void
     {

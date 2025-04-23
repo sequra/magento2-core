@@ -41,7 +41,8 @@ class OrderCancellationObserver implements ObserverInterface
     public function execute(Observer $observer): void
     {
         $orderData = $observer->getData('order');
-        if (WebhookController::isWebhookProcessing() || $orderData->getStatus() !== Order::STATE_CANCELED ||
+        if (WebhookController::isWebhookProcessing() || ! $orderData instanceof MagentoOrder ||
+            $orderData->getStatus() !== Order::STATE_CANCELED ||
             $orderData->getPayment()->getMethod() !== ConfigProvider::CODE) {
             return;
         }
@@ -69,6 +70,9 @@ class OrderCancellationObserver implements ObserverInterface
             throw new LocalizedException($this->translationProvider->translate('sequra.error.cannotCancel'));
         }
 
+        /**
+         * @var OrderService $orderService
+         */
         $orderService = StoreContext::doWithStore($orderData->getStoreId(), function () {
             return ServiceRegister::getService(OrderService::class);
         });

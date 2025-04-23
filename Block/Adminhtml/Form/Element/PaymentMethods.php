@@ -16,7 +16,7 @@ class PaymentMethods extends Template
      * PaymentMethods constructor.
      *
      * @param Context $context
-     * @param array $data
+     * @param mixed[] $data
      */
     public function __construct(Context $context, array $data = [])
     {
@@ -33,7 +33,7 @@ class PaymentMethods extends Template
     /**
      * Retrieves all payment methods configured for all connected stores.
      *
-     * @return array
+     * @return array<string, mixed>
      *
      * @throws Exception
      */

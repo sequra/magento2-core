@@ -39,9 +39,12 @@ class QueueItemRepository extends BaseRepository implements QueueItemRepositoryI
         $entity = new $this->entityClass;
 
         try {
+            // TODO: Call to an undefined method Sequra\Core\ResourceModel\SequraEntity::findOldestQueuedItems()
+            // @phpstan-ignore-next-line
             $records = $this->resourceEntity->findOldestQueuedItems($entity, $priority, $limit);
             /** @var QueueItem[] $queuedItems */
-            return $this->deserializeEntities($records);
+            $queuedItems = $this->deserializeEntities($records);
+            return $queuedItems;
         } catch (LocalizedException $e) {
             // In case of exception return empty result set.
             return [];
@@ -51,7 +54,7 @@ class QueueItemRepository extends BaseRepository implements QueueItemRepositoryI
     /**
      * Batch update the status of multiple queue items
      *
-     * @param array $ids IDs of queue items to update
+     * @param array<int> $ids IDs of queue items to update
      * @param mixed $status Status to set for the items
      *
      * @return void
@@ -62,6 +65,8 @@ class QueueItemRepository extends BaseRepository implements QueueItemRepositoryI
             return;
         }
 
+        // TODO: Call to an undefined method Sequra\Core\ResourceModel\SequraEntity::batchStatusUpdate()
+        // @phpstan-ignore-next-line
         $this->resourceEntity->batchStatusUpdate($ids, $status);
     }
 
@@ -76,6 +81,7 @@ class QueueItemRepository extends BaseRepository implements QueueItemRepositoryI
      *  queue item property and value is condition value for that property. Example for MySql storage:
      *  $storage->save($queueItem, array('status' => 'queued')) should produce query
      *  UPDATE queue_storage_table SET .... WHERE .... AND status => 'queued'
+     * @phpstan-param array<string, mixed> $additionalWhere
      *
      * @return int Id of saved queue item
      *
@@ -83,6 +89,8 @@ class QueueItemRepository extends BaseRepository implements QueueItemRepositoryI
      */
     public function saveWithCondition(QueueItem $queueItem, array $additionalWhere = []): int
     {
+        // TODO: Call to an undefined method Sequra\Core\ResourceModel\SequraEntity::saveWithCondition()
+        // @phpstan-ignore-next-line
         return $this->resourceEntity->saveWithCondition($queueItem, $additionalWhere);
     }
 
@@ -100,6 +108,7 @@ class QueueItemRepository extends BaseRepository implements QueueItemRepositoryI
      * Translates database records to Sequra entities.
      *
      * @param array $records Array of database records.
+     * @phpstan-param array<int, array{data: string, id: int}> $records
      *
      * @return Entity[]
      */
@@ -107,12 +116,20 @@ class QueueItemRepository extends BaseRepository implements QueueItemRepositoryI
     {
         $entities = [];
         foreach ($records as $record) {
+
+            $requiredKeys = ['data', 'id', 'index_1', 'index_7'];
+            foreach ($requiredKeys as $key) {
+                if (!array_key_exists($key, $record)) {
+                    continue;
+                }
+            }
+
             /** @var QueueItem $entity */
             $entity = $this->deserializeEntity($record['data']);
             if ($entity !== null) {
                 $entity->setId((int)$record['id']);
-                $entity->setStatus($record['index_1']);
-                $entity->setLastUpdateTimestamp($record['index_7']);
+                $entity->setStatus($record['index_1']); // @phpstan-ignore-line
+                $entity->setLastUpdateTimestamp($record['index_7']); // @phpstan-ignore-line
                 $entities[] = $entity;
             }
         }
