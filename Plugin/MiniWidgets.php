@@ -63,12 +63,19 @@ class MiniWidgets
     private $localeResolver;
 
     /**
+     * @var \Magento\Framework\Escaper
+     */
+    private $htmlEscaper;
+
+    /**
      * @param StoreManagerInterface $storeManager
      * @param StoreConfigManagerInterface $storeConfigManager
      * @param ProductRepository $productRepository
      * @param ProductService $productService
      * @param ScopeConfigInterface $scopeConfig
      * @param PriceCurrencyInterface $priceCurrency
+     * @param \Magento\Framework\Locale\ResolverInterface $localeResolver
+     * @param \Magento\Framework\Escaper $htmlEscaper
      */
     public function __construct(
         StoreManagerInterface       $storeManager,
@@ -77,7 +84,8 @@ class MiniWidgets
         ProductService              $productService,
         ScopeConfigInterface        $scopeConfig,
         PriceCurrencyInterface      $priceCurrency,
-        \Magento\Framework\Locale\ResolverInterface $localeResolver
+        \Magento\Framework\Locale\ResolverInterface $localeResolver,
+        \Magento\Framework\Escaper $htmlEscaper
     ) {
         $this->storeManager = $storeManager;
         $this->storeConfigManager = $storeConfigManager;
@@ -86,6 +94,7 @@ class MiniWidgets
         $this->scopeConfig = $scopeConfig;
         $this->priceCurrency = $priceCurrency;
         $this->localeResolver = $localeResolver;
+        $this->htmlEscaper = $htmlEscaper;
     }
 
     /**
@@ -170,11 +179,11 @@ class MiniWidgets
             }
 
             $minAmount = (int)($paymentMethod['minAmount'] ?? 0);
-            if($amount < $minAmount) {
+            if ($amount < $minAmount) {
                 continue;
             }
             $maxAmount = isset($paymentMethod['maxAmount']) ? (int)$paymentMethod['maxAmount']: null;
-            if(null !== $maxAmount && $maxAmount < $amount) {
+            if (null !== $maxAmount && $maxAmount < $amount) {
                 continue;
             }
 
@@ -271,7 +280,7 @@ class MiniWidgets
 
         $dataset = array_map(
             function ($key, $value) {
-                return sprintf('data-%s="%s"', $key, htmlspecialchars($value, ENT_QUOTES));
+                return sprintf('data-%s="%s"', $key, $this->htmlEscaper->escapeHtml($value, ENT_QUOTES));
             },
             array_keys($dataset),
             $dataset
