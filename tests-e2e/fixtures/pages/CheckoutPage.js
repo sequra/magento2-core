@@ -27,8 +27,7 @@ export default class CheckoutPage extends BaseCheckoutPage {
             continueButton: () => this.page.locator('.action.continue'),
             submitCheckout: () => this.page.locator('.payment-method._active .action.checkout'),
             orderRowStatus: orderNumber => this.page.locator(`.data-row:has(td:has-text("${orderNumber}")) td:nth-child(9)`),
-            orderNumber: () => this.page.locator('.checkout-success p>span'),
-            paymentMethodEducationalLink: options => this.page.locator(`label[for="sequra_${options.product}"] .sequra-educational-popup`),
+            orderNumber: () => this.page.locator('.checkout-success p>span')
         };
     }
 
@@ -175,14 +174,14 @@ export default class CheckoutPage extends BaseCheckoutPage {
     }
 
     /**
-     * Find "+ info" link and click it
+     * Provide the locator for the moreInfo tag 
+     * 
      * @param {Object} options
      * @param {string} options.product seQura product (i1, pp3, etc)
-     * @returns {Promise<void>}
+     * @returns {import("@playwright/test").Locator}
      */
-    async openAndCloseEducationalPopup(options) {
-        await this.locators.paymentMethodEducationalLink(options).click();
-        await this.page.frameLocator('iframe').locator('button[data-testid="close-popup"]').click();
+    moreInfoLinkLocator(options) {
+        return this.page.locator(`label[for="sequra_${options.product}"] .sequra-educational-popup`)
     }
 
     /**

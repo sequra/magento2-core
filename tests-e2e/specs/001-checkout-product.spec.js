@@ -28,7 +28,7 @@ test.describe('Product checkout', () => {
     await productPage.addToCart({ slug: 'push-it-messenger-bag', quantity: 1 });
     await checkoutPage.goto();
     await checkoutPage.fillForm(shopper);
-    await checkoutPage.openAndCloseEducationalPopup({ ...shopper, product: 'i1' });
+    await checkoutPage.openAndCloseEducationalPopup({ product: 'i1' });
     await checkoutPage.placeOrder({ ...shopper, product: 'i1' });
     await checkoutPage.waitForOrderSuccess();
   });
