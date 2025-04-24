@@ -461,8 +461,7 @@ class Teaser extends Template implements BlockInterface
                 if (!is_array($paymentMethod) ||
                     !isset($paymentMethod['product']) ||
                     $paymentMethod['product'] !== $paymentMethodData['product'] ||
-                    !isset($paymentMethod['campaign']) ||
-                    $paymentMethod['campaign'] !== $paymentMethodData['campaign']
+                    (($paymentMethod['campaign'] ?? null) !== ($paymentMethodData['campaign'] ?? null))
                 ) {
                     continue;
                 }
