@@ -4,7 +4,6 @@ namespace Sequra\Core\Plugin;
 
 use Exception;
 use Magento\Catalog\Model\ProductRepository;
-use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Pricing\PriceCurrencyInterface;
 use Magento\Framework\Pricing\Render\Amount;
@@ -12,7 +11,6 @@ use Magento\Framework\Pricing\SaleableInterface;
 use Magento\Store\Api\Data\StoreConfigInterface;
 use Magento\Store\Api\Data\StoreInterface;
 use Magento\Store\Api\StoreConfigManagerInterface;
-use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
 use SeQura\Core\BusinessLogic\CheckoutAPI\CheckoutAPI;
 use SeQura\Core\BusinessLogic\CheckoutAPI\PaymentMethods\Requests\GetCachedPaymentMethodsRequest;
@@ -48,10 +46,7 @@ class MiniWidgets
      * @var ProductService
      */
     private $productService;
-    /**
-     * @var ScopeConfigInterface
-     */
-    private $scopeConfig;
+  
     /**
      * @var PriceCurrencyInterface
      */
@@ -72,7 +67,6 @@ class MiniWidgets
      * @param StoreConfigManagerInterface $storeConfigManager
      * @param ProductRepository $productRepository
      * @param ProductService $productService
-     * @param ScopeConfigInterface $scopeConfig
      * @param PriceCurrencyInterface $priceCurrency
      * @param \Magento\Framework\Locale\ResolverInterface $localeResolver
      * @param \Magento\Framework\Escaper $htmlEscaper
@@ -82,7 +76,6 @@ class MiniWidgets
         StoreConfigManagerInterface $storeConfigManager,
         ProductRepository           $productRepository,
         ProductService              $productService,
-        ScopeConfigInterface        $scopeConfig,
         PriceCurrencyInterface      $priceCurrency,
         \Magento\Framework\Locale\ResolverInterface $localeResolver,
         \Magento\Framework\Escaper $htmlEscaper
@@ -91,7 +84,6 @@ class MiniWidgets
         $this->storeConfigManager = $storeConfigManager;
         $this->productRepository = $productRepository;
         $this->productService = $productService;
-        $this->scopeConfig = $scopeConfig;
         $this->priceCurrency = $priceCurrency;
         $this->localeResolver = $localeResolver;
         $this->htmlEscaper = $htmlEscaper;
@@ -279,8 +271,16 @@ class MiniWidgets
         ];
 
         $dataset = array_map(
+            /**
+             * @param string $key
+             * @param string $value
+             */
             function ($key, $value) {
-                return sprintf('data-%s="%s"', $key, $this->htmlEscaper->escapeHtml($value, ENT_QUOTES));
+                /**
+                 * @var string $escapedValue
+                 */
+                $escapedValue = $this->htmlEscaper->escapeHtml((string) $value);
+                return sprintf('data-%s="%s"', $key, $escapedValue);
             },
             array_keys($dataset),
             $dataset
