@@ -30,7 +30,7 @@ use Sequra\Core\Services\BusinessLogic\ProductService;
 
 class MiniWidgets
 {
-    public const MINI_WIDGET_PRODUCTS = ['sp1', 'pp3', 'pp6', 'pp9'];
+    public const MINI_WIDGET_PRODUCTS = ['pp3'];
 
     /**
      * @var StoreManagerInterface
@@ -58,6 +58,11 @@ class MiniWidgets
     private $priceCurrency;
 
     /**
+     * @var \Magento\Framework\Locale\ResolverInterface
+     */
+    private $localeResolver;
+
+    /**
      * @param StoreManagerInterface $storeManager
      * @param StoreConfigManagerInterface $storeConfigManager
      * @param ProductRepository $productRepository
@@ -71,7 +76,8 @@ class MiniWidgets
         ProductRepository           $productRepository,
         ProductService              $productService,
         ScopeConfigInterface        $scopeConfig,
-        PriceCurrencyInterface      $priceCurrency
+        PriceCurrencyInterface      $priceCurrency,
+        \Magento\Framework\Locale\ResolverInterface $localeResolver
     ) {
         $this->storeManager = $storeManager;
         $this->storeConfigManager = $storeConfigManager;
@@ -79,6 +85,7 @@ class MiniWidgets
         $this->productService = $productService;
         $this->scopeConfig = $scopeConfig;
         $this->priceCurrency = $priceCurrency;
+        $this->localeResolver = $localeResolver;
     }
 
     /**
@@ -162,6 +169,15 @@ class MiniWidgets
                 continue;
             }
 
+            $minAmount = (int)($paymentMethod['minAmount'] ?? 0);
+            if($amount < $minAmount) {
+                continue;
+            }
+            $maxAmount = isset($paymentMethod['maxAmount']) ? (int)$paymentMethod['maxAmount']: null;
+            if(null !== $maxAmount && $maxAmount < $amount) {
+                continue;
+            }
+
             $result .= $this->getWidgetHtml(
                 $widgetConfig,
                 $storeConfig,
@@ -183,15 +199,8 @@ class MiniWidgets
      */
     private function getCountry(StoreConfigInterface $storeConfig)
     {
-        /**
-         * @var string $value
-         */
-        $value = $this->scopeConfig->getValue(
-            'general/country/default',
-            ScopeInterface::SCOPE_STORE,
-            $storeConfig->getId()
-        );
-        return $value;
+        $parts = explode('_', $this->localeResolver->getLocale());
+        return strtoupper(count($parts) > 1 ? $parts[1] : $parts[0]);
     }
 
     /**
@@ -251,10 +260,25 @@ class MiniWidgets
         $message = $widgetLabels->getMessages()[$storeConfig->getLocale()] ?? '';
         $belowLimit = $widgetLabels->getMessagesBelowLimit()[$storeConfig->getLocale()] ?? '';
 
-        return "<div class=\"sequra-educational-popup\" data-content-type=\"sequra_core\" data-amount=\""
-            . $amount . "\" data-product=\"" . $product . "\"
-                data-min-amount='" . $minAmount . "' data-label='" . $message . "'
-                data-below-limit='" . $belowLimit . "'></div>";
+        $dataset = [
+            'content-type' => 'sequra_core',
+            'amount' => $amount,
+            'product' => $product,
+            'min-amount' => $minAmount,
+            'label' => $message,
+            'below-limit' => $belowLimit,
+        ];
+
+        $dataset = array_map(
+            function ($key, $value) {
+                return sprintf('data-%s="%s"', $key, htmlspecialchars($value, ENT_QUOTES));
+            },
+            array_keys($dataset),
+            $dataset
+        );
+        $dataset = implode(' ', $dataset);
+
+        return "<div class=\"sequra-educational-popup\" $dataset></div>";
     }
 
     /**
