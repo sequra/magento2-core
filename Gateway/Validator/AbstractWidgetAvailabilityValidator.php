@@ -34,11 +34,14 @@ abstract class AbstractWidgetAvailabilityValidator extends AbstractValidator
     }
 
     /**
-     * Get the compatible action names for showing the widget
+     * Get the compatible action names for showing the widget or null to skip validation
      *
-     * @return array<string>
+     * @return array<string>|null
      */
-    abstract protected function getActionNames();
+    protected function getActionNames()
+    {
+        return null;
+    }
 
     /**
      * Validate if the widget is enabled for the product
@@ -52,8 +55,10 @@ abstract class AbstractWidgetAvailabilityValidator extends AbstractValidator
      */
     protected function getValidationResult(array $validationSubject)
     {
-        if (!isset($validationSubject['storeId']) ||
-        !in_array($this->request->getFullActionName(), $this->getActionNames(), true)) {
+        if (!isset($validationSubject['storeId']) || (
+            is_array($this->getActionNames()) &&
+            !in_array($this->request->getFullActionName(), $this->getActionNames(), true)
+        )) {
             return false;
         }
 

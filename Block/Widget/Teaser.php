@@ -10,6 +10,7 @@ use SeQura\Core\BusinessLogic\CheckoutAPI\PaymentMethods\Responses\CachedPayment
 use Sequra\Core\Gateway\Validator\CurrencyValidator;
 use Sequra\Core\Gateway\Validator\IpAddressValidator;
 use Sequra\Core\Gateway\Validator\ProductWidgetAvailabilityValidator;
+use Magento\Framework\App\Request\Http;
 
 class Teaser extends Template implements BlockInterface
 {
@@ -34,6 +35,11 @@ class Teaser extends Template implements BlockInterface
     private $productWidgetAvailabilityValidator;
 
     /**
+     * @var Http
+     */
+    private $request;
+
+    /**
      * Constructor
      *
      * @param \Magento\Framework\App\ScopeResolverInterface $scopeResolver
@@ -42,6 +48,7 @@ class Teaser extends Template implements BlockInterface
      * @param CurrencyValidator $currencyValidator
      * @param IpAddressValidator $ipAddressValidator
      * @param ProductWidgetAvailabilityValidator $productValidator
+     * @param Http $request
      * @param mixed[] $data
      */
     public function __construct(
@@ -51,14 +58,16 @@ class Teaser extends Template implements BlockInterface
         CurrencyValidator $currencyValidator,
         IpAddressValidator $ipAddressValidator,
         ProductWidgetAvailabilityValidator $productValidator,
-        array $data = []
+        Http $request,
+        array $data = [],
     ) {
+        parent::__construct($context, $data);
         $this->scopeResolver = $scopeResolver;
         $this->localeResolver = $localeResolver;
-        parent::__construct($context, $data);
         $this->currencyValidator = $currencyValidator;
         $this->ipAddressValidator = $ipAddressValidator;
         $this->productWidgetAvailabilityValidator = $productValidator;
+        $this->request = $request;
     }
 
     // phpcs:disable PSR2.Methods.MethodDeclaration.Underscore
@@ -74,7 +83,15 @@ class Teaser extends Template implements BlockInterface
          * @var \Magento\Store\Model\Store $store
          */
         $store = $this->scopeResolver->getScope();
-        $subject = ['currency' => $store->getCurrentCurrency()->getCode(), 'storeId' => $store->getId()];
+        /**
+         * @var int $productId
+         */
+        $productId = $this->request->getParam('id');
+        $subject = [
+            'currency' => $store->getCurrentCurrency()->getCode(),
+            'storeId' => $store->getId(),
+            'productId' => $productId,
+        ];
 
         if (!$this->currencyValidator->validate($subject)->isValid()) {
             // TODO: Log currency error

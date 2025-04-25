@@ -8,6 +8,7 @@ use Magento\Framework\Exception\NoSuchEntityException;
 use SeQura\Core\BusinessLogic\Domain\GeneralSettings\Models\GeneralSettings;
 use Sequra\Core\Services\BusinessLogic\ProductService;
 use Magento\Payment\Gateway\Validator\ResultInterfaceFactory;
+use SeQura\Core\BusinessLogic\Domain\PromotionalWidgets\Models\WidgetSettings;
 
 class ProductWidgetAvailabilityValidator extends AbstractWidgetAvailabilityValidator
 {
@@ -15,12 +16,12 @@ class ProductWidgetAvailabilityValidator extends AbstractWidgetAvailabilityValid
     /**
      * @var \Magento\Catalog\Model\ProductRepository
      */
-    private $productRepository;
+    protected $productRepository;
 
     /**
      * @var ProductService
      */
-    private $productService;
+    protected $productService;
 
     /**
      * Constructor
@@ -50,6 +51,17 @@ class ProductWidgetAvailabilityValidator extends AbstractWidgetAvailabilityValid
     }
 
     /**
+     * Check if the option is enabled in the settings
+     *
+     * @param WidgetSettings $widgetSettings
+     * @return bool
+     */
+    protected function isEnabledInSettings($widgetSettings): bool
+    {
+        return $widgetSettings->isDisplayOnProductPage();
+    }
+
+    /**
      * @inheritdoc
      */
     protected function getValidationResult(array $validationSubject)
@@ -57,20 +69,19 @@ class ProductWidgetAvailabilityValidator extends AbstractWidgetAvailabilityValid
         if (!parent::getValidationResult($validationSubject)) {
             return false;
         }
+        if (!isset($validationSubject['productId'])) {
+            return false;
+        }
         $storeId = (string) $validationSubject['storeId'];
         $widgetSettings = $this->getWidgetSettings($storeId);
         
-        if (empty($widgetSettings) || !$widgetSettings->isDisplayOnProductPage()) {
+        if (empty($widgetSettings) || !$this->isEnabledInSettings($widgetSettings)) {
             return false;
         }
         /**
-         * @var int $productId
-         */
-        $productId = $this->request->getParam('id');
-        /**
          * @var \Magento\Catalog\Model\Product $product
          */
-        $product = $this->productRepository->getById($productId);
+        $product = $this->productRepository->getById((int) $validationSubject['productId']);
         $settings = $this->getGeneralSettings($storeId);
         return $this->isWidgetEnabledForProduct($product, $settings);
     }
@@ -85,7 +96,7 @@ class ProductWidgetAvailabilityValidator extends AbstractWidgetAvailabilityValid
      *
      * @throws NoSuchEntityException
      */
-    private function isWidgetEnabledForProduct(Product $product, ?GeneralSettings $settings): bool
+    protected function isWidgetEnabledForProduct(Product $product, ?GeneralSettings $settings): bool
     {
 
         if ($product->getIsVirtual() || $product->getTypeId() === 'grouped') {
