@@ -24,8 +24,8 @@ class Cart extends Template
     use WidgetTrait;
 
      /**
-     * @var \Magento\Framework\App\ScopeResolverInterface
-     */
+      * @var \Magento\Framework\App\ScopeResolverInterface
+      */
     protected $scopeResolver;
 
     /**
@@ -40,6 +40,7 @@ class Cart extends Template
      * @param ResolverInterface $localeResolver
      * @param CurrencyValidator $currencyValidator
      * @param IpAddressValidator $ipAddressValidator
+     * @param CartWidgetAvailabilityValidator $cartWidgetAvailabilityValidator
      * @param Context $context
      */
     public function __construct(
@@ -123,13 +124,7 @@ class Cart extends Template
         $cachedPaymentMethods = CheckoutAPI::get()->cachedPaymentMethods($store->getStoreId())
             ->getCachedPaymentMethods(new GetCachedPaymentMethodsRequest($merchantId));
 
-        /**
-         * @var string $destSelData
-         */
         $destinationSelector = '.cart-totals';
-        /**
-         * @var string $priceSelData
-         */
         $priceSelector = ".grand.totals .price";
 
         /**

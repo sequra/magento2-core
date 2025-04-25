@@ -27,7 +27,8 @@ abstract class AbstractWidgetAvailabilityValidator extends AbstractValidator
      * @param ResultInterfaceFactory $resultFactory
      * @param Http $request
      */
-    public function __construct(ResultInterfaceFactory $resultFactory, Http $request) {
+    public function __construct(ResultInterfaceFactory $resultFactory, Http $request)
+    {
         parent::__construct($resultFactory);
         $this->request = $request;
     }
@@ -41,17 +42,17 @@ abstract class AbstractWidgetAvailabilityValidator extends AbstractValidator
 
     /**
      * Validate if the widget is enabled for the product
-     * 
+     *
      * @param array $validationSubject
      * @phpstan-param array<string, string|int> $validationSubject
-     * 
-     * @throws Throwable
-     * 
+     *
+     * @throws \Throwable
+     *
      * @return bool
      */
     protected function getValidationResult(array $validationSubject)
     {
-        if (!isset($validationSubject['storeId']) || 
+        if (!isset($validationSubject['storeId']) ||
         !in_array($this->request->getFullActionName(), $this->getActionNames(), true)) {
             return false;
         }

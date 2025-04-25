@@ -17,7 +17,7 @@ class CartWidgetAvailabilityValidator extends AbstractWidgetAvailabilityValidato
      */
     protected function getValidationResult(array $validationSubject)
     {
-        if(!parent::getValidationResult($validationSubject)) {
+        if (!parent::getValidationResult($validationSubject)) {
             return false;
         }
         $storeId = (string) $validationSubject['storeId'];
