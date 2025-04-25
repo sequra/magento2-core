@@ -3,8 +3,8 @@
     xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
     <body>
         <referenceContainer name="content">
-            <block class="Magento\Checkout\Block\Cart" before="-" name="sequra-script"
-                template="Sequra_Core::scripts.phtml" />
+            <block class="Sequra\Core\Block\Cart" before="-" name="sequra.cart"
+                template="Sequra_Core::cart.phtml" />
         </referenceContainer>
     </body>
 </page>

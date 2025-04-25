@@ -1,28 +1,16 @@
 <?php
 namespace Sequra\Core\Gateway\Validator;
 
-use Exception;
 use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\ProductRepository;
 use Magento\Framework\App\Request\Http;
 use Magento\Framework\Exception\NoSuchEntityException;
 use SeQura\Core\BusinessLogic\Domain\GeneralSettings\Models\GeneralSettings;
-use SeQura\Core\BusinessLogic\Domain\GeneralSettings\Services\GeneralSettingsService;
-use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
-use SeQura\Core\BusinessLogic\Domain\PromotionalWidgets\Models\WidgetSettings;
-use SeQura\Core\BusinessLogic\Domain\PromotionalWidgets\Services\WidgetSettingsService;
-use SeQura\Core\Infrastructure\ServiceRegister;
 use Sequra\Core\Services\BusinessLogic\ProductService;
-use Magento\Payment\Gateway\Validator\AbstractValidator;
 use Magento\Payment\Gateway\Validator\ResultInterfaceFactory;
 
-class ProductWidgetAvailabilityValidator extends AbstractValidator
+class ProductWidgetAvailabilityValidator extends AbstractWidgetAvailabilityValidator
 {
-
-    /**
-     * @var \Magento\Framework\App\Request\Http
-     */
-    private $request;
 
     /**
      * @var \Magento\Catalog\Model\ProductRepository
@@ -48,90 +36,43 @@ class ProductWidgetAvailabilityValidator extends AbstractValidator
         ProductRepository $productRepository,
         ProductService         $productService
     ) {
-        parent::__construct($resultFactory);
-        $this->request = $request;
+        parent::__construct($resultFactory, $request);
         $this->productRepository = $productRepository;
         $this->productService = $productService;
     }
 
     /**
      * @inheritdoc
-     *
-     * @param array $validationSubject
-     * @phpstan-param array<string, string|int> $validationSubject
      */
-    public function validate(array $validationSubject)
+    protected function getActionNames()
     {
-        try {
-            if ($this->request->getFullActionName() !== 'catalog_product_view'
-            || !isset($validationSubject['storeId'])) {
-                return $this->createResult(false);
-            }
+        return ['catalog_product_view'];
+    }
 
-            $storeId = (string) $validationSubject['storeId'];
-
-            $widgetSettings = $this->getWidgetSettings($storeId);
-            $settings = $this->getGeneralSettings($storeId);
-
-            if (empty($widgetSettings) || !$widgetSettings->isEnabled() || !$widgetSettings->isDisplayOnProductPage()) {
-                return $this->createResult(false);
-            }
-
-            /**
-             * @var int $productId
-             */
-            $productId = $this->request->getParam('id');
-            /**
-             * @var \Magento\Catalog\Model\Product $product
-             */
-            $product = $this->productRepository->getById($productId);
-
-            if (!$this->isWidgetEnabledForProduct($product, $settings)) {
-                return $this->createResult(false);
-            }
-            return $this->createResult(true);
-        } catch (\Throwable $e) {
-            return $this->createResult(false);
+    /**
+     * @inheritdoc
+     */
+    protected function getValidationResult(array $validationSubject)
+    {
+        if(!parent::getValidationResult($validationSubject)) {
+            return false;
         }
-    }
-
-    /**
-     * Get widget settings for the given store ID
-     *
-     * @param string $storeId The store ID for which to get widget settings
-     *
-     * @return WidgetSettings|null
-     */
-    private function getWidgetSettings($storeId)
-    {
+        $storeId = (string) $validationSubject['storeId'];
+        $widgetSettings = $this->getWidgetSettings($storeId);
+        
+        if (empty($widgetSettings) || !$widgetSettings->isDisplayOnProductPage()) {
+            return false;
+        }
         /**
-         * @var WidgetSettings|null $settings
+         * @var int $productId
          */
-        $settings = StoreContext::doWithStore($storeId, function () {
-            return ServiceRegister::getService(WidgetSettingsService::class)->getWidgetSettings();
-        });
-        return $settings;
-    }
-
-    /**
-     * Get general settings for the given store ID
-     *
-     * @param string $storeId The store ID for which to get general settings
-     *
-     * @return GeneralSettings|null
-     *
-     * @throws NoSuchEntityException
-     * @throws Exception
-     */
-    private function getGeneralSettings($storeId): ?GeneralSettings
-    {
+        $productId = $this->request->getParam('id');
         /**
-         * @var GeneralSettings|null $settings
+         * @var \Magento\Catalog\Model\Product $product
          */
-        $settings = StoreContext::doWithStore($storeId, function () {
-            return ServiceRegister::getService(GeneralSettingsService::class)->getGeneralSettings();
-        });
-        return $settings;
+        $product = $this->productRepository->getById($productId);
+        $settings = $this->getGeneralSettings($storeId);
+        return $this->isWidgetEnabledForProduct($product, $settings);
     }
 
     /**

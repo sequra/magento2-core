@@ -1,0 +1,16 @@
+<?php
+/**
+ * Cart template
+ *
+ * @var $block \Sequra\Core\Block\Cart
+ */
+?>
+<script type="text/x-magento-init">
+    {
+        "*": {
+            "Sequra_Core/js/widget": {
+                "widgets": <?= json_encode($block->getAvailableWidgets()); ?>
+            }
+        }
+    }
+</script>
