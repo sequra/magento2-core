@@ -279,7 +279,7 @@ define([
                             const priceSrc = this.getPriceSelector(widget);
                             priceElem = document.querySelector(priceSrc);
                             if (!priceElem) {
-                                console.error(priceSrc + ' is not a valid css selector to read the price from, for seQura mini-widget.');
+                                // console.error(priceSrc + ' is not a valid css selector to read the price from, for seQura mini-widget.');
                                 return;
                             }
                         }
@@ -347,7 +347,7 @@ define([
                         const priceSrc = this.getPriceSelector(widget);
                         const priceElem = document.querySelector(priceSrc);
                         if (!priceElem) {
-                            console.error(priceSrc + ' is not a valid css selector to read the price from, for seQura widget.');
+                            // console.error(priceSrc + ' is not a valid css selector to read the price from, for seQura widget.');
                             return;
                         }
                         const cents = this.nodeToCents(priceElem);
