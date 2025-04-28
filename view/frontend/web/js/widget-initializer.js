@@ -217,7 +217,7 @@ define([
                     drawWidgetsOnPage: function (forcePriceSelector = true) {
 
                         // Init the pre-rendered miniWidgets if any.
-                        for (const widget of document.querySelectorAll('.sequra-educational-popup')) {
+                        for (const widget of document.querySelectorAll('.sequra-promotion-miniwidget')) {
                             const {amount, product, label, belowLimit} = widget.dataset;
                             const innerText = this.getMiniWidgetInnerText(
                                 parseInt(amount),
@@ -284,7 +284,7 @@ define([
                             }
                         }
                         const cents = this.nodeToCents(priceElem);
-                        const className = 'sequra-educational-popup';
+                        const className = 'sequra-promotion-miniwidget';
                         const modifierClassName = className + '--' + widget.product;
         
                         const oldWidget = element.parentNode.querySelector('.' + className + '.' + modifierClassName);

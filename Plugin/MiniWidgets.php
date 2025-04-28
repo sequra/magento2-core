@@ -266,6 +266,6 @@ class MiniWidgets
         );
         $dataset = implode(' ', $dataset);
 
-        return "<div class=\"sequra-educational-popup\" $dataset></div>";
+        return "<div class=\"sequra-educational-popup sequra-promotion-miniwidget\" $dataset></div>";
     }
 }
