@@ -19,7 +19,7 @@
     "minimum-stability": "stable",
     "require": {
         "php": ">=7.4",
-        "sequra/integration-core": "v1.1.1",
+        "sequra/integration-core": "dev-feature/LIS-53",
         "ext-json": "*"
     },
     "autoload": {
@@ -65,5 +65,12 @@
         "allow-plugins": {
             "dealerdirect/phpcodesniffer-composer-installer": true
         }
-    }
+    },
+    "repositories": [
+        {
+            "type": "git",
+            "url": "git@github.com:sequra/integration-core.git",
+            "branch": "feature/LIS-53"
+        }
+    ]
 }

@@ -1,5 +1,6 @@
 <?php
 /** @var \Sequra\Core\Block\WidgetInitializer $block */
+$widgetData = $block->getWidgetInitializeData();
 // TODO: Unescaped output detected
 // phpcs:disable Magento2.Security.XssTemplate.FoundUnescaped
 ?>
@@ -7,14 +8,14 @@
     {
         "*": {
             "Sequra_Core/js/widget-initializer": {
-                "scriptUri": "<?= $block->getScriptUri(); ?>",
-                "thousandSeparator": "<?= $block->getThousandsSeparator(); ?>",
-                "decimalSeparator": "<?= $block->getDecimalSeparator(); ?>",
-                "locale": "<?= $block->getLocale(); ?>",
-                "merchant": "<?= $block->getMerchantId(); ?>",
-                "assetKey": "<?= $block->getAssetsKey(); ?>",
-                "products": <?= json_encode($block->getProducts()); ?>
-            }
-        }
+                "scriptUri": "<?= $widgetData['scriptUri']; ?>",
+                "thousandSeparator": "<?= $widgetData['thousandSeparator']; ?>",
+                "decimalSeparator": "<?= $widgetData['decimalSeparator']; ?>",
+                "locale": "<?= $widgetData['locale']; ?>",
+                "merchant": "<?= $widgetData['merchantId']; ?>",
+                "assetKey": "<?= $widgetData['assetKey']; ?>",
+                "products": <?= json_encode($widgetData['products']); ?>
     }
+}
+}
 </script>
