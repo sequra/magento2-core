@@ -459,9 +459,9 @@ class Teaser extends Template implements BlockInterface
 
             foreach ($cachedPaymentMethods->toArray() as $paymentMethod) {
                 if (!is_array($paymentMethod) ||
-                    !isset($paymentMethod['product']) ||
+                    !array_key_exists('product', $paymentMethod) ||
                     $paymentMethod['product'] !== $paymentMethodData['product'] ||
-                    !isset($paymentMethod['campaign']) ||
+                    !array_key_exists('campaign', $paymentMethod) ||
                     $paymentMethod['campaign'] !== $paymentMethodData['campaign']
                 ) {
                     continue;
