@@ -9,7 +9,7 @@ if (!window.SequraFE) {
      * @param {{
      * validateConnectionDataUrl: string,
      * getConnectionDataUrl: string,
-     * saveConnectionDataUrl: string,
+     * connectUrl: string,
      * getSellingCountriesUrl: string,
      * getCountrySettingsUrl: string,
      * saveCountrySettingsUrl: string,
@@ -178,7 +178,7 @@ if (!window.SequraFE) {
                     case SequraFE.appPages.ONBOARDING.COUNTRIES:
                         return {
                             label: 'sidebar.stepThreeLabel',
-                            href: '#onboarding-countries',
+                            href: '#onboarding-countriesss',
                             isCompleted: SequraFE.pages.onboarding.indexOf(SequraFE.state.getPage()) >
                                 SequraFE.pages.onboarding.indexOf(SequraFE.appPages.ONBOARDING.COUNTRIES),
                             isActive: activePage === SequraFE.appPages.ONBOARDING.COUNTRIES

@@ -28,6 +28,7 @@ if (!window.SequraFE) {
      * @typedef SellingCountry
      * @property {string} name
      * @property {string} code
+     * @property {string} merchantId
      */
 
     /**
@@ -95,6 +96,13 @@ if (!window.SequraFE) {
             }
 
             changedCountryConfiguration = activeCountryConfiguration?.map((utilities.cloneObject))
+            if(!changedCountryConfiguration.length && data.sellingCountries.length > 0) {
+                hasCountryConfigurationChanged = true;
+                changedCountryConfiguration = data.sellingCountries.map((sellingCountry) => ({
+                    countryCode: sellingCountry.code,
+                    merchantId: sellingCountry.merchantId || '',
+                }));
+            }
             changedGeneralSettings = utilities.cloneObject(activeGeneralSettings)
             initForm();
 
@@ -282,10 +290,14 @@ if (!window.SequraFE) {
 
             const countryElements = document.querySelectorAll('.sq-country-field-wrapper');
             countryElements.forEach((el) => el.remove());
-            changedCountryConfiguration = countryCodes.map((code) => ({
-                countryCode: code,
-                merchantId: changedCountryConfiguration.find((config) => config.countryCode === code)?.merchantId || ''
-            }));
+
+            changedCountryConfiguration = countryCodes.map((code) => {
+                const sellingCountry = data.sellingCountries.find((country) => country.code === code);
+                return {
+                    countryCode: code,
+                    merchantId: sellingCountry ? sellingCountry.merchantId : ''
+                };
+            });
 
             renderCountries();
 

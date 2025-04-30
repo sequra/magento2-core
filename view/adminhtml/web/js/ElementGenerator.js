@@ -288,14 +288,14 @@ if (!window.SequraFE) {
      */
     const createCountryField = ({countryCode, merchantId, onChange}) => {
         const code = countryCode.toUpperCase();
-        return createElement('div', 'sq-country-field-wrapper', '', null, [
-            createElementFromHTML(SequraFE.imagesProvider.flags[code] || ''),
+        return createElement('div', 'sq-country-field-wrapper sqs--hidden', '', null, [
             createTextField({
                 className: 'sq-text-input',
                 name: `country_${code}`,
                 label: `countries.${code}.label`,
                 description: `countries.${code}.description`,
                 value: merchantId,
+                hidden: true,
                 onChange
             })
         ]);
