@@ -484,7 +484,8 @@ class CreateOrderRequestBuilder implements \SeQura\Core\BusinessLogic\Domain\Ord
 
         foreach ($orderCollection as $orderRow) {
             $order = [];
-            $order['amount'] = $this->formatPrice($orderRow->getData('grand_total'));
+            $order['amount'] = $this->formatPrice(is_numeric($orderRow->getData('grand_total'))
+                ? (float) $orderRow->getData('grand_total') : 0);
             $order['currency'] = $orderRow->getData('order_currency_code');
             $order['created_at'] = str_replace(' ', 'T', $orderRow->getData('created_at'));
             $order['raw_status'] = $orderRow->getData('status');

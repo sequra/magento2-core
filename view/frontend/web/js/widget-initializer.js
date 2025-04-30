@@ -215,6 +215,25 @@ define([
                      * @param {boolean} forcePriceSelector If true, the price selector will be forced to the simple product price selector.
                      */
                     drawWidgetsOnPage: function (forcePriceSelector = true) {
+
+                        // Init the pre-rendered miniWidgets if any.
+                        for (const widget of document.querySelectorAll('.sequra-promotion-miniwidget')) {
+                            const {amount, product, label, belowLimit} = widget.dataset;
+                            const innerText = this.getMiniWidgetInnerText(
+                                parseInt(amount),
+                                product,
+                                label,
+                                !belowLimit ? null : belowLimit
+                            );
+    
+                            if(!innerText) {
+                                // Remove from DOM
+                                widget.remove();
+                                continue;
+                            }
+                            widget.innerText = innerText;
+                        }
+
                         if (!this.widgets.length && !this.miniWidgets.length) {
                             return;
                         }
@@ -260,12 +279,12 @@ define([
                             const priceSrc = this.getPriceSelector(widget);
                             priceElem = document.querySelector(priceSrc);
                             if (!priceElem) {
-                                console.error(priceSrc + ' is not a valid css selector to read the price from, for seQura mini-widget.');
+                                // console.error(priceSrc + ' is not a valid css selector to read the price from, for seQura mini-widget.');
                                 return;
                             }
                         }
                         const cents = this.nodeToCents(priceElem);
-                        const className = 'sequra-educational-popup';
+                        const className = 'sequra-promotion-miniwidget';
                         const modifierClassName = className + '--' + widget.product;
         
                         const oldWidget = element.parentNode.querySelector('.' + className + '.' + modifierClassName);
@@ -285,24 +304,18 @@ define([
                         widgetNode.className = className + ' ' + modifierClassName;
                         widgetNode.setAttribute('data-amount', cents);
                         widgetNode.setAttribute('data-product', widget.product);
-        
-                        const creditAgreements = Sequra.computeCreditAgreements({ amount: cents, product: widget.product })[widget.product];
-                        let creditAgreement = null
-                        do {
-                            creditAgreement = creditAgreements.pop();
-                        } while (cents < creditAgreement.min_amount.value && creditAgreements.length > 1);
-                        if (cents < creditAgreement.min_amount.value && !widget.messageBelowLimit) {
+
+                        const innerText = this.getMiniWidgetInnerText(
+                            cents,
+                            widget.product,
+                            widget.message,
+                            'undefined' !== typeof widget.messageBelowLimit ? widget.messageBelowLimit : null
+                        );
+
+                        if(!innerText) {
                             return;
                         }
-        
-                        if (cents >= creditAgreement.min_amount.value) {
-                            widgetNode.innerText = widget.message.replace('%s', creditAgreement.instalment_total.string);
-                        } else {
-                            if (!widget.messageBelowLimit) {
-                                return;
-                            }
-                            widgetNode.innerText = widget.messageBelowLimit.replace('%s', creditAgreement.min_amount.string);
-                        }
+                        widgetNode.innerText = innerText;
         
                         if (element.nextSibling) {//Insert after
                             element.parentNode.insertBefore(widgetNode, element.nextSibling);
@@ -312,12 +325,29 @@ define([
                         }
         
                     },
+
+                    getMiniWidgetInnerText: function(cents, product, message, messageBelowLimit) {
+                        const creditAgreements = Sequra.computeCreditAgreements({ amount: cents, product: product })[product];
+                        let creditAgreement = null
+                        do {
+                            creditAgreement = creditAgreements.pop();
+                        } while (cents < creditAgreement.min_amount.value && creditAgreements.length > 1);
+                        if (cents < creditAgreement.min_amount.value && !messageBelowLimit) {
+                            return null;
+                        }
+        
+                        if (cents >= creditAgreement.min_amount.value) {
+                            return message.replace('%s', creditAgreement.instalment_total.string);
+                        } else {
+                            return !messageBelowLimit ? null : messageBelowLimit.replace('%s', creditAgreement.min_amount.string);
+                        }
+                    },
         
                     drawWidgetOnElement: function (widget, element) {
                         const priceSrc = this.getPriceSelector(widget);
                         const priceElem = document.querySelector(priceSrc);
                         if (!priceElem) {
-                            console.error(priceSrc + ' is not a valid css selector to read the price from, for seQura widget.');
+                            // console.error(priceSrc + ' is not a valid css selector to read the price from, for seQura widget.');
                             return;
                         }
                         const cents = this.nodeToCents(priceElem);

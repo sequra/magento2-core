@@ -4,87 +4,109 @@ namespace Sequra\Core\Plugin;
 
 use Exception;
 use Magento\Catalog\Model\ProductRepository;
-use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Pricing\PriceCurrencyInterface;
 use Magento\Framework\Pricing\Render\Amount;
-use Magento\Framework\Pricing\SaleableInterface;
 use Magento\Store\Api\Data\StoreConfigInterface;
 use Magento\Store\Api\Data\StoreInterface;
 use Magento\Store\Api\StoreConfigManagerInterface;
-use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
 use SeQura\Core\BusinessLogic\CheckoutAPI\CheckoutAPI;
 use SeQura\Core\BusinessLogic\CheckoutAPI\PaymentMethods\Requests\GetCachedPaymentMethodsRequest;
 use SeQura\Core\BusinessLogic\CheckoutAPI\PaymentMethods\Responses\CachedPaymentMethodsResponse;
-use SeQura\Core\BusinessLogic\Domain\CountryConfiguration\Models\CountryConfiguration;
-use SeQura\Core\BusinessLogic\Domain\CountryConfiguration\Services\CountryConfigurationService;
-use SeQura\Core\BusinessLogic\Domain\GeneralSettings\Models\GeneralSettings;
-use SeQura\Core\BusinessLogic\Domain\GeneralSettings\Services\GeneralSettingsService;
 use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
 use SeQura\Core\BusinessLogic\Domain\PromotionalWidgets\Models\WidgetSettings;
-use SeQura\Core\BusinessLogic\Domain\PromotionalWidgets\Services\WidgetSettingsService;
 use SeQura\Core\Infrastructure\Http\Exceptions\HttpRequestException;
-use SeQura\Core\Infrastructure\ServiceRegister;
 use Sequra\Core\Services\BusinessLogic\ProductService;
+use Sequra\Core\Block\Widget\WidgetTrait;
+use Magento\Framework\Escaper;
+use Sequra\Core\Gateway\Validator\CurrencyValidator;
+use Sequra\Core\Gateway\Validator\IpAddressValidator;
+use Sequra\Core\Gateway\Validator\ProductListingWidgetAvailabilityValidator;
+use Magento\Framework\Locale\ResolverInterface;
 
 class MiniWidgets
 {
-    public const MINI_WIDGET_PRODUCTS = ['sp1', 'pp3', 'pp6', 'pp9'];
+    use WidgetTrait;
 
     /**
      * @var StoreManagerInterface
      */
-    private $storeManager;
+    private $_storeManager;
     /**
      * @var StoreConfigManagerInterface
      */
     private $storeConfigManager;
     /**
+     * Required by the Trait
+     *
      * @var ProductRepository
+     * @phpstan-ignore-next-line
      */
     private $productRepository;
     /**
+     * Required by the Trait
+     *
      * @var ProductService
+     * @phpstan-ignore-next-line
      */
     private $productService;
-    /**
-     * @var ScopeConfigInterface
-     */
-    private $scopeConfig;
+  
     /**
      * @var PriceCurrencyInterface
      */
     private $priceCurrency;
 
     /**
+     * @var \Magento\Framework\Escaper
+     */
+    private $htmlEscaper;
+
+    /**
+     * @var ProductListingWidgetAvailabilityValidator
+     */
+    private $productAvailabilityValidator;
+
+    /**
      * @param StoreManagerInterface $storeManager
      * @param StoreConfigManagerInterface $storeConfigManager
      * @param ProductRepository $productRepository
      * @param ProductService $productService
-     * @param ScopeConfigInterface $scopeConfig
      * @param PriceCurrencyInterface $priceCurrency
+     * @param Escaper $htmlEscaper
+     * @param CurrencyValidator $currencyValidator
+     * @param IpAddressValidator $ipAddressValidator
+     * @param ProductListingWidgetAvailabilityValidator $productValidator
+     * @param ResolverInterface $localeResolver
      */
     public function __construct(
         StoreManagerInterface       $storeManager,
         StoreConfigManagerInterface $storeConfigManager,
         ProductRepository           $productRepository,
         ProductService              $productService,
-        ScopeConfigInterface        $scopeConfig,
-        PriceCurrencyInterface      $priceCurrency
+        PriceCurrencyInterface      $priceCurrency,
+        Escaper $htmlEscaper,
+        CurrencyValidator $currencyValidator,
+        IpAddressValidator $ipAddressValidator,
+        ProductListingWidgetAvailabilityValidator $productValidator,
+        ResolverInterface $localeResolver
     ) {
-        $this->storeManager = $storeManager;
+        $this->_storeManager = $storeManager;
         $this->storeConfigManager = $storeConfigManager;
         $this->productRepository = $productRepository;
         $this->productService = $productService;
-        $this->scopeConfig = $scopeConfig;
         $this->priceCurrency = $priceCurrency;
+        $this->localeResolver = $localeResolver;
+        $this->htmlEscaper = $htmlEscaper;
+        $this->currencyValidator = $currencyValidator;
+        $this->ipAddressValidator = $ipAddressValidator;
+        $this->productAvailabilityValidator = $productValidator;
     }
 
     /**
      * Runs after the toHtml method
      *
-     * @param Amount $subject
+     * @param Amount $amount
      * @param string $result
      *
      * @return string
@@ -92,19 +114,41 @@ class MiniWidgets
      * @throws NoSuchEntityException
      * @throws Exception
      */
-    public function afterToHtml(Amount $subject, $result): string
+    public function afterToHtml(Amount $amount, $result): string
     {
-        if ($subject->getData('zone') !== 'item_list' || $subject->getData('price_type') !== 'finalPrice') {
+        if ($amount->getData('zone') !== 'item_list' || $amount->getData('price_type') !== 'finalPrice') {
             return $result;
         }
-        $store = $this->storeManager->getStore();
         // TODO: Call to an undefined method Magento\Framework\Pricing\Price\PriceInterface::getProduct()
         // @phpstan-ignore-next-line
-        $product = $subject->getPrice()->getProduct();
+        $product = $amount->getPrice()->getProduct();
+        // @phpstan-ignore-next-line
+        $currencyCode = $this->priceCurrency->getCurrency()->getCurrencyCode();
+        $subject = [
+            'currency' => $currencyCode,
+            'storeId' => $this->_storeManager->getStore()->getId(),
+            'productId' => (int) $product->getId(),
+        ];
 
-        $amount = (int)round($subject->getPrice()->getAmount()->getValue() * 100);
-        $result .= StoreContext::doWithStore((string) $store->getId(), function () use ($amount, $store, $product) {
-            return $this->getHtml($amount, $store, $product);
+        if (!$this->currencyValidator->validate($subject)->isValid()) {
+            // TODO: Log currency error
+            return $result;
+        }
+
+        if (!$this->ipAddressValidator->validate($subject)->isValid()) {
+            // TODO: Log IP error
+            return $result;
+        }
+
+        if (!$this->productAvailabilityValidator->validate($subject)->isValid()) {
+            // TODO: Log product is not eligible for widgets
+            return '';
+        }
+
+        $store = $this->_storeManager->getStore();
+        $cents = (int) round($amount->getPrice()->getAmount()->getValue() * 100);
+        $result .= StoreContext::doWithStore((string) $store->getId(), function () use ($cents, $store) {
+            return $this->getHtml($cents, $store);
         });
 
         return $result;
@@ -115,50 +159,45 @@ class MiniWidgets
      *
      * @param int $amount
      * @param StoreInterface $store
-     * @param SaleableInterface $product
      *
      * @return string
      *
      * @throws HttpRequestException
      * @throws Exception
      */
-    private function getHtml(int $amount, StoreInterface $store, SaleableInterface $product): string
+    private function getHtml(int $amount, StoreInterface $store): string
     {
         $result = '';
-
-        $storeConfig = $this->storeConfigManager->getStoreConfigs([$store->getCode()])[0];
-
-        // TODO: Call to an undefined method Magento\Framework\Model\AbstractModel::getCurrencyCode()
-        // @phpstan-ignore-next-line
-        if ($this->priceCurrency->getCurrency()->getCurrencyCode() !== 'EUR') {
+        $merchantId = $this->getMerchantId();
+        if (!$merchantId) {
             return $result;
         }
-
-        $code = $this->getCountry($storeConfig);
-
-        $widgetConfig = $this->getWidgetSettingsService()->getWidgetSettings();
-        $merchantId = $this->getMerchantId($code);
-        $generalSettings = $this->getGeneralSettings();
-
-        if (empty($merchantId) || empty($widgetConfig) || !$widgetConfig->isEnabled()
-            || ($generalSettings && !empty($generalSettings->getAllowedIPAddresses())
-                && !empty($ipAddress = $this->getCustomerIpAddress()) &&
-                !in_array($ipAddress, $generalSettings->getAllowedIPAddresses(), true))
-            || !$widgetConfig->isShowInstallmentsInProductListing()
-            || !$this->isWidgetEnabledForProduct($product, $generalSettings)) {
-            return $result;
-        }
-
         /** @var CachedPaymentMethodsResponse $paymentMethods */
-        $paymentMethods = CheckoutAPI::get()->cachedPaymentMethods($this->storeManager->getStore()->getId())
+        $paymentMethods = CheckoutAPI::get()->cachedPaymentMethods($this->_storeManager->getStore()->getId())
             ->getCachedPaymentMethods(new GetCachedPaymentMethodsRequest($merchantId));
 
         if (!$paymentMethods->isSuccessful()) {
             return $result;
         }
 
+        $widgetConfig = $this->getWidgetSettings();
+        if (!$widgetConfig) {
+            return $result;
+        }
+        
+        $storeConfig = $this->storeConfigManager->getStoreConfigs([$store->getCode()])[0];
+
         foreach ($paymentMethods->toArray() as $paymentMethod) {
-            if (!is_array($paymentMethod) || !in_array($paymentMethod['product'], self::MINI_WIDGET_PRODUCTS)) {
+            if (!is_array($paymentMethod) || $paymentMethod['product'] !== 'pp3') {
+                continue;
+            }
+
+            $minAmount = (int)($paymentMethod['minAmount'] ?? 0);
+            if ($amount < $minAmount) {
+                continue;
+            }
+            $maxAmount = isset($paymentMethod['maxAmount']) ? (int)$paymentMethod['maxAmount']: null;
+            if (null !== $maxAmount && $maxAmount < $amount) {
                 continue;
             }
 
@@ -172,56 +211,6 @@ class MiniWidgets
         }
 
         return $result;
-    }
-
-    /**
-     * Gets the country code from store configuration
-     *
-     * @param StoreConfigInterface $storeConfig Store configuration
-     *
-     * @return string Country code
-     */
-    private function getCountry(StoreConfigInterface $storeConfig)
-    {
-        /**
-         * @var string $value
-         */
-        $value = $this->scopeConfig->getValue(
-            'general/country/default',
-            ScopeInterface::SCOPE_STORE,
-            $storeConfig->getId()
-        );
-        return $value;
-    }
-
-    /**
-     * Checks if the widget is enabled for the product
-     *
-     * @param SaleableInterface $saleable
-     * @param GeneralSettings|null $generalSettings
-     *
-     * @return bool
-     *
-     * @throws NoSuchEntityException
-     */
-    private function isWidgetEnabledForProduct(SaleableInterface $saleable, ?GeneralSettings $generalSettings): bool
-    {
-        /**
-         * @var \Magento\Catalog\Model\Product $product
-         */
-        $product = $this->productRepository->getById($saleable->getId());
-        $categoryIds = $product->getCategoryIds();
-        $trail = $this->productService->getAllProductCategories($categoryIds);
-        $excludedProducts = [];
-        $excludedCategories = [];
-        if ($generalSettings) {
-            $excludedProducts = $generalSettings->getExcludedProducts() ?? [];
-            $excludedCategories = $generalSettings->getExcludedCategories() ?? [];
-        }
-
-        return !in_array($product->getData('sku'), $excludedProducts)
-            && empty(array_intersect($trail, $excludedCategories))
-            && !$product->isVirtual() && $product->getTypeId() !== 'grouped';
     }
 
     /**
@@ -251,105 +240,32 @@ class MiniWidgets
         $message = $widgetLabels->getMessages()[$storeConfig->getLocale()] ?? '';
         $belowLimit = $widgetLabels->getMessagesBelowLimit()[$storeConfig->getLocale()] ?? '';
 
-        return "<div class=\"sequra-educational-popup\" data-content-type=\"sequra_core\" data-amount=\""
-            . $amount . "\" data-product=\"" . $product . "\"
-                data-min-amount='" . $minAmount . "' data-label='" . $message . "'
-                data-below-limit='" . $belowLimit . "'></div>";
-    }
+        $dataset = [
+            'content-type' => 'sequra_core',
+            'amount' => $amount,
+            'product' => $product,
+            'min-amount' => $minAmount,
+            'label' => $message,
+            'below-limit' => $belowLimit,
+        ];
 
-    /**
-     * Gets the merchant ID from the country configuration
-     *
-     * @param string|null $code
-     *
-     * @return string
-     */
-    private function getMerchantId(?string $code): string
-    {
-        $merchantId = '';
-        $countryConfig = $this->getCountryConfiguration();
+        $dataset = array_map(
+            /**
+             * @param string $key
+             * @param string $value
+             */
+            function ($key, $value) {
+                /**
+                 * @var string $escapedValue
+                 */
+                $escapedValue = $this->htmlEscaper->escapeHtml((string) $value);
+                return sprintf('data-%s="%s"', $key, $escapedValue);
+            },
+            array_keys($dataset),
+            $dataset
+        );
+        $dataset = implode(' ', $dataset);
 
-        if (empty($countryConfig) || !$code) {
-            return $merchantId;
-        }
-
-        foreach ($countryConfig as $item) {
-            if ($item->getCountryCode() === $code) {
-                $merchantId = $item->getMerchantId();
-            }
-        }
-
-        return $merchantId;
-    }
-
-    /**
-     * Gets customer IP address from server globals
-     *
-     * @return string Customer IP address
-     */
-    private function getCustomerIpAddress(): string
-    {
-        // TODO: Look for an alternative to $_SERVER as it is not recommended to use it directly
-        // phpcs:disable Magento2.Security.Superglobal.SuperglobalUsageWarning
-        if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
-            return $_SERVER['HTTP_CLIENT_IP'];
-        }
-
-        if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-            return $_SERVER['HTTP_X_FORWARDED_FOR'];
-        }
-
-        return $_SERVER['REMOTE_ADDR'];
-        // phpcs:enable Magento2.Security.Superglobal.SuperglobalUsageWarning
-    }
-
-    /**
-     * Gets the country configuration
-     *
-     * @return CountryConfiguration[]|null
-     */
-    private function getCountryConfiguration(): ?array
-    {
-        return $this->getCountryConfigService()->getCountryConfiguration();
-    }
-
-    /**
-     * Gets the general settings
-     *
-     * @return GeneralSettings|null
-     */
-    private function getGeneralSettings(): ?GeneralSettings
-    {
-        return $this->getSettingsService()->getGeneralSettings();
-    }
-
-    /**
-     * Gets the country configuration service
-     *
-     * @return CountryConfigurationService
-     */
-    private function getCountryConfigService(): CountryConfigurationService
-    {
-        return ServiceRegister::getService(CountryConfigurationService::class);
-    }
-
-    /**
-     * Gets the widget settings service
-     *
-     * @return WidgetSettingsService
-     */
-    private function getWidgetSettingsService(): WidgetSettingsService
-    {
-        return ServiceRegister::getService(WidgetSettingsService::class);
-    }
-
-    /**
-     * Get the general settings service
-     *
-     * @return GeneralSettingsService
-     */
-    private function getSettingsService(): GeneralSettingsService
-    {
-        return ServiceRegister::getService(GeneralSettingsService::class);
+        return "<div class=\"sequra-educational-popup sequra-promotion-miniwidget\" $dataset></div>";
     }
 }
