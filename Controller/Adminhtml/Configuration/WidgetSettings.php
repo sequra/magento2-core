@@ -95,10 +95,6 @@ class WidgetSettings extends BaseConfigurationController
          */
         $useWidgets = $data['useWidgets'] ?? false;
         /**
-         * @var string|null $assetsKey
-         */
-        $assetsKey = isset($data['assetsKey']) && is_string($data['assetsKey']) ? $data['assetsKey'] : null;
-        /**
          * @var bool $displayWidgetOnProductPage
          */
         $displayWidgetOnProductPage = $data['displayWidgetOnProductPage'] ?? false;
@@ -127,7 +123,6 @@ class WidgetSettings extends BaseConfigurationController
         $response = AdminAPI::get()->widgetConfiguration($this->storeId)->setWidgetSettings(
             new WidgetSettingsRequest(
                 $useWidgets,
-                $assetsKey,
                 $displayWidgetOnProductPage,
                 $showInstallmentAmountInProductListing,
                 $showInstallmentAmountInCartPage,

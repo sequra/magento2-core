@@ -12,7 +12,6 @@ if (!window.SequraFE) {
     /**
      * @typedef WidgetSettings
      * @property {boolean} useWidgets
-     * @property {string|null} assetsKey
      * @property {boolean} displayWidgetOnProductPage
      * @property {boolean} showInstallmentAmountInProductListing
      * @property {boolean} showInstallmentAmountInCartPage
@@ -53,8 +52,6 @@ if (!window.SequraFE) {
         let changedSettings;
         /** @type string[] */
         let paymentMethodIds;
-        /** @type boolean */
-        let isAssetKeyValid = false;
 
         const miniWidgetLabels = {
             messages: {
@@ -74,7 +71,6 @@ if (!window.SequraFE) {
         /** @type WidgetSettings */
         const defaultFormData = {
             useWidgets: false,
-            assetsKey: '',
             displayWidgetOnProductPage: false,
             widgetLabels: {
                 message: '',
@@ -97,7 +93,6 @@ if (!window.SequraFE) {
             }
 
             paymentMethodIds = data.paymentMethods?.map((paymentMethod) => paymentMethod.product);
-            isAssetKeyValid = activeSettings.assetsKey && activeSettings.assetsKey.length !== 0;
             changedSettings = utilities.cloneObject(activeSettings)
             initForm();
 
@@ -129,43 +124,15 @@ if (!window.SequraFE) {
                 ])
             );
 
-            renderAssetsKeyField();
             renderAdditionalSettings();
             renderControls();
-        }
-
-        /**
-         * Renders the assets key field.
-         */
-        const renderAssetsKeyField = () => {
-            const pageInnerContent = document.querySelector('.sq-content-inner');
-            if (changedSettings.useWidgets) {
-                pageInnerContent?.append(
-                    generator.createTextField({
-                        name: 'assets-key-input',
-                        value: changedSettings.assetsKey,
-                        className: 'sq-text-input',
-                        label: 'widgets.assetKey.label',
-                        description: 'widgets.assetKey.description',
-                        onChange: (value) => handleChange('assetsKey', value)
-                    })
-                );
-
-                if (changedSettings.assetsKey?.length !== 0) {
-                    validator.validateField(
-                        document.querySelector('[name="assets-key-input"]'),
-                        !isAssetKeyValid,
-                        'validation.invalidField'
-                    );
-                }
-            }
         }
 
         /**
          * Renders additional widget settings.
          */
         const renderAdditionalSettings = () => {
-            if (!changedSettings.useWidgets || !isAssetKeyValid) {
+            if (!changedSettings.useWidgets) {
                 return;
             }
 
@@ -312,21 +279,6 @@ if (!window.SequraFE) {
                     disableFooter(true);
                 }
             }
-
-            if (name === 'assetsKey') {
-                utilities.showLoader();
-                isAssetsKeyValid()
-                    .then((isValid) => {
-                        isAssetKeyValid = isValid;
-                        refreshForm();
-                        validator.validateField(
-                            document.querySelector('[name="assets-key-input"]'),
-                            !isValid,
-                            'validation.invalidField'
-                        );
-                    })
-                    .finally(utilities.hideLoader);
-            }
         }
 
         const handleLabelChange = (name, value) => {
@@ -347,19 +299,6 @@ if (!window.SequraFE) {
          * Handles the saving of the form.
          */
         const handleSave = () => {
-            if (changedSettings.useWidgets && changedSettings.assetsKey?.length === 0) {
-                validator.validateRequiredField(
-                    document.querySelector('[name="assets-key-input"]'),
-                    'validation.requiredField'
-                );
-
-                return;
-            }
-
-            if (changedSettings.useWidgets && !isAssetKeyValid) {
-                return;
-            }
-
             if (changedSettings.useWidgets) {
                 let valid = isJSONValid(changedSettings.widgetStyles);
 
@@ -430,25 +369,6 @@ if (!window.SequraFE) {
             } catch (e) {
                 return false
             }
-        }
-
-        /**
-         * Returns a Promise<boolean> for assets key validation.
-         *
-         * @returns {Promise<boolean>}
-         */
-        const isAssetsKeyValid = () => {
-            const mode = data.connectionSettings.environment;
-            const merchantId = data.countrySettings[0].merchantId;
-            const assetsKey = changedSettings.assetsKey;
-            const methods = paymentMethodIds.filter((id) => id !== 'i1').join('_');
-
-            const validationUrl =
-                `https://${mode}.sequracdn.com/scripts/${merchantId}/${assetsKey}/${methods}_cost.json`;
-            customHeader = {
-                'Content-Type': 'text/plain'
-            };
-            return api.get(validationUrl, null, customHeader).then(() => true).catch(() => false)
         }
     }
 

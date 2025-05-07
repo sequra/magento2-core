@@ -96,7 +96,7 @@ if (!window.SequraFE) {
             }
 
             changedCountryConfiguration = activeCountryConfiguration?.map((utilities.cloneObject))
-            if(!changedCountryConfiguration.length && data.sellingCountries.length > 0) {
+            if (!changedCountryConfiguration.length && data.sellingCountries.length > 0) {
                 hasCountryConfigurationChanged = true;
                 changedCountryConfiguration = data.sellingCountries.map((sellingCountry) => ({
                     countryCode: sellingCountry.code,
@@ -352,24 +352,24 @@ if (!window.SequraFE) {
 
             return !hasError;
         }
-
-        /**
-         * Verifying merchant ids for all selected countries.
-         *
-         * @returns {Promise<Awaited<unknown>[]>}
-         */
-        const validateMerchantIds = () => {
-            const promises = [];
-
-            changedCountryConfiguration.forEach((config) => {
-                promises.push(api.post(
-                    configuration.validateConnectionDataUrl,
-                    {...data.connectionSettings, merchantId: config.merchantId}
-                ))
-            });
-
-            return Promise.all(promises);
-        }
+        //
+        // /**
+        //  * Verifying merchant ids for all selected countries.
+        //  *
+        //  * @returns {Promise<Awaited<unknown>[]>}
+        //  */
+        // const validateMerchantIds = () => {
+        //     const promises = [];
+        //
+        //     changedCountryConfiguration.forEach((config) => {
+        //         promises.push(api.post(
+        //             configuration.validateConnectionDataUrl,
+        //             {...data.connectionSettings, merchantId: config.merchantId}
+        //         ))
+        //     });
+        //
+        //     return Promise.all(promises);
+        // }
 
         /**
          * Handles saving of the form.
@@ -382,11 +382,7 @@ if (!window.SequraFE) {
             utilities.showLoader();
 
             areIPAddressesValid()
-            validateMerchantIds()
-                .then((results) => {
-                    const hasError = results.some((result) => result.isValid === false);
-                    hasError ? handleValidationError(results) : saveChangedData();
-                });
+            saveChangedData();
         }
 
         /**

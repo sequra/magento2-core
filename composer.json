@@ -19,7 +19,7 @@
     "minimum-stability": "stable",
     "require": {
         "php": ">=7.4",
-        "sequra/integration-core": "v1.1.1",
+        "sequra/integration-core": "dev-feature/LIS-61",
         "ext-json": "*"
     },
     "autoload": {

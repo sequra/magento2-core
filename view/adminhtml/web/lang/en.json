@@ -168,10 +168,10 @@
   },
   "countries": {
     "title": "Selling countries",
-    "description": "Please select countries where you want to offer SeQura payment methods. Please make sure to add SeQura merchant ID for each selected country.",
+    "description": "Please select countries where you want to offer SeQura payment methods.",
     "selector": {
       "label": "In which countries do you want to offer SeQura payment methods?",
-      "description": "Please select countries where SeQura payment methods should be available."
+      "description": "Please select countries where SeQura payment methods should be available. To enable additional selling countries, please contact us <a class='sq-link-button' href='https://www.sequra.com/en/contact' target='_blank'><span>here</span></a>."
     },
     "ES": {
       "label": "Spain",
