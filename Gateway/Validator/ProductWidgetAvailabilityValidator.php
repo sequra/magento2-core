@@ -103,14 +103,15 @@ class ProductWidgetAvailabilityValidator extends AbstractWidgetAvailabilityValid
             return false;
         }
 
-        $categoryIds = $product->getCategoryIds();
-        $trail = $this->productService->getAllProductCategories($categoryIds);
         $excludedProducts = $settings ? $settings->getExcludedProducts() : [];
         if (!is_array($excludedProducts)) {
             $excludedProducts = [];
         }
 
-        if (in_array($product->getData('sku'), $excludedProducts) || in_array($product->getSku(), $excludedProducts)) {
+        if (!empty($excludedProducts) &&
+            (in_array($product->getData('sku'), $excludedProducts)
+            || in_array($product->getSku(), $excludedProducts))
+            ) {
             return false;
         }
 
@@ -118,6 +119,12 @@ class ProductWidgetAvailabilityValidator extends AbstractWidgetAvailabilityValid
         if (!is_array($excludedCategories)) {
             $excludedCategories = [];
         }
+        if (empty($excludedCategories)) {
+            return true;
+        }
+
+        $categoryIds = $product->getCategoryIds();
+        $trail = $this->productService->getAllProductCategories($categoryIds);
 
         return empty(array_intersect($trail, $excludedCategories));
     }
