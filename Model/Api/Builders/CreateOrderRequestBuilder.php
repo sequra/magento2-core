@@ -482,18 +482,24 @@ class CreateOrderRequestBuilder implements \SeQura\Core\BusinessLogic\Domain\Ord
             return $orders;
         }
 
+        /**
+         * @var Order $orderRow
+         */
         foreach ($orderCollection as $orderRow) {
             $order = [];
             $order['amount'] = $this->formatPrice(is_numeric($orderRow->getData('grand_total'))
                 ? (float) $orderRow->getData('grand_total') : 0);
             $order['currency'] = $orderRow->getData('order_currency_code');
-            $order['created_at'] = str_replace(' ', 'T', $orderRow->getData('created_at'));
+            $createdAt = $orderRow->getData('created_at');
+            $order['created_at'] = str_replace(' ', 'T', is_string($createdAt) ? $createdAt : '');
             $order['raw_status'] = $orderRow->getData('status');
-            $order['postal_code'] = $orderRow->getBillingAddress()->getPostCode();
-            $order['country_code'] = $orderRow->getBillingAddress()->getCountryId();
-            $order['status'] = $this->mapOrderStatus($orderRow->getData('status'));
-            $order['payment_method_raw'] = $orderRow->getPayment()->getAdditionalInformation()['method_title'] ?? '';
-            $order['payment_method'] = $this->mapPaymentName($orderRow->getPayment()->getMethod());
+            $billingAddress = $orderRow->getBillingAddress();
+            $order['postal_code'] = $billingAddress ? $billingAddress->getPostCode() : '';
+            $order['country_code'] = $billingAddress ? $billingAddress->getCountryId() : '';
+            $order['status'] = $this->mapOrderStatus(is_string($order['raw_status']) ? $order['raw_status'] : '');
+            $payment = $orderRow->getPayment();
+            $order['payment_method_raw'] = $payment ? $payment->getAdditionalInformation()['method_title'] : '';
+            $order['payment_method'] = $payment ? $this->mapPaymentName($payment->getMethod()) : '';
 
             $orders[] = $order;
         }

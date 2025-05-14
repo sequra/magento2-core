@@ -10,27 +10,19 @@ use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
 class ProductService
 {
     /**
-     * @var Tree
-     */
-    private $categoryTree;
-    /**
      * @var CategoryRepositoryInterface
      */
     private $categoryRepository;
     /**
-     * @var array<string, array<int>>
+     * @var array<string, array<string>>
      */
     private $resolvedCategories = [];
 
     /**
-     * @param Tree $categoryTree
      * @param CategoryRepositoryInterface $categoryRepository
      */
-    public function __construct(
-        Tree $categoryTree,
-        CategoryRepositoryInterface $categoryRepository
-    ) {
-        $this->categoryTree = $categoryTree;
+    public function __construct(CategoryRepositoryInterface $categoryRepository)
+    {
         $this->categoryRepository = $categoryRepository;
     }
 
