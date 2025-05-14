@@ -20,3 +20,8 @@ bin/php/*
 !bin/php/install
 !bin/php/composer.json
 !bin/php/README.md
+
+# MacOS
+.DS_Store
+
+*.gz
