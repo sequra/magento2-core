@@ -122,9 +122,8 @@ class ProductWidgetAvailabilityValidator extends AbstractWidgetAvailabilityValid
         if (empty($excludedCategories)) {
             return true;
         }
-
-        $categoryIds = $product->getCategoryIds();
-        $trail = $this->productService->getAllProductCategories($categoryIds);
+        
+        $trail = $this->productService->getAllProductCategoryIds($product->getCategoryIds());
 
         return empty(array_intersect($trail, $excludedCategories));
     }

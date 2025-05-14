@@ -39,11 +39,11 @@ class ProductService
      *
      * @param array<string> $categoryIds
      *
-     * @return array<int>
+     * @return array<string>
      *
      * @throws NoSuchEntityException
      */
-    public function getAllProductCategories(array $categoryIds): array
+    public function getAllProductCategoryIds(array $categoryIds): array
     {
         if (!$categoryIds) {
             return [];
@@ -55,7 +55,7 @@ class ProductService
             $trails[] = $this->getTrail($categoryId);
         }
 
-        return array_merge(...$trails);
+        return array_unique(array_merge(...$trails));
     }
 
     /**
@@ -63,7 +63,7 @@ class ProductService
      *
      * @param string $categoryId
      *
-     * @return array<int>
+     * @return array<string>
      *
      * @throws NoSuchEntityException
      */
@@ -75,17 +75,11 @@ class ProductService
 
         $storeId = (int) StoreContext::getInstance()->getStoreId();
         $category = $this->categoryRepository->get((int) $categoryId, $storeId);
-        $categoryTree = $this->categoryTree
-        ->setStoreId($storeId)
-        ->loadBreadcrumbsArray($category->getPath() ?? '');
-
-        $categoryTrailArray = [];
-        foreach ($categoryTree as $eachCategory) {
-            $categoryTrailArray[] = $eachCategory['entity_id'];
+        $categories = explode('/', $category->getPath() ?? '');
+        if (count($categories) < 2) {
+            return [];
         }
-
-        $this->resolvedCategories[$categoryId] = $categoryTrailArray;
-
-        return $categoryTrailArray;
+        unset($categories[0]);
+        return $categories;
     }
 }

@@ -193,7 +193,7 @@ class CreateOrderRequestBuilder implements \SeQura\Core\BusinessLogic\Domain\Ord
                 if (!empty($generalSettings['excludedCategories']) &&
                     !empty(array_intersect(
                         $generalSettings['excludedCategories'],
-                        $this->productService->getAllProductCategories($item->getProduct()->getCategoryIds())
+                        $this->productService->getAllProductCategoryIds($item->getProduct()->getCategoryIds())
                     ))
                 ) {
                     return false;
