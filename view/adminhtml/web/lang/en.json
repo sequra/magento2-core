@@ -242,6 +242,56 @@
     "messageBelowLimit": {
       "label": "Message below limit",
       "description": "Message below limit description"
+    },
+    "productPriceSelector": {
+      "label": "Price selector",
+      "description": "Define a CSS selector to retrieve the product price"
+    },
+    "altProductPriceSelector": {
+      "label": "Alternative price selector",
+      "description": "An alternative CSS selector to retrieve the product price for special product page layouts. Ex: variable products"
+    },
+    "altProductPriceTriggerSelector": {
+      "label": "Selector for alternative price detection",
+      "description": "A CSS selector that points an element that, when present, indicates that the alternative price selector should be used"
+    },
+    "defaultProductLocationSelector": {
+      "label": "Default widget location selector",
+      "description": "CSS selector to define the default container element for the widget"
+    },
+    "locations": {
+      "headerTitle": "Customize widgets",
+      "headerDescription": "Define alternative configuration per payment method",
+      "addRow": "Add new",
+      "removeRow": "Remove",
+      "paymentMethod": "Payment method",
+      "selector": "Location CSS selector",
+      "leaveEmptyToUseDefault": "Leave empty to use default value",
+      "showWidget": "Display widget"
+    },
+    "cartPriceSelector": {
+      "label": "Cart price selector",
+      "description": "Define a CSS selector to retrieve the cart total price"
+    },
+    "cartLocationSelector": {
+      "label": "Cart widget location selector",
+      "description": "CSS selector to define the container element for the cart widget"
+    },
+    "widgetOnCartPage": {
+      "label": "Select payment method",
+      "description": "Choose which payment method you want to display as widget on the cart page"
+    },
+    "listingPriceSelector": {
+      "label": "Product listing price selector",
+      "description": "Define a CSS selector to retrieve the product price in the listing"
+    },
+    "listingLocationSelector": {
+      "label": "Product listing widget location selector",
+      "description": "CSS selector to define the container element for the product listing widget"
+    },
+    "widgetOnListingPage": {
+      "label": "Select payment method",
+      "description": "Choose which payment method you want to display as mini-widget on the product listing page"
     }
   },
   "orderStatusSettings": {

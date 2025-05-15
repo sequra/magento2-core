@@ -16,6 +16,7 @@ if (!window.SequraFE) {
      * getWidgetSettingsUrl: string,
      * saveWidgetSettingsUrl: string,
      * getPaymentMethodsUrl: string,
+     * getAllAvailablePaymentMethodsUrl: string,
      * page: string}} configuration
      * @constructor
      */
@@ -81,6 +82,7 @@ if (!window.SequraFE) {
                     renderer = renderWidgetSettingsForm;
                     promises = Promise.all([
                         SequraFE.state.getData('paymentMethods') ?? api.get(configuration.getPaymentMethodsUrl.replace(encodeURIComponent('{merchantId}'), countrySettings[0].merchantId)),
+                        SequraFE.state.getData('allAvailablePaymentMethods') ?? api.get(configuration.getAllAvailablePaymentMethodsUrl),
                     ])
                     break;
                 default:
@@ -117,15 +119,20 @@ if (!window.SequraFE) {
          * Renders the widgets settings form.
          *
          * @param paymentMethods
+         * @param allAvailablePaymentMethods
          */
-        const renderWidgetSettingsForm = (paymentMethods) => {
+        const renderWidgetSettingsForm = (paymentMethods, allAvailablePaymentMethods) => {
             if (!SequraFE.state.getData('paymentMethods')) {
                 SequraFE.state.setData('paymentMethods', paymentMethods)
             }
 
+            if (!SequraFE.state.getData('allAvailablePaymentMethods')) {
+                SequraFE.state.setData('allAvailablePaymentMethods', allAvailablePaymentMethods)
+            }
+
             const form = formFactory.getInstance(
                 'widgetSettings',
-                {widgetSettings, connectionSettings, countrySettings, paymentMethods},
+                {widgetSettings, connectionSettings, countrySettings, paymentMethods, allAvailablePaymentMethods},
                 {...configuration, appState: SequraFE.appStates.ONBOARDING}
             );
 
