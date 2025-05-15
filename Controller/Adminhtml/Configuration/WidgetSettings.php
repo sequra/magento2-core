@@ -127,37 +127,41 @@ class WidgetSettings extends BaseConfigurationController
          */
         $defaultProductLocationSelector = $data['defaultProductLocationSelector'] ?? '';
         /**
-         * @var $altProductPriceSelector
+         * @var string $altProductPriceSelector
          */
         $altProductPriceSelector = $data['altProductPriceSelector'] ?? '';
         /**
-         * @var $altProductPriceTriggerSelector
+         * @var string $altProductPriceTriggerSelector
          */
         $altProductPriceTriggerSelector = $data['altProductPriceTriggerSelector'] ?? '';
         /**
-         * @var $cartPriceSelector
+         * @var string $cartPriceSelector
          */
         $cartPriceSelector = $data['cartPriceSelector'] ?? '';
         /**
-         * @var $cartLocationSelector
+         * @var string $cartLocationSelector
          */
         $cartLocationSelector = $data['cartLocationSelector'] ?? '';
         /**
-         * @var $widgetOnCartPage
+         * @var string $widgetOnCartPage
          */
         $widgetOnCartPage = $data['widgetOnCartPage'] ?? '';
         /**
-         * @var $listingPriceSelector
+         * @var string $listingPriceSelector
          */
         $listingPriceSelector = $data['listingPriceSelector'] ?? '';
         /**
-         * @var $listingLocationSelector
+         * @var string $listingLocationSelector
          */
         $listingLocationSelector = $data['listingLocationSelector'] ?? '';
         /**
-         * @var $widgetOnListingPage
+         * @var string $widgetOnListingPage
          */
         $widgetOnListingPage = $data['widgetOnListingPage'] ?? '';
+        /**
+         * @var mixed[] $customLocations
+         */
+        $customLocations = $data['customLocations'] ?? [];
 
         /**
          * @var array<string, string> $labels
@@ -184,7 +188,8 @@ class WidgetSettings extends BaseConfigurationController
                 $altProductPriceSelector,
                 $altProductPriceTriggerSelector,
                 isset($labels['message']) ? [$storeConfig->getLocale() => $labels['message']] : [],
-                isset($labels['messageBelowLimit']) ? [$storeConfig->getLocale() => $labels['messageBelowLimit']] : []
+                isset($labels['messageBelowLimit']) ? [$storeConfig->getLocale() => $labels['messageBelowLimit']] : [],
+                $customLocations
             )
         );
 
