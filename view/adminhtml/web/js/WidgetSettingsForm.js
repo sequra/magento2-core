@@ -4,15 +4,23 @@ if (!window.SequraFE) {
 
 (function () {
     /**
-     * @typedef PaymentMethodByCategory
+     * @typedef CategoryPaymentMethod
      * @property {string|null} category
      * @property {string|null} product
      * @property {string|null} title
      */
 
     /**
-     * @typedef CategoryWithPaymentMethods
-     * @property {PaymentMethodByCategory[]} paymentMethods
+     * @typedef Category
+     * @property {CategoryPaymentMethod[]} paymentMethods
+     */
+
+    /**
+     * @typedef WidgetLocation
+     * @property {string|null} selForTarget
+     * @property {string|null} product
+     * @property {boolean} displayWidget
+     * @property {string|null} widgetStyles
      */
 
     /**
@@ -22,12 +30,13 @@ if (!window.SequraFE) {
      * @property {boolean} displayWidgetOnProductPage
      * @property {boolean} showInstallmentAmountInProductListing
      * @property {boolean} showInstallmentAmountInCartPage
-     * @property {string[]|null} widgetStyles
+     * @property {string|null} widgetStyles
      *
      * @property {string|null} productPriceSelector
      * @property {string|null} altProductPriceSelector
      * @property {string|null} altProductPriceTriggerSelector
      * @property {string|null} defaultProductLocationSelector
+     * @property {WidgetLocation[]} customLocations
      *
      * @property {string|null} cartPriceSelector
      * @property {string|null} cartLocationSelector
@@ -46,7 +55,7 @@ if (!window.SequraFE) {
      * connectionSettings: ConnectionSettings,
      * countrySettings: CountrySettings[],
      * paymentMethods: PaymentMethod[],
-     * allAvailablePaymentMethods: CategoryWithPaymentMethods[],
+     * allAvailablePaymentMethods: Category[],
      * }} data
      * @param {{
      * saveWidgetSettingsUrl: string,
@@ -75,16 +84,16 @@ if (!window.SequraFE) {
         let paymentMethodIds;
         /** @type boolean */
         let isAssetKeyValid = false;
-        /** @type {CategoryWithPaymentMethods[]} */
+        /** @type {Category[]} */
         let allAvailablePaymentMethods = data.allAvailablePaymentMethods;
-        /** @type {PaymentMethodByCategory[]} */
+        /** @type {CategoryPaymentMethod[]} */
         let payNowPaymentMethods = allAvailablePaymentMethods.pay_now ?? [];
-        /** @type {PaymentMethodByCategory[]} */
+        /** @type {CategoryPaymentMethod[]} */
         let payLaterPaymentMethods = allAvailablePaymentMethods.pay_later ?? [];
-        /** @type {PaymentMethodByCategory[]} */
+        /** @type {CategoryPaymentMethod[]} */
         let partPaymentPaymentMethods = allAvailablePaymentMethods.part_payment ?? [];
-        /** @type {PaymentMethodByCategory[]} */
-        let cartPaymentMethods = partPaymentPaymentMethods.concat(payLaterPaymentMethods);
+        /** @type {CategoryPaymentMethod[]} */
+        let partAndLaterPaymentMethods = partPaymentPaymentMethods.concat(payLaterPaymentMethods);
 
         /** @type WidgetSettings */
         const defaultFormData = {
@@ -98,9 +107,23 @@ if (!window.SequraFE) {
             altProductPriceSelector: '[data-price-type="finalPrice"] .price',
             altProductPriceTriggerSelector: '.bundle-actions',
             defaultProductLocationSelector: '.actions .action.primary.tocart',
+            customLocations: [
+                {
+                    "displayWidget": false,
+                    "selForTarget": ".cart",
+                    "widgetStyles": "",
+                    "product": "i1"
+                },
+                {
+                    "displayWidget": true,
+                    "selForTarget": "trtrh",
+                    "widgetStyles": "",
+                    "product": "pp3"
+                }
+            ],
             cartPriceSelector: '.grand.totals .price',
             cartLocationSelector: '.cart-summary',
-            widgetOnCartPage: cartPaymentMethods.length > 0 ? cartPaymentMethods[0]['product'] : '',
+            widgetOnCartPage: partAndLaterPaymentMethods.length > 0 ? partAndLaterPaymentMethods[0]['product'] : '',
             listingPriceSelector: '.price-box.price-final_price .price',
             listingLocationSelector: '.price-box.price-final_price',
             widgetOnListingPage: partPaymentPaymentMethods.length > 0 ? partPaymentPaymentMethods[0]['product'] : ''
@@ -273,13 +296,13 @@ if (!window.SequraFE) {
                     onChange: (value) => handleChange('cartLocationSelector', value)
                 }),
 
-                cartPaymentMethods.length > 0 ? generator.createDropdownField({
+                partAndLaterPaymentMethods.length > 0 ? generator.createDropdownField({
                     name: 'widgetOnCartPage',
                     className: 'sqm--table-dropdown sq-cart-related-field',
                     label: 'widgets.widgetOnCartPage.label',
                     description: 'widgets.widgetOnCartPage.description',
                     value: changedSettings.widgetOnCartPage,
-                    options: cartPaymentMethods.map((paymentMethod) => {
+                    options: partAndLaterPaymentMethods.map((paymentMethod) => {
                         return {
                             label: paymentMethod.title, value: paymentMethod.product
                         }
@@ -336,6 +359,8 @@ if (!window.SequraFE) {
                 }),
                 generator.createElement('span', '', 'widgets.configurator.description.end'),
             )
+
+            renderLocations();
         }
 
         const showOrHideRelatedFields = (relatedFieldClass, show) => {
@@ -347,6 +372,80 @@ if (!window.SequraFE) {
                 } else {
                     el.classList.add(hiddenClass)
                 }
+            });
+        }
+
+        const renderLocations = () => {
+            new SequraFE.Repeater({
+                containerSelector: '.sq-locations-container',
+                data: changedSettings.customLocations,
+                getHeaders: () => [
+                    {
+                        title: SequraFE.translationService.translate('widgets.locations.headerTitle'),
+                        description: SequraFE.translationService.translate('widgets.locations.headerDescription')
+                    },
+                ],
+                getRowContent: (data) => {
+                    let displayWidget = true;
+                    if (data && 'undefined' !== typeof data.displayWidget) {
+                        displayWidget = data.displayWidget;
+                    }
+
+                    return `
+                    <div class="sq-table__row-field-wrapper sq-table__row-field-wrapper--grow sq-table__row-field-wrapper--space-between">
+                       <h3 class="sqp-field-title">${SequraFE.translationService.translate('widgets.displayOnProductPage.label')}
+                       <label class="sq-toggle"><input class="sqp-toggle-input" type="checkbox" ${displayWidget ? 'checked' : ''}><span class="sqp-toggle-round"></span></label>
+                       </h3>
+                       <span class="sqp-field-subtitle">${SequraFE.translationService.translate('widgets.displayOnProductPage.description')}</span>
+                    </div>
+
+                     <div class="sq-table__row-field-wrapper sq-table__row-field-wrapper--grow">
+                        <label class="sq-table__row-field-label">${SequraFE.translationService.translate('widgets.locations.selector')}</label>
+                        <span class="sqp-field-subtitle">${SequraFE.translationService.translate('widgets.locations.leaveEmptyToUseDefault')}</span>
+                        <input class="sq-table__row-field" type="text" value="${data && 'undefined' !== typeof data.selForTarget ? data.selForTarget : ''}">
+                    </div>
+                    <div class="sq-table__row-field-wrapper sq-table__row-field-wrapper--grow">
+                    <label class="sq-table__row-field-label">${SequraFE.translationService.translate('widgets.configurator.label')}</label>
+                    <span class="sqp-field-subtitle">${SequraFE.translationService.translate('widgets.configurator.description.start')}<a class="sq-link-button" href="https://live.sequracdn.com/assets/static/simulator.html" target="_blank"><span>${SequraFE.translationService.translate('widgets.configurator.description.link')}</span></a><span>${SequraFE.translationService.translate('widgets.configurator.description.end')} ${SequraFE.translationService.translate('widgets.locations.leaveEmptyToUseDefault')}</span></span>
+                    <textarea class="sqp-field-component sq-text-input sq-text-area" rows="5">${data && 'undefined' !== typeof data.widgetStyles ? data.widgetStyles : ''}</textarea>
+                    </div>
+                    `
+                },
+                getRowHeader: (data) => {
+                    let selectedFound = false;
+                    return `
+                    <div class="sq-table__row-field-wrapper">
+                        <label class="sq-table__row-field-label">${SequraFE.translationService.translate('widgets.locations.paymentMethod')}</label>
+                        <select class="sq-table__row-field">${partAndLaterPaymentMethods ? partAndLaterPaymentMethods.map((pm, idx) => {
+                        let selected = '';
+                        if(!selectedFound && data && data.product === pm.product) {
+                            selected = ' selected';
+                            selectedFound = true;
+                        }
+
+                        return `<option key="${idx}" data-product="${pm.product}"${ selected}>${pm.title}</option>`;
+                    }).join('') : ''
+                    }
+                        </select>
+                    </div>
+                   `
+                },
+                handleChange: table => {
+                    const customLocations = [];
+                    table.querySelectorAll('.sq-table__row').forEach(row => {
+                        const select = row.querySelector('select');
+                        const selForTarget = row.querySelector('input[type="text"]').value;
+                        const widgetStyles = row.querySelector('textarea').value;
+                        const displayWidget = row.querySelector('input[type="checkbox"]').checked;
+                        const dataset = select.selectedIndex === -1 ? null : select.options[select.selectedIndex].dataset;
+
+                        const product = dataset && 'undefined' !== typeof dataset.product ? dataset.product : null;
+                        customLocations.push({ selForTarget, product, widgetStyles, displayWidget });
+                    });
+                    handleChange('customLocations', customLocations)
+                },
+                addRowText: 'widgets.locations.addRow',
+                removeRowText: 'widgets.locations.removeRow',
             });
         }
 
@@ -384,6 +483,38 @@ if (!window.SequraFE) {
                     }
                 })
             );
+        }
+
+        const isCssSelectorValid = selector => {
+            try {
+                document.querySelector(selector);
+                return true;
+            } catch {
+                return false;
+            }
+        }
+
+        const isCustomLocationValid = value => {
+            try {
+                value.forEach(location => {
+                    if ('' !== location.selForTarget && !isCssSelectorValid(location.selForTarget)) {
+                        throw new Error('Invalid selector');
+                    }
+                    if ('' !== location.widgetStyles && !isJSONValid(location.widgetStyles)) {
+                        throw new Error('Invalid selector');
+                    }
+                    if (!partAndLaterPaymentMethods.some(pm => pm.product === location.product)) {
+                        throw new Error('Invalid payment method');
+                    }
+                    // Check if exists other location with the same product
+                    if (value.filter(l => l.product === location.product).length > 1) {
+                        throw new Error('Duplicated entry found');
+                    }
+                });
+                return true;
+            } catch {
+                return false;
+            }
         }
 
         /**
@@ -444,6 +575,16 @@ if (!window.SequraFE) {
                 );
                 disableFooter(!isValid);
             }
+
+            if (name === 'customLocations') {
+                const isValid = isCustomLocationValid(value);
+                validator.validateField(
+                    document.querySelector(`.sq-product-related-field .sq-table`),
+                    !isValid,
+                    'validation.invalidField'
+                );
+                disableFooter(!isValid);
+            }
         }
 
         /**
@@ -496,6 +637,14 @@ if (!window.SequraFE) {
                             'validation.invalidField'
                         ) && valid;
                     }
+
+                    const isValid = isCustomLocationValid(changedSettings.customLocations);
+                    valid = isValid && valid;
+                    validator.validateField(
+                        document.querySelector(`.sq-product-related-field .sq-table`),
+                        !isValid,
+                        'validation.invalidField'
+                    );
                 }
 
                 if (changedSettings.showInstallmentAmountInCartPage) {
