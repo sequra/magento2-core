@@ -118,6 +118,46 @@ class WidgetSettings extends BaseConfigurationController
          * @var string $widgetStyles
          */
         $widgetStyles = $data['widgetStyles'] ?? '';
+        /**
+         * @var string $productPriceSelector
+         */
+        $productPriceSelector = $data['productPriceSelector'] ?? '';
+        /**
+         * @var string $defaultProductLocationSelector
+         */
+        $defaultProductLocationSelector = $data['defaultProductLocationSelector'] ?? '';
+        /**
+         * @var $altProductPriceSelector
+         */
+        $altProductPriceSelector = $data['altProductPriceSelector'] ?? '';
+        /**
+         * @var $altProductPriceTriggerSelector
+         */
+        $altProductPriceTriggerSelector = $data['altProductPriceTriggerSelector'] ?? '';
+        /**
+         * @var $cartPriceSelector
+         */
+        $cartPriceSelector = $data['cartPriceSelector'] ?? '';
+        /**
+         * @var $cartLocationSelector
+         */
+        $cartLocationSelector = $data['cartLocationSelector'] ?? '';
+        /**
+         * @var $widgetOnCartPage
+         */
+        $widgetOnCartPage = $data['widgetOnCartPage'] ?? '';
+        /**
+         * @var $listingPriceSelector
+         */
+        $listingPriceSelector = $data['listingPriceSelector'] ?? '';
+        /**
+         * @var $listingLocationSelector
+         */
+        $listingLocationSelector = $data['listingLocationSelector'] ?? '';
+        /**
+         * @var $widgetOnListingPage
+         */
+        $widgetOnListingPage = $data['widgetOnListingPage'] ?? '';
 
         /**
          * @var array<string, string> $labels
@@ -133,6 +173,16 @@ class WidgetSettings extends BaseConfigurationController
                 $showInstallmentAmountInCartPage,
                 $miniWidgetSelector,
                 $widgetStyles,
+                $productPriceSelector,
+                $defaultProductLocationSelector,
+                $cartPriceSelector,
+                $cartLocationSelector,
+                $widgetOnCartPage,
+                $listingPriceSelector,
+                $listingLocationSelector,
+                $widgetOnListingPage,
+                $altProductPriceSelector,
+                $altProductPriceTriggerSelector,
                 isset($labels['message']) ? [$storeConfig->getLocale() => $labels['message']] : [],
                 isset($labels['messageBelowLimit']) ? [$storeConfig->getLocale() => $labels['messageBelowLimit']] : []
             )
