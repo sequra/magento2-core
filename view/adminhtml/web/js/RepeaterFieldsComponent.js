@@ -19,7 +19,7 @@ if (!window.SequraFE) {
      *
      * @param {RepeaterAdapter} adapter
      */
-    function Repeater(adapter) {
+    function RepeaterFieldsComponent(adapter) {
         this.adapter = adapter;
         this.elem = document.querySelector(this.adapter.containerSelector);
         if (!this.elem) return;
@@ -131,5 +131,5 @@ if (!window.SequraFE) {
 
     }
 
-    SequraFE.Repeater = Repeater;
+    SequraFE.RepeaterFieldsComponent = RepeaterFieldsComponent;
 })();

@@ -376,7 +376,7 @@ if (!window.SequraFE) {
         }
 
         const renderLocations = () => {
-            new SequraFE.Repeater({
+            new SequraFE.RepeaterFieldsComponent({
                 containerSelector: '.sq-locations-container',
                 data: changedSettings.customLocations,
                 getHeaders: () => [

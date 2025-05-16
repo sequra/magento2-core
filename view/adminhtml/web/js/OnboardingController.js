@@ -48,7 +48,7 @@ if (!window.SequraFE) {
          *
          * @param {{ state?: string, storeId: string }} config
          */
-        this.display = ({storeId}) => {
+        this.display = ({ storeId }) => {
             utilities.showLoader();
             currentStoreId = storeId;
             templateService.clearMainPage();
@@ -81,7 +81,10 @@ if (!window.SequraFE) {
                 case SequraFE.appPages.ONBOARDING.WIDGETS:
                     renderer = renderWidgetSettingsForm;
                     promises = Promise.all([
-                        SequraFE.state.getData('paymentMethods') ?? api.get(configuration.getPaymentMethodsUrl.replace(encodeURIComponent('{merchantId}'), countrySettings[0].merchantId)),
+                        SequraFE.state.getData('paymentMethods') ?? api.get(configuration.getPaymentMethodsUrl.replace(
+                            encodeURIComponent('{merchantId}'),
+                            countrySettings[0].merchantId
+                        )),
                         SequraFE.state.getData('allAvailablePaymentMethods') ?? api.get(configuration.getAllAvailablePaymentMethodsUrl),
                     ])
                     break;
@@ -92,7 +95,8 @@ if (!window.SequraFE) {
 
             promises
                 .then((array) => renderer(...array))
-                .catch(() => {})
+                .catch(() => {
+                })
                 .finally(() => utilities.hideLoader());
         };
 
@@ -108,8 +112,8 @@ if (!window.SequraFE) {
 
             const form = formFactory.getInstance(
                 'generalSettings',
-                {countrySettings, sellingCountries, connectionSettings},
-                {...configuration, appState: SequraFE.appStates.ONBOARDING}
+                { countrySettings, sellingCountries, connectionSettings },
+                { ...configuration, appState: SequraFE.appStates.ONBOARDING }
             );
 
             form?.render();
@@ -132,8 +136,8 @@ if (!window.SequraFE) {
 
             const form = formFactory.getInstance(
                 'widgetSettings',
-                {widgetSettings, connectionSettings, countrySettings, paymentMethods, allAvailablePaymentMethods},
-                {...configuration, appState: SequraFE.appStates.ONBOARDING}
+                { widgetSettings, connectionSettings, countrySettings, paymentMethods, allAvailablePaymentMethods },
+                { ...configuration, appState: SequraFE.appStates.ONBOARDING }
             );
 
             form?.render();
@@ -145,8 +149,8 @@ if (!window.SequraFE) {
         const renderConnectionSettingsForm = () => {
             const form = formFactory.getInstance(
                 'connectionSettings',
-                {connectionSettings},
-                {...configuration, appState: SequraFE.appStates.ONBOARDING}
+                { connectionSettings },
+                { ...configuration, appState: SequraFE.appStates.ONBOARDING }
             );
 
             form?.render();
