@@ -68,12 +68,7 @@ class WidgetInitializer extends Template
                 new PromotionalWidgetsCheckoutRequest($shippingCountry, $currentCountry)
             );
 
-        $data = $widgetInitializeData->toArray();
-        $data['thousandSeparator'] = $this->getThousandsSeparator() ?? $data['thousandSeparator'];
-        $data['decimalSeparator'] = $this->getDecimalSeparator() ?? $data['decimalSeparator'];
-        $data['locale'] = $this->getLocale() ?? $data['locale'];
-
-        return $data;
+        return $widgetInitializeData->toArray();
     }
 
     /**
