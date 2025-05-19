@@ -107,20 +107,7 @@ if (!window.SequraFE) {
             altProductPriceSelector: '[data-price-type="finalPrice"] .price',
             altProductPriceTriggerSelector: '.bundle-actions',
             defaultProductLocationSelector: '.actions .action.primary.tocart',
-            customLocations: [
-                {
-                    "displayWidget": false,
-                    "selForTarget": ".cart",
-                    "widgetStyles": "",
-                    "product": "i1"
-                },
-                {
-                    "displayWidget": true,
-                    "selForTarget": "trtrh",
-                    "widgetStyles": "",
-                    "product": "pp3"
-                }
-            ],
+            customLocations: [],
             cartPriceSelector: '.grand.totals .price',
             cartLocationSelector: '.cart-summary',
             widgetOnCartPage: partAndLaterPaymentMethods.length > 0 ? partAndLaterPaymentMethods[0]['product'] : '',
@@ -291,8 +278,8 @@ if (!window.SequraFE) {
                     value: changedSettings.cartLocationSelector,
                     name: 'cartLocationSelector',
                     className: 'sq-text-input sq-cart-related-field',
-                    label: 'widgets.cartDefaultLocationSel.label',
-                    description: 'widgets.cartDefaultLocationSel.description',
+                    label: 'widgets.cartLocationSelector.label',
+                    description: 'widgets.cartLocationSelector.description',
                     onChange: (value) => handleChange('cartLocationSelector', value)
                 }),
 
