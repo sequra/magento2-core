@@ -10,7 +10,7 @@ define([
     'jquery'
 ], function ($) {
     'use strict';
-    
+
     return function(config){
         if('undefined' === typeof window.SequraWidgetFacade){
             window.SequraWidgetFacade = {};
@@ -45,7 +45,7 @@ define([
                         minimalL: '{"type":"text","branding":"none","size":"S","starting-text":"as-low-as","alignment":"left"}',
                         minimalR: '{"type":"text","branding":"none","size":"S","starting-text":"as-low-as","alignment":"right"}'
                     },
-        
+
                     init: function () {
                         // Remove duplicated objects from this.widgets.
                         const uniqueWidgets = [];
@@ -55,26 +55,26 @@ define([
                                     widget[key] = this.decodeEntities(widget[key]);
                                 }
                             });
-        
+
                             if (!uniqueWidgets.some(w => w.price_src === widget.price_src && w.dest === widget.dest && w.product === widget.product && w.theme === widget.theme && w.reverse === widget.reverse && w.campaign === widget.campaign)) {
                                 uniqueWidgets.push(widget);
                             }
                         });
                         this.widgets = uniqueWidgets;
                     },
-        
+
                     getText: function (selector) {
                         return selector && document.querySelector(selector) ? document.querySelector(selector).textContent : "0";
                     },
-        
+
                     nodeToCents: function (node) {
                         return this.textToCents(node ? node.textContent : "0");
                     },
-        
+
                     selectorToCents: function (selector) {
                         return this.textToCents(this.getText(selector));
                     },
-        
+
                     decodeEntities: function (encodedString) {
                         if (!encodedString.match(/&(nbsp|amp|quot|lt|gt|#\d+|#x[0-9A-Fa-f]+);/g)) {
                             return encodedString;
@@ -83,11 +83,11 @@ define([
                         elem.innerHTML = encodedString;
                         return elem.textContent;
                     },
-        
+
                     textToCents: function (text) {
                         const thousandSeparator = this.decodeEntities(this.thousandSeparator);
                         const decimalSeparator = this.decodeEntities(this.decimalSeparator);
-        
+
                         text = text.replace(/^\D*/, '').replace(/\D*$/, '');
                         if (text.indexOf(decimalSeparator) < 0) {
                             text += decimalSeparator + '00';
@@ -100,11 +100,11 @@ define([
                             )
                         );
                     },
-        
+
                     floatToCents: function (value) {
                         return parseInt(value.toFixed(2).replace('.', ''), 10);
                     },
-        
+
                     refreshComponents: function () {
                         Sequra.onLoad(
                             function () {
@@ -112,16 +112,16 @@ define([
                             }
                         );
                     },
-        
+
                     isVariableProduct: function (selector) {
                         return document.querySelector(selector) ? true : false;
                     },
-        
+
                     getPriceSelector: function (widget) {
                         return widget.priceSel;
                         // return !this.forcePriceSelector && this.isVariableProduct(widget.isVariableSel) ? widget.variationPriceSel : widget.priceSel;
                     },
-        
+
                     /**
                      * Search for child elements in the parentElem that are targets of the widget
                      * @param {object} parentElem DOM element that may contains the widget's targets
@@ -144,7 +144,7 @@ define([
                         }
                         return targets;
                     },
-        
+
                     /**
                      * Search for child elements in the parentElem that are targets of the widget
                      * @param {object} widget  Widget object
@@ -156,13 +156,13 @@ define([
                             const children = document.querySelectorAll(widget.dest);
                             const prices = document.querySelectorAll(widget.priceSel);
                             const priceObservedAttr = 'data-sequra-observed-price-' + widget.product;
-        
+
                             for (let i = 0; i < children.length; i++) {
                                 const child = children[i];
-        
+
                                 const priceElem = 'undefined' !== typeof prices[i] ? prices[i] : null;
                                 const priceValue = priceElem ? this.nodeToCents(priceElem) : null;
-        
+
                                 if (null === priceValue || child.getAttribute(priceObservedAttr) == priceValue) {
                                     continue;
                                 }
@@ -172,13 +172,13 @@ define([
                         }
                         return targets;
                     },
-        
+
                     /**
                      * Get an unique identifier to avoid fetch the same element multiple times
                      * @returns {number} The current timestamp
                      */
                     getObservedAt: () => Date.now(),
-        
+
                     removeWidgetsOnPage: function () {
                         if (this.mutationObserver) {
                             this.mutationObserver.disconnect();
@@ -188,12 +188,12 @@ define([
                             this.mutationObserver.observe(document, { childList: true, subtree: true });
                         }
                     },
-        
+
                     /**
                      * Draw the missing or outdated widgets in the page.
                      */
                     refreshWidgets: function () {
-        
+
                         const targets = [];
                         for (const widget of this.widgets) {
                             const widgetTargets = this.getWidgetTargets(document, widget, this.getObservedAt());
@@ -203,13 +203,13 @@ define([
                             const widgetTargets = this.getMiniWidgetTargets(miniWidget);
                             targets.push(...widgetTargets);
                         }
-        
+
                         targets.forEach(target => {
                             const { elem, widget } = target;
                             this.isMiniWidget(widget) ? this.drawMiniWidgetOnElement(widget, elem, target.priceElem) : this.drawWidgetOnElement(widget, elem);
                         });
                     },
-        
+
                     /**
                      * Paint the widgets in the page and observe the DOM to refresh the widgets when the page changes.
                      * @param {boolean} forcePriceSelector If true, the price selector will be forced to the simple product price selector.
@@ -218,15 +218,15 @@ define([
                         if (!this.widgets.length && !this.miniWidgets.length) {
                             return;
                         }
-        
+
                         if (this.mutationObserver) {
                             this.mutationObserver.disconnect();
                         }
-        
+
                         this.forcePriceSelector = forcePriceSelector;
-        
+
                         this.refreshWidgets();
-        
+
                         // Then, observe the DOM to refresh the widgets when the page changes.
                         this.mutationObserver = new MutationObserver((mutations) => {
                             this.mutationObserver.disconnect();// disable the observer to avoid multiple calls to the same function.
@@ -238,10 +238,10 @@ define([
                             }
                             this.mutationObserver.observe(document, { childList: true, subtree: true, characterData: true }); // enable the observer again.
                         });
-        
+
                         this.mutationObserver.observe(document, { childList: true, subtree: true, characterData: true });
                     },
-        
+
                     isMiniWidget: function (widget) {
                         return this.miniWidgets.indexOf(widget) !== -1;
                     },
@@ -254,38 +254,37 @@ define([
                         }
                         return true;
                     },
-        
+
                     drawMiniWidgetOnElement: function (widget, element, priceElem) {
                         if (!priceElem) {
                             const priceSrc = this.getPriceSelector(widget);
                             priceElem = document.querySelector(priceSrc);
                             if (!priceElem) {
-                                console.error(priceSrc + ' is not a valid css selector to read the price from, for seQura mini-widget.');
                                 return;
                             }
                         }
                         const cents = this.nodeToCents(priceElem);
                         const className = 'sequra-educational-popup';
                         const modifierClassName = className + '--' + widget.product;
-        
+
                         const oldWidget = element.parentNode.querySelector('.' + className + '.' + modifierClassName);
                         if (oldWidget) {
                             if (cents == oldWidget.getAttribute('data-amount')) {
                                 return; // no need to update the widget, the price is the same.
                             }
-        
+
                             oldWidget.remove();// remove the old widget to draw a new one.
                         }
-        
+
                         if (!this.isAmountInAllowedRange(widget, cents)) {
                             return;
                         }
-        
+
                         const widgetNode = document.createElement('small');
                         widgetNode.className = className + ' ' + modifierClassName;
                         widgetNode.setAttribute('data-amount', cents);
                         widgetNode.setAttribute('data-product', widget.product);
-        
+
                         const creditAgreements = Sequra.computeCreditAgreements({ amount: cents, product: widget.product })[widget.product];
                         let creditAgreement = null
                         do {
@@ -294,7 +293,7 @@ define([
                         if (cents < creditAgreement.min_amount.value && !widget.messageBelowLimit) {
                             return;
                         }
-        
+
                         if (cents >= creditAgreement.min_amount.value) {
                             widgetNode.innerText = widget.message.replace('%s', creditAgreement.instalment_total.string);
                         } else {
@@ -303,45 +302,44 @@ define([
                             }
                             widgetNode.innerText = widget.messageBelowLimit.replace('%s', creditAgreement.min_amount.string);
                         }
-        
+
                         if (element.nextSibling) {//Insert after
                             element.parentNode.insertBefore(widgetNode, element.nextSibling);
                             this.refreshComponents();
                         } else {
                             element.parentNode.appendChild(widgetNode);
                         }
-        
+
                     },
-        
+
                     drawWidgetOnElement: function (widget, element) {
                         const priceSrc = this.getPriceSelector(widget);
                         const priceElem = document.querySelector(priceSrc);
                         if (!priceElem) {
-                            console.error(priceSrc + ' is not a valid css selector to read the price from, for seQura widget.');
                             return;
                         }
                         const cents = this.nodeToCents(priceElem);
                         const className = 'sequra-promotion-widget';
                         const modifierClassName = className + '--' + widget.product;
-        
+
                         const oldWidget = element.parentNode.querySelector('.' + className + '.' + modifierClassName);
                         if (oldWidget) {
                             if (cents == oldWidget.getAttribute('data-amount')) {
                                 return; // no need to update the widget, the price is the same.
                             }
-        
+
                             oldWidget.remove();// remove the old widget to draw a new one.
                         }
 
                         if (!this.isAmountInAllowedRange(widget, cents)) {
                             return;
                         }
-        
+
                         const promoWidgetNode = document.createElement('div');
                         promoWidgetNode.className = className + ' ' + modifierClassName;
                         promoWidgetNode.setAttribute('data-amount', cents);
                         promoWidgetNode.setAttribute('data-product', widget.product);
-        
+
                         const theme = this.presets[widget.theme] ? this.presets[widget.theme] : widget.theme;
                         try {
                             const attributes = JSON.parse(theme);
@@ -351,14 +349,14 @@ define([
                         } catch (e) {
                             promoWidgetNode.setAttribute('data-type', 'text');
                         }
-        
+
                         if (widget.campaign) {
                             promoWidgetNode.setAttribute('data-campaign', widget.campaign);
                         }
                         if (widget.registrationAmount) {
                             promoWidgetNode.setAttribute('data-registration-amount', widget.registrationAmount);
                         }
-        
+
                         if (element.nextSibling) {//Insert after
                             element.parentNode.insertBefore(promoWidgetNode, element.nextSibling);
                             this.refreshComponents();
