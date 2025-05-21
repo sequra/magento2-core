@@ -111,7 +111,7 @@ class Index extends Onepage
          */
         $cartId = $this->getRequest()->getParam('cartId');
         $quote = $this->quoteRepository->get($cartId);
-        $order = $this->orderFactory->create()->loadByIncrementId($quote->getReservedOrderId());
+        $order = $this->orderFactory->create()->loadByIncrementId((string) $quote->getReservedOrderId());
         if (!$order->getId()) {
             $this->manager->addWarningMessage(
                 $this->translationProvider->translate('sequra.error.somethingWentWrong')

@@ -69,11 +69,22 @@ class CategoryService implements CategoryServiceInterface
             $categories[] = new Category((string) $rootCategory->getId(), $rootCategory->getName());
         }
 
+        /**
+         * @var \Magento\Catalog\Model\Category $category
+         */
         foreach ($categoryCollection as $category) {
-            if ($category->getId() === null || $category->getName() === null) {
+            /**
+             * @var int|null $id
+             */
+            $id = $category->getId();
+            /**
+             * @var string|null $name
+             */
+            $name = $category->getName();
+            if ($id === null || $name === null) {
                 continue;
             }
-            $categories[] = new Category((string) $category->getId(), $category->getName());
+            $categories[] = new Category((string) $id, $name);
         }
 
         return $categories;

@@ -10,17 +10,11 @@ use SeQura\Core\BusinessLogic\CheckoutAPI\PaymentMethods\Responses\CachedPayment
 use Sequra\Core\Gateway\Validator\CurrencyValidator;
 use Sequra\Core\Gateway\Validator\IpAddressValidator;
 use Sequra\Core\Gateway\Validator\ProductWidgetAvailabilityValidator;
-use SeQura\Core\Infrastructure\ServiceRegister;
-use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
-use SeQura\Core\BusinessLogic\Domain\Connection\Models\ConnectionData;
-use SeQura\Core\BusinessLogic\Domain\Connection\Services\ConnectionService;
-use SeQura\Core\BusinessLogic\Domain\PromotionalWidgets\Models\WidgetSettings;
-use SeQura\Core\BusinessLogic\Domain\PromotionalWidgets\Services\WidgetSettingsService;
-use SeQura\Core\BusinessLogic\Domain\CountryConfiguration\Models\CountryConfiguration;
-use SeQura\Core\BusinessLogic\Domain\CountryConfiguration\Services\CountryConfigurationService;
+use Magento\Framework\App\Request\Http;
 
 class Teaser extends Template implements BlockInterface
 {
+    use WidgetTrait;
     /**
      * @var string
      */
@@ -36,142 +30,14 @@ class Teaser extends Template implements BlockInterface
     protected $scopeResolver;
 
     /**
-     * @var \Magento\Framework\Locale\ResolverInterface
-     */
-    protected $localeResolver;
-
-    /**
-     * @var \NumberFormatter
-     */
-    protected $formatter;
-
-    /**
-     * @var IpAddressValidator
-     */
-    private $ipAddressValidator;
-    /**
-     * @var CurrencyValidator
-     */
-    private $currencyValidator;
-
-    /**
      * @var ProductWidgetAvailabilityValidator
      */
     private $productWidgetAvailabilityValidator;
 
     /**
-     * @var ConnectionData
+     * @var Http
      */
-    private $connectionSettings;
-
-    /**
-     * @var WidgetSettings
-     */
-    private $widgetSettings;
-
-    /**
-     * @var CountryConfiguration[]
-     */
-    private $countrySettings;
-
-    /**
-     * Get widget settings
-     *
-     * @return WidgetSettings|null
-     */
-    private function getWidgetSettings()
-    {
-        if (!$this->widgetSettings) {
-            try {
-                $storeId = (string) $this->_storeManager->getStore()->getId();
-                /**
-                 * @var ?WidgetSettings $widgetSettings
-                 */
-                $widgetSettings = StoreContext::doWithStore($storeId, function () {
-                    /**
-                     * @var WidgetSettingsService $service
-                     */
-                    $service = ServiceRegister::getService(WidgetSettingsService::class);
-                    return $service->getWidgetSettings();
-                });
-
-                if (!$widgetSettings) {
-                    return null;
-                }
-
-                $this->widgetSettings = $widgetSettings;
-
-                // TODO: Log error
-                // phpcs:ignore Magento2.CodeAnalysis.EmptyBlock.DetectedCatch
-            } catch (\Throwable $e) {
-            }
-        }
-        return $this->widgetSettings;
-    }
-
-    /**
-     * Get country settings
-     *
-     * @return CountryConfiguration[]|null
-     */
-    private function getCountrySettings()
-    {
-        if (!$this->countrySettings) {
-            try {
-                $storeId = (string) $this->_storeManager->getStore()->getId();
-                /**
-                 * @var ?CountryConfiguration[] $countrySettings
-                 */
-                $countrySettings = StoreContext::doWithStore($storeId, function () {
-                    /**
-                     * @var CountryConfigurationService $settings
-                     */
-                    $settings = ServiceRegister::getService(CountryConfigurationService::class);
-                    return $settings->getCountryConfiguration();
-                });
-                if (!$countrySettings) {
-                    return null;
-                }
-                $this->countrySettings = $countrySettings;
-                // TODO: Log error
-                // phpcs:ignore Magento2.CodeAnalysis.EmptyBlock.DetectedCatch
-            } catch (\Throwable $e) {
-            }
-        }
-        return $this->countrySettings;
-    }
-
-    /**
-     * Get connection settings
-     *
-     * @return ConnectionData|null
-     */
-    private function getConnectionSettings()
-    {
-        if (!$this->connectionSettings) {
-            try {
-                $storeId = (string) $this->_storeManager->getStore()->getId();
-                /**
-                 * @var ?ConnectionData $connectionSettings
-                 */
-                $connectionSettings = StoreContext::doWithStore($storeId, function () {
-                    /**
-                     * @var ConnectionService $service
-                     */
-                    $service = ServiceRegister::getService(ConnectionService::class);
-                    return $service->getConnectionData();
-                });
-                if (!$connectionSettings) {
-                    return null;
-                }
-                $this->connectionSettings = $connectionSettings;
-                // TODO: Log error
-                // phpcs:ignore Magento2.CodeAnalysis.EmptyBlock.DetectedCatch
-            } catch (\Throwable $e) {
-            }
-        }
-        return $this->connectionSettings;
-    }
+    private $request;
 
     /**
      * Constructor
@@ -182,6 +48,7 @@ class Teaser extends Template implements BlockInterface
      * @param CurrencyValidator $currencyValidator
      * @param IpAddressValidator $ipAddressValidator
      * @param ProductWidgetAvailabilityValidator $productValidator
+     * @param Http $request
      * @param mixed[] $data
      */
     public function __construct(
@@ -191,15 +58,16 @@ class Teaser extends Template implements BlockInterface
         CurrencyValidator $currencyValidator,
         IpAddressValidator $ipAddressValidator,
         ProductWidgetAvailabilityValidator $productValidator,
-        array $data = []
+        Http $request,
+        array $data = [],
     ) {
+        parent::__construct($context, $data);
         $this->scopeResolver = $scopeResolver;
         $this->localeResolver = $localeResolver;
-        parent::__construct($context, $data);
-        $this->formatter = $this->getFormatter();
         $this->currencyValidator = $currencyValidator;
         $this->ipAddressValidator = $ipAddressValidator;
         $this->productWidgetAvailabilityValidator = $productValidator;
+        $this->request = $request;
     }
 
     // phpcs:disable PSR2.Methods.MethodDeclaration.Underscore
@@ -215,7 +83,15 @@ class Teaser extends Template implements BlockInterface
          * @var \Magento\Store\Model\Store $store
          */
         $store = $this->scopeResolver->getScope();
-        $subject = ['currency' => $store->getCurrentCurrency()->getCode(), 'storeId' => $store->getId()];
+        /**
+         * @var int $productId
+         */
+        $productId = $this->request->getParam('id');
+        $subject = [
+            'currency' => $store->getCurrentCurrency()->getCode(),
+            'storeId' => $store->getId(),
+            'productId' => $productId,
+        ];
 
         if (!$this->currencyValidator->validate($subject)->isValid()) {
             // TODO: Log currency error
@@ -235,57 +111,6 @@ class Teaser extends Template implements BlockInterface
         return parent::_toHtml();
     }
     // phpcs:enable
-
-    /**
-     * Get formatter instance.
-     *
-     * @return \NumberFormatter
-     */
-    private function getFormatter()
-    {
-        /**
-         * @var \Magento\Store\Model\Store $store
-         */
-        $store = $this->scopeResolver->getScope();
-        $currency = $store->getCurrentCurrency();
-        $localeCode = $this->localeResolver->getLocale();
-        return new \NumberFormatter(
-            $localeCode . '@currency=' . $currency->getCode(),
-            \NumberFormatter::CURRENCY
-        );
-    }
-
-    /**
-     * Get decimal separator symbol.
-     *
-     * @return string
-     */
-    public function getDecimalSeparator()
-    {
-        return (string) $this->formatter->getSymbol(\NumberFormatter::DECIMAL_SEPARATOR_SYMBOL);
-    }
-
-    /**
-     * Get thousands separator symbol.
-     *
-     * @return string
-     */
-    public function getThousandsSeparator()
-    {
-        return (string) $this->formatter->getSymbol(\NumberFormatter::GROUPING_SEPARATOR_SYMBOL);
-    }
-
-    /**
-     * Get script URI for the Sequra CDN.
-     *
-     * @return string
-     */
-    public function getScriptUri()
-    {
-        $settings = $this->getConnectionSettings();
-        return !$settings || !$settings->getEnvironment() ?
-            '' : "https://{$settings->getEnvironment()}.sequracdn.com/assets/sequra-checkout.min.js";
-    }
 
     /**
      * Return the list of payment methods selected in the widget settings
@@ -335,57 +160,6 @@ class Teaser extends Template implements BlockInterface
         }
 
         return $products;
-    }
-
-    /**
-     * Get assets key from widget settings.
-     *
-     * @return string
-     */
-    public function getAssetsKey()
-    {
-        $settings = $this->getWidgetSettings();
-        return !$settings ? '' : $settings->getAssetsKey();
-    }
-
-    /**
-     * Get current country code from locale.
-     *
-     * @return string
-     */
-    private function getCurrentCountry()
-    {
-        $parts = explode('_', $this->localeResolver->getLocale());
-        return strtoupper(count($parts) > 1 ? $parts[1] : $parts[0]);
-    }
-
-    /**
-     * Get merchant ID for current country.
-     *
-     * @return string
-     */
-    private function getMerchantId()
-    {
-        $country = $this->getCurrentCountry();
-        $settingsArr = $this->getCountrySettings();
-        if (is_array($settingsArr)) {
-            foreach ($settingsArr as $settings) {
-                if ($settings->getCountryCode() === $country) {
-                    return $settings->getMerchantId();
-                }
-            }
-        }
-        return '';
-    }
-
-    /**
-     * Get formatted locale for widget.
-     *
-     * @return string
-     */
-    public function getLocale()
-    {
-        return str_replace('_', '-', $this->localeResolver->getLocale());
     }
 
     /**
