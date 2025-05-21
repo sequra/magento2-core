@@ -1,0 +1,18 @@
+<?php
+/**
+ * Mini template
+ *
+ * @var $block \Sequra\Core\Block\MiniWidget
+ */
+// TODO: Unescaped output detected
+// phpcs:disable Magento2.Security.XssTemplate.FoundUnescaped
+?>
+<script type="text/x-magento-init">
+    {
+        "*": {
+            "Sequra_Core/js/widget": {
+                "miniWidgets": <?= json_encode($block->getAvailableMiniWidgets()); ?>
+            }
+        }
+    }
+</script>

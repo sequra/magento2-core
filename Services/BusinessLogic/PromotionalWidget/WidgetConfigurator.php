@@ -6,7 +6,7 @@ use SeQura\Core\BusinessLogic\Domain\PromotionalWidgets\WidgetConfiguratorContra
 use Magento\Directory\Model;
 
 /**
- * Interface WidgetConfigurator
+ * Class WidgetConfigurator
  *
  * @package Sequra\Core\Services\BusinessLogic\PromotionalWidget
  */
