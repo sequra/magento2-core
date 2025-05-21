@@ -39,7 +39,7 @@ class Cart extends Template
         CurrencyValidator      $currencyValidator,
         IpAddressValidator     $ipAddressValidator,
         Context                $context,
-        CheckoutSession        $checkoutSession,
+        CheckoutSession        $checkoutSession
     )
     {
         parent::__construct($context);
