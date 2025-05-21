@@ -61,12 +61,8 @@ class WidgetSettings extends BaseConfigurationController
             return $this->result->setData($result);
         }
 
-        $result['widgetLabels']['message'] = !empty($result['widgetLabels']['messages']) ?
-            reset($result['widgetLabels']['messages']): '';
-        $result['widgetLabels']['messageBelowLimit'] = !empty($result['widgetLabels']['messagesBelowLimit']) ?
-            reset($result['widgetLabels']['messagesBelowLimit']): '';
+
         $result['widgetStyles'] = $result['widgetConfiguration'];
-        unset($result['widgetLabels']['messages'], $result['widgetLabels']['messagesBelowLimit']);
         unset($result['widgetConfiguration']);
 
         $this->addResponseCode($data);
@@ -110,10 +106,7 @@ class WidgetSettings extends BaseConfigurationController
          * @var bool $showInstallmentAmountInCartPage
          */
         $showInstallmentAmountInCartPage = $data['showInstallmentAmountInCartPage'] ?? false;
-        /**
-         * @var string $miniWidgetSelector
-         */
-        $miniWidgetSelector = $data['miniWidgetSelector'] ?? '';
+
         /**
          * @var string $widgetStyles
          */
@@ -159,14 +152,10 @@ class WidgetSettings extends BaseConfigurationController
          */
         $widgetOnListingPage = $data['widgetOnListingPage'] ?? '';
         /**
-         * @var mixed[] $customLocations
+         * @var array<string, string> $customLocations
          */
         $customLocations = $data['customLocations'] ?? [];
 
-        /**
-         * @var array<string, string> $labels
-         */
-        $labels = $data['widgetLabels'] ?? [];
         // @phpstan-ignore-next-line
         $response = AdminAPI::get()->widgetConfiguration($this->storeId)->setWidgetSettings(
             new WidgetSettingsRequest(
@@ -175,7 +164,6 @@ class WidgetSettings extends BaseConfigurationController
                 $displayWidgetOnProductPage,
                 $showInstallmentAmountInProductListing,
                 $showInstallmentAmountInCartPage,
-                $miniWidgetSelector,
                 $widgetStyles,
                 $productPriceSelector,
                 $defaultProductLocationSelector,
@@ -187,8 +175,6 @@ class WidgetSettings extends BaseConfigurationController
                 $widgetOnListingPage,
                 $altProductPriceSelector,
                 $altProductPriceTriggerSelector,
-                isset($labels['message']) ? [$storeConfig->getLocale() => $labels['message']] : [],
-                isset($labels['messageBelowLimit']) ? [$storeConfig->getLocale() => $labels['messageBelowLimit']] : [],
                 $customLocations
             )
         );

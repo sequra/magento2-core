@@ -243,13 +243,9 @@ class MiniWidgets
         int $amount
     ): string {
 
-        $widgetLabels = $widgetConfig->getWidgetLabels();
-        if (!$widgetLabels) {
-            return '';
-        }
 
-        $message = $widgetLabels->getMessages()[$storeConfig->getLocale()] ?? '';
-        $belowLimit = $widgetLabels->getMessagesBelowLimit()[$storeConfig->getLocale()] ?? '';
+        $message = '';
+        $belowLimit = '';
 
         return "<div class=\"sequra-educational-popup\" data-content-type=\"sequra_core\" data-amount=\""
             . $amount . "\" data-product=\"" . $product . "\"
