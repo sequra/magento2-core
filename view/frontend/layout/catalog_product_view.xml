@@ -9,6 +9,10 @@
                    name="sequra.mini.widget"
                    template="Sequra_Core::widget/mini_widget.phtml"
             />
+            <block class="Sequra\Core\Block\Product"
+                   name="sequra.product.widget"
+                   template="Sequra_Core::widget/product.phtml"
+            />
         </referenceContainer>
     </body>
 </page>
