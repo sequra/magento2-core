@@ -4,8 +4,8 @@ if (!window.SequraFE) {
 
 /**
  * @typedef AjaxServiceType
- * @property {(url:string, errorCallback?: (error?: Record<string, any>) => Promise<any> | any, fallthrough?:
- *     boolean) => Promise<any>} get
+ * @property {(url:string, errorCallback?: (error?: Record<string, any>) => Promise<any> | any, customHeader?:
+ *      Record<string, string>) => Promise<any>} get
  * @property {(url:string, data?: any, customHeader?: Record<string, string>, errorCallback: (error?:
  *     Record<string, any>) => Promise<void>) => Promise<any>} post
  * @property {(url:string, data?: any, customHeader?: Record<string, string>, errorCallback: (error?:

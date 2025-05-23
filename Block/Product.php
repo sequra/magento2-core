@@ -15,11 +15,11 @@ use Sequra\Core\Gateway\Validator\IpAddressValidator;
 use SeQura\Core\Infrastructure\Logger\Logger;
 
 /**
- * Class Cart
+ * Class Product
  *
- * Implements required logic to show widget in the cart page
+ * Implements required logic to show widget in the product page
  */
-class Cart extends Template
+class Product extends Template
 {
     use WidgetTrait;
 
@@ -75,7 +75,7 @@ class Cart extends Template
      *       reverse: '0',
      *       altPriceSel: string,
      *       altTriggerSelector: string,
-     * -     *       minAmount: int|null,
+     *       minAmount: int|null,
      *       maxAmount: int|null,
      *       miniWidgetMessage: string,
      *       miniWidgetBelowLimitMessage: string
@@ -85,15 +85,15 @@ class Cart extends Template
     {
         try {
             $storeId = (string)$this->_storeManager->getStore()->getId();
-            $widget = CheckoutAPI::get()->promotionalWidgets($storeId)
-                ->getAvailableWidgetForCartPage(new PromotionalWidgetsCheckoutRequest(
+            $widgets = CheckoutAPI::get()->promotionalWidgets($storeId)
+                ->getAvailableWidgetsForProductPage(new PromotionalWidgetsCheckoutRequest(
                     $this->getShippingAddressCountry(),
                     $this->getCurrentCountry()
                 ));
 
-            return $widget->toArray();
+            return $widgets->toArray();
         } catch (Exception $e) {
-            Logger::logError('Fetching available widgets on cart page failed: ' . $e->getMessage() .
+            Logger::logError('Fetching available widgets on product page failed: ' . $e->getMessage() .
                 ' Trace: ' . $e->getTraceAsString());
 
             return [];

@@ -24,15 +24,15 @@ if (!window.SequraFE.components) {
      * @constructor
      */
     function PageHeaderComponent({
-                                     currentVersion,
-                                     newVersion,
-                                     mode,
-                                     menuItems,
-                                     merchantName,
-                                     stores,
-                                     activeStore,
-                                     onChange
-                                 }) {
+        currentVersion,
+        newVersion,
+        mode,
+        menuItems,
+        merchantName,
+        stores,
+        activeStore,
+        onChange
+    }) {
         const generator = SequraFE.elementGenerator;
 
         const logoAndVersion = generator.createElement('div', 'sqp-page-header', '', null, [
@@ -45,7 +45,7 @@ if (!window.SequraFE.components) {
                     'a',
                     'sqp-download-version',
                     '',
-                    {href: newVersion.versionUrl, download: true, target: "_blank"},
+                    { href: newVersion.versionUrl, download: true, target: "_blank" },
                     [
                         generator.createElement('span', '', 'general.downloadNewVersion'),
                         generator.createElement('span', '', newVersion.versionLabel)

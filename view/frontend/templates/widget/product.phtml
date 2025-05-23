@@ -1,0 +1,22 @@
+<?php
+/** @var Product $block */
+
+use Sequra\Core\Block\Product;
+
+$availableWidgets = $block->getAvailableWidgets();
+
+if (!empty($availableWidgets)):
+    // phpcs:disable Magento2.Security.XssTemplate.FoundUnescaped
+    ?>
+    <script type="text/x-magento-init">
+        {
+            "*": {
+                "Sequra_Core/js/widget": {
+                    "widgets": <?= json_encode($availableWidgets, JSON_THROW_ON_ERROR); ?>
+        }
+    }
+}
+    </script>
+    <?php
+// phpcs:enable
+endif;

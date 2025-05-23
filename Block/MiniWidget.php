@@ -15,11 +15,11 @@ use Sequra\Core\Gateway\Validator\IpAddressValidator;
 use SeQura\Core\Infrastructure\Logger\Logger;
 
 /**
- * Class Cart
+ * Class MiniWidget
  *
- * Implements required logic to show widget in the cart page
+ * Implements required logic to show mini-widget according to configuration on product listing page
  */
-class Cart extends Template
+class MiniWidget extends Template
 {
     use WidgetTrait;
 
@@ -62,38 +62,38 @@ class Cart extends Template
     }
 
     /**
-     * Prepares the available widget to show in the cart frontend based on the configuration and the current context
+     * Prepares the available mini-widget to show based on the configuration and the current context
      *
      * @return array
      * @phpstan-return array<int,
      *  array{
-     *       product: string,
-     *       campaign: string,
-     *       priceSel: string,
-     *       dest: string,
-     *       theme: string|null,
-     *       reverse: '0',
-     *       altPriceSel: string,
-     *       altTriggerSelector: string,
-     * -     *       minAmount: int|null,
-     *       maxAmount: int|null,
-     *       miniWidgetMessage: string,
-     *       miniWidgetBelowLimitMessage: string
-     *   }>
+     *      product: string,
+     *      campaign: string,
+     *      priceSel: string,
+     *      dest: string,
+     *      theme: string|null,
+     *      reverse: '0',
+     *      minAmount: int|null,
+     *      maxAmount: int|null,
+     *      altPriceSel: string,
+     *      altTriggerSelector: string,
+     *      miniWidgetMessage: string,
+     *      miniWidgetBelowLimitMessage: string
+     *  }>
      */
-    public function getAvailableWidgets(): array
+    public function getAvailableMiniWidgets():array
     {
         try {
             $storeId = (string)$this->_storeManager->getStore()->getId();
             $widget = CheckoutAPI::get()->promotionalWidgets($storeId)
-                ->getAvailableWidgetForCartPage(new PromotionalWidgetsCheckoutRequest(
+                ->getAvailableMiniWidgetForProductListingPage(new PromotionalWidgetsCheckoutRequest(
                     $this->getShippingAddressCountry(),
                     $this->getCurrentCountry()
                 ));
 
             return $widget->toArray();
         } catch (Exception $e) {
-            Logger::logError('Fetching available widgets on cart page failed: ' . $e->getMessage() .
+            Logger::logError('Fetching available widgets on product listing page failed: ' . $e->getMessage() .
                 ' Trace: ' . $e->getTraceAsString());
 
             return [];

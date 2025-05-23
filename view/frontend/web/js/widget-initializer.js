@@ -217,7 +217,7 @@ define([
                     drawWidgetsOnPage: function (forcePriceSelector = true) {
 
                         // Init the pre-rendered miniWidgets if any.
-                        for (const widget of document.querySelectorAll('.sequra-promotion-miniwidget')) {
+                        for (const widget of document.querySelectorAll('.sequra-educational-popup.sequra-promotion-miniwidget')) {
                             const {amount, product, label, belowLimit} = widget.dataset;
                             const innerText = this.getMiniWidgetInnerText(
                                 parseInt(amount),
@@ -225,7 +225,7 @@ define([
                                 label,
                                 !belowLimit ? null : belowLimit
                             );
-    
+
                             if(!innerText) {
                                 // Remove from DOM
                                 widget.remove();
@@ -279,12 +279,11 @@ define([
                             const priceSrc = this.getPriceSelector(widget);
                             priceElem = document.querySelector(priceSrc);
                             if (!priceElem) {
-                                // console.error(priceSrc + ' is not a valid css selector to read the price from, for seQura mini-widget.');
                                 return;
                             }
                         }
                         const cents = this.nodeToCents(priceElem);
-                        const className = 'sequra-promotion-miniwidget';
+                        const className = 'sequra-educational-popup sequra-promotion-miniwidget';
                         const modifierClassName = className + '--' + widget.product;
         
                         const oldWidget = element.parentNode.querySelector('.' + className + '.' + modifierClassName);
@@ -335,19 +334,18 @@ define([
                         if (cents < creditAgreement.min_amount.value && !messageBelowLimit) {
                             return null;
                         }
-        
+
                         if (cents >= creditAgreement.min_amount.value) {
                             return message.replace('%s', creditAgreement.instalment_total.string);
                         } else {
                             return !messageBelowLimit ? null : messageBelowLimit.replace('%s', creditAgreement.min_amount.string);
                         }
                     },
-        
+
                     drawWidgetOnElement: function (widget, element) {
                         const priceSrc = this.getPriceSelector(widget);
                         const priceElem = document.querySelector(priceSrc);
                         if (!priceElem) {
-                            // console.error(priceSrc + ' is not a valid css selector to read the price from, for seQura widget.');
                             return;
                         }
                         const cents = this.nodeToCents(priceElem);
