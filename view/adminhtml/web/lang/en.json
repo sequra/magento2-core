@@ -234,11 +234,7 @@
     "showInCartPage": {
       "label": "Show installment amount in cart page",
       "description": "Display installment amount for current cart amount on cart page"
-    },
-    "teaserMessage": {
-      "label": "Teaser message",
-      "description": "Teaser message description"
-    },
+    }
     "messageBelowLimit": {
       "label": "Message below limit",
       "description": "Message below limit description"

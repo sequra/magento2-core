@@ -235,10 +235,6 @@
       "label": "Mostrar cantidad de cuota en la página de carrito",
       "description": "Mostrar la cantidad de cuota para el importe actual del carrito en la página de carrito."
     },
-    "teaserMessage": {
-      "label": "Mensaje promocional",
-      "description": "Descripción del mensaje promocional"
-    },
     "messageBelowLimit": {
       "label": "Mensaje por debajo del límite",
       "description": "Descripción del mensaje por debajo del límite"

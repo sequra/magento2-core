@@ -2,30 +2,26 @@
 
 namespace Sequra\Core\Block;
 
+use Exception;
 use Magento\Framework\View\Element\Template\Context;
-use Magento\Checkout\Model\Session as CheckoutSession;
-use SeQura\Core\BusinessLogic\CheckoutAPI\CheckoutAPI;
+use Magento\Checkout\Model\Session;
 use Magento\Framework\View\Element\Template;
+use Magento\Framework\App\ScopeResolverInterface;
+use Magento\Framework\Locale\ResolverInterface;
+use SeQura\Core\BusinessLogic\CheckoutAPI\CheckoutAPI;
 use SeQura\Core\BusinessLogic\CheckoutAPI\PromotionalWidgets\Requests\PromotionalWidgetsCheckoutRequest;
 use Sequra\Core\Gateway\Validator\CurrencyValidator;
 use Sequra\Core\Gateway\Validator\IpAddressValidator;
-use Magento\Framework\App\ScopeResolverInterface;
-use Magento\Framework\Locale\ResolverInterface;
+use SeQura\Core\Infrastructure\Logger\Logger;
 
 /**
- * *
+ * Class MiniWidget
+ *
  * Implements required logic to show mini-widget according to configuration on product listing page
  */
 class MiniWidget extends Template
 {
-    /**
-     * @var \Magento\Framework\App\ScopeResolverInterface
-     */
-    protected $scopeResolver;
-    /**
-     * @var CheckoutSession
-     */
-    protected $checkoutSession;
+    use WidgetTrait;
 
     /**
      * @param ScopeResolverInterface $scopeResolver
@@ -33,7 +29,7 @@ class MiniWidget extends Template
      * @param CurrencyValidator $currencyValidator
      * @param IpAddressValidator $ipAddressValidator
      * @param Context $context
-     * @param CheckoutSession $checkoutSession
+     * @param Session $checkoutSession
      */
     public function __construct(
         ScopeResolverInterface $scopeResolver,
@@ -41,7 +37,7 @@ class MiniWidget extends Template
         CurrencyValidator      $currencyValidator,
         IpAddressValidator     $ipAddressValidator,
         Context                $context,
-        CheckoutSession        $checkoutSession
+        Session                $checkoutSession
     )
     {
         parent::__construct($context);
@@ -59,17 +55,7 @@ class MiniWidget extends Template
      */
     protected function _toHtml()
     {
-        /**
-         * @var \Magento\Store\Model\Store $store
-         */
-        $store = $this->scopeResolver->getScope();
-        $subject = ['currency' => $store->getCurrentCurrency()->getCode(), 'storeId' => $store->getId()];
-
-        if (!$this->currencyValidator->validate($subject)->isValid()) {
-            return '';
-        }
-
-        if (!$this->ipAddressValidator->validate($subject)->isValid()) {
+        if (!$this->validate()) {
             return '';
         }
 
@@ -77,7 +63,7 @@ class MiniWidget extends Template
     }
 
     /**
-     * Prepare the available mini-widget to show in the product listing frontend based on the configuration and the current context
+     * Prepares the available mini-widget to show in the product listing frontend based on the configuration and the current context
      *
      * @return array
      * @phpstan-return array<int,
@@ -96,33 +82,22 @@ class MiniWidget extends Template
      *      miniWidgetBelowLimitMessage: string
      *  }>
      */
-    public function getAvailableMiniWidgets()
+    public function getAvailableMiniWidgets():array
     {
-        $quote = $this->checkoutSession->getQuote();
-        $shippingAddress = $quote ? $quote->getShippingAddress() : null;
-        $shippingCountry = ($shippingAddress && $shippingAddress->getCountryId()) ?
-            $shippingAddress->getCountryId() : '';
-        $currentCountry = $this->getCurrentCountry() ?? '';
+        try {
+            $storeId = (string)$this->_storeManager->getStore()->getId();
+            $widget = CheckoutAPI::get()->promotionalWidgets($storeId)
+                ->getAvailableMiniWidgetForProductListingPage(new PromotionalWidgetsCheckoutRequest(
+                    $this->getShippingAddressCountry(),
+                    $this->getCurrentCountry()
+                ));
 
-        $storeId = (string)$this->_storeManager->getStore()->getId();
-        $widget = CheckoutAPI::get()->promotionalWidgets($storeId)
-            ->getAvailableMiniWidgetForProductListingPage(new PromotionalWidgetsCheckoutRequest(
-                $shippingCountry,
-                $currentCountry
-            ));
+            return $widget->toArray();
+        } catch (Exception $e) {
+            Logger::logError('Fetching available widgets on product listing page failed: ' . $e->getMessage() .
+                ' Trace: ' . $e->getTraceAsString());
 
-        return $widget->toArray();
-    }
-
-    /**
-     * Get current country code
-     *
-     * @return string
-     */
-    private function getCurrentCountry(): string
-    {
-        $parts = explode('_', $this->localeResolver->getLocale());
-
-        return strtoupper(count($parts) > 1 ? $parts[1] : $parts[0]);
+            return [];
+        }
     }
 }

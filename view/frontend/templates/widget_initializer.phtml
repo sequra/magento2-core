@@ -1,21 +1,28 @@
 <?php
-/** @var \Sequra\Core\Block\WidgetInitializer $block */
+/** @var WidgetInitializer $block */
+
+use Sequra\Core\Block\WidgetInitializer;
+
 $widgetData = $block->getWidgetInitializeData();
-// TODO: Unescaped output detected
-// phpcs:disable Magento2.Security.XssTemplate.FoundUnescaped
-?>
-<script type="text/x-magento-init">
-    {
-        "*": {
-            "Sequra_Core/js/widget-initializer": {
-                "scriptUri": "<?= $widgetData['scriptUri']; ?>",
+
+if (!empty($widgetData)) :
+    // phpcs:disable Magento2.Security.XssTemplate.FoundUnescaped
+    ?>
+    <script type="text/x-magento-init">
+        {
+            "*": {
+                "Sequra_Core/js/widget-initializer": {
+                    "scriptUri": "<?= $widgetData['scriptUri']; ?>",
                 "thousandSeparator": "<?= $widgetData['thousandSeparator']; ?>",
                 "decimalSeparator": "<?= $widgetData['decimalSeparator']; ?>",
                 "locale": "<?= $widgetData['locale']; ?>",
                 "merchant": "<?= $widgetData['merchantId']; ?>",
                 "assetKey": "<?= $widgetData['assetKey']; ?>",
-                "products": <?= json_encode($widgetData['products']); ?>
+                "products": <?= json_encode($widgetData['products'], JSON_THROW_ON_ERROR); ?>
+        }
     }
 }
-}
-</script>
+    </script>
+<?php
+// phpcs:enable
+endif;

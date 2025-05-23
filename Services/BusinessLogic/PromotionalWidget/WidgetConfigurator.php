@@ -2,8 +2,11 @@
 
 namespace Sequra\Core\Services\BusinessLogic\PromotionalWidget;
 
+use Magento\Framework\App\ScopeResolverInterface;
+use Magento\Framework\Locale\ResolverInterface;
+use Magento\Store\Model\Store;
+use NumberFormatter;
 use SeQura\Core\BusinessLogic\Domain\PromotionalWidgets\WidgetConfiguratorContracts\WidgetConfiguratorInterface;
-use Magento\Directory\Model;
 
 /**
  * Class WidgetConfigurator
@@ -13,22 +16,27 @@ use Magento\Directory\Model;
 class WidgetConfigurator implements WidgetConfiguratorInterface
 {
     /**
-     * @var \Magento\Framework\App\ScopeResolverInterface
+     * @var ScopeResolverInterface
      */
     protected $scopeResolver;
     /**
-     * @var \Magento\Framework\Locale\ResolverInterface
+     * @var ResolverInterface
      */
     protected $localeResolver;
-
     /**
-     * @var \NumberFormatter
+     * @var NumberFormatter
      */
     protected $formatter;
 
+    /**
+     * Construct
+     *
+     * @param ScopeResolverInterface $scopeResolver
+     * @param ResolverInterface $localeResolver
+     */
     public function __construct(
-        \Magento\Framework\App\ScopeResolverInterface $scopeResolver,
-        \Magento\Framework\Locale\ResolverInterface $localeResolver
+        ScopeResolverInterface $scopeResolver,
+        ResolverInterface $localeResolver
     )
     {
         $this->scopeResolver = $scopeResolver;
@@ -37,7 +45,7 @@ class WidgetConfigurator implements WidgetConfiguratorInterface
     }
 
     /**
-     * Returns locale
+     * Returns current locale
      *
      * @return string
      */
@@ -47,14 +55,14 @@ class WidgetConfigurator implements WidgetConfiguratorInterface
     }
 
     /**
-     * Returns currency
+     * Returns current currency
      *
      * @return string
      */
     public function getCurrency(): string
     {
         /**
-         * @var \Magento\Store\Model\Store $store
+         * @var Store $store
          */
         $store = $this->scopeResolver->getScope();
 
@@ -68,7 +76,7 @@ class WidgetConfigurator implements WidgetConfiguratorInterface
      */
     public function getDecimalSeparator(): string
     {
-        return (string) $this->formatter->getSymbol(\NumberFormatter::DECIMAL_SEPARATOR_SYMBOL);
+        return (string) $this->formatter->getSymbol(NumberFormatter::DECIMAL_SEPARATOR_SYMBOL);
     }
 
     /**
@@ -78,21 +86,21 @@ class WidgetConfigurator implements WidgetConfiguratorInterface
      */
     public function getThousandsSeparator(): string
     {
-        return (string) $this->formatter->getSymbol(\NumberFormatter::GROUPING_SEPARATOR_SYMBOL);
+        return (string) $this->formatter->getSymbol(NumberFormatter::GROUPING_SEPARATOR_SYMBOL);
     }
 
     /**
      * Get formatter instance.
      *
-     * @return \NumberFormatter
+     * @return NumberFormatter
      */
-    private function getFormatter(): \NumberFormatter
+    private function getFormatter(): NumberFormatter
     {
         $localeCode = $this->localeResolver->getLocale();
 
-        return new \NumberFormatter(
+        return new NumberFormatter(
             $localeCode . '@currency=' . $this->getCurrency(),
-            \NumberFormatter::CURRENCY
+            NumberFormatter::CURRENCY
         );
     }
 }

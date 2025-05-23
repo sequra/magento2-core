@@ -2,29 +2,26 @@
 
 namespace Sequra\Core\Block;
 
+use Exception;
 use Magento\Framework\View\Element\Template\Context;
-use Magento\Checkout\Model\Session as CheckoutSession;
-use SeQura\Core\BusinessLogic\CheckoutAPI\CheckoutAPI;
+use Magento\Checkout\Model\Session;
 use Magento\Framework\View\Element\Template;
+use Magento\Framework\App\ScopeResolverInterface;
+use Magento\Framework\Locale\ResolverInterface;
+use SeQura\Core\BusinessLogic\CheckoutAPI\CheckoutAPI;
 use SeQura\Core\BusinessLogic\CheckoutAPI\PromotionalWidgets\Requests\PromotionalWidgetsCheckoutRequest;
 use Sequra\Core\Gateway\Validator\CurrencyValidator;
 use Sequra\Core\Gateway\Validator\IpAddressValidator;
-use Magento\Framework\App\ScopeResolverInterface;
-use Magento\Framework\Locale\ResolverInterface;
+use SeQura\Core\Infrastructure\Logger\Logger;
 
 /**
  * Class Product
- * 
+ *
  * Implements required logic to show widget in the product page
  */
 class Product extends Template
 {
-    /**
-     * @var \Magento\Framework\App\ScopeResolverInterface
-     */
-    protected $scopeResolver;
-    /** @var CheckoutSession */
-    protected $checkoutSession;
+    use WidgetTrait;
 
     /**
      * @param ScopeResolverInterface $scopeResolver
@@ -32,7 +29,7 @@ class Product extends Template
      * @param CurrencyValidator $currencyValidator
      * @param IpAddressValidator $ipAddressValidator
      * @param Context $context
-     * @param CheckoutSession $checkoutSession
+     * @param Session $checkoutSession
      */
     public function __construct(
         ScopeResolverInterface $scopeResolver,
@@ -40,7 +37,7 @@ class Product extends Template
         CurrencyValidator      $currencyValidator,
         IpAddressValidator     $ipAddressValidator,
         Context                $context,
-        CheckoutSession        $checkoutSession
+        Session                $checkoutSession
     )
     {
         parent::__construct($context);
@@ -58,17 +55,7 @@ class Product extends Template
      */
     protected function _toHtml()
     {
-        /**
-         * @var \Magento\Store\Model\Store $store
-         */
-        $store = $this->scopeResolver->getScope();
-        $subject = ['currency' => $store->getCurrentCurrency()->getCode(), 'storeId' => $store->getId()];
-
-        if (!$this->currencyValidator->validate($subject)->isValid()) {
-            return '';
-        }
-
-        if (!$this->ipAddressValidator->validate($subject)->isValid()) {
+        if (!$this->validate()) {
             return '';
         }
 
@@ -76,50 +63,41 @@ class Product extends Template
     }
 
     /**
-     * Prepare the available widget to show in the cart frontend based on the configuration and the current context
+     * Prepares the available widget to show in the cart frontend based on the configuration and the current context
      *
      * @return array
      * @phpstan-return array<int,
      *  array{
-     *      product: string,
-     *      campaign: string,
-     *      priceSel: string,
-     *      dest: string,
-     *      theme: string|null,
-     *      reverse: '0',
-     *      minAmount: int|null,
-     *      maxAmount: int|null,
-     *      altPriceSel: string,
-     *      altTriggerSelector: string
-     *  }>
+     *       product: string,
+     *       campaign: string,
+     *       priceSel: string,
+     *       dest: string,
+     *       theme: string|null,
+     *       reverse: '0',
+     *       altPriceSel: string,
+     *       altTriggerSelector: string,
+     *       minAmount: int|null,
+     *       maxAmount: int|null,
+     *       miniWidgetMessage: string,
+     *       miniWidgetBelowLimitMessage: string
+     *   }>
      */
-    public function getAvailableWidgets()
+    public function getAvailableWidgets(): array
     {
-        $quote = $this->checkoutSession->getQuote();
-        $shippingAddress = $quote ? $quote->getShippingAddress() : null;
-        $shippingCountry = ($shippingAddress && $shippingAddress->getCountryId()) ?
-            $shippingAddress->getCountryId() : '';
-        $currentCountry = $this->getCurrentCountry() ?? '';
+        try {
+            $storeId = (string)$this->_storeManager->getStore()->getId();
+            $widgets = CheckoutAPI::get()->promotionalWidgets($storeId)
+                ->getAvailableWidgetsForProductPage(new PromotionalWidgetsCheckoutRequest(
+                    $this->getShippingAddressCountry(),
+                    $this->getCurrentCountry()
+                ));
 
-        $storeId = (string)$this->_storeManager->getStore()->getId();
-        $widgets = CheckoutAPI::get()->promotionalWidgets($storeId)
-            ->getAvailableWidgetsForProductPage(new PromotionalWidgetsCheckoutRequest(
-                $shippingCountry,
-                $currentCountry
-            ));
+            return $widgets->toArray();
+        } catch (Exception $e) {
+            Logger::logError('Fetching available widgets on product page failed: ' . $e->getMessage() .
+                ' Trace: ' . $e->getTraceAsString());
 
-        return $widgets->toArray();
-    }
-
-    /**
-     * Get current country code
-     *
-     * @return string
-     */
-    private function getCurrentCountry(): string
-    {
-        $parts = explode('_', $this->localeResolver->getLocale());
-
-        return strtoupper(count($parts) > 1 ? $parts[1] : $parts[0]);
+            return [];
+        }
     }
 }

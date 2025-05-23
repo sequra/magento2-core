@@ -22,7 +22,6 @@ use SeQura\Core\BusinessLogic\Domain\Integration\Version\VersionServiceInterface
 use SeQura\Core\BusinessLogic\Domain\Order\Models\SeQuraOrder;
 use SeQura\Core\BusinessLogic\Domain\Order\RepositoryContracts\SeQuraOrderRepositoryInterface;
 use SeQura\Core\BusinessLogic\Domain\OrderStatusSettings\RepositoryContracts\OrderStatusSettingsRepositoryInterface;
-use SeQura\Core\BusinessLogic\Domain\PromotionalWidgets\WidgetConfiguratorContracts\MiniWidgetMessagesProviderInterface;
 use SeQura\Core\BusinessLogic\Domain\PromotionalWidgets\WidgetConfiguratorContracts\WidgetConfiguratorInterface;
 use SeQura\Core\BusinessLogic\Domain\SendReport\RepositoryContracts\SendReportRepositoryInterface;
 use SeQura\Core\BusinessLogic\Domain\StatisticalData\RepositoryContracts\StatisticalDataRepositoryInterface;
@@ -47,7 +46,6 @@ use Sequra\Core\Services\BusinessLogic\ConfigurationService;
 use Sequra\Core\Services\BusinessLogic\DisconnectService;
 use Sequra\Core\Services\BusinessLogic\OrderReportService;
 use Sequra\Core\Services\BusinessLogic\PaymentMethodsService;
-use Sequra\Core\Services\BusinessLogic\PromotionalWidget\MiniWidgetMessagesProvider;
 use Sequra\Core\Services\BusinessLogic\PromotionalWidget\WidgetConfigurator;
 use Sequra\Core\Services\BusinessLogic\SellingCountriesService;
 use Sequra\Core\Services\BusinessLogic\ShopOrderStatusesService;
@@ -108,8 +106,6 @@ class Bootstrap extends BootstrapComponent
     private $orderServiceFactory;
     /** @var WidgetConfigurator */
     private $widgetConfigurator;
-    /** @var MiniWidgetMessagesProvider */
-    private $miniWidgetMessagesProvider;
 
     /**
      * Constructor for Bootstrap
@@ -136,8 +132,7 @@ class Bootstrap extends BootstrapComponent
         OrderReportService                                      $orderReportService,
         Encryptor                                               $encryptor,
         \Sequra\Core\Services\BusinessLogic\OrderServiceFactory $orderServiceFactory,
-        WidgetConfigurator                                      $widgetConfigurator,
-        MiniWidgetMessagesProvider                              $miniWidgetMessagesProvider
+        WidgetConfigurator                                      $widgetConfigurator
     ) {
         $this->loggerService = $loggerService;
         $this->configurationService = $configurationService;
@@ -150,7 +145,6 @@ class Bootstrap extends BootstrapComponent
         $this->encryptor = $encryptor;
         $this->orderServiceFactory = $orderServiceFactory;
         $this->widgetConfigurator = $widgetConfigurator;
-        $this->miniWidgetMessagesProvider = $miniWidgetMessagesProvider;
 
         static::$instance = $this;
     }
@@ -289,13 +283,6 @@ class Bootstrap extends BootstrapComponent
             WidgetConfiguratorInterface::class,
             static function () {
                 return static::$instance->widgetConfigurator;
-            }
-        );
-
-        ServiceRegister::registerService(
-            MiniWidgetMessagesProviderInterface::class,
-            static function () {
-                return static::$instance->miniWidgetMessagesProvider;
             }
         );
     }
