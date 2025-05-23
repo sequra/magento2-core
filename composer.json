@@ -16,7 +16,7 @@
             "email": "dev@sequra.es"
         }
     ],
-    "minimum-stability": "stable",
+    "minimum-stability": "dev",
     "require": {
         "php": ">=7.4",
         "sequra/integration-core": "dev-feature/LIS-53",
@@ -69,8 +69,7 @@
     "repositories": [
         {
             "type": "git",
-            "url": "git@github.com:sequra/integration-core.git",
-            "branch": "feature/LIS-53"
+            "url": "git@github.com:sequra/integration-core.git"
         }
     ]
 }

@@ -6,7 +6,6 @@ use Magento\Checkout\Model\Session;
 use Magento\Framework\App\ScopeResolverInterface;
 use Magento\Framework\Locale\ResolverInterface;
 use Magento\Store\Model\Store;
-use Magento\Tests\NamingConvention\true\string;
 use Magento\Framework\Exception\LocalizedException;
 use Sequra\Core\Gateway\Validator\CurrencyValidator;
 use Sequra\Core\Gateway\Validator\IpAddressValidator;
