@@ -39,8 +39,7 @@ class Version270 implements DataPatchInterface
      */
     public function __construct(
         ModuleDataSetupInterface $moduleDataSetup
-    )
-    {
+    ) {
         $this->moduleDataSetup = $moduleDataSetup;
     }
 
@@ -62,6 +61,7 @@ class Version270 implements DataPatchInterface
 
     /**
      * @inheritDoc
+     *
      * @throws Exception
      */
     public function apply(): void
@@ -124,7 +124,8 @@ class Version270 implements DataPatchInterface
     {
         $widget_instance = $this->moduleDataSetup->getTable('widget_instance');
         $query = $connection->select()->from($widget_instance)->where(
-            'instance_type = ?', 'Sequra\Core\Block\Widget\Teaser',
+            'instance_type = ?',
+            '%Sequra\Core\Block\Widget\Teaser%',
         );
         $teasers = $connection->fetchAll($query);
 
@@ -142,7 +143,6 @@ class Version270 implements DataPatchInterface
 
         return $teasers[0];
     }
-
 
     /**
      * Decodes payment methods data from teaser payment methods data
@@ -185,8 +185,7 @@ class Version270 implements DataPatchInterface
         string               $theme,
         array                $teaserPaymentMethods,
         WidgetSettingsEntity $widgetSettingsEntity
-    ): void
-    {
+    ): void {
         $availableCountries = $this->getAvailableCountries($storeId);
         $paymentMethods = [];
         foreach ($teaserPaymentMethods as $teaserPaymentMethod) {
@@ -225,8 +224,7 @@ class Version270 implements DataPatchInterface
         string               $destinationSelector,
         string               $theme,
         array                $paymentMethods
-    ): void
-    {
+    ): void {
         $widgetSettings = $widgetSettingsEntity->getWidgetSettings();
         $widgetSettingsForProduct = new WidgetSelectorSettings(
             $priceSelector,
@@ -248,7 +246,6 @@ class Version270 implements DataPatchInterface
 
         $this->getWidgetSettingRepository()->update($widgetSettingsEntity);
     }
-
 
     /**
      * Returns country codes for available countries in store

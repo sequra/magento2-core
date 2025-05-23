@@ -5,7 +5,7 @@ use Sequra\Core\Block\Cart;
 
 $availableWidgets = $block->getAvailableWidgets();
 
-if (!empty($availableWidgets)) :
+if (!empty($availableWidgets)):
     // phpcs:disable Magento2.Security.XssTemplate.FoundUnescaped
     ?>
     <script type="text/x-magento-init">
@@ -17,6 +17,6 @@ if (!empty($availableWidgets)) :
     }
 }
     </script>
-<?php
+    <?php
 // phpcs:enable
 endif;

@@ -61,7 +61,6 @@ class WidgetSettings extends BaseConfigurationController
             return $this->result->setData($result);
         }
 
-
         $result['widgetStyles'] = $result['widgetConfiguration'];
         unset($result['widgetConfiguration']);
 

@@ -38,8 +38,7 @@ class MiniWidget extends Template
         IpAddressValidator     $ipAddressValidator,
         Context                $context,
         Session                $checkoutSession
-    )
-    {
+    ) {
         parent::__construct($context);
         $this->scopeResolver = $scopeResolver;
         $this->localeResolver = $localeResolver;
@@ -63,7 +62,7 @@ class MiniWidget extends Template
     }
 
     /**
-     * Prepares the available mini-widget to show in the product listing frontend based on the configuration and the current context
+     * Prepares the available mini-widget to show based on the configuration and the current context
      *
      * @return array
      * @phpstan-return array<int,

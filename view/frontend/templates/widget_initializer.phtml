@@ -5,7 +5,7 @@ use Sequra\Core\Block\WidgetInitializer;
 
 $widgetData = $block->getWidgetInitializeData();
 
-if (!empty($widgetData)) :
+if (!empty($widgetData)):
     // phpcs:disable Magento2.Security.XssTemplate.FoundUnescaped
     ?>
     <script type="text/x-magento-init">
@@ -23,6 +23,6 @@ if (!empty($widgetData)) :
     }
 }
     </script>
-<?php
+    <?php
 // phpcs:enable
 endif;

@@ -8,11 +8,6 @@ use Magento\Store\Model\Store;
 use NumberFormatter;
 use SeQura\Core\BusinessLogic\Domain\PromotionalWidgets\WidgetConfiguratorContracts\WidgetConfiguratorInterface;
 
-/**
- * Class WidgetConfigurator
- *
- * @package Sequra\Core\Services\BusinessLogic\PromotionalWidget
- */
 class WidgetConfigurator implements WidgetConfiguratorInterface
 {
     /**
@@ -37,8 +32,7 @@ class WidgetConfigurator implements WidgetConfiguratorInterface
     public function __construct(
         ScopeResolverInterface $scopeResolver,
         ResolverInterface $localeResolver
-    )
-    {
+    ) {
         $this->scopeResolver = $scopeResolver;
         $this->localeResolver = $localeResolver;
         $this->formatter = $this->getFormatter();

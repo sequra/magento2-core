@@ -36,8 +36,7 @@ class WidgetInitializer extends Template
         ResolverInterface $localeResolver,
         Session           $session,
         array             $data = []
-    )
-    {
+    ) {
         parent::__construct($context, $data);
         $this->localeResolver = $localeResolver;
         $this->session = $session;

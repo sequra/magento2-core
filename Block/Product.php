@@ -38,8 +38,7 @@ class Product extends Template
         IpAddressValidator     $ipAddressValidator,
         Context                $context,
         Session                $checkoutSession
-    )
-    {
+    ) {
         parent::__construct($context);
         $this->scopeResolver = $scopeResolver;
         $this->localeResolver = $localeResolver;
