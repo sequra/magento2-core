@@ -7,6 +7,8 @@ use JsonException;
 use Magento\Framework\Setup\Patch\DataPatchInterface;
 use Magento\Framework\Setup\ModuleDataSetupInterface;
 use Magento\Framework\DB\Adapter\AdapterInterface;
+use Magento\Tests\NamingConvention\true\mixed;
+use Magento\Tests\NamingConvention\true\string;
 use SeQura\Core\BusinessLogic\DataAccess\PromotionalWidgets\Entities\WidgetSettings as WidgetSettingsEntity;
 use SeQura\Core\BusinessLogic\Domain\CountryConfiguration\Models\CountryConfiguration;
 use SeQura\Core\BusinessLogic\Domain\CountryConfiguration\Services\CountryConfigurationService;
@@ -70,18 +72,23 @@ class Version270 implements DataPatchInterface
         $connection = $this->moduleDataSetup->getConnection();
 
         try {
-
             // Fetch teaser data from Magento 2 database
             $teaser = $this->fetchFirstTeaserAndRemoveAll($connection);
             $storeIds = explode(',', $teaser['store_ids']);
-            $widget_parameters = json_decode($teaser['widget_parameters'], true, 512, JSON_THROW_ON_ERROR);
-            $priceSelector = $widget_parameters['price_sel'];
-            $destinationSelector = $widget_parameters['dest_sel'];
-            $theme = $widget_parameters['theme'];
-            $teaserPaymentMethods = $this->getPaymentMethodsData(
-                array_key_exists('payment_methods', $widget_parameters) ?
-                    $widget_parameters['payment_methods'] : []
-            );
+            /** @var array<string, mixed> $widgetParameters */
+            $widgetParameters = json_decode($teaser['widget_parameters'], true, 512, JSON_THROW_ON_ERROR);
+            /** @var string $priceSelector */
+            $priceSelector = $widgetParameters['price_sel'];
+            /** @var string $destinationSelector */
+            $destinationSelector = $widgetParameters['dest_sel'];
+            /** @var string $theme */
+            $theme = $widgetParameters['theme'];
+
+            /** @var array<string> $paymentMethods */
+            $paymentMethods = array_key_exists('payment_methods', $widgetParameters) ?
+                $widgetParameters['payment_methods'] : [];
+            /** @var array<mixed> $teaserPaymentMethods */
+            $teaserPaymentMethods = $this->getPaymentMethodsData($paymentMethods);
 
             $widgetSettingsEntities = $this->getAllWidgetSettingsEntities();
             foreach ($widgetSettingsEntities as $widgetSettingsEntity) {
@@ -118,7 +125,7 @@ class Version270 implements DataPatchInterface
      *
      * @param AdapterInterface $connection
      *
-     * @return array
+     * @return string[]
      */
     private function fetchFirstTeaserAndRemoveAll(AdapterInterface $connection): array
     {
@@ -147,9 +154,10 @@ class Version270 implements DataPatchInterface
     /**
      * Decodes payment methods data from teaser payment methods data
      *
-     * @param array $paymentMethods
+     * @param array<string> $paymentMethods
      *
-     * @return array
+     * @return array<mixed>
+     *
      * @throws JsonException
      */
     private function getPaymentMethodsData(array $paymentMethods): array
@@ -171,7 +179,7 @@ class Version270 implements DataPatchInterface
      * @param string $priceSelector
      * @param string $destinationsSelector
      * @param string $theme
-     * @param array $teaserPaymentMethods
+     * @param mixed[] $teaserPaymentMethods
      * @param WidgetSettingsEntity $widgetSettingsEntity
      *
      * @return void
@@ -179,11 +187,11 @@ class Version270 implements DataPatchInterface
      * @throws Exception
      */
     private function migrateWidgetConfigurationForStore(
-        string               $storeId,
-        string               $priceSelector,
-        string               $destinationsSelector,
-        string               $theme,
-        array                $teaserPaymentMethods,
+        string $storeId,
+        string $priceSelector,
+        string $destinationsSelector,
+        string $theme,
+        array $teaserPaymentMethods,
         WidgetSettingsEntity $widgetSettingsEntity
     ): void {
         $availableCountries = $this->getAvailableCountries($storeId);
@@ -213,17 +221,17 @@ class Version270 implements DataPatchInterface
      * @param string $priceSelector
      * @param string $destinationSelector
      * @param string $theme
-     * @param array $paymentMethods
+     * @param string[] $paymentMethods
      *
      * @return void
      * @throws RepositoryNotRegisteredException
      */
     private function updateWidgetSettingEntity(
         WidgetSettingsEntity $widgetSettingsEntity,
-        string               $priceSelector,
-        string               $destinationSelector,
-        string               $theme,
-        array                $paymentMethods
+        string $priceSelector,
+        string $destinationSelector,
+        string $theme,
+        array $paymentMethods
     ): void {
         $widgetSettings = $widgetSettingsEntity->getWidgetSettings();
         $widgetSettingsForProduct = new WidgetSelectorSettings(
@@ -251,7 +259,9 @@ class Version270 implements DataPatchInterface
      * Returns country codes for available countries in store
      *
      * @param string $storeId
-     * @return array
+     *
+     * @return string[]
+     *
      * @throws Exception
      */
     private function getAvailableCountries(string $storeId): array
@@ -260,6 +270,10 @@ class Version270 implements DataPatchInterface
         $countries = StoreContext::doWithStore($storeId, function () {
             return $this->getCountryConfigurationService()->getCountryConfiguration();
         });
+
+        if (!$countries) {
+            return [];
+        }
 
         return array_map(static function ($country) {
             return $country->getCountryCode();
@@ -274,7 +288,10 @@ class Version270 implements DataPatchInterface
      */
     private function getAllWidgetSettingsEntities(): array
     {
-        return $this->getWidgetSettingRepository()->select();
+        /** @var WidgetSettingsEntity[] $entities */
+        $entities = $this->getWidgetSettingRepository()->select();
+
+        return $entities;
     }
 
     /**

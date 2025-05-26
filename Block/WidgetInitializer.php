@@ -16,12 +16,12 @@ class WidgetInitializer extends Template
     /**
      * @var ResolverInterface
      */
-    protected $localeResolver;
+    protected ResolverInterface $localeResolver;
 
     /**
      * @var Session
      */
-    private $session;
+    private Session $session;
 
     /**
      * Constructor
@@ -29,13 +29,13 @@ class WidgetInitializer extends Template
      * @param Context $context
      * @param ResolverInterface $localeResolver
      * @param Session $session
-     * @param array $data
+     * @param mixed[] $data
      */
     public function __construct(
-        Context           $context,
+        Context $context,
         ResolverInterface $localeResolver,
-        Session           $session,
-        array             $data = []
+        Session $session,
+        array $data = []
     ) {
         parent::__construct($context, $data);
         $this->localeResolver = $localeResolver;
@@ -45,7 +45,7 @@ class WidgetInitializer extends Template
     /**
      * Returns data for widget initialization
      *
-     * @return array
+     * @return mixed[]
      */
     public function getWidgetInitializeData(): array
     {
@@ -53,7 +53,7 @@ class WidgetInitializer extends Template
             $quote = $this->session->getQuote();
             $shippingCountry = $quote->getShippingAddress()->getCountryId() ?? '';
             $storeId = (string)$this->_storeManager->getStore()->getId();
-            $currentCountry = $this->getCurrentCountry() ?? '';
+            $currentCountry = $this->getCurrentCountry();
 
             $widgetInitializeData = CheckoutAPI::get()
                 ->promotionalWidgets($storeId)
