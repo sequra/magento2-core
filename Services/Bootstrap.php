@@ -45,6 +45,7 @@ use Sequra\Core\Services\BusinessLogic\CategoryService;
 use Sequra\Core\Services\BusinessLogic\ConfigurationService;
 use Sequra\Core\Services\BusinessLogic\DisconnectService;
 use Sequra\Core\Services\BusinessLogic\OrderReportService;
+use Sequra\Core\Services\BusinessLogic\OrderServiceFactory;
 use Sequra\Core\Services\BusinessLogic\PaymentMethodsService;
 use Sequra\Core\Services\BusinessLogic\PromotionalWidget\WidgetConfigurator;
 use Sequra\Core\Services\BusinessLogic\SellingCountriesService;
@@ -101,7 +102,7 @@ class Bootstrap extends BootstrapComponent
      */
     private $encryptor;
     /**
-     * @var \Sequra\Core\Services\BusinessLogic\OrderServiceFactory
+     * @var OrderServiceFactory
      */
     private $orderServiceFactory;
     /** @var WidgetConfigurator */
@@ -119,20 +120,20 @@ class Bootstrap extends BootstrapComponent
      * @param DisconnectService $disconnectService Disconnect service
      * @param OrderReportService $orderReportService Order report service
      * @param Encryptor $encryptor Encryptor
-     * @param \Sequra\Core\Services\BusinessLogic\OrderServiceFactory $orderServiceFactory Order service factory
+     * @param OrderServiceFactory $orderServiceFactory Order service factory
      */
     public function __construct(
-        LoggerService                                           $loggerService,
-        ConfigurationService                                    $configurationService,
-        StoreService                                            $storeService,
-        VersionService                                          $versionService,
-        SellingCountriesService                                 $sellingCountriesService,
-        CategoryService                                         $categoryService,
-        DisconnectService                                       $disconnectService,
-        OrderReportService                                      $orderReportService,
-        Encryptor                                               $encryptor,
-        \Sequra\Core\Services\BusinessLogic\OrderServiceFactory $orderServiceFactory,
-        WidgetConfigurator                                      $widgetConfigurator
+        LoggerService $loggerService,
+        ConfigurationService $configurationService,
+        StoreService $storeService,
+        VersionService $versionService,
+        SellingCountriesService $sellingCountriesService,
+        CategoryService $categoryService,
+        DisconnectService $disconnectService,
+        OrderReportService $orderReportService,
+        Encryptor $encryptor,
+        OrderServiceFactory $orderServiceFactory,
+        WidgetConfigurator $widgetConfigurator
     ) {
         $this->loggerService = $loggerService;
         $this->configurationService = $configurationService;

@@ -7,8 +7,6 @@ use JsonException;
 use Magento\Framework\Setup\Patch\DataPatchInterface;
 use Magento\Framework\Setup\ModuleDataSetupInterface;
 use Magento\Framework\DB\Adapter\AdapterInterface;
-use Magento\Tests\NamingConvention\true\mixed;
-use Magento\Tests\NamingConvention\true\string;
 use SeQura\Core\BusinessLogic\DataAccess\PromotionalWidgets\Entities\WidgetSettings as WidgetSettingsEntity;
 use SeQura\Core\BusinessLogic\Domain\CountryConfiguration\Models\CountryConfiguration;
 use SeQura\Core\BusinessLogic\Domain\CountryConfiguration\Services\CountryConfigurationService;
@@ -284,6 +282,7 @@ class Version270 implements DataPatchInterface
      * Returns all widget settings entities
      *
      * @return WidgetSettingsEntity[]
+     *
      * @throws RepositoryNotRegisteredException
      */
     private function getAllWidgetSettingsEntities(): array
