@@ -121,6 +121,7 @@ class Bootstrap extends BootstrapComponent
      * @param OrderReportService $orderReportService Order report service
      * @param Encryptor $encryptor Encryptor
      * @param OrderServiceFactory $orderServiceFactory Order service factory
+     * @param WidgetConfigurator $widgetConfigurator Widget configurator
      */
     public function __construct(
         LoggerService $loggerService,
