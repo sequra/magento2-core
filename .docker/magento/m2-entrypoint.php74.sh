@@ -88,7 +88,7 @@ if [ ! -f /var/www/html/.post-install-complete ]; then
 
     # Install seQura plugin
     su -s /bin/bash www-data -c "composer config repositories.sequra/magento2-core path /Sequra/Core" \
-    && su -s /bin/bash www-data -c "COMPOSER_MIRROR_PATH_REPOS=1 composer require sequra/magento2-core:^2.5" \
+    && su -s /bin/bash www-data -c "COMPOSER_MIRROR_PATH_REPOS=1 composer require sequra/magento2-core" \
     && su -s /bin/bash www-data -c "bin/magento config:set dev/template/allow_symlink $M2_ALLOW_SYMLINK" \
     && su -s /bin/bash www-data -c "bin/magento module:enable Sequra_Core" \
     && su -s /bin/bash www-data -c "bin/magento setup:upgrade" \
