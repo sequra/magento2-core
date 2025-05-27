@@ -111,7 +111,8 @@ class Version270 implements DataPatchInterface
 
             $this->moduleDataSetup->endSetup();
         } catch (Exception $e) {
-            $connection->rollBack();
+            // TODO: this causes an error in the setup script, so we comment it out for now.
+            // $connection->rollBack();
 
             Logger::logError('Migration ' . self::class . ' failed with error: ' . $e->getMessage() .
                 ' Trace :' . $e->getTraceAsString());
