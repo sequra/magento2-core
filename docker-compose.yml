@@ -30,7 +30,7 @@ services:
     volumes:
       - m2_db:/var/lib/mysql
     healthcheck:
-      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      test: [ "CMD", "sh", "-c", "mysqladmin ping -h localhost || mariadb-admin ping -h localhost" ]
       interval: 1s
       timeout: 3s
       retries: 10
