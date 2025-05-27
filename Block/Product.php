@@ -65,22 +65,7 @@ class Product extends Template
     /**
      * Prepares the available widget to show in the cart frontend based on the configuration and the current context
      *
-     * @return array
-     * @phpstan-return array<int,
-     *  array{
-     *       product: string,
-     *       campaign: string,
-     *       priceSel: string,
-     *       dest: string,
-     *       theme: string|null,
-     *       reverse: '0',
-     *       altPriceSel: string,
-     *       altTriggerSelector: string,
-     *       minAmount: int|null,
-     *       maxAmount: int|null,
-     *       miniWidgetMessage: string,
-     *       miniWidgetBelowLimitMessage: string
-     *   }>
+     * @return mixed[]
      */
     public function getAvailableWidgets(): array
     {

@@ -65,22 +65,7 @@ class MiniWidget extends Template
     /**
      * Prepares the available mini-widget to show based on the configuration and the current context
      *
-     * @return array
-     * @phpstan-return array<int,
-     *  array{
-     *      product: string,
-     *      campaign: string,
-     *      priceSel: string,
-     *      dest: string,
-     *      theme: string|null,
-     *      reverse: '0',
-     *      minAmount: int|null,
-     *      maxAmount: int|null,
-     *      altPriceSel: string,
-     *      altTriggerSelector: string,
-     *      miniWidgetMessage: string,
-     *      miniWidgetBelowLimitMessage: string
-     *  }>
+     * @return mixed[]
      */
     public function getAvailableMiniWidgets(): array
     {
