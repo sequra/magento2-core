@@ -79,6 +79,8 @@ RUN --mount=type=secret,id=M2_COMPOSER_REPO_KEY,env=M2_REPO_KEY \
     composer config -g --no-plugins allow-plugins true \
     && composer config -g http-basic.repo.magento.com $M2_REPO_KEY $M2_REPO_SECRET \
     && composer create-project --repository-url=https://repo.magento.com/ magento/project-community-edition=$M2_VERSION . \
+    && composer config minimum-stability dev \
+    && composer config prefer-stable true \
     && composer require n98/magerun2-dist mageplaza/magento-2-spanish-language-pack:dev-master mageplaza/magento-2-portuguese-language-pack:dev-master mageplaza/magento-2-french-language-pack:dev-master mageplaza/magento-2-italian-language-pack:dev-master \
     && chmod -R 755 ./ \
     && chown -R www-data:www-data ./
