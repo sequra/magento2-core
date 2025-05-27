@@ -70,8 +70,17 @@ class Version270 implements DataPatchInterface
         $connection = $this->moduleDataSetup->getConnection();
 
         try {
+            $connection->beginTransaction();
+
             // Fetch teaser data from Magento 2 database
             $teaser = $this->fetchFirstTeaserAndRemoveAll($connection);
+            if (empty($teaser) || !isset($teaser['store_ids'])) {
+                $connection->commit();
+                $this->moduleDataSetup->endSetup();
+
+                return;
+            }
+
             $storeIds = explode(',', $teaser['store_ids']);
             /** @var array<string, mixed> $widgetParameters */
             $widgetParameters = json_decode($teaser['widget_parameters'], true, 512, JSON_THROW_ON_ERROR);
@@ -109,14 +118,15 @@ class Version270 implements DataPatchInterface
                 );
             }
 
-            $this->moduleDataSetup->endSetup();
+            $connection->commit();
         } catch (Exception $e) {
-            // TODO: this causes an error in the setup script, so we comment it out for now.
-            // $connection->rollBack();
+            $connection->rollBack();
 
             Logger::logError('Migration ' . self::class . ' failed with error: ' . $e->getMessage() .
                 ' Trace :' . $e->getTraceAsString());
         }
+
+        $this->moduleDataSetup->endSetup();
     }
 
     /**
@@ -128,8 +138,8 @@ class Version270 implements DataPatchInterface
      */
     private function fetchFirstTeaserAndRemoveAll(AdapterInterface $connection): array
     {
-        $widget_instance = $this->moduleDataSetup->getTable('widget_instance');
-        $query = $connection->select()->from($widget_instance)->where(
+        $widgetInstance = $this->moduleDataSetup->getTable('widget_instance');
+        $query = $connection->select()->from($widgetInstance)->where(
             'instance_type = ?',
             '%Sequra\Core\Block\Widget\Teaser%',
         );
@@ -145,7 +155,7 @@ class Version270 implements DataPatchInterface
             $ids[] = $teaser['instance_id'];
         }
 
-        $connection->delete($widget_instance, ['instance_id IN (?)' => $ids]);
+        $connection->delete($widgetInstance, ['instance_id IN (?)' => $ids]);
 
         return $teasers[0];
     }

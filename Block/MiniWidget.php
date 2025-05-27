@@ -10,6 +10,7 @@ use Magento\Framework\App\ScopeResolverInterface;
 use Magento\Framework\Locale\ResolverInterface;
 use SeQura\Core\BusinessLogic\CheckoutAPI\CheckoutAPI;
 use SeQura\Core\BusinessLogic\CheckoutAPI\PromotionalWidgets\Requests\PromotionalWidgetsCheckoutRequest;
+use SeQura\Core\BusinessLogic\CheckoutAPI\PromotionalWidgets\Responses\GetWidgetsCheckoutResponse;
 use Sequra\Core\Gateway\Validator\CurrencyValidator;
 use Sequra\Core\Gateway\Validator\IpAddressValidator;
 use SeQura\Core\Infrastructure\Logger\Logger;
@@ -81,17 +82,18 @@ class MiniWidget extends Template
      *      miniWidgetBelowLimitMessage: string
      *  }>
      */
-    public function getAvailableMiniWidgets():array
+    public function getAvailableMiniWidgets(): array
     {
         try {
             $storeId = (string)$this->_storeManager->getStore()->getId();
+            /** @var GetWidgetsCheckoutResponse $widget */
             $widget = CheckoutAPI::get()->promotionalWidgets($storeId)
                 ->getAvailableMiniWidgetForProductListingPage(new PromotionalWidgetsCheckoutRequest(
                     $this->getShippingAddressCountry(),
                     $this->getCurrentCountry()
                 ));
 
-            return $widget->toArray();
+            return $widget->isSuccessful() ? $widget->toArray() : [];
         } catch (Exception $e) {
             Logger::logError('Fetching available widgets on product listing page failed: ' . $e->getMessage() .
                 ' Trace: ' . $e->getTraceAsString());

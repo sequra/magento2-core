@@ -10,6 +10,7 @@ use Magento\Framework\App\ScopeResolverInterface;
 use Magento\Framework\Locale\ResolverInterface;
 use SeQura\Core\BusinessLogic\CheckoutAPI\CheckoutAPI;
 use SeQura\Core\BusinessLogic\CheckoutAPI\PromotionalWidgets\Requests\PromotionalWidgetsCheckoutRequest;
+use SeQura\Core\BusinessLogic\CheckoutAPI\PromotionalWidgets\Responses\GetWidgetsCheckoutResponse;
 use Sequra\Core\Gateway\Validator\CurrencyValidator;
 use Sequra\Core\Gateway\Validator\IpAddressValidator;
 use SeQura\Core\Infrastructure\Logger\Logger;
@@ -85,13 +86,14 @@ class Product extends Template
     {
         try {
             $storeId = (string)$this->_storeManager->getStore()->getId();
+            /** @var GetWidgetsCheckoutResponse $widgets */
             $widgets = CheckoutAPI::get()->promotionalWidgets($storeId)
                 ->getAvailableWidgetsForProductPage(new PromotionalWidgetsCheckoutRequest(
                     $this->getShippingAddressCountry(),
                     $this->getCurrentCountry()
                 ));
 
-            return $widgets->toArray();
+            return $widgets->isSuccessful() ? $widgets->toArray() : [];
         } catch (Exception $e) {
             Logger::logError('Fetching available widgets on product page failed: ' . $e->getMessage() .
                 ' Trace: ' . $e->getTraceAsString());

@@ -95,7 +95,8 @@ if (!window.SequraFE) {
 
             promises
                 .then((array) => renderer(...array))
-                .catch(() => {
+                .catch((error) => {
+                    console.error('Error occurred while rendering the page: ', error);
                 })
                 .finally(() => utilities.hideLoader());
         };
