@@ -7,8 +7,7 @@ use Magento\Framework\App\ScopeResolverInterface;
 use Magento\Framework\Locale\ResolverInterface;
 use Magento\Store\Model\Store;
 use Magento\Framework\Exception\LocalizedException;
-use Sequra\Core\Gateway\Validator\CurrencyValidator;
-use Sequra\Core\Gateway\Validator\IpAddressValidator;
+use Magento\Framework\HTTP\PhpEnvironment\Request;
 
 /**
  * Implement common behavior for all widgets
@@ -20,14 +19,6 @@ trait WidgetTrait
      */
     protected $localeResolver;
     /**
-     * @var CurrencyValidator
-     */
-    protected $currencyValidator;
-    /**
-     * @var IpAddressValidator
-     */
-    protected $ipAddressValidator;
-    /**
      * @var Session
      */
     protected $checkoutSession;
@@ -35,34 +26,11 @@ trait WidgetTrait
      * @var ScopeResolverInterface
      */
     protected $scopeResolver;
-
     /**
-     * Validates current currency and ip address
-     *
-     * @return bool
-     * @throws LocalizedException
+     * @var Request
      */
-    private function validate(): bool
-    {
-        /**
-         * @var Store $store
-         */
-        $store = $this->scopeResolver->getScope();
-        $subject = [
-            'currency' => $store->getCurrentCurrency()->getCode(),
-            'storeId' => $store->getId()
-        ];
+    protected $request;
 
-        if (!$this->currencyValidator->validate($subject)->isValid()) {
-            return false;
-        }
-
-        if (!$this->ipAddressValidator->validate($subject)->isValid()) {
-            return false;
-        }
-
-        return true;
-    }
 
     /**
      * Returns current country code
@@ -90,5 +58,31 @@ trait WidgetTrait
 
         return ($shippingAddress && $shippingAddress->getCountryId()) ?
             $shippingAddress->getCountryId() : '';
+    }
+
+    /**
+     * Returns current currency code
+     *
+     * @return string
+     * @throws LocalizedException
+     */
+    private function getCurrentCurrency(): string
+    {
+        /**
+         * @var Store $store
+         */
+        $store = $this->scopeResolver->getScope();
+
+        return $store->getCurrentCurrency()->getCode();
+    }
+
+    /**
+     * Returns customer ip address
+     *
+     * @return string
+     */
+    private function getCustomerIpAddress(): string
+    {
+        return $this->request->getClientIp();
     }
 }

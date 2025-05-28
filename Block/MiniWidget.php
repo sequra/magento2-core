@@ -8,11 +8,10 @@ use Magento\Checkout\Model\Session;
 use Magento\Framework\View\Element\Template;
 use Magento\Framework\App\ScopeResolverInterface;
 use Magento\Framework\Locale\ResolverInterface;
+use Magento\Framework\HTTP\PhpEnvironment\Request;
 use SeQura\Core\BusinessLogic\CheckoutAPI\CheckoutAPI;
 use SeQura\Core\BusinessLogic\CheckoutAPI\PromotionalWidgets\Requests\PromotionalWidgetsCheckoutRequest;
 use SeQura\Core\BusinessLogic\CheckoutAPI\PromotionalWidgets\Responses\GetWidgetsCheckoutResponse;
-use Sequra\Core\Gateway\Validator\CurrencyValidator;
-use Sequra\Core\Gateway\Validator\IpAddressValidator;
 use SeQura\Core\Infrastructure\Logger\Logger;
 
 /**
@@ -27,39 +26,22 @@ class MiniWidget extends Template
     /**
      * @param ScopeResolverInterface $scopeResolver
      * @param ResolverInterface $localeResolver
-     * @param CurrencyValidator $currencyValidator
-     * @param IpAddressValidator $ipAddressValidator
      * @param Context $context
      * @param Session $checkoutSession
+     * @param Request $request
      */
     public function __construct(
         ScopeResolverInterface $scopeResolver,
         ResolverInterface      $localeResolver,
-        CurrencyValidator      $currencyValidator,
-        IpAddressValidator     $ipAddressValidator,
         Context                $context,
-        Session                $checkoutSession
+        Session                $checkoutSession,
+        Request               $request,
     ) {
         parent::__construct($context);
         $this->scopeResolver = $scopeResolver;
         $this->localeResolver = $localeResolver;
-        $this->currencyValidator = $currencyValidator;
-        $this->ipAddressValidator = $ipAddressValidator;
         $this->checkoutSession = $checkoutSession;
-    }
-
-    /**
-     * Validate before producing html
-     *
-     * @return string
-     */
-    protected function _toHtml()
-    {
-        if (!$this->validate()) {
-            return '';
-        }
-
-        return parent::_toHtml();
+        $this->request = $request;
     }
 
     /**
@@ -75,7 +57,9 @@ class MiniWidget extends Template
             $widget = CheckoutAPI::get()->promotionalWidgets($storeId)
                 ->getAvailableMiniWidgetForProductListingPage(new PromotionalWidgetsCheckoutRequest(
                     $this->getShippingAddressCountry(),
-                    $this->getCurrentCountry()
+                    $this->getCurrentCountry(),
+                    $this->getCurrentCurrency(),
+                    $this->getCustomerIpAddress()
                 ));
 
             return $widget->isSuccessful() ? $widget->toArray() : [];
