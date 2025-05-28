@@ -72,50 +72,76 @@ class Version270 implements DataPatchInterface
         try {
             $connection->beginTransaction();
 
-            // Fetch teaser data from Magento 2 database
-            $teaser = $this->fetchFirstTeaserAndRemoveAll($connection);
-            if (empty($teaser) || !isset($teaser['store_ids'])) {
-                $connection->commit();
-                $this->moduleDataSetup->endSetup();
-
-                return;
-            }
-
-            $storeIds = explode(',', $teaser['store_ids']);
-            /** @var array<string, mixed> $widgetParameters */
-            $widgetParameters = json_decode($teaser['widget_parameters'], true, 512, JSON_THROW_ON_ERROR);
-            /** @var string $priceSelector */
-            $priceSelector = $widgetParameters['price_sel'];
-            /** @var string $destinationSelector */
-            $destinationSelector = $widgetParameters['dest_sel'];
-            /** @var string $theme */
-            $theme = $widgetParameters['theme'];
-
-            /** @var array<string> $paymentMethods */
-            $paymentMethods = array_key_exists('payment_methods', $widgetParameters) ?
-                $widgetParameters['payment_methods'] : [];
-            /** @var array<mixed> $teaserPaymentMethods */
-            $teaserPaymentMethods = $this->getPaymentMethodsData($paymentMethods);
-
             $widgetSettingsEntities = $this->getAllWidgetSettingsEntities();
+            $arrayOfWidgetSettingsEntities = [];
             foreach ($widgetSettingsEntities as $widgetSettingsEntity) {
                 $storeId = $widgetSettingsEntity->getStoreId();
                 StoreContext::doWithStore($storeId, function () {
                     return $this->getPaymentMethodsService()->getAvailablePaymentMethodsForAllMerchants(true);
                 });
 
-                if (!in_array($storeId, $storeIds, true)) {
+                $arrayOfWidgetSettingsEntities[$storeId] = $widgetSettingsEntity;
+            }
+
+            // Fetch all Sequra teasers from Magento 2 database and remove them
+            $teasers = $this->fetchAllTeasersAndRemoveThem($connection);
+            if (empty($teasers)) {
+                $connection->commit();
+                $this->moduleDataSetup->endSetup();
+
+                return;
+            }
+
+            foreach ($teasers as $teaser) {
+                if (!isset($teaser['store_ids'])) {
                     continue;
                 }
 
-                $this->migrateWidgetConfigurationForStore(
-                    $storeId,
-                    $priceSelector,
-                    $destinationSelector,
-                    $theme,
-                    $teaserPaymentMethods,
-                    $widgetSettingsEntity
-                );
+                $storeIds = explode(',', $teaser['store_ids']);
+                /** @var array<string, mixed> $widgetParameters */
+                $widgetParameters = json_decode($teaser['widget_parameters'], true, 512, JSON_THROW_ON_ERROR);
+                /** @var string $priceSelector */
+                $priceSelector = $widgetParameters['price_sel'];
+                /** @var string $destinationSelector */
+                $destinationSelector = $widgetParameters['dest_sel'];
+                /** @var string $theme */
+                $theme = $widgetParameters['theme'];
+                /** @var array<string> $paymentMethods */
+                $paymentMethods = array_key_exists('payment_methods', $widgetParameters) ?
+                    $widgetParameters['payment_methods'] : [];
+                /** @var array<mixed> $teaserPaymentMethods */
+                $teaserPaymentMethods = $this->getPaymentMethodsData($paymentMethods);
+
+                if (in_array('0', $storeIds)) {
+                    foreach ($arrayOfWidgetSettingsEntities as $key => $widgetSettingsEntity) {
+                        $this->migrateWidgetConfigurationForStore(
+                            $key,
+                            $priceSelector,
+                            $destinationSelector,
+                            $theme,
+                            $teaserPaymentMethods,
+                            $widgetSettingsEntity
+                        );
+                    }
+
+                    continue;
+                }
+
+                foreach ($storeIds as $storeId) {
+                    if (!array_key_exists($storeId, $arrayOfWidgetSettingsEntities)) {
+                        continue;
+                    }
+
+                    $widgetSettingsEntity = $arrayOfWidgetSettingsEntities[$storeId];
+                    $this->migrateWidgetConfigurationForStore(
+                        $storeId,
+                        $priceSelector,
+                        $destinationSelector,
+                        $theme,
+                        $teaserPaymentMethods,
+                        $widgetSettingsEntity
+                    );
+                }
             }
 
             $connection->commit();
@@ -130,18 +156,18 @@ class Version270 implements DataPatchInterface
     }
 
     /**
-     * Returns first Sequra Teaser from database and removes all teaser in database
+     * Returns all Sequra Teasers from database and removes them
      *
      * @param AdapterInterface $connection
      *
      * @return string[]
      */
-    private function fetchFirstTeaserAndRemoveAll(AdapterInterface $connection): array
+    private function fetchAllTeasersAndRemoveThem(AdapterInterface $connection): array
     {
         $widgetInstance = $this->moduleDataSetup->getTable('widget_instance');
         $query = $connection->select()->from($widgetInstance)->where(
             'instance_type = ?',
-            '%Sequra\Core\Block\Widget\Teaser%',
+            'Sequra\Core\Block\Widget\Teaser',
         );
         $teasers = $connection->fetchAll($query);
 
@@ -157,7 +183,7 @@ class Version270 implements DataPatchInterface
 
         $connection->delete($widgetInstance, ['instance_id IN (?)' => $ids]);
 
-        return $teasers[0];
+        return $teasers;
     }
 
     /**
@@ -173,7 +199,6 @@ class Version270 implements DataPatchInterface
     {
         return array_map(
             static function ($value) {
-                // TODO: The use of function base64_decode() is discouraged
                 // phpcs:ignore Magento2.Functions.DiscouragedFunction.Discouraged
                 return json_decode(base64_decode($value), true, 512, JSON_THROW_ON_ERROR);
             },
@@ -196,11 +221,11 @@ class Version270 implements DataPatchInterface
      * @throws Exception
      */
     private function migrateWidgetConfigurationForStore(
-        string $storeId,
-        string $priceSelector,
-        string $destinationsSelector,
-        string $theme,
-        array $teaserPaymentMethods,
+        string               $storeId,
+        string               $priceSelector,
+        string               $destinationsSelector,
+        string               $theme,
+        array                $teaserPaymentMethods,
         WidgetSettingsEntity $widgetSettingsEntity
     ): void {
         $availableCountries = $this->getAvailableCountries($storeId);
@@ -237,31 +262,122 @@ class Version270 implements DataPatchInterface
      */
     private function updateWidgetSettingEntity(
         WidgetSettingsEntity $widgetSettingsEntity,
+        string               $priceSelector,
+        string               $destinationSelector,
+        string               $theme,
+        array                $paymentMethods
+    ): void {
+        $widgetSettings = $widgetSettingsEntity->getWidgetSettings();
+        $widgetSettingsForProduct = $widgetSettings->getWidgetSettingsForProduct();
+        if ($widgetSettingsForProduct) {
+            $widgetSettingsForProduct = $this->updateExistingWidgetSettingsForProduct(
+                $widgetSettingsForProduct,
+                $priceSelector,
+                $destinationSelector,
+                $theme,
+                $paymentMethods
+            );
+        } else {
+            $widgetSettingsForProduct = $this->createNewWidgetSettingsForProduct(
+                $priceSelector,
+                $destinationSelector,
+                $theme,
+                $paymentMethods
+            );
+        }
+
+        $widgetSettings->setWidgetSettingsForProduct($widgetSettingsForProduct);
+        $widgetSettingsEntity->setWidgetSettings($widgetSettings);
+        $this->getWidgetSettingRepository()->update($widgetSettingsEntity);
+    }
+
+    /**
+     * Updates existing settings for product page
+     *
+     * @param WidgetSelectorSettings $widgetSettingsForProduct
+     * @param string $priceSelector
+     * @param string $destinationSelector
+     * @param string $theme
+     * @param array<string> $paymentMethods
+     * @return WidgetSelectorSettings
+     */
+    private function updateExistingWidgetSettingsForProduct(
+        WidgetSelectorSettings $widgetSettingsForProduct,
+        string                 $priceSelector,
+        string                 $destinationSelector,
+        string                 $theme,
+        array                  $paymentMethods
+    ): WidgetSelectorSettings {
+        $widgetSettingsForProduct->setPriceSelector($priceSelector);
+        $widgetSettingsForProduct->setLocationSelector($destinationSelector);
+
+        $customWidgetSettings = $widgetSettingsForProduct->getCustomWidgetsSettings();
+        $updatedPaymentMethods = [];
+        foreach ($customWidgetSettings as $customWidgetSetting) {
+            if (in_array($customWidgetSetting->getProduct(), $paymentMethods, true)) {
+                $updatedPaymentMethods[] = $customWidgetSetting->getProduct();
+                $customWidgetSetting->setCustomWidgetStyle($theme);
+                $customWidgetSetting->setCustomLocationSelector($destinationSelector);
+            }
+        }
+
+        $paymentMethods = array_diff($paymentMethods, $updatedPaymentMethods);
+        $customWidgetSettings = $this->createCustomWidgetSettings($paymentMethods, $theme, $destinationSelector);
+        $widgetSettingsForProduct->setCustomWidgetsSettings($customWidgetSettings);
+
+        return $widgetSettingsForProduct;
+    }
+
+    /**
+     * Creates new settings for product page
+     *
+     * @param string $priceSelector
+     * @param string $destinationSelector
+     * @param string $theme
+     * @param array<string> $paymentMethods
+     * @return WidgetSelectorSettings
+     */
+    private function createNewWidgetSettingsForProduct(
         string $priceSelector,
         string $destinationSelector,
         string $theme,
-        array $paymentMethods
-    ): void {
-        $widgetSettings = $widgetSettingsEntity->getWidgetSettings();
+        array  $paymentMethods
+    ): WidgetSelectorSettings {
         $widgetSettingsForProduct = new WidgetSelectorSettings(
             $priceSelector,
             $destinationSelector
         );
+
+        $customWidgetSettings = $this->createCustomWidgetSettings($paymentMethods, $theme, $destinationSelector);
+        $widgetSettingsForProduct->setCustomWidgetsSettings($customWidgetSettings);
+
+        return $widgetSettingsForProduct;
+    }
+
+    /**
+     * Creates custom widget settings for given payment methods
+     *
+     * @param array<string> $paymentMethods
+     * @param string $theme
+     * @param string $destinationSelector
+     * @return array<CustomWidgetsSettings>
+     */
+    private function createCustomWidgetSettings(
+        array $paymentMethods,
+        string $theme,
+        string $destinationSelector
+    ): array {
         $customWidgetSettings = [];
         foreach ($paymentMethods as $paymentMethod) {
             $customWidgetSettings[] = new CustomWidgetsSettings(
-                '',
+                $destinationSelector,
                 $paymentMethod,
                 true,
                 $theme
             );
         }
 
-        $widgetSettingsForProduct->setCustomWidgetsSettings($customWidgetSettings);
-        $widgetSettings->setWidgetSettingsForProduct($widgetSettingsForProduct);
-        $widgetSettingsEntity->setWidgetSettings($widgetSettings);
-
-        $this->getWidgetSettingRepository()->update($widgetSettingsEntity);
+        return $customWidgetSettings;
     }
 
     /**
