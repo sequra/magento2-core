@@ -145,6 +145,7 @@ class Version270 implements DataPatchInterface
             }
 
             $connection->commit();
+            Logger::logInfo('Migration ' . self::class . ' has been successfully finished.');
         } catch (Exception $e) {
             $connection->rollBack();
 
@@ -166,8 +167,8 @@ class Version270 implements DataPatchInterface
     {
         $widgetInstance = $this->moduleDataSetup->getTable('widget_instance');
         $query = $connection->select()->from($widgetInstance)->where(
-            'instance_type = ?',
-            'Sequra\Core\Block\Widget\Teaser',
+            'instance_type LIKE ?',
+            '%Sequra\Core\Block\Widget\Teaser%',
         );
         $teasers = $connection->fetchAll($query);
 
