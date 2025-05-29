@@ -31,7 +31,6 @@ trait WidgetTrait
      */
     protected $request;
 
-
     /**
      * Returns current country code
      *

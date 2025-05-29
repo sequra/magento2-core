@@ -9,10 +9,12 @@ use Magento\Framework\View\Element\Template;
 use Magento\Framework\App\ScopeResolverInterface;
 use Magento\Framework\Locale\ResolverInterface;
 use Magento\Framework\HTTP\PhpEnvironment\Request;
+use Magento\Framework\App\Request\Http;
 use SeQura\Core\BusinessLogic\CheckoutAPI\CheckoutAPI;
 use SeQura\Core\BusinessLogic\CheckoutAPI\PromotionalWidgets\Requests\PromotionalWidgetsCheckoutRequest;
 use SeQura\Core\BusinessLogic\CheckoutAPI\PromotionalWidgets\Responses\GetWidgetsCheckoutResponse;
 use SeQura\Core\Infrastructure\Logger\Logger;
+use Sequra\Core\Services\BusinessLogic\ProductService;
 
 /**
  * Class Product
@@ -24,24 +26,39 @@ class Product extends Template
     use WidgetTrait;
 
     /**
+     * @var Http
+     */
+    protected $http;
+    /**
+     * @var ProductService
+     */
+    protected $productService;
+
+    /**
      * @param ScopeResolverInterface $scopeResolver
      * @param ResolverInterface $localeResolver
      * @param Context $context
      * @param Session $checkoutSession
      * @param Request $request
+     * @param Http $http
+     * @param ProductService $productService
      */
     public function __construct(
         ScopeResolverInterface $scopeResolver,
         ResolverInterface      $localeResolver,
         Context                $context,
         Session                $checkoutSession,
-        Request               $request,
+        Request                $request,
+        Http                   $http,
+        ProductService         $productService
     ) {
         parent::__construct($context);
         $this->scopeResolver = $scopeResolver;
         $this->localeResolver = $localeResolver;
         $this->checkoutSession = $checkoutSession;
         $this->request = $request;
+        $this->http = $http;
+        $this->productService = $productService;
     }
 
     /**
@@ -52,14 +69,28 @@ class Product extends Template
     public function getAvailableWidgets(): array
     {
         try {
+            $productId = $this->http->getParam('id');
+            if (!is_numeric($productId)) {
+                return [];
+            }
+
+            $product = $this->productService->getProductById((int)$productId);
+            if (!$product) {
+                return [];
+            }
+
             $storeId = (string)$this->_storeManager->getStore()->getId();
+
             /** @var GetWidgetsCheckoutResponse $widgets */
             $widgets = CheckoutAPI::get()->promotionalWidgets($storeId)
                 ->getAvailableWidgetsForProductPage(new PromotionalWidgetsCheckoutRequest(
                     $this->getShippingAddressCountry(),
                     $this->getCurrentCountry(),
                     $this->getCurrentCurrency(),
-                    $this->getCustomerIpAddress()
+                    $this->getCustomerIpAddress(),
+                    $product->getSku(),
+                    $this->productService->getAllProductCategoryIds($product->getCategoryIds()),
+                    $product->getIsVirtual()
                 ));
 
             return $widgets->isSuccessful() ? $widgets->toArray() : [];

@@ -3,12 +3,17 @@
 namespace Sequra\Core\Services\BusinessLogic;
 
 use Magento\Catalog\Api\CategoryRepositoryInterface;
-use Magento\Catalog\Model\ResourceModel\Category\Tree;
+use Magento\Catalog\Model\ProductRepository;
+use Magento\Catalog\Model\Product;
 use Magento\Framework\Exception\NoSuchEntityException;
 use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
 
 class ProductService
 {
+    /**
+     * @var ProductRepository
+     */
+    private $productRepository;
     /**
      * @var CategoryRepositoryInterface
      */
@@ -19,11 +24,33 @@ class ProductService
     private $resolvedCategories = [];
 
     /**
+     * @param ProductRepository $productRepository
      * @param CategoryRepositoryInterface $categoryRepository
      */
-    public function __construct(CategoryRepositoryInterface $categoryRepository)
-    {
+    public function __construct(
+        ProductRepository  $productRepository,
+        CategoryRepositoryInterface $categoryRepository
+    ) {
+        $this->productRepository = $productRepository;
         $this->categoryRepository = $categoryRepository;
+    }
+
+    /**
+     * Gets Magento product by id if type is not "grouped"
+     *
+     * @param int $productId
+     *
+     * @return Product|null
+     * @throws NoSuchEntityException
+     */
+    public function getProductById(int $productId): ?Product
+    {
+        $product = $this->productRepository->getById($productId);
+        if ($product->getTypeId() === 'grouped') {
+            return null;
+        }
+
+        return $product;
     }
 
     /**
