@@ -34,7 +34,6 @@ define([
                 ...SequraWidgetFacade,
                 ...{
                     mutationObserver: null,
-                    forcePriceSelector: true,
                     presets: {
                         L: '{"alignment":"left"}',
                         R: '{"alignment":"right"}',
@@ -112,14 +111,24 @@ define([
                             }
                         );
                     },
-        
-                    isVariableProduct: function (selector) {
-                        return document.querySelector(selector) ? true : false;
+
+                    isAlternativeTriggerSelectorAvailable: function (widget) {
+                        return widget.altPriceSel !== '' && widget.altTriggerSelector !== ''
+                    },
+
+                    isSpecialProduct: function (selector) {
+                        return !!document.querySelector(selector);
                     },
         
                     getPriceSelector: function (widget) {
+                        if (
+                            this.isAlternativeTriggerSelectorAvailable(widget) &&
+                            this.isSpecialProduct(widget.altTriggerSelector))
+                        {
+                            return widget.altPriceSel;
+                        }
+
                         return widget.priceSel;
-                        // return !this.forcePriceSelector && this.isVariableProduct(widget.isVariableSel) ? widget.variationPriceSel : widget.priceSel;
                     },
         
                     /**
@@ -212,9 +221,8 @@ define([
         
                     /**
                      * Paint the widgets in the page and observe the DOM to refresh the widgets when the page changes.
-                     * @param {boolean} forcePriceSelector If true, the price selector will be forced to the simple product price selector.
                      */
-                    drawWidgetsOnPage: function (forcePriceSelector = true) {
+                    drawWidgetsOnPage: function () {
 
                         // Init the pre-rendered miniWidgets if any.
                         for (const widget of document.querySelectorAll('.sequra-educational-popup.sequra-promotion-miniwidget')) {
@@ -241,9 +249,7 @@ define([
                         if (this.mutationObserver) {
                             this.mutationObserver.disconnect();
                         }
-        
-                        this.forcePriceSelector = forcePriceSelector;
-        
+
                         this.refreshWidgets();
         
                         // Then, observe the DOM to refresh the widgets when the page changes.

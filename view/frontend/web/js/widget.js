@@ -35,6 +35,8 @@ define([
                     campaign: widget.campaign,
                     priceSel: widget.priceSel,
                     dest: widget.dest || '#' + config.divId,
+                    altPriceSel: widget.altPriceSel,
+                    altTriggerSelector: widget.altTriggerSelector,
                     theme: widget.theme,
                     reverse: widget.reverse,
                     minAmount: widget.minAmount,
