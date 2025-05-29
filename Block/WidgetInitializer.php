@@ -9,6 +9,7 @@ use Magento\Checkout\Model\Session;
 use Magento\Framework\Locale\ResolverInterface;
 use SeQura\Core\BusinessLogic\CheckoutAPI\CheckoutAPI;
 use SeQura\Core\BusinessLogic\CheckoutAPI\PromotionalWidgets\Requests\PromotionalWidgetsCheckoutRequest;
+use SeQura\Core\BusinessLogic\CheckoutAPI\PromotionalWidgets\Responses\PromotionalWidgetsCheckoutResponse;
 use SeQura\Core\Infrastructure\Logger\Logger;
 
 class WidgetInitializer extends Template
@@ -55,13 +56,14 @@ class WidgetInitializer extends Template
             $storeId = (string)$this->_storeManager->getStore()->getId();
             $currentCountry = $this->getCurrentCountry();
 
+            /** @var PromotionalWidgetsCheckoutResponse $widgetInitializeData */
             $widgetInitializeData = CheckoutAPI::get()
                 ->promotionalWidgets($storeId)
                 ->getPromotionalWidgetInitializeData(
                     new PromotionalWidgetsCheckoutRequest($shippingCountry, $currentCountry)
                 );
 
-            return $widgetInitializeData->toArray();
+            return $widgetInitializeData->isSuccessful() ? $widgetInitializeData->toArray() : [];
         } catch (Exception $e) {
             Logger::logError('Widget data initialization failed: ' . $e->getMessage() .
                 ' Trace: ' . $e->getTraceAsString());
