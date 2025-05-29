@@ -58,6 +58,15 @@ class WidgetSettings extends BaseConfigurationController
         $result = $data->toArray();
 
         if (empty($result)) {
+            $result['productPriceSelector'] ='.price-container .price';
+            $result['defaultProductLocationSelector'] = '.actions .action.primary.tocart';
+            $result['altProductPriceSelector'] = '[data-price-type="finalPrice"] .price';
+            $result['altProductPriceTriggerSelector'] = '.bundle-actions';
+            $result['cartPriceSelector'] = '.grand.totals .price';
+            $result['cartLocationSelector'] = '.cart-summary';
+            $result['listingPriceSelector'] = '.price-box.price-final_price .price';
+            $result['listingLocationSelector'] = '.price-box.price-final_price';
+
             return $this->result->setData($result);
         }
 
