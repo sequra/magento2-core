@@ -5,11 +5,6 @@ namespace Sequra\Core\Services\BusinessLogic\PromotionalWidget;
 use Magento\Framework\Locale\ResolverInterface;
 use SeQura\Core\BusinessLogic\Domain\Integration\PromotionalWidgets\MiniWidgetMessagesProviderInterface;
 
-/**
- * Class MiniWidgetMessagesProvider
- *
- * @package Sequra\Core\Services\BusinessLogic\PromotionalWidget
- */
 class MiniWidgetMessagesProvider implements MiniWidgetMessagesProviderInterface
 {
     /**
@@ -26,6 +21,8 @@ class MiniWidgetMessagesProvider implements MiniWidgetMessagesProviderInterface
     }
 
     /**
+     * @inheritDoc
+     *
      * @return string|null
      */
     public function getMessage(): ?string
@@ -34,6 +31,8 @@ class MiniWidgetMessagesProvider implements MiniWidgetMessagesProviderInterface
     }
 
     /**
+     * @inheritDoc
+     *
      * @return string|null
      */
     public function getBelowLimitMessage(): ?string
@@ -42,6 +41,8 @@ class MiniWidgetMessagesProvider implements MiniWidgetMessagesProviderInterface
     }
 
     /**
+     * Returns country code from locale
+     *
      * @return string
      */
     protected function getCountryCode(): string

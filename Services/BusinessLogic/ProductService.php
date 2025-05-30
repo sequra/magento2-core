@@ -41,6 +41,8 @@ class ProductService implements ProductServiceInterface
     }
 
     /**
+     * @inheritDoc
+     *
      * @param string $productId
      *
      * @return ?string
@@ -51,7 +53,7 @@ class ProductService implements ProductServiceInterface
     {
         $product = $this->getProductById($productId);
 
-        if(!$product) {
+        if (!$product) {
             return null;
         }
 
@@ -59,13 +61,15 @@ class ProductService implements ProductServiceInterface
     }
 
     /**
+     * @inheritDoc
+     *
      * @throws NoSuchEntityException
      */
     public function isProductVirtual(string $productId): bool
     {
         $product = $this->getProductById($productId);
 
-        if(!$product) {
+        if (!$product) {
             return false;
         }
 
@@ -73,6 +77,8 @@ class ProductService implements ProductServiceInterface
     }
 
     /**
+     * @inheritDoc
+     *
      * @param string $productId
      *
      * @return string[]
@@ -83,7 +89,7 @@ class ProductService implements ProductServiceInterface
     {
         $product = $this->getProductById($productId);
 
-        if(!$product) {
+        if (!$product) {
             return [];
         }
 
@@ -100,7 +106,7 @@ class ProductService implements ProductServiceInterface
      */
     public function getProductById(int $productId): ?Product
     {
-        if(self::$products[$productId] ?? null) {
+        if (self::$products[$productId] ?? null) {
             return self::$products[$productId];
         }
 

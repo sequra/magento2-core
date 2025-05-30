@@ -5,10 +5,6 @@
 
     <body>
         <referenceContainer name="product.info.main">
-            <block class="Sequra\Core\Block\MiniWidget"
-                   name="sequra.mini.widget"
-                   template="Sequra_Core::widget/mini_widget.phtml"
-            />
             <block class="Sequra\Core\Block\Product"
                    name="sequra.product.widget"
                    template="Sequra_Core::widget/product.phtml"

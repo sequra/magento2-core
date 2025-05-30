@@ -6,9 +6,6 @@ var config = {
             'Magento_Checkout/js/action/set-shipping-information': {
                 'Sequra_Core/js/model/set-shipping-information-mixin': true
             },
-            'Magento_Catalog/js/price-box': {
-                'Sequra_Core/js/pricebox-widget-mixin': true
-            },
             'Magento_Swatches/js/swatch-renderer': {
                 'Sequra_Core/js/model/skuswitch': true
             }

@@ -6,7 +6,7 @@ use Magento\Framework\App\ScopeResolverInterface;
 use Magento\Framework\Locale\ResolverInterface;
 use Magento\Store\Model\Store;
 use NumberFormatter;
-use SeQura\Core\BusinessLogic\Domain\PromotionalWidgets\WidgetConfiguratorContracts\WidgetConfiguratorInterface;
+use SeQura\Core\BusinessLogic\Domain\Integration\PromotionalWidgets\WidgetConfiguratorInterface;
 
 class WidgetConfigurator implements WidgetConfiguratorInterface
 {
