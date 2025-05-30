@@ -43,6 +43,7 @@ class OrderCancellationObserver implements ObserverInterface
         $orderData = $observer->getData('order');
         if (WebhookController::isWebhookProcessing() || ! $orderData instanceof MagentoOrder ||
             $orderData->getStatus() !== Order::STATE_CANCELED ||
+            !$orderData->getPayment() ||
             $orderData->getPayment()->getMethod() !== ConfigProvider::CODE) {
             return;
         }
@@ -73,15 +74,15 @@ class OrderCancellationObserver implements ObserverInterface
         /**
          * @var OrderService $orderService
          */
-        $orderService = StoreContext::doWithStore($orderData->getStoreId(), function () {
+        $orderService = StoreContext::doWithStore((string)$orderData->getStoreId(), function () {
             return ServiceRegister::getService(OrderService::class);
         });
 
-        StoreContext::doWithStore($orderData->getStoreId(), [$orderService, 'updateOrder'], [
+        StoreContext::doWithStore((string)$orderData->getStoreId(), [$orderService, 'updateOrder'], [
             new OrderUpdateData(
                 $orderData->getIncrementId(),
-                new SeQuraCart($orderData->getOrderCurrencyCode()),
-                new SeQuraCart($orderData->getOrderCurrencyCode()),
+                new SeQuraCart($orderData->getOrderCurrencyCode() ?? ''),
+                new SeQuraCart($orderData->getOrderCurrencyCode() ?? ''),
                 null,
                 null
             )
