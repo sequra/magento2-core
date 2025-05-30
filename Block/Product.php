@@ -14,7 +14,6 @@ use SeQura\Core\BusinessLogic\CheckoutAPI\CheckoutAPI;
 use SeQura\Core\BusinessLogic\CheckoutAPI\PromotionalWidgets\Requests\PromotionalWidgetsCheckoutRequest;
 use SeQura\Core\BusinessLogic\CheckoutAPI\PromotionalWidgets\Responses\GetWidgetsCheckoutResponse;
 use SeQura\Core\Infrastructure\Logger\Logger;
-use Sequra\Core\Services\BusinessLogic\ProductService;
 
 /**
  * Class Product
@@ -29,10 +28,6 @@ class Product extends Template
      * @var Http
      */
     protected $http;
-    /**
-     * @var ProductService
-     */
-    protected $productService;
 
     /**
      * @param ScopeResolverInterface $scopeResolver
@@ -41,16 +36,14 @@ class Product extends Template
      * @param Session $checkoutSession
      * @param Request $request
      * @param Http $http
-     * @param ProductService $productService
      */
     public function __construct(
         ScopeResolverInterface $scopeResolver,
-        ResolverInterface      $localeResolver,
-        Context                $context,
-        Session                $checkoutSession,
-        Request                $request,
-        Http                   $http,
-        ProductService         $productService
+        ResolverInterface $localeResolver,
+        Context $context,
+        Session $checkoutSession,
+        Request $request,
+        Http $http
     ) {
         parent::__construct($context);
         $this->scopeResolver = $scopeResolver;
@@ -58,7 +51,6 @@ class Product extends Template
         $this->checkoutSession = $checkoutSession;
         $this->request = $request;
         $this->http = $http;
-        $this->productService = $productService;
     }
 
     /**
@@ -74,11 +66,6 @@ class Product extends Template
                 return [];
             }
 
-            $product = $this->productService->getProductById((int)$productId);
-            if (!$product) {
-                return [];
-            }
-
             $storeId = (string)$this->_storeManager->getStore()->getId();
 
             /** @var GetWidgetsCheckoutResponse $widgets */
@@ -88,9 +75,7 @@ class Product extends Template
                     $this->getCurrentCountry(),
                     $this->getCurrentCurrency(),
                     $this->getCustomerIpAddress(),
-                    $product->getSku(),
-                    $this->productService->getAllProductCategoryIds($product->getCategoryIds()),
-                    $product->getIsVirtual()
+                    $productId
                 ));
 
             return $widgets->isSuccessful() ? $widgets->toArray() : [];

@@ -32,10 +32,10 @@ class MiniWidget extends Template
      */
     public function __construct(
         ScopeResolverInterface $scopeResolver,
-        ResolverInterface      $localeResolver,
-        Context                $context,
-        Session                $checkoutSession,
-        Request               $request,
+        ResolverInterface $localeResolver,
+        Context $context,
+        Session $checkoutSession,
+        Request $request
     ) {
         parent::__construct($context);
         $this->scopeResolver = $scopeResolver;

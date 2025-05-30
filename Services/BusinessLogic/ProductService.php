@@ -6,9 +6,10 @@ use Magento\Catalog\Api\CategoryRepositoryInterface;
 use Magento\Catalog\Model\ProductRepository;
 use Magento\Catalog\Model\Product;
 use Magento\Framework\Exception\NoSuchEntityException;
+use SeQura\Core\BusinessLogic\Domain\Integration\Product\ProductServiceInterface;
 use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
 
-class ProductService
+class ProductService implements ProductServiceInterface
 {
     /**
      * @var ProductRepository
@@ -22,6 +23,10 @@ class ProductService
      * @var array<string, array<string>>
      */
     private $resolvedCategories = [];
+    /**
+     * @var array<int, Product>
+     */
+    private static $products = [];
 
     /**
      * @param ProductRepository $productRepository
@@ -36,6 +41,56 @@ class ProductService
     }
 
     /**
+     * @param string $productId
+     *
+     * @return ?string
+     *
+     * @throws NoSuchEntityException
+     */
+    public function getProductsSkuByProductId(string $productId): ?string
+    {
+        $product = $this->getProductById($productId);
+
+        if(!$product) {
+            return null;
+        }
+
+        return $product->getSku() ?? '';
+    }
+
+    /**
+     * @throws NoSuchEntityException
+     */
+    public function isProductVirtual(string $productId): bool
+    {
+        $product = $this->getProductById($productId);
+
+        if(!$product) {
+            return false;
+        }
+
+        return $product->getIsVirtual() ?? false;
+    }
+
+    /**
+     * @param string $productId
+     *
+     * @return string[]
+     *
+     * @throws NoSuchEntityException
+     */
+    public function getProductCategoriesByProductId(string $productId): array
+    {
+        $product = $this->getProductById($productId);
+
+        if(!$product) {
+            return [];
+        }
+
+        return $this->getAllProductCategoryIds($product->getCategoryIds());
+    }
+
+    /**
      * Gets Magento product by id if type is not "grouped"
      *
      * @param int $productId
@@ -45,10 +100,16 @@ class ProductService
      */
     public function getProductById(int $productId): ?Product
     {
+        if(self::$products[$productId] ?? null) {
+            return self::$products[$productId];
+        }
+
         $product = $this->productRepository->getById($productId);
         if ($product->getTypeId() === 'grouped') {
             return null;
         }
+
+        self::$products[$productId] = $product;
 
         return $product;
     }
@@ -62,7 +123,7 @@ class ProductService
      *
      * @throws NoSuchEntityException
      */
-    public function getAllProductCategoryIds(array $categoryIds): array
+    private function getAllProductCategoryIds(array $categoryIds): array
     {
         if (!$categoryIds) {
             return [];
