@@ -11,7 +11,7 @@ define(['jquery'], function ($) {
         updatePrice: function (newPrices) {
             var ret = this._super(newPrices);
             let sequraElements = document.getElementsByClassName('sequra-promotion-widget');
-            let miniElements = document.getElementsByClassName('sequra-educational-popup');
+            let miniElements = document.getElementsByClassName('sequra-promotion-miniwidget');
             var price = Math.round(this.cache.displayPrices.finalPrice.amount * 100);
             var productId = this.element[0].getAttribute('data-product-id');
 
