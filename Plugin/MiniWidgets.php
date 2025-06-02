@@ -122,15 +122,16 @@ class MiniWidgets
     /**
      * Gets the HTML with mini-widget dataset
      *
-     * @param array<array{
-     *      product?: string,
-     *      priceSel?: string,
-     *      dest?: string,
-     *      minAmount?: int,
-     *      maxAmount?: int,
-     *      miniWidgetMessage?: string,
-     *      miniWidgetBelowLimitMessage?: string
-     *  }> $miniWidgetData
+     * @param array $miniWidgetData
+     * @phpstan-param array<array{
+     * product?: string,
+     * priceSel?: string,
+     * dest?: string,
+     * minAmount?: int,
+     * maxAmount?: int,
+     * miniWidgetMessage?: string,
+     * miniWidgetBelowLimitMessage?: string
+     * }> $miniWidgetData
      *
      * @return string
      */
