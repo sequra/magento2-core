@@ -17,6 +17,7 @@
         }
     ],
     "minimum-stability": "stable",
+    "prefer-stable": true,
     "require": {
         "php": ">=7.4",
         "sequra/integration-core": "dev-feature/LIS-61",
