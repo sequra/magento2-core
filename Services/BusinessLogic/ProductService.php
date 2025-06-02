@@ -99,17 +99,24 @@ class ProductService implements ProductServiceInterface
     /**
      * Gets Magento product by id if type is not "grouped"
      *
-     * @param int $productId
+     * @param string $id
      *
      * @return Product|null
      * @throws NoSuchEntityException
      */
-    public function getProductById(int $productId): ?Product
+    public function getProductById(string $id): ?Product
     {
+        if (!is_numeric($id)) {
+            return null;
+        }
+
+        $productId = (int) $id;
+
         if (self::$products[$productId] ?? null) {
             return self::$products[$productId];
         }
 
+        /** @var Product $product */
         $product = $this->productRepository->getById($productId);
         if ($product->getTypeId() === 'grouped') {
             return null;
@@ -129,7 +136,7 @@ class ProductService implements ProductServiceInterface
      *
      * @throws NoSuchEntityException
      */
-    private function getAllProductCategoryIds(array $categoryIds): array
+    public function getAllProductCategoryIds(array $categoryIds): array
     {
         if (!$categoryIds) {
             return [];

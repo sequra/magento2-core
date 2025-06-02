@@ -10,6 +10,7 @@ use Magento\Store\Api\StoreConfigManagerInterface;
 use Magento\Store\Model\StoreManagerInterface;
 use SeQura\Core\BusinessLogic\AdminAPI\AdminAPI;
 use SeQura\Core\BusinessLogic\AdminAPI\PromotionalWidgets\Requests\WidgetSettingsRequest;
+use SeQura\Core\BusinessLogic\AdminAPI\PromotionalWidgets\Responses\WidgetSettingsResponse;
 
 class WidgetSettings extends BaseConfigurationController
 {
@@ -52,13 +53,13 @@ class WidgetSettings extends BaseConfigurationController
      */
     protected function getWidgetSettings(): Json
     {
-        // @phpstan-ignore-next-line
+        /** @var WidgetSettingsResponse $data */
         $data = AdminAPI::get()->widgetConfiguration($this->storeId)->getWidgetSettings();
 
         $result = $data->toArray();
 
         if (empty($result)) {
-            $result['productPriceSelector'] ='.price-container .price';
+            $result['productPriceSelector'] = '.price-container .price';
             $result['defaultProductLocationSelector'] = '.actions .action.primary.tocart';
             $result['altProductPriceSelector'] = '[data-price-type="finalPrice"] .price';
             $result['altProductPriceTriggerSelector'] = '.bundle-actions';

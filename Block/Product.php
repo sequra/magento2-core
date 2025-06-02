@@ -62,7 +62,7 @@ class Product extends Template
     {
         try {
             $productId = $this->http->getParam('id');
-            if (!is_numeric($productId)) {
+            if (!is_string($productId) && !is_int($productId)) {
                 return [];
             }
 
@@ -75,7 +75,7 @@ class Product extends Template
                     $this->getCurrentCountry(),
                     $this->getCurrentCurrency(),
                     $this->getCustomerIpAddress(),
-                    $productId
+                    (string)$productId
                 ));
 
             return $widgets->isSuccessful() ? $widgets->toArray() : [];

@@ -80,7 +80,6 @@ class MiniWidgets
         }
 
         // @phpstan-ignore-next-line
-        /** @var Product $product */
         $product = $amount->getPrice() ? $amount->getPrice()->getProduct() : null;
         if (!$product) {
             return $result;
@@ -95,10 +94,23 @@ class MiniWidgets
                     $this->getCurrentCountry(),
                     $this->getCurrentCurrency(),
                     $this->getCustomerIpAddress(),
-                    $product->getId()
+                    (string)$product->getId()
                 ));
 
-            $result .= $this->getHtml($miniWidget->isSuccessful() ? $miniWidget->toArray() : []);
+            if ($miniWidget->isSuccessful()) {
+                /** @var array<array{
+                 *     product?: string,
+                 *     priceSel?: string,
+                 *     dest?: string,
+                 *     minAmount?: int,
+                 *     maxAmount?: int,
+                 *     miniWidgetMessage?: string,
+                 *     miniWidgetBelowLimitMessage?: string
+                 * }> $data
+                 */
+                $data = $miniWidget->toArray();
+                $result .= $this->getHtml($data);
+            }
         } catch (Exception $e) {
             Logger::logError('Fetching available widgets on product listing page failed: ' . $e->getMessage() .
                 ' Trace: ' . $e->getTraceAsString());
@@ -110,11 +122,19 @@ class MiniWidgets
     /**
      * Gets the HTML with mini-widget dataset
      *
-     * @param array $miniWidgetData
+     * @param array<array{
+     *      product?: string,
+     *      priceSel?: string,
+     *      dest?: string,
+     *      minAmount?: int,
+     *      maxAmount?: int,
+     *      miniWidgetMessage?: string,
+     *      miniWidgetBelowLimitMessage?: string
+     *  }> $miniWidgetData
      *
      * @return string
      */
-    private function getHtml(array $miniWidgetData): string
+    protected function getHtml(array $miniWidgetData): string
     {
         if (empty($miniWidgetData)) {
             return '';
@@ -123,17 +143,17 @@ class MiniWidgets
         $datasetString = '';
         foreach ($miniWidgetData as $miniWidget) {
             $dataset = [
-                'product' => $miniWidget['product'],
-                'price-sel' => '.product-item-info ' . $miniWidget['priceSel'],
-                'dest' => '.product-item-info ' . $miniWidget['dest'],
-                'min-amount' => $miniWidget['minAmount'],
-                'max-amount' => $miniWidget['maxAmount'],
-                'message' => $miniWidget['miniWidgetMessage'],
-                'message-below-limit' => $miniWidget['miniWidgetBelowLimitMessage'],
+                'product' => $miniWidget['product'] ?? '',
+                'price-sel' => isset($miniWidget['priceSel']) ? '.product-item-info ' . $miniWidget['priceSel'] : '',
+                'dest' => isset($miniWidget['dest']) ? '.product-item-info ' . $miniWidget['dest'] : '',
+                'min-amount' => $miniWidget['minAmount'] ?? '',
+                'max-amount' => $miniWidget['maxAmount'] ?? '',
+                'message' => $miniWidget['miniWidgetMessage'] ?? '',
+                'message-below-limit' => $miniWidget['miniWidgetBelowLimitMessage'] ?? '',
             ];
 
             $dataset = array_map(
-                function (string $key, string $value) {
+                function ($key, $value) {
                     /** @var string $escapedValue */
                     $escapedValue = $this->htmlEscaper->escapeHtml((string)$value);
                     return sprintf('data-%s="%s"', $key, $escapedValue);
