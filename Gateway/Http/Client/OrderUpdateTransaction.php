@@ -30,11 +30,6 @@ class OrderUpdateTransaction implements ClientInterface
     private $transformService;
 
     /**
-     * @var OrderService|null
-     */
-    private $orderService;
-
-    /**
      * Constructor
      *
      * @param SeQuraTranslationProvider $translationProvider
@@ -83,13 +78,23 @@ class OrderUpdateTransaction implements ClientInterface
         $shippedCart = $this->transformService->transformOrderCartToSeQuraCart($order, true);
         $unshippedCart = $this->transformService->transformOrderCartToSeQuraCart($order, false);
         $sequraOrder = null;
+        
+        $storeId = (string) $order->getStoreId();
+
+        /**
+         * @var OrderService $orderService
+         */
+        $orderService = StoreContext::doWithStore($storeId, function () {
+            return ServiceRegister::getService(OrderService::class);
+        });
+
         try {
             /**
             * @var \SeQura\Core\BusinessLogic\Domain\Order\Models\SeQuraOrder $sequraOrder
             */
             $sequraOrder = StoreContext::doWithStore(
-                (string) $order->getStoreId(),
-                [$this->getOrderService(), 'updateOrder'],
+                $storeId,
+                [$orderService, 'updateOrder'],
                 [
                 new OrderUpdateData(
                     $order->getIncrementId(),
@@ -120,19 +125,5 @@ class OrderUpdateTransaction implements ClientInterface
             "success" => true,
             "data" => $sequraOrder
         ];
-    }
-
-    /**
-     * Returns an instance of Order service.
-     *
-     * @return OrderService
-     */
-    private function getOrderService(): OrderService
-    {
-        if (!isset($this->orderService)) {
-            $this->orderService = ServiceRegister::getService(OrderService::class);
-        }
-
-        return $this->orderService;
     }
 }
