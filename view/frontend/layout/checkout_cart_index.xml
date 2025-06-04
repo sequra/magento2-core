@@ -1,10 +1,14 @@
 <?xml version="1.0"?>
-<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" layout="1column"
-    xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      layout="1column"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+
     <body>
         <referenceContainer name="content">
-            <block class="Sequra\Core\Block\Cart" before="-" name="sequra.cart"
-                template="Sequra_Core::cart.phtml" />
+            <block class="Sequra\Core\Block\Cart"
+                   name="sequra.cart.widget"
+                   template="Sequra_Core::widget/cart.phtml"
+           />
         </referenceContainer>
     </body>
 </page>

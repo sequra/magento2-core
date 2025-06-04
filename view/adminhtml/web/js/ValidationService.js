@@ -193,6 +193,25 @@ if (!window.SequraFE) {
         parent && parent.classList.remove('sqs--error');
     };
 
+    /**
+     * Validates if the input is a valid css selector. If not, adds the error class to the input element.
+     *
+     * @param {HTMLInputElement} input
+     * @param {boolean} required
+     * @param {string?} message
+     * @return {boolean}
+     */
+    const validateCssSelector = (input, required, message) => {
+        let isValid = false;
+        try {
+            document.querySelector(input.value);
+            isValid = true;
+        } catch {
+            isValid = !required && !input.value;
+        }
+
+        return validateField(input, !isValid, message);
+    };
 
     /**
      * Validates the provided JSON string and marks field invalid if the JSON is invalid.
@@ -242,6 +261,7 @@ if (!window.SequraFE) {
         validateNumber,
         validateUrl,
         validateMaxLength,
+        validateCssSelector,
         validateJson,
         validateField,
         validateRequiredField,

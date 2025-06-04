@@ -3,12 +3,18 @@
 namespace Sequra\Core\Services\BusinessLogic;
 
 use Magento\Catalog\Api\CategoryRepositoryInterface;
-use Magento\Catalog\Model\ResourceModel\Category\Tree;
+use Magento\Catalog\Model\ProductRepository;
+use Magento\Catalog\Model\Product;
 use Magento\Framework\Exception\NoSuchEntityException;
+use SeQura\Core\BusinessLogic\Domain\Integration\Product\ProductServiceInterface;
 use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
 
-class ProductService
+class ProductService implements ProductServiceInterface
 {
+    /**
+     * @var ProductRepository
+     */
+    private $productRepository;
     /**
      * @var CategoryRepositoryInterface
      */
@@ -17,13 +23,108 @@ class ProductService
      * @var array<string, array<string>>
      */
     private $resolvedCategories = [];
+    /**
+     * @var array<int, Product>
+     */
+    private static $products = [];
 
     /**
+     * @param ProductRepository $productRepository
      * @param CategoryRepositoryInterface $categoryRepository
      */
-    public function __construct(CategoryRepositoryInterface $categoryRepository)
-    {
+    public function __construct(
+        ProductRepository  $productRepository,
+        CategoryRepositoryInterface $categoryRepository
+    ) {
+        $this->productRepository = $productRepository;
         $this->categoryRepository = $categoryRepository;
+    }
+
+    /**
+     * @inheritDoc
+     *
+     * @param string $productId
+     *
+     * @return ?string
+     *
+     * @throws NoSuchEntityException
+     */
+    public function getProductsSkuByProductId(string $productId): ?string
+    {
+        $product = $this->getProductById($productId);
+
+        if (!$product) {
+            return null;
+        }
+
+        return $product->getSku() ?? '';
+    }
+
+    /**
+     * @inheritDoc
+     *
+     * @throws NoSuchEntityException
+     */
+    public function isProductVirtual(string $productId): bool
+    {
+        $product = $this->getProductById($productId);
+
+        if (!$product) {
+            return false;
+        }
+
+        return $product->getIsVirtual() ?? false;
+    }
+
+    /**
+     * @inheritDoc
+     *
+     * @param string $productId
+     *
+     * @return string[]
+     *
+     * @throws NoSuchEntityException
+     */
+    public function getProductCategoriesByProductId(string $productId): array
+    {
+        $product = $this->getProductById($productId);
+
+        if (!$product) {
+            return [];
+        }
+
+        return $this->getAllProductCategoryIds($product->getCategoryIds());
+    }
+
+    /**
+     * Gets Magento product by id if type is not "grouped"
+     *
+     * @param string $id
+     *
+     * @return Product|null
+     * @throws NoSuchEntityException
+     */
+    public function getProductById(string $id): ?Product
+    {
+        if (!is_numeric($id)) {
+            return null;
+        }
+
+        $productId = (int) $id;
+
+        if (self::$products[$productId] ?? null) {
+            return self::$products[$productId];
+        }
+
+        /** @var Product $product */
+        $product = $this->productRepository->getById($productId);
+        if ($product->getTypeId() === 'grouped') {
+            return null;
+        }
+
+        self::$products[$productId] = $product;
+
+        return $product;
     }
 
     /**

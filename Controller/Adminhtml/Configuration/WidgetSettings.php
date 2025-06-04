@@ -10,6 +10,7 @@ use Magento\Store\Api\StoreConfigManagerInterface;
 use Magento\Store\Model\StoreManagerInterface;
 use SeQura\Core\BusinessLogic\AdminAPI\AdminAPI;
 use SeQura\Core\BusinessLogic\AdminAPI\PromotionalWidgets\Requests\WidgetSettingsRequest;
+use SeQura\Core\BusinessLogic\AdminAPI\PromotionalWidgets\Responses\WidgetSettingsResponse;
 
 class WidgetSettings extends BaseConfigurationController
 {
@@ -52,21 +53,25 @@ class WidgetSettings extends BaseConfigurationController
      */
     protected function getWidgetSettings(): Json
     {
-        // @phpstan-ignore-next-line
+        /** @var WidgetSettingsResponse $data */
         $data = AdminAPI::get()->widgetConfiguration($this->storeId)->getWidgetSettings();
 
         $result = $data->toArray();
 
         if (empty($result)) {
+            $result['productPriceSelector'] = '.price-container .price';
+            $result['defaultProductLocationSelector'] = '.actions .action.primary.tocart';
+            $result['altProductPriceSelector'] = '[data-price-type="finalPrice"] .price';
+            $result['altProductPriceTriggerSelector'] = '.bundle-actions';
+            $result['cartPriceSelector'] = '.grand.totals .price';
+            $result['cartLocationSelector'] = '.cart-summary';
+            $result['listingPriceSelector'] = '.price-box.price-final_price .price';
+            $result['listingLocationSelector'] = '.price-box.price-final_price';
+
             return $this->result->setData($result);
         }
 
-        $result['widgetLabels']['message'] = !empty($result['widgetLabels']['messages']) ?
-            reset($result['widgetLabels']['messages']): '';
-        $result['widgetLabels']['messageBelowLimit'] = !empty($result['widgetLabels']['messagesBelowLimit']) ?
-            reset($result['widgetLabels']['messagesBelowLimit']): '';
         $result['widgetStyles'] = $result['widgetConfiguration'];
-        unset($result['widgetLabels']['messages'], $result['widgetLabels']['messagesBelowLimit']);
         unset($result['widgetConfiguration']);
 
         $this->addResponseCode($data);
@@ -110,19 +115,56 @@ class WidgetSettings extends BaseConfigurationController
          * @var bool $showInstallmentAmountInCartPage
          */
         $showInstallmentAmountInCartPage = $data['showInstallmentAmountInCartPage'] ?? false;
-        /**
-         * @var string $miniWidgetSelector
-         */
-        $miniWidgetSelector = $data['miniWidgetSelector'] ?? '';
+
         /**
          * @var string $widgetStyles
          */
         $widgetStyles = $data['widgetStyles'] ?? '';
-
         /**
-         * @var array<string, string> $labels
+         * @var string $productPriceSelector
          */
-        $labels = $data['widgetLabels'] ?? [];
+        $productPriceSelector = $data['productPriceSelector'] ?? '';
+        /**
+         * @var string $defaultProductLocationSelector
+         */
+        $defaultProductLocationSelector = $data['defaultProductLocationSelector'] ?? '';
+        /**
+         * @var string $altProductPriceSelector
+         */
+        $altProductPriceSelector = $data['altProductPriceSelector'] ?? '';
+        /**
+         * @var string $altProductPriceTriggerSelector
+         */
+        $altProductPriceTriggerSelector = $data['altProductPriceTriggerSelector'] ?? '';
+        /**
+         * @var string $cartPriceSelector
+         */
+        $cartPriceSelector = $data['cartPriceSelector'] ?? '';
+        /**
+         * @var string $cartLocationSelector
+         */
+        $cartLocationSelector = $data['cartLocationSelector'] ?? '';
+        /**
+         * @var string $widgetOnCartPage
+         */
+        $widgetOnCartPage = $data['widgetOnCartPage'] ?? '';
+        /**
+         * @var string $listingPriceSelector
+         */
+        $listingPriceSelector = $data['listingPriceSelector'] ?? '';
+        /**
+         * @var string $listingLocationSelector
+         */
+        $listingLocationSelector = $data['listingLocationSelector'] ?? '';
+        /**
+         * @var string $widgetOnListingPage
+         */
+        $widgetOnListingPage = $data['widgetOnListingPage'] ?? '';
+        /**
+         * @var array<string, string> $customLocations
+         */
+        $customLocations = $data['customLocations'] ?? [];
+
         // @phpstan-ignore-next-line
         $response = AdminAPI::get()->widgetConfiguration($this->storeId)->setWidgetSettings(
             new WidgetSettingsRequest(
@@ -131,10 +173,18 @@ class WidgetSettings extends BaseConfigurationController
                 $displayWidgetOnProductPage,
                 $showInstallmentAmountInProductListing,
                 $showInstallmentAmountInCartPage,
-                $miniWidgetSelector,
                 $widgetStyles,
-                isset($labels['message']) ? [$storeConfig->getLocale() => $labels['message']] : [],
-                isset($labels['messageBelowLimit']) ? [$storeConfig->getLocale() => $labels['messageBelowLimit']] : []
+                $productPriceSelector,
+                $defaultProductLocationSelector,
+                $cartPriceSelector,
+                $cartLocationSelector,
+                $widgetOnCartPage,
+                $listingPriceSelector,
+                $listingLocationSelector,
+                $widgetOnListingPage,
+                $altProductPriceSelector,
+                $altProductPriceTriggerSelector,
+                $customLocations
             )
         );
 
