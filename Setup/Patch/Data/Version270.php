@@ -168,7 +168,7 @@ class Version270 implements DataPatchInterface
         $widgetInstance = $this->moduleDataSetup->getTable('widget_instance');
         $query = $connection->select()->from($widgetInstance)->where(
             'instance_type LIKE ?',
-            '%Sequra\Core\Block\Widget\Teaser%',
+            '%Sequra_Core_Block_Widget_Teaser%',
         );
         $teasers = $connection->fetchAll($query);
 
