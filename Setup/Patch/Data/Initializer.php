@@ -14,17 +14,9 @@ use SeQura\Core\BusinessLogic\Domain\Connection\Exceptions\WrongCredentialsExcep
 use SeQura\Core\BusinessLogic\Domain\Connection\Models\AuthorizationCredentials;
 use SeQura\Core\BusinessLogic\Domain\Connection\Models\ConnectionData;
 use SeQura\Core\BusinessLogic\Domain\Connection\Services\ConnectionService;
-use SeQura\Core\BusinessLogic\Domain\CountryConfiguration\Exceptions\EmptyCountryConfigurationParameterException;
-use SeQura\Core\BusinessLogic\Domain\CountryConfiguration\Exceptions\InvalidCountryCodeForConfigurationException;
-use SeQura\Core\BusinessLogic\Domain\CountryConfiguration\Models\CountryConfiguration;
-use SeQura\Core\BusinessLogic\Domain\CountryConfiguration\Models\SellingCountry;
-use SeQura\Core\BusinessLogic\Domain\CountryConfiguration\Services\CountryConfigurationService;
-use SeQura\Core\BusinessLogic\Domain\CountryConfiguration\Services\SellingCountriesService;
 use SeQura\Core\BusinessLogic\Domain\GeneralSettings\Models\GeneralSettings;
 use SeQura\Core\BusinessLogic\Domain\GeneralSettings\Services\GeneralSettingsService;
 use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
-use SeQura\Core\BusinessLogic\Domain\PromotionalWidgets\Models\WidgetSettings;
-use SeQura\Core\BusinessLogic\Domain\PromotionalWidgets\Services\WidgetSettingsService;
 use SeQura\Core\BusinessLogic\SeQuraAPI\BaseProxy;
 use SeQura\Core\BusinessLogic\Utility\EncryptorInterface;
 use SeQura\Core\Infrastructure\Configuration\Configuration;
@@ -54,19 +46,6 @@ class Initializer implements DataPatchInterface
      * @var GeneralSettingsService
      */
     private $generalSettingsService;
-    /**
-     * @var WidgetSettingsService
-     * @phpstan-ignore-next-line
-     */
-    private $widgetSettingsService;
-    /**
-     * @var SellingCountriesService
-     */
-    private $sellingCountriesService;
-    /**
-     * @var CountryConfigurationService
-     */
-    private $countryConfigService;
     /**
      * @var ModuleDataSetupInterface
      */
@@ -139,14 +118,6 @@ class Initializer implements DataPatchInterface
             $defaultPassword = $this->scopeConfig->getValue('sequra/core/user_secret') ?? '';
             $defaultPassword = $this->getEncryptor()->decrypt($defaultPassword);
             /**
-             * @var string $defaultMerchantId
-             */
-            $defaultMerchantId = $this->scopeConfig->getValue('sequra/core/merchant_ref');
-            /**
-             * @var string $defaultAssetsKey
-             */
-            $defaultAssetsKey = $this->scopeConfig->getValue('sequra/core/assets_key');
-            /**
              * @var string $defaultTestIps
              */
             $defaultTestIps = $this->scopeConfig->getValue('sequra/core/test_ip');
@@ -162,16 +133,12 @@ class Initializer implements DataPatchInterface
                         function () use (
                             $defaultUsername,
                             $defaultPassword,
-                            $defaultMerchantId,
-                            $defaultAssetsKey,
                             $defaultTestIps,
                             $defaultEndpoint
                         ) {
                             $this->migrateCredentials(
                                 $defaultUsername,
                                 $defaultPassword,
-                                $defaultMerchantId,
-                                $defaultAssetsKey,
                                 $defaultTestIps,
                                 $defaultEndpoint
                             );
@@ -211,8 +178,6 @@ class Initializer implements DataPatchInterface
      *
      * @param string|null $defaultUsername Default username from global configuration
      * @param string|null $defaultPassword Default password from global configuration
-     * @param string|null $defaultMerchantId Default merchant ID from global configuration
-     * @param string|null $defaultAssetsKey Default assets key from global configuration
      * @param string|null $defaultTestIps Default test IPs from global configuration
      * @param string|null $defaultEndpoint Default endpoint from global configuration
      *
@@ -224,8 +189,6 @@ class Initializer implements DataPatchInterface
     private function migrateCredentials(
         ?string $defaultUsername,
         ?string $defaultPassword,
-        ?string $defaultMerchantId,
-        ?string $defaultAssetsKey,
         ?string $defaultTestIps,
         ?string $defaultEndpoint
     ) {
@@ -251,22 +214,6 @@ class Initializer implements DataPatchInterface
         ) ?? '';
         $password = $this->getEncryptor()->decrypt($password);
         /**
-         * @var string $merchantId
-         */
-        $merchantId = $this->scopeConfig->getValue(
-            'sequra/core/merchant_ref',
-            ScopeInterface::SCOPE_STORES,
-            $storeId
-        );
-        /**
-         * @var string $assetsKey
-         */
-        $assetsKey = $this->scopeConfig->getValue(
-            'sequra/core/assets_key',
-            ScopeInterface::SCOPE_STORES,
-            $storeId
-        );
-        /**
          * @var string $testIps
          */
         $testIps = $this->scopeConfig->getValue(
@@ -282,10 +229,8 @@ class Initializer implements DataPatchInterface
             ScopeInterface::SCOPE_STORES,
             $storeId
         );
-        $sellingCountries = $this->getSellingCountriesService()->getSellingCountries();
 
-        if (empty($username) || empty($password) || empty($merchantId) ||
-            empty($assetsKey) || empty($endpoint)) {
+        if (empty($username) || empty($password) || empty($endpoint)) {
             /**
              * @var string $username
              */
@@ -304,22 +249,6 @@ class Initializer implements DataPatchInterface
             ) ?? '';
             $password = $this->getEncryptor()->decrypt($password);
             /**
-             * @var string $merchantId
-             */
-            $merchantId = $this->scopeConfig->getValue(
-                'sequra/core/merchant_ref',
-                ScopeInterface::SCOPE_WEBSITES,
-                $websiteId
-            );
-            /**
-             * @var string $assetsKey
-             */
-            $assetsKey = $this->scopeConfig->getValue(
-                'sequra/core/assets_key',
-                ScopeInterface::SCOPE_WEBSITES,
-                $websiteId
-            );
-            /**
              * @var string $testIps
              */
             $testIps = $this->scopeConfig->getValue(
@@ -337,8 +266,7 @@ class Initializer implements DataPatchInterface
             );
         }
 
-        if (empty($username) || empty($password) || empty($merchantId) ||
-            empty($assetsKey) || empty($endpoint)) {
+        if (empty($username) || empty($password) || empty($endpoint)) {
             /**
              * @var string $username
              */
@@ -347,14 +275,6 @@ class Initializer implements DataPatchInterface
              * @var string $password
              */
             $password = $defaultPassword;
-            /**
-             * @var string $merchantId
-             */
-            $merchantId = $defaultMerchantId;
-            /**
-             * @var string $assetsKey
-             */
-            $assetsKey = $defaultAssetsKey;
             /**
              * @var string $testIps
              */
@@ -365,19 +285,11 @@ class Initializer implements DataPatchInterface
             $endpoint = $defaultEndpoint;
         }
 
-        if (empty($username) || empty($password) || empty($merchantId) ||
-            empty($endpoint)) {
+        if (empty($username) || empty($password) || empty($endpoint)) {
             return;
         }
 
-        $this->validateCredentials($endpoint, $username, $password, $merchantId);
-        $this->saveConnectionData($endpoint, $username, $password);
-
-        if (empty($sellingCountries)) {
-            return;
-        }
-
-        $this->saveCountriesConfig($sellingCountries, $merchantId);
+        $this->connect($endpoint, $username, $password);
 
         $ipAddresses = is_string($testIps) ? explode(',', $testIps) : [];
 
@@ -395,7 +307,6 @@ class Initializer implements DataPatchInterface
             []
         );
         $this->getGeneralSettingsService()->saveGeneralSettings($generalSettings);
-        $this->saveWidgetSettings($assetsKey);
     }
 
     /**
@@ -404,8 +315,6 @@ class Initializer implements DataPatchInterface
      * @param string $endpoint
      * @param string $username
      * @param string $password
-     * @param string $merchantId
-     *
      * @return void
      *
      * @throws InvalidEnvironmentException
@@ -413,77 +322,15 @@ class Initializer implements DataPatchInterface
      * @throws WrongCredentialsException
      * @throws HttpRequestException
      */
-    private function validateCredentials(string $endpoint, string $username, string $password, string $merchantId)
-    {
-        $connectionData = new ConnectionData(
-            $endpoint === 'https://sandbox.sequrapi.com/orders' ? BaseProxy::TEST_MODE : BaseProxy::LIVE_MODE,
-            $merchantId,
-            new AuthorizationCredentials($username, $password)
-        );
-
-        $this->getConnectionService()->isConnectionDataValid($connectionData);
-    }
-
-    /**
-     * Saves the connection data to the database.
-     *
-     * @param string $endpoint
-     * @param string $username
-     * @param string $password
-     *
-     * @return void
-     *
-     * @throws InvalidEnvironmentException
-     */
-    private function saveConnectionData(string $endpoint, string $username, string $password)
+    private function connect(string $endpoint, string $username, string $password): void
     {
         $connectionData = new ConnectionData(
             $endpoint === 'https://sandbox.sequrapi.com/orders' ? BaseProxy::TEST_MODE : BaseProxy::LIVE_MODE,
             '',
             new AuthorizationCredentials($username, $password)
         );
-        $this->getConnectionService()->saveConnectionData($connectionData);
-    }
 
-    /**
-     * Saves the countries configuration to the database.
-     *
-     * @param SellingCountry[] $sellingCountries
-     * @param string $merchantId
-     *
-     * @return void
-     *
-     * @throws EmptyCountryConfigurationParameterException
-     * @throws InvalidCountryCodeForConfigurationException
-     */
-    private function saveCountriesConfig(array $sellingCountries, string $merchantId)
-    {
-        $countryConfiguration = [];
-        foreach ($sellingCountries as $country) {
-            $countryConfiguration[] = new CountryConfiguration($country->getCode(), $merchantId);
-        }
-
-        $this->getCountryConfigService()->saveCountryConfiguration($countryConfiguration);
-    }
-
-    /**
-     * Saves the widget settings to the database.
-     *
-     * @param string $assetsKey
-     *
-     * @return void
-     *
-     * @throws HttpRequestException
-     * @throws Exception
-     */
-    private function saveWidgetSettings(string $assetsKey)
-    {
-        if (!$this->getWidgetSettingsService()->isAssetsKeyValid($assetsKey)) {
-            return;
-        }
-
-        $widgetSettings = new WidgetSettings(false, $assetsKey);
-        $this->getWidgetSettingsService()->setWidgetSettings($widgetSettings);
+        $this->getConnectionService()->connect($connectionData);
     }
 
     /**
@@ -538,44 +385,6 @@ class Initializer implements DataPatchInterface
         }
 
         return $this->generalSettingsService;
-    }
-
-    /**
-     * Gets the widget settings service.
-     *
-     * @return WidgetSettingsService
-     */
-    private function getWidgetSettingsService(): WidgetSettingsService
-    {
-        return ServiceRegister::getService(WidgetSettingsService::class);
-    }
-
-    /**
-     * Get the selling countries service.
-     *
-     * @return SellingCountriesService
-     */
-    private function getSellingCountriesService(): SellingCountriesService
-    {
-        if ($this->sellingCountriesService === null) {
-            $this->sellingCountriesService = ServiceRegister::getService(SellingCountriesService::class);
-        }
-
-        return $this->sellingCountriesService;
-    }
-
-    /**
-     * Gets the country configuration service.
-     *
-     * @return CountryConfigurationService
-     */
-    private function getCountryConfigService(): CountryConfigurationService
-    {
-        if ($this->countryConfigService === null) {
-            $this->countryConfigService = ServiceRegister::getService(CountryConfigurationService::class);
-        }
-
-        return $this->countryConfigService;
     }
 
     /**

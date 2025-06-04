@@ -211,10 +211,6 @@
         "no": "No, thanks"
       }
     },
-    "assetKey": {
-      "label": "Assets key",
-      "description": "You can find your assets key in the email sent by SeQura."
-    },
     "displayOnProductPage": {
       "label": "Display widget on product page",
       "description": "Specify whether payment method icon should be displayed to customers on the checkout."

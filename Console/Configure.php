@@ -21,8 +21,7 @@ use SeQura\Core\BusinessLogic\Domain\CountryConfiguration\Services\SellingCountr
 use SeQura\Core\BusinessLogic\Domain\GeneralSettings\Models\GeneralSettings;
 use SeQura\Core\BusinessLogic\Domain\GeneralSettings\Services\GeneralSettingsService;
 use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
-use SeQura\Core\BusinessLogic\Domain\PromotionalWidgets\Models\WidgetSettings;
-use SeQura\Core\BusinessLogic\Domain\PromotionalWidgets\Services\WidgetSettingsService;
+use SeQura\Core\BusinessLogic\Domain\Connection\Exceptions\InvalidEnvironmentException;
 use SeQura\Core\BusinessLogic\SeQuraAPI\BaseProxy;
 use SeQura\Core\Infrastructure\Logger\Logger;
 use SeQura\Core\Infrastructure\ServiceRegister;
@@ -47,11 +46,6 @@ class Configure extends Command
      * Values of input arguments or options
      */
     public const INPUT_KEY_USERNAME = 'username';
-
-    /**
-     * Values of input arguments or options
-     */
-    public const INPUT_KEY_ASSETS_KEY = 'assets_key';
 
     /**
      * Values of input arguments or options
@@ -119,12 +113,6 @@ class Configure extends Command
                 null,
                 InputOption::VALUE_OPTIONAL,
                 'Username'
-            )
-            ->addOption(
-                self::INPUT_KEY_ASSETS_KEY,
-                null,
-                InputOption::VALUE_OPTIONAL,
-                'Assets key'
             )
             ->addOption(
                 self::INPUT_KEY_ENDPOINT,
@@ -223,16 +211,11 @@ class Configure extends Command
          * @var string $merchantId
          */
         $merchantId = $input->getOption(self::INPUT_KEY_MERCHANT_REF);
-        /**
-         * @var string $assetsKey
-         */
-        $assetsKey = $input->getOption(self::INPUT_KEY_ASSETS_KEY);
 
         $this->saveConnectionData($endpoint, $username, $password);
         $this->saveCountriesConfig($this->getSellingCountriesService()->getSellingCountries(), $merchantId);
         $generalSettings = new GeneralSettings(false, true, [], [], []);
         $this->getGeneralSettingsService()->saveGeneralSettings($generalSettings);
-        $this->saveWidgetSettings($assetsKey);
     }
 
     /**
@@ -242,7 +225,7 @@ class Configure extends Command
      * @param string $username
      * @param string $password
      *
-     * @throws \SeQura\Core\BusinessLogic\Domain\Connection\Exceptions\InvalidEnvironmentException
+     * @throws InvalidEnvironmentException
      *
      * @return void
      */
@@ -331,35 +314,5 @@ class Configure extends Command
         }
 
         return $this->sellingCountriesService;
-    }
-
-    /**
-     * Save widget settings
-     *
-     * @param string $assetsKey
-     *
-     * @return void
-     *
-     * @throws \SeQura\Core\Infrastructure\Http\Exceptions\HttpRequestException
-     * @throws \Exception
-     */
-    private function saveWidgetSettings(string $assetsKey)
-    {
-        if (!$this->getWidgetSettingsService()->isAssetsKeyValid($assetsKey)) {
-            return;
-        }
-
-        $widgetSettings = new WidgetSettings(false, $assetsKey);
-        $this->getWidgetSettingsService()->setWidgetSettings($widgetSettings);
-    }
-
-    /**
-     * Get widget settings service
-     *
-     * @return WidgetSettingsService
-     */
-    private function getWidgetSettingsService(): WidgetSettingsService
-    {
-        return ServiceRegister::getService(WidgetSettingsService::class);
     }
 }

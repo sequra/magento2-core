@@ -211,10 +211,6 @@
         "no": "No, gracias"
       }
     },
-    "assetKey": {
-      "label": "Clave de activos",
-      "description": "Puedes encontrar tu clave de activos en el correo electrónico enviado por SeQura."
-    },
     "displayOnProductPage": {
       "label": "Mostrar widget en la página de productos",
       "description": "Especificar si el icono del método de pago debe mostrarse a los clientes en la página de pago."
