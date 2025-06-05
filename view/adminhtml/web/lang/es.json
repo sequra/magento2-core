@@ -171,7 +171,7 @@
     "description": "Por favor, selecciona los países en los que deseas ofrecer métodos de pago de SeQura.",
     "selector": {
       "label": "¿En qué países deseas ofrecer métodos de pago de SeQura?",
-      "description": "Por favor, selecciona los países donde los métodos de pago de SeQura estarán disponibles. <a class='sq-link-button' href='https://www.sequra.com/en/contact' target='_blank'><span>Contáctanos</span></a> para habilitar países adicionales."
+      "description": "Por favor, selecciona los países donde los métodos de pago de SeQura estarán disponibles. <a class='sq-link-button' href='https://www.sequra.com/es/contacto' target='_blank'><span>Contáctanos</span></a> para habilitar países adicionales."
     },
     "ES": {
       "label": "España",
