@@ -352,24 +352,6 @@ if (!window.SequraFE) {
 
             return !hasError;
         }
-        //
-        // /**
-        //  * Verifying merchant ids for all selected countries.
-        //  *
-        //  * @returns {Promise<Awaited<unknown>[]>}
-        //  */
-        // const validateMerchantIds = () => {
-        //     const promises = [];
-        //
-        //     changedCountryConfiguration.forEach((config) => {
-        //         promises.push(api.post(
-        //             configuration.validateConnectionDataUrl,
-        //             {...data.connectionSettings, merchantId: config.merchantId}
-        //         ))
-        //     });
-        //
-        //     return Promise.all(promises);
-        // }
 
         /**
          * Handles saving of the form.
