@@ -36,7 +36,7 @@ class Webhooks implements WebhooksInterface
      */
     public function execute()
     {
-        return $this->getTaskForWebhook((string)($_GET['sq-webhook'] ?? null))->execute();
+        return $this->getTaskForWebhook((string)($_GET['sq-webhook'] ?? null))->execute($_REQUEST);
     }
 
     /**
