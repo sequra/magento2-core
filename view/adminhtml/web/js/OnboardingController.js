@@ -191,7 +191,7 @@ if (!window.SequraFE) {
                     case SequraFE.appPages.ONBOARDING.COUNTRIES:
                         return {
                             label: 'sidebar.stepThreeLabel',
-                            href: '#onboarding-countriesss',
+                            href: '#onboarding-countries',
                             isCompleted: SequraFE.pages.onboarding.indexOf(SequraFE.state.getPage()) >
                                 SequraFE.pages.onboarding.indexOf(SequraFE.appPages.ONBOARDING.COUNTRIES),
                             isActive: activePage === SequraFE.appPages.ONBOARDING.COUNTRIES
