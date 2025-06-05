@@ -65,8 +65,6 @@ class WidgetSettings extends BaseConfigurationController
             $result['altProductPriceTriggerSelector'] = '.bundle-actions';
             $result['cartPriceSelector'] = '.grand.totals .price';
             $result['cartLocationSelector'] = '.cart-summary';
-            $result['listingPriceSelector'] = '.price-box.price-final_price .price';
-            $result['listingLocationSelector'] = '.price-box.price-final_price';
 
             return $this->result->setData($result);
         }
@@ -145,14 +143,6 @@ class WidgetSettings extends BaseConfigurationController
          */
         $widgetOnCartPage = $data['widgetOnCartPage'] ?? '';
         /**
-         * @var string $listingPriceSelector
-         */
-        $listingPriceSelector = $data['listingPriceSelector'] ?? '';
-        /**
-         * @var string $listingLocationSelector
-         */
-        $listingLocationSelector = $data['listingLocationSelector'] ?? '';
-        /**
          * @var string $widgetOnListingPage
          */
         $widgetOnListingPage = $data['widgetOnListingPage'] ?? '';
@@ -174,9 +164,9 @@ class WidgetSettings extends BaseConfigurationController
                 $cartPriceSelector,
                 $cartLocationSelector,
                 $widgetOnCartPage,
-                $listingPriceSelector,
-                $listingLocationSelector,
                 $widgetOnListingPage,
+                '',
+                '',
                 $altProductPriceSelector,
                 $altProductPriceTriggerSelector,
                 $customLocations

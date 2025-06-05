@@ -62,6 +62,7 @@ if (!window.SequraFE) {
      * getAllPaymentMethodsUrl: string,
      * page: string,
      * appState: string,
+     * configurableSelectorsForMiniWidgets: string
      * }} configuration
      * @constructor
      */
@@ -74,6 +75,9 @@ if (!window.SequraFE) {
             validationService: validator,
             utilities
         } = SequraFE;
+
+        const configurableSelectorsForMiniWidgets =
+            configuration.configurableSelectorsForMiniWidgets === "true";
 
         /** @type WidgetSettings */
         let activeSettings;
@@ -272,22 +276,22 @@ if (!window.SequraFE) {
                     onChange: (value) => handleChange('showInstallmentAmountInProductListing', value)
                 }),
 
-                generator.createTextField({
+                configurableSelectorsForMiniWidgets ? generator.createTextField({
                     value: changedSettings.listingPriceSelector,
                     name: 'listingPriceSelector',
                     className: 'sq-text-input sq-listing-related-field',
                     label: 'widgets.listingPriceSelector.label',
                     description: 'widgets.listingPriceSelector.description',
                     onChange: (value) => handleChange('listingPriceSelector', value)
-                }),
-                generator.createTextField({
+                }) : [],
+                configurableSelectorsForMiniWidgets ? generator.createTextField({
                     value: changedSettings.listingLocationSelector,
                     name: 'listingLocationSelector',
                     className: 'sq-text-input sq-listing-related-field',
                     label: 'widgets.listingLocationSelector.label',
                     description: 'widgets.listingLocationSelector.description',
                     onChange: (value) => handleChange('listingLocationSelector', value)
-                }),
+                }): [],
                 partPaymentPaymentMethods.length > 0 ? generator.createDropdownField({
                     name: 'widgetOnListingPage',
                     className: 'sqm--table-dropdown sq-listing-related-field',
@@ -585,8 +589,13 @@ if (!window.SequraFE) {
 
                 if (changedSettings.showInstallmentAmountInProductListing) {
                     for (const name of ['listingPriceSelector', 'listingLocationSelector']) {
+                        let element = document.querySelector(`[name="${name}"]`)
+                        if(!element){
+                            continue;
+                        }
+
                         valid = validator.validateCssSelector(
-                            document.querySelector(`[name="${name}"]`),
+                            element,
                             true,
                             'validation.invalidField'
                         ) && valid;

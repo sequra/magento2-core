@@ -109,7 +109,8 @@ class MiniWidgets
                  * }> $data
                  */
                 $data = $miniWidget->toArray();
-                $result .= $this->getHtml($data);
+                $cents = (int) round($amount->getPrice()->getAmount()->getValue() * 100);
+                $result .= $this->getHtml($data, $cents);
             }
         } catch (Exception $e) {
             Logger::logError('Fetching available widgets on product listing page failed: ' . $e->getMessage() .
@@ -123,6 +124,7 @@ class MiniWidgets
      * Gets the HTML with mini-widget dataset
      *
      * @param array $miniWidgetData
+     * @param int $amount
      * @phpstan-param array<array{
      * product?: string,
      * priceSel?: string,
@@ -135,7 +137,7 @@ class MiniWidgets
      *
      * @return string
      */
-    protected function getHtml(array $miniWidgetData): string
+    protected function getHtml(array $miniWidgetData, int $amount): string
     {
         if (empty($miniWidgetData)) {
             return '';
@@ -145,12 +147,11 @@ class MiniWidgets
         foreach ($miniWidgetData as $miniWidget) {
             $dataset = [
                 'product' => $miniWidget['product'] ?? '',
-                'price-sel' => isset($miniWidget['priceSel']) ? '.product-item-info ' . $miniWidget['priceSel'] : '',
-                'dest' => isset($miniWidget['dest']) ? '.product-item-info ' . $miniWidget['dest'] : '',
                 'min-amount' => $miniWidget['minAmount'] ?? '',
                 'max-amount' => $miniWidget['maxAmount'] ?? '',
                 'message' => $miniWidget['miniWidgetMessage'] ?? '',
                 'message-below-limit' => $miniWidget['miniWidgetBelowLimitMessage'] ?? '',
+                'amount' => $amount
             ];
 
             $dataset = array_map(

@@ -17,6 +17,7 @@ if (!window.SequraFE) {
      * saveWidgetSettingsUrl: string,
      * getPaymentMethodsUrl: string,
      * getAllAvailablePaymentMethodsUrl: string,
+     * configurableSelectorsForMiniWidgets: string
      * page: string}} configuration
      * @constructor
      */

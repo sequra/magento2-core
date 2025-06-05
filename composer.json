@@ -69,8 +69,17 @@
     },
     "repositories": [
         {
-            "type": "git",
-            "url": "git@github.com:sequra/integration-core.git"
+            "type": "path",
+            "url": "/var/www/workspace/sequra/integration-core",
+            "options": {
+                "versions": {
+                    "sequra/integration-core": "dev-feature/LIS-61"
+                },
+                "symlink": false
+            }
+        },
+        {
+            "packagist.org": false
         }
     ]
 }
