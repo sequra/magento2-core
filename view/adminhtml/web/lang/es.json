@@ -168,10 +168,10 @@
   },
   "countries": {
     "title": "Países de venta",
-    "description": "Por favor, selecciona los países en los que deseas ofrecer métodos de pago de SeQura. Asegúrate de agregar la ID de comerciante de SeQura para cada país seleccionado.",
+    "description": "Por favor, selecciona los países en los que deseas ofrecer métodos de pago de SeQura.",
     "selector": {
       "label": "¿En qué países deseas ofrecer métodos de pago de SeQura?",
-      "description": "Por favor, selecciona los países en los que los métodos de pago de SeQura deberían estar disponibles."
+      "description": "Por favor, selecciona los países donde los métodos de pago de SeQura estarán disponibles. <a class='sq-link-button' href='https://www.sequra.com/es/contacto' target='_blank'><span>Contáctanos</span></a> para habilitar países adicionales."
     },
     "ES": {
       "label": "España",
@@ -210,10 +210,6 @@
         "yes": "Sí",
         "no": "No, gracias"
       }
-    },
-    "assetKey": {
-      "label": "Clave de activos",
-      "description": "Puedes encontrar tu clave de activos en el correo electrónico enviado por SeQura."
     },
     "displayOnProductPage": {
       "label": "Mostrar widget en la página de productos",

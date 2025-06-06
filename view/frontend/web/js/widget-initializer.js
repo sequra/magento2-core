@@ -158,31 +158,30 @@ define([
 
                     /**
                      * Search for child elements in the parentElem that are targets of the widget
-                     * @param element
-                     * @param {object} miniWidget  Widget object
-                     * @returns {object} Array of objects containing the target elements and a reference to the widget
+                     * @param {object} widget  Widget object
+                     * @returns {array} Array of objects containing the target elements and a reference to the widget
                      */
-                    getMiniWidgetTargets: function (element, miniWidget) {
-                        if (miniWidget.dest) {
-                            const itemElement = element.closest('li.product-item');
-                            if(!itemElement){
-                                return null;
+                    getMiniWidgetTargets: function (widget) {
+                        const targets = [];
+                        if (widget.dest) {
+                            const children = document.querySelectorAll(widget.dest);
+                            const prices = document.querySelectorAll(widget.priceSel);
+                            const priceObservedAttr = 'data-sequra-observed-price-' + widget.product;
+
+                            for (let i = 0; i < children.length; i++) {
+                                const child = children[i];
+
+                                const priceElem = 'undefined' !== typeof prices[i] ? prices[i] : null;
+                                const priceValue = priceElem ? this.nodeToCents(priceElem) : null;
+
+                                if (null === priceValue || child.getAttribute(priceObservedAttr) == priceValue) {
+                                    continue;
+                                }
+                                child.setAttribute(priceObservedAttr, priceValue);
+                                targets.push({elem: child, priceElem, widget});
                             }
-
-                            const child = itemElement.querySelector(miniWidget.dest);
-                            const price = itemElement.querySelector(miniWidget.priceSel);
-                            const priceObservedAttr = 'data-sequra-observed-price-' + miniWidget.product;
-
-                            const priceElem = 'undefined' !== typeof price ? price : null;
-                            const priceValue = priceElem ? this.nodeToCents(priceElem) : null;
-                            if (null === priceValue || child.getAttribute(priceObservedAttr) == priceValue) {
-                                return null;
-                            }
-
-                            child.setAttribute(priceObservedAttr, priceValue);
-
-                            return {elem: child, priceElem, widget: miniWidget};
                         }
+                        return targets;
                     },
 
                     /**
@@ -201,35 +200,14 @@ define([
                             const widgetTargets = this.getWidgetTargets(document, widget, this.getObservedAt());
                             targets.push(...widgetTargets);
                         }
-
-                        for (const element of document.querySelectorAll('.sequra-educational-popup.sequra-promotion-miniwidget')) {
-                            const {
-                                product,
-                                priceSel,
-                                dest,
-                                minAmount,
-                                maxAmount,
-                                message,
-                                messageBelowLimit
-                            } = element.dataset;
-                            const miniWidget = {
-                                product,
-                                priceSel: priceSel,
-                                dest,
-                                minAmount: minAmount,
-                                maxAmount: maxAmount,
-                                message,
-                                messageBelowLimit: messageBelowLimit
-                            };
-                            const widgetTarget = this.getMiniWidgetTargets(element, miniWidget);
-                            if (widgetTarget) {
-                                targets.push(widgetTarget);
-                            }
+                        for (const miniWidget of this.miniWidgets) {
+                            const widgetTargets = this.getMiniWidgetTargets(miniWidget);
+                            targets.push(...widgetTargets);
                         }
 
                         targets.forEach(target => {
                             const {elem, widget} = target;
-                            this.isMiniWidget(elem) ? this.drawMiniWidgetOnElement(widget, elem, target.priceElem) : this.drawWidgetOnElement(widget, elem);
+                            this.isMiniWidget(widget) ? this.drawMiniWidgetOnElement(widget, elem, target.priceElem) : this.drawWidgetOnElement(widget, elem);
                         });
                     },
 
@@ -237,6 +215,28 @@ define([
                      * Paint the widgets in the page and observe the DOM to refresh the widgets when the page changes.
                      */
                     drawWidgetsOnPage: function () {
+                        // Init the pre-rendered miniWidgets if any.
+                        for (const widget of document.querySelectorAll('.sequra-educational-popup.sequra-promotion-miniwidget')) {
+                            const {amount, product, message, messageBelowLimit} = widget.dataset;
+                            const innerText = this.getMiniWidgetInnerText(
+                                parseInt(amount),
+                                product,
+                                message,
+                                !messageBelowLimit ? null : messageBelowLimit
+                            );
+
+                            if (!innerText) {
+                                // Remove from DOM
+                                widget.remove();
+                                continue;
+                            }
+                            widget.innerText = innerText;
+                        }
+
+                        if (!this.widgets.length && !this.miniWidgets.length) {
+                            return;
+                        }
+
                         if (this.mutationObserver) {
                             this.mutationObserver.disconnect();
                         }
@@ -262,8 +262,8 @@ define([
                         this.mutationObserver.observe(document, {childList: true, subtree: true, characterData: true});
                     },
 
-                    isMiniWidget: function (elem) {
-                        return elem.querySelector('.sequra-promotion-miniwidget') !== null;
+                    isMiniWidget: function (widget) {
+                        return this.miniWidgets.indexOf(widget) !== -1;
                     },
                     isAmountInAllowedRange: function (widget, cents) {
                         if ('undefined' !== typeof widget.minAmount && widget.minAmount && cents < widget.minAmount) {

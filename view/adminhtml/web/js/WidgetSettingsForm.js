@@ -26,7 +26,6 @@ if (!window.SequraFE) {
     /**
      * @typedef WidgetSettings
      * @property {boolean} useWidgets
-     * @property {string|null} assetsKey
      * @property {boolean} displayWidgetOnProductPage
      * @property {boolean} showInstallmentAmountInProductListing
      * @property {boolean} showInstallmentAmountInCartPage
@@ -63,6 +62,7 @@ if (!window.SequraFE) {
      * getAllPaymentMethodsUrl: string,
      * page: string,
      * appState: string,
+     * configurableSelectorsForMiniWidgets: string
      * }} configuration
      * @constructor
      */
@@ -76,14 +76,15 @@ if (!window.SequraFE) {
             utilities
         } = SequraFE;
 
+        const configurableSelectorsForMiniWidgets =
+            configuration.configurableSelectorsForMiniWidgets === "true";
+
         /** @type WidgetSettings */
         let activeSettings;
         /** @type WidgetSettings */
         let changedSettings;
         /** @type string[] */
         let paymentMethodIds;
-        /** @type boolean */
-        let isAssetKeyValid = false;
         /** @type {Category[]} */
         let allAvailablePaymentMethods = data.allAvailablePaymentMethods;
         /** @type {CategoryPaymentMethod[]} */
@@ -98,7 +99,6 @@ if (!window.SequraFE) {
         /** @type WidgetSettings */
         const defaultFormData = {
             useWidgets: false,
-            assetsKey: '',
             displayWidgetOnProductPage: false,
             widgetStyles: '{"alignment":"center","amount-font-bold":"true","amount-font-color":"#1C1C1C","amount-font-size":"15","background-color":"white","border-color":"#B1AEBA","border-radius":"","class":"","font-color":"#1C1C1C","link-font-color":"#1C1C1C","link-underline":"true","no-costs-claim":"","size":"M","starting-text":"only","type":"banner"}',
             showInstallmentAmountInProductListing: false,
@@ -128,7 +128,6 @@ if (!window.SequraFE) {
             }
 
             paymentMethodIds = data.paymentMethods?.map((paymentMethod) => paymentMethod.product);
-            isAssetKeyValid = activeSettings.assetsKey && activeSettings.assetsKey.length !== 0;
             changedSettings = utilities.cloneObject(activeSettings)
             initForm();
 
@@ -160,7 +159,6 @@ if (!window.SequraFE) {
                 ])
             );
 
-            renderAssetsKeyField();
             renderAdditionalSettings();
             renderControls();
             showOrHideRelatedFields('.sq-product-related-field', changedSettings.displayWidgetOnProductPage);
@@ -169,37 +167,10 @@ if (!window.SequraFE) {
         }
 
         /**
-         * Renders the assets key field.
-         */
-        const renderAssetsKeyField = () => {
-            const pageInnerContent = document.querySelector('.sq-content-inner');
-            if (changedSettings.useWidgets) {
-                pageInnerContent?.append(
-                    generator.createTextField({
-                        name: 'assets-key-input',
-                        value: changedSettings.assetsKey,
-                        className: 'sq-text-input',
-                        label: 'widgets.assetKey.label',
-                        description: 'widgets.assetKey.description',
-                        onChange: (value) => handleChange('assetsKey', value)
-                    })
-                );
-
-                if (changedSettings.assetsKey?.length !== 0) {
-                    validator.validateField(
-                        document.querySelector('[name="assets-key-input"]'),
-                        !isAssetKeyValid,
-                        'validation.invalidField'
-                    );
-                }
-            }
-        }
-
-        /**
          * Renders additional widget settings.
          */
         const renderAdditionalSettings = () => {
-            if (!changedSettings.useWidgets || !isAssetKeyValid) {
+            if (!changedSettings.useWidgets) {
                 return;
             }
 
@@ -305,22 +276,22 @@ if (!window.SequraFE) {
                     onChange: (value) => handleChange('showInstallmentAmountInProductListing', value)
                 }),
 
-                generator.createTextField({
+                configurableSelectorsForMiniWidgets ? generator.createTextField({
                     value: changedSettings.listingPriceSelector,
                     name: 'listingPriceSelector',
                     className: 'sq-text-input sq-listing-related-field',
                     label: 'widgets.listingPriceSelector.label',
                     description: 'widgets.listingPriceSelector.description',
                     onChange: (value) => handleChange('listingPriceSelector', value)
-                }),
-                generator.createTextField({
+                }) : [],
+                configurableSelectorsForMiniWidgets ? generator.createTextField({
                     value: changedSettings.listingLocationSelector,
                     name: 'listingLocationSelector',
                     className: 'sq-text-input sq-listing-related-field',
                     label: 'widgets.listingLocationSelector.label',
                     description: 'widgets.listingLocationSelector.description',
                     onChange: (value) => handleChange('listingLocationSelector', value)
-                }),
+                }): [],
                 partPaymentPaymentMethods.length > 0 ? generator.createDropdownField({
                     name: 'widgetOnListingPage',
                     className: 'sqm--table-dropdown sq-listing-related-field',
@@ -528,21 +499,6 @@ if (!window.SequraFE) {
                 }
             }
 
-            if (name === 'assetsKey') {
-                utilities.showLoader();
-                isAssetsKeyValid()
-                    .then((isValid) => {
-                        isAssetKeyValid = isValid;
-                        refreshForm();
-                        validator.validateField(
-                            document.querySelector('[name="assets-key-input"]'),
-                            !isValid,
-                            'validation.invalidField'
-                        );
-                    })
-                    .finally(utilities.hideLoader);
-            }
-
             if (name === 'displayWidgetOnProductPage') {
                 showOrHideRelatedFields('.sq-product-related-field', value);
             }
@@ -587,19 +543,6 @@ if (!window.SequraFE) {
          * Handles the saving of the form.
          */
         const handleSave = () => {
-            if (changedSettings.useWidgets && changedSettings.assetsKey?.length === 0) {
-                validator.validateRequiredField(
-                    document.querySelector('[name="assets-key-input"]'),
-                    'validation.requiredField'
-                );
-
-                return;
-            }
-
-            if (changedSettings.useWidgets && !isAssetKeyValid) {
-                return;
-            }
-
             if (changedSettings.useWidgets) {
                 let valid = isJSONValid(changedSettings.widgetStyles);
 
@@ -646,8 +589,13 @@ if (!window.SequraFE) {
 
                 if (changedSettings.showInstallmentAmountInProductListing) {
                     for (const name of ['listingPriceSelector', 'listingLocationSelector']) {
+                        let element = document.querySelector(`[name="${name}"]`)
+                        if(!element){
+                            continue;
+                        }
+
                         valid = validator.validateCssSelector(
-                            document.querySelector(`[name="${name}"]`),
+                            element,
                             true,
                             'validation.invalidField'
                         ) && valid;
@@ -703,27 +651,6 @@ if (!window.SequraFE) {
             } catch (e) {
                 return false
             }
-        }
-
-        /**
-         * Returns a Promise<boolean> for assets key validation.
-         *
-         * @returns {Promise<boolean>}
-         */
-        const isAssetsKeyValid = () => {
-            const mode = data.connectionSettings.environment;
-            const merchantId = data.countrySettings[0].merchantId;
-            const assetsKey = changedSettings.assetsKey;
-            const methods = paymentMethodIds.filter((id) => id !== 'i1').join('_');
-
-            const validationUrl =
-                `https://${mode}.sequracdn.com/scripts/${merchantId}/${assetsKey}/${methods}_cost.json`;
-
-            let customHeader = {
-                'Content-Type': 'text/plain'
-            };
-
-            return api.get(validationUrl, null, customHeader).then(() => true).catch(() => false)
         }
     }
 

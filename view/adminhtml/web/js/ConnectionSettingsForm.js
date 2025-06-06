@@ -19,7 +19,7 @@ if (!window.SequraFE) {
      * countrySettings: CountrySettings[]
      * }} data
      * @param {{
-     * saveConnectionDataUrl: string,
+     * connectUrl: string,
      * validateConnectionDataUrl: string,
      * disconnectUrl: string,
      * page: string,
@@ -242,16 +242,12 @@ if (!window.SequraFE) {
 
                     utilities.showLoader();
 
-                    const merchantId = configuration.appState === SequraFE.appStates.ONBOARDING ? 'test' : data.countrySettings[0]?.merchantId;
-                    api.post(configuration.validateConnectionDataUrl, {...changedSettings, merchantId: merchantId})
-                        .then((result) => areCredentialsValid(result) ? saveChangedData() : handleValidationError())
+                    connect()
                 })
             } else {
                 utilities.showLoader();
 
-                const merchantId = configuration.appState === SequraFE.appStates.ONBOARDING ? 'test' : data.countrySettings[0]?.merchantId;
-                api.post(configuration.validateConnectionDataUrl, {...changedSettings, merchantId: merchantId})
-                    .then((result) => areCredentialsValid(result) ? saveChangedData() : handleValidationError());
+                connect();
             }
         }
 
@@ -285,10 +281,18 @@ if (!window.SequraFE) {
             utilities.hideLoader();
         }
 
-        const saveChangedData = () => {
+        const connect = () => {
             utilities.showLoader();
-            api.post(configuration.saveConnectionDataUrl, changedSettings)
-                .then(() => {
+            api.post(configuration.connectUrl, changedSettings)
+                .then((result) => {
+
+                    if (!areCredentialsValid(result)) {
+                        handleValidationError();
+
+                        return;
+                    }
+
+
                     if (configuration.appState === SequraFE.appStates.ONBOARDING) {
                         if (activeSettings.username.length !== 0) {
                             SequraFE.state.setCredentialsChanged();

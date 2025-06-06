@@ -9,7 +9,7 @@ if (!window.SequraFE) {
      * @param {{
      * validateConnectionDataUrl: string,
      * getConnectionDataUrl: string,
-     * saveConnectionDataUrl: string,
+     * connectUrl: string,
      * getSellingCountriesUrl: string,
      * getCountrySettingsUrl: string,
      * saveCountrySettingsUrl: string,
@@ -17,6 +17,7 @@ if (!window.SequraFE) {
      * saveWidgetSettingsUrl: string,
      * getPaymentMethodsUrl: string,
      * getAllAvailablePaymentMethodsUrl: string,
+     * configurableSelectorsForMiniWidgets: string
      * page: string}} configuration
      * @constructor
      */

@@ -209,7 +209,7 @@ SequraFE.appPages = {
                 }
 
                 if (!page) {
-                    page = SequraFE.appPages.ONBOARDING.WIDGETS;
+                    page = SequraFE.appPages.ONBOARDING.COUNTRIES;
                 }
 
                 switch (page) {

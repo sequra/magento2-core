@@ -21,7 +21,7 @@ class Onboarding extends BaseConfigurationController
     {
         parent::__construct($context, $jsonFactory);
 
-        $this->allowedActions = ['getConnectionData', 'setConnectionData', 'validateConnectionData'];
+        $this->allowedActions = ['getConnectionData', 'connect', 'validateConnectionData'];
     }
 
     /**
@@ -43,7 +43,7 @@ class Onboarding extends BaseConfigurationController
      *
      * @return Json
      */
-    protected function setConnectionData(): Json
+    protected function connect(): Json
     {
         /**
          * @var array<string, string|bool>
@@ -68,7 +68,7 @@ class Onboarding extends BaseConfigurationController
         $sendStatisticalData = $data['sendStatisticalData'] ?? true;
 
         // @phpstan-ignore-next-line
-        $response = AdminAPI::get()->connection($this->storeId)->saveOnboardingData(new OnboardingRequest(
+        $response = AdminAPI::get()->connection($this->storeId)->connect(new OnboardingRequest(
             $environment,
             $username,
             $password,
