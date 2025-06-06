@@ -15,6 +15,7 @@ use SeQura\Core\BusinessLogic\Domain\Order\Models\OrderRequest\Item\HandlingItem
 use SeQura\Core\BusinessLogic\Domain\Order\Models\OrderRequest\Item\Item as SeQuraItem;
 use SeQura\Core\BusinessLogic\Domain\Order\Models\OrderRequest\Item\ItemType;
 use SeQura\Core\BusinessLogic\Domain\Order\Models\OrderRequest\Item\ProductItem;
+use SeQura\Core\BusinessLogic\Domain\Order\Models\OrderRequest\Item\OtherPaymentItem;
 
 class TransformEntityService
 {
@@ -107,23 +108,13 @@ class TransformEntityService
             $orderItemsTotal += self::transformPrice($orderItem->getRowTotalInclTax() ?? 0);
             $orderedQty = $orderItem->getQtyOrdered() ? (int)$orderItem->getQtyOrdered() : 0;
             $shippedQty = $orderItem->getQtyShipped() ? (int)$orderItem->getQtyShipped() : 0;
+            $unshippedQty = $orderedQty - $shippedQty;
             $refundedQty = $orderItem->getQtyRefunded() ? (int)$orderItem->getQtyRefunded() : 0;
-            if (($shippedQty + $refundedQty) > $orderedQty) {
-                throw new LocalizedException(
-                    $this->translationProvider->translate('sequra.error.invalidShipRefundQuantity')
-                );
-            }
-
-            $quantity = $isShipped ? $shippedQty : $orderedQty - $shippedQty - $refundedQty;
-
-            if ($isShipped && ($orderedQty - $refundedQty) !== $shippedQty) {
-                $isUnshippedOrFullyShipped = false;
-            }
-
-            if (($isShipped && $shippedQty <= 0) || (!$isShipped && $shippedQty >= ($orderedQty - $refundedQty))) {
+            $quantityToRefund = ($isShipped) ? $refundedQty - $unshippedQty : min($refundedQty, $unshippedQty);
+            $quantity = ($isShipped) ? $shippedQty - $quantityToRefund : $unshippedQty - $quantityToRefund;
+            if ($quantity <= 0 ) {
                 continue;
             }
-
             $product = $orderItem->getProduct();
             $items[] = ProductItem::fromArray([
                 'type' => ItemType::TYPE_PRODUCT,
@@ -179,11 +170,11 @@ class TransformEntityService
         $diff = self::transformPrice($orderData->getGrandTotal()) - $orderItemsTotal;
 
         if ($diff < 0 && $isUnshippedOrFullyShipped && !self::isCartEmpty($items)) {
-            $items[] = new DiscountItem('additional_discount', 'discount', $diff);
+            $items[] = new OtherPaymentItem('additional_discount', 'Refund adjustment', $diff);
         }
 
         if ($diff > 0 && $isUnshippedOrFullyShipped && !self::isCartEmpty($items)) {
-            $items[] = new HandlingItem('additional_handling', 'surcharge', $diff);
+            $items[] = new HandlingItem('additional_handling', 'Refund adjustment', $diff);
         }
 
         /**
