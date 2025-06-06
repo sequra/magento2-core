@@ -79,6 +79,24 @@ if (!window.SequraFE) {
         const configurableSelectorsForMiniWidgets =
             configuration.configurableSelectorsForMiniWidgets === "true";
 
+        const fieldsRelationships = [
+            {
+                parentField: 'displayWidgetOnProductPage',
+                requiredFields: ['productPriceSelector', 'defaultProductLocationSelector', 'altProductPriceSelector', 'altProductPriceTriggerSelector'],
+                fields: ['productPriceSelector', 'defaultProductLocationSelector']
+            },
+            {
+                parentField: 'showInstallmentAmountInCartPage',
+                requiredFields: ['cartPriceSelector', 'cartLocationSelector'],
+                fields: ['cartPriceSelector', 'cartLocationSelector']
+            },
+            {
+                parentField: 'showInstallmentAmountInProductListing',
+                requiredFields: configurableSelectorsForMiniWidgets ? ['listingPriceSelector', 'listingLocationSelector'] : [],
+                fields: configurableSelectorsForMiniWidgets ? ['listingPriceSelector', 'listingLocationSelector'] : []
+            }
+        ];
+
         /** @type WidgetSettings */
         let activeSettings;
         /** @type WidgetSettings */
@@ -151,8 +169,8 @@ if (!window.SequraFE) {
                         value: changedSettings.useWidgets,
                         label: 'widgets.usePromotionalComponents.label',
                         options: [
-                            {label: 'widgets.usePromotionalComponents.options.yes', value: true},
-                            {label: 'widgets.usePromotionalComponents.options.no', value: false}
+                            { label: 'widgets.usePromotionalComponents.options.yes', value: true },
+                            { label: 'widgets.usePromotionalComponents.options.no', value: false }
                         ],
                         onChange: (value) => handleChange('useWidgets', value)
                     })
@@ -291,7 +309,7 @@ if (!window.SequraFE) {
                     label: 'widgets.listingLocationSelector.label',
                     description: 'widgets.listingLocationSelector.description',
                     onChange: (value) => handleChange('listingLocationSelector', value)
-                }): [],
+                }) : [],
                 partPaymentPaymentMethods.length > 0 ? generator.createDropdownField({
                     name: 'widgetOnListingPage',
                     className: 'sqm--table-dropdown sq-listing-related-field',
@@ -332,6 +350,49 @@ if (!window.SequraFE) {
                 }
             });
         }
+
+        /**
+         * Validates related fields and disables the footer if any of them is invalid.
+         * @param {string} parentField The parent field name that controls the visibility of related fields. 
+         * @param {boolean} show Whether to show or hide the related fields.
+         * @return {boolean} Returns true if all related fields are valid, false otherwise.
+         */
+        const validateRelatedFields = (parentField, show) => {
+            if (!show) {
+                return true;
+            }
+
+            let isValid = true;
+            const { requiredFields, fields } = fieldsRelationships.find(group => group.parentField === parentField) || { requiredFields: [], fields: [] };
+            for (let i = 0; i < fields.length && isValid; i++) {
+                isValid = validator.validateCssSelector(
+                    document.querySelector(`[name="${fields[i]}"]`),
+                    requiredFields.includes(fields[i]),
+                    'validation.invalidField'
+                );
+            }
+            return isValid;
+        }
+
+        /**
+         * Checks if the field is any of the related fields and validates it if so.
+         * @param {string} fieldName
+         * @return {boolean} Returns true if the field is valid, false otherwise. 
+         */
+        const validateFieldIfRelated = (fieldName) => {
+            const group = fieldsRelationships.find(group => group.fields.includes(fieldName));
+            if (!group) {
+                return true;
+            }
+
+            return validator.validateCssSelector(
+                document.querySelector(`[name="${fieldName}"]`),
+                group.requiredFields.includes(fieldName),
+                'validation.invalidField'
+            );
+        }
+
+        
 
         const renderLocations = () => {
             new SequraFE.RepeaterFieldsComponent({
@@ -376,14 +437,14 @@ if (!window.SequraFE) {
                         <label class="sq-table__row-field-label">${SequraFE.translationService.translate('widgets.locations.paymentMethod')}</label>
                         <select class="sq-table__row-field">${partAndLaterPaymentMethods ? partAndLaterPaymentMethods.map((pm, idx) => {
                         let selected = '';
-                        if(!selectedFound && data && data.product === pm.product) {
+                        if (!selectedFound && data && data.product === pm.product) {
                             selected = ' selected';
                             selectedFound = true;
                         }
 
-                        return `<option key="${idx}" data-product="${pm.product}"${ selected}>${pm.title}</option>`;
+                        return `<option key="${idx}" data-product="${pm.product}"${selected}>${pm.title}</option>`;
                     }).join('') : ''
-                    }
+                        }
                         </select>
                     </div>
                    `
@@ -501,22 +562,19 @@ if (!window.SequraFE) {
 
             if (name === 'displayWidgetOnProductPage') {
                 showOrHideRelatedFields('.sq-product-related-field', value);
+                disableFooter(!validateRelatedFields(name, value));
             }
             if (name === 'showInstallmentAmountInCartPage') {
                 showOrHideRelatedFields('.sq-cart-related-field', value);
+                disableFooter(!validateRelatedFields(name, value));
             }
             if (name === 'showInstallmentAmountInProductListing') {
                 showOrHideRelatedFields('.sq-listing-related-field', value);
+                disableFooter(!validateRelatedFields(name, value));
             }
 
-            if (['productPriceSelector', 'defaultProductLocationSelector', 'altProductPriceSelector', 'altProductPriceTriggerSelector', 'cartPriceSelector', 'cartLocationSelector', 'listingPriceSelector', 'listingLocationSelector'].includes(name)) {
-                const required = ['productPriceSelector', 'defaultProductLocationSelector', 'cartPriceSelector', 'cartLocationSelector', 'listingPriceSelector', 'listingLocationSelector'];
-                const isValid = validator.validateCssSelector(
-                    document.querySelector(`[name="${name}"]`),
-                    required.includes(name),
-                    'validation.invalidField'
-                );
-                disableFooter(!isValid);
+            if(!validateFieldIfRelated(name)) {
+                disableFooter(true);
             }
 
             if (name === 'customLocations') {
@@ -590,7 +648,7 @@ if (!window.SequraFE) {
                 if (changedSettings.showInstallmentAmountInProductListing) {
                     for (const name of ['listingPriceSelector', 'listingLocationSelector']) {
                         let element = document.querySelector(`[name="${name}"]`)
-                        if(!element){
+                        if (!element) {
                             continue;
                         }
 
