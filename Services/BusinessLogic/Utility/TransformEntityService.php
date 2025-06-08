@@ -102,7 +102,6 @@ class TransformEntityService
     {
         $items = [];
         $orderItemsTotal = 0;
-        $isUnshippedOrFullyShipped = true;
         /** @var MagentoOrder\Item $orderItem */
         foreach ($orderData->getAllVisibleItems() as $orderItem) {
             $orderItemsTotal += self::transformPrice($orderItem->getRowTotalInclTax() ?? 0);
@@ -136,7 +135,7 @@ class TransformEntityService
         $shippingAmount = $orderData->getShippingInclTax() ? self::transformPrice($orderData->getShippingInclTax()) : 0;
         $totalShipmentCost = $shippingAmount - $refundedShippingAmount;
         $orderItemsTotal += $shippingAmount;
-        if ($isUnshippedOrFullyShipped && $totalShipmentCost > 0 && !self::isCartEmpty($items)) {
+        if ($totalShipmentCost > 0 && !self::isCartEmpty($items)) {
             $items[] = HandlingItem::fromArray([
                 'type' => ItemType::TYPE_HANDLING,
                 'reference' => 'shipping cost',
@@ -150,7 +149,7 @@ class TransformEntityService
         $discountAmount = $orderData->getDiscountAmount() ? self::getTotalDiscountAmount($orderData) : 0;
         $totalDiscount = $discountAmount - $refundedDiscountAmount;
         $orderItemsTotal += $discountAmount;
-        if ($isUnshippedOrFullyShipped && $totalDiscount < 0 && !self::isCartEmpty($items)) {
+        if ($totalDiscount < 0 && !self::isCartEmpty($items)) {
             $items[] = DiscountItem::fromArray([
                 'type' => ItemType::TYPE_DISCOUNT,
                 'reference' => 'discount',
@@ -169,11 +168,11 @@ class TransformEntityService
 
         $diff = self::transformPrice($orderData->getGrandTotal()) - $orderItemsTotal;
 
-        if ($diff < 0 && $isUnshippedOrFullyShipped && !self::isCartEmpty($items)) {
+        if ($diff < 0 && !self::isCartEmpty($items)) {
             $items[] = new OtherPaymentItem('additional_discount', 'Refund adjustment', $diff);
         }
 
-        if ($diff > 0 && $isUnshippedOrFullyShipped && !self::isCartEmpty($items)) {
+        if ($diff > 0 && !self::isCartEmpty($items)) {
             $items[] = new HandlingItem('additional_handling', 'Refund adjustment', $diff);
         }
 
