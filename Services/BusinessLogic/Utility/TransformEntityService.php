@@ -135,43 +135,43 @@ class TransformEntityService
         $refundedShippingAmount = $orderData->getShippingRefunded() ?
         self::transformPrice($orderData->getShippingRefunded()) : 0;
         $shippingAmount = $orderData->getShippingInclTax() ? self::transformPrice($orderData->getShippingInclTax()) : 0;
-        $totalShipmentCost = $shippingAmount - $refundedShippingAmount;
-        if ($totalShipmentCost > 0 && !self::isCartEmpty($items)) {
+        $totalShipmentCost = round(($shippingAmount - $refundedShippingAmount) * $ratio);
+        if ($totalShipmentCost > 0) {
             $items[] = HandlingItem::fromArray([
                 'type' => ItemType::TYPE_HANDLING,
                 'reference' => 'shipping cost',
                 'name' => 'Shipping cost',
-                'total_with_tax' => round($totalShipmentCost * $ratio),
+                'total_with_tax' => $totalShipmentCost,
             ]);
         }
 
         $refundedDiscountAmount = $orderData->getDiscountRefunded() ?
         self::getTotalDiscountAmount($orderData, true) : 0;
         $discountAmount = $orderData->getDiscountAmount() ? self::getTotalDiscountAmount($orderData) : 0;
-        $totalDiscount = $discountAmount - $refundedDiscountAmount;
-        if ($totalDiscount < 0 && !self::isCartEmpty($items)) {
+        $totalDiscount = round(($discountAmount - $refundedDiscountAmount) * $ratio);
+        if ($totalDiscount < 0) {
             $items[] = DiscountItem::fromArray([
                 'type' => ItemType::TYPE_DISCOUNT,
                 'reference' => 'discount',
                 'name' => 'Discount',
-                'total_with_tax' => round($totalDiscount * $ratio),
+                'total_with_tax' => $totalDiscount,
             ]);
         }
-        $adjustmentPositive = $orderData->getAdjustmentPositive();
+        $adjustmentPositive = $orderData->getAdjustmentPositive() * $ratio;
         if ($adjustmentPositive) {
             $items[] = new OtherPaymentItem(
                 'additional_discount',
                 'Refund adjustment',
-                self::transformPrice($adjustmentPositive * $ratio)
+                self::transformPrice($adjustmentPositive)
             );
 
         }
-        $adjustmentNegative = $orderData->getAdjustmentNegative();
+        $adjustmentNegative = $orderData->getAdjustmentNegative()  * $ratio;
         if ($adjustmentNegative) {
             $items[] = new HandlingItem(
                 'additional_handling',
                 'Refund adjustment',
-                self::transformPrice($adjustmentNegative * $ratio)
+                self::transformPrice($adjustmentNegative)
             );
         }
 
@@ -312,20 +312,4 @@ class TransformEntityService
             self::transformPrice($order->getShippingInclTax() ?? 0) -
             self::transformPrice($order->getDiscountAmount() ?? 0) === 0;
     }
-
-    /**
-     * Checks if there are cart items of type product.
-     *
-     * @param SeQuraItem[] $items
-     *
-     * @return bool
-     */
-    private static function isCartEmpty(array $items): bool
-    {
-        return empty(array_filter($items, static function ($item) {
-            return $item->getType() === ItemType::TYPE_PRODUCT;
-        }));
-    }
-
-    // phpcs:enable Magento2.Functions.StaticFunction.StaticFunction
 }
