@@ -164,7 +164,7 @@ class TransformEntityService
             $items[] = new OtherPaymentItem(
                 'additional_discount',
                 'Refund adjustment',
-                self::transformPrice($adjustmentPositive)
+                -1 * self::transformPrice($adjustmentPositive)
             );
 
         }
@@ -194,7 +194,7 @@ class TransformEntityService
     }
     // TODO: Static method cannot be intercepted and its use is discouraged.
     // phpcs:disable Magento2.Functions.StaticFunction.StaticFunction
-    
+
     /**
      * Calculates the subtotal of the cart.
      *
