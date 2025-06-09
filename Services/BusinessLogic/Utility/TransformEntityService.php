@@ -213,15 +213,17 @@ class TransformEntityService
             $orderedQty = $orderItem->getQtyOrdered() ? (int)$orderItem->getQtyOrdered() : 0;
             $unshippedQty = $orderItem->getQtyOrdered() - $shippedQty;
             $refundedQty = $orderItem->getQtyRefunded() ? (int)$orderItem->getQtyRefunded() : 0;
-            $shippedSubtotal += self::transformPrice(
-                ($orderItem->getRowTotalInclTax() ?? 0) * $shippedQty / $orderedQty
-            ) ;
-            $unShippedSubtotal += self::transformPrice(
-                ($orderItem->getRowTotalInclTax() ?? 0) * $unshippedQty / $orderedQty
-            );
-            $refundedSubtotal += self::transformPrice(
-                ($orderItem->getRowTotalInclTax() ?? 0) * $refundedQty / $orderedQty
-            );
+            if ($orderedQty > 0) {
+                $shippedSubtotal += self::transformPrice(
+                    ($orderItem->getRowTotalInclTax() ?? 0) * $shippedQty / $orderedQty
+                );
+                $unShippedSubtotal += self::transformPrice(
+                    ($orderItem->getRowTotalInclTax() ?? 0) * $unshippedQty / $orderedQty
+                );
+                $refundedSubtotal += self::transformPrice(
+                    ($orderItem->getRowTotalInclTax() ?? 0) * $refundedQty / $orderedQty
+                );
+            }
         }
         return ['shipped' => $shippedSubtotal, 'unshipped' => $unShippedSubtotal, 'refunded' => $refundedSubtotal];
     }
