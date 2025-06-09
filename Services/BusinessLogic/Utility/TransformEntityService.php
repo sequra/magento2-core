@@ -210,7 +210,7 @@ class TransformEntityService
         foreach ($orderData->getAllVisibleItems() as $orderItem) {
             $shippedQty = $orderItem->getQtyShipped() ? (int)$orderItem->getQtyShipped() : 0;
             $orderedQty = $orderItem->getQtyOrdered() ? (int)$orderItem->getQtyOrdered() : 0;
-            $unshippedQty = $orderItem->getQtyOrdered() - $shippedQty;
+            $unshippedQty = $orderedQty - $shippedQty;
             if ($orderedQty > 0) {
                 $shippedSubtotal += self::transformPrice(
                     ($orderItem->getRowTotalInclTax() ?? 0) * $shippedQty / $orderedQty
