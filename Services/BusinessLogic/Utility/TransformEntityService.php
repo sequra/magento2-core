@@ -15,7 +15,6 @@ use SeQura\Core\BusinessLogic\Domain\Order\Models\OrderRequest\Item\HandlingItem
 use SeQura\Core\BusinessLogic\Domain\Order\Models\OrderRequest\Item\Item as SeQuraItem;
 use SeQura\Core\BusinessLogic\Domain\Order\Models\OrderRequest\Item\ItemType;
 use SeQura\Core\BusinessLogic\Domain\Order\Models\OrderRequest\Item\ProductItem;
-use SeQura\Core\BusinessLogic\Domain\Order\Models\OrderRequest\Item\OtherPaymentItem;
 
 class TransformEntityService
 {
@@ -101,22 +100,41 @@ class TransformEntityService
     public function transformOrderItemsToSeQuraCartItems(MagentoOrder $orderData, bool $isShipped): array
     {
         $items = [];
-        $cartSubTotal = self::cartSubTotal($orderData);
-        $shippedRatio = self::isFullyShipped($orderData) ?
-            1 : $cartSubTotal['shipped'] / ($cartSubTotal['shipped'] + $cartSubTotal['unshipped']);
-        $unShippedRatio = 1 - $shippedRatio;
-        $ratio = ($isShipped ) ? $shippedRatio : $unShippedRatio;
+        $orderItemsTotal = 0;
+        $isUnshippedOrFullyShipped = true;
         /** @var MagentoOrder\Item $orderItem */
         foreach ($orderData->getAllVisibleItems() as $orderItem) {
+            $orderItemsTotal += self::transformPrice($orderItem->getRowTotalInclTax() ?? 0);
             $orderedQty = $orderItem->getQtyOrdered() ? (int)$orderItem->getQtyOrdered() : 0;
             $shippedQty = $orderItem->getQtyShipped() ? (int)$orderItem->getQtyShipped() : 0;
-            $unshippedQty = $orderedQty - $shippedQty;
             $refundedQty = $orderItem->getQtyRefunded() ? (int)$orderItem->getQtyRefunded() : 0;
-            $quantityToRefund = ($isShipped) ? max(0, $refundedQty - $unshippedQty) : min($refundedQty, $unshippedQty);
-            $quantity = ($isShipped) ? $shippedQty - $quantityToRefund : $unshippedQty - $quantityToRefund;
+            $quantity = 0;
+            $leftToShip = $orderedQty - $refundedQty;
+
+            if ($leftToShip <= 0) {
+                continue;
+            }
+
+            if ($isShipped) {
+                $quantity = ($leftToShip <= $shippedQty) ? $leftToShip : $shippedQty;
+            }
+
+            if (!$isShipped) {
+                $quantity = $orderedQty - $refundedQty - $shippedQty;
+            }
+
             if ($quantity <= 0) {
                 continue;
             }
+
+            if ($isShipped && $refundedQty + $shippedQty < $orderedQty) {
+                $isUnshippedOrFullyShipped = false;
+            }
+
+            if (($isShipped && $shippedQty <= 0)) {
+                continue;
+            }
+
             $product = $orderItem->getProduct();
             $items[] = ProductItem::fromArray([
                 'type' => ItemType::TYPE_PRODUCT,
@@ -134,11 +152,11 @@ class TransformEntityService
         }
 
         $refundedShippingAmount = $orderData->getShippingRefunded() ?
-        self::transformPrice($orderData->getShippingRefunded()) : 0;
-        $shippingAmount = $orderData->getShippingInclTax() ?
-            self::transformPrice($orderData->getShippingInclTax()) : 0;
-        $totalShipmentCost = round(($shippingAmount - $refundedShippingAmount) * $ratio);
-        if ($totalShipmentCost > 0) {
+            self::transformPrice($orderData->getShippingRefunded()) : 0;
+        $shippingAmount = $orderData->getShippingInclTax() ? self::transformPrice($orderData->getShippingInclTax()) : 0;
+        $totalShipmentCost = $shippingAmount - $refundedShippingAmount;
+        $orderItemsTotal += $shippingAmount;
+        if ($isUnshippedOrFullyShipped && $totalShipmentCost > 0 && !self::isCartEmpty($items)) {
             $items[] = HandlingItem::fromArray([
                 'type' => ItemType::TYPE_HANDLING,
                 'reference' => 'shipping cost',
@@ -148,10 +166,11 @@ class TransformEntityService
         }
 
         $refundedDiscountAmount = $orderData->getDiscountRefunded() ?
-        self::getTotalDiscountAmount($orderData, true) : 0;
+            self::getTotalDiscountAmount($orderData, true) : 0;
         $discountAmount = $orderData->getDiscountAmount() ? self::getTotalDiscountAmount($orderData) : 0;
-        $totalDiscount = round(($discountAmount - $refundedDiscountAmount) * $ratio);
-        if ($totalDiscount < 0) {
+        $totalDiscount = $discountAmount - $refundedDiscountAmount;
+        $orderItemsTotal += $discountAmount;
+        if ($isUnshippedOrFullyShipped && $totalDiscount < 0 && !self::isCartEmpty($items)) {
             $items[] = DiscountItem::fromArray([
                 'type' => ItemType::TYPE_DISCOUNT,
                 'reference' => 'discount',
@@ -159,22 +178,23 @@ class TransformEntityService
                 'total_with_tax' => $totalDiscount,
             ]);
         }
-        $adjustmentPositive = $orderData->getAdjustmentPositive() * $ratio;
-        if ($adjustmentPositive) {
-            $items[] = new OtherPaymentItem(
-                'additional_discount',
-                'Refund adjustment',
-                -1 * self::transformPrice($adjustmentPositive)
-            );
 
+        if ($orderData->getAdjustmentPositive()) {
+            $orderItemsTotal += self::transformPrice($orderData->getAdjustmentPositive());
         }
-        $adjustmentNegative = $orderData->getAdjustmentNegative()  * $ratio;
-        if ($adjustmentNegative) {
-            $items[] = new HandlingItem(
-                'additional_handling',
-                'Refund adjustment',
-                self::transformPrice($adjustmentNegative)
-            );
+
+        if ($orderData->getAdjustmentNegative()) {
+            $orderItemsTotal += self::transformPrice(-$orderData->getAdjustmentNegative());
+        }
+
+        $diff = self::transformPrice($orderData->getGrandTotal()) - $orderItemsTotal;
+
+        if ($diff < 0 && $isUnshippedOrFullyShipped && !self::isCartEmpty($items)) {
+            $items[] = new DiscountItem('additional_discount', 'discount', $diff);
+        }
+
+        if ($diff > 0 && $isUnshippedOrFullyShipped && !self::isCartEmpty($items)) {
+            $items[] = new HandlingItem('additional_handling', 'surcharge', $diff);
         }
 
         /**
@@ -192,57 +212,9 @@ class TransformEntityService
 
         return $items;
     }
+
     // TODO: Static method cannot be intercepted and its use is discouraged.
     // phpcs:disable Magento2.Functions.StaticFunction.StaticFunction
-
-    /**
-     * Calculates the subtotal of the cart.
-     *
-     * @param MagentoOrder $orderData
-     *
-     * @return array<string, int>
-     */
-    private static function cartSubTotal(MagentoOrder $orderData): array
-    {
-        $shippedSubtotal = 0;
-        $unShippedSubtotal = 0;
-        /** @var MagentoOrder\Item $orderItem */
-        foreach ($orderData->getAllVisibleItems() as $orderItem) {
-            $shippedQty = $orderItem->getQtyShipped() ? (int)$orderItem->getQtyShipped() : 0;
-            $orderedQty = $orderItem->getQtyOrdered() ? (int)$orderItem->getQtyOrdered() : 0;
-            $unshippedQty = $orderedQty - $shippedQty;
-            if ($orderedQty > 0) {
-                $shippedSubtotal += self::transformPrice(
-                    ($orderItem->getRowTotalInclTax() ?? 0) * $shippedQty / $orderedQty
-                );
-                $unShippedSubtotal += self::transformPrice(
-                    ($orderItem->getRowTotalInclTax() ?? 0) * $unshippedQty / $orderedQty
-                );
-            }
-        }
-        return ['shipped' => $shippedSubtotal, 'unshipped' => $unShippedSubtotal];
-    }
-
-    /**
-     * Checks if the order is fully shipped.
-     *
-     * @param MagentoOrder $orderData
-     *
-     * @return bool
-     */
-    private static function isFullyShipped(MagentoOrder $orderData): bool
-    {
-        /** @var MagentoOrder\Item $orderItem */
-        foreach ($orderData->getAllVisibleItems() as $orderItem) {
-            $shippedQty = $orderItem->getQtyShipped() ? (int)$orderItem->getQtyShipped() : 0;
-            $orderedQty = $orderItem->getQtyOrdered() ? (int)$orderItem->getQtyOrdered() : 0;
-            $refundedQty = $orderItem->getQtyRefunded() ? (int)$orderItem->getQtyRefunded() : 0;
-            if ($orderedQty - $shippedQty - $refundedQty > 0) {
-                return false;
-            }
-        }
-        return true;
-    }
 
     /**
      * Transform price to format.
@@ -318,4 +290,20 @@ class TransformEntityService
             self::transformPrice($order->getShippingInclTax() ?? 0) -
             self::transformPrice($order->getDiscountAmount() ?? 0) === 0;
     }
+
+    /**
+     * Checks if there are cart items of type product.
+     *
+     * @param SeQuraItem[] $items
+     *
+     * @return bool
+     */
+    private static function isCartEmpty(array $items): bool
+    {
+        return empty(array_filter($items, static function ($item) {
+            return $item->getType() === ItemType::TYPE_PRODUCT;
+        }));
+    }
+
+    // phpcs:enable Magento2.Functions.StaticFunction.StaticFunction
 }
