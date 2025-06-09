@@ -8,7 +8,7 @@
         "pagos",
         "magento2"
     ],
-    "version": "2.6.2",
+    "version": "2.6.3",
     "license": "MIT",
     "authors": [
         {
@@ -66,11 +66,5 @@
         "allow-plugins": {
             "dealerdirect/phpcodesniffer-composer-installer": true
         }
-    },
-    "repositories": [
-        {
-            "type": "git",
-            "url": "git@github.com:sequra/integration-core.git"
-        }
-    ]
+    }
 }
