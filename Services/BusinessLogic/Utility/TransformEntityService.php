@@ -206,13 +206,11 @@ class TransformEntityService
     {
         $shippedSubtotal = 0;
         $unShippedSubtotal = 0;
-        $refundedSubtotal = 0;
         /** @var MagentoOrder\Item $orderItem */
         foreach ($orderData->getAllVisibleItems() as $orderItem) {
             $shippedQty = $orderItem->getQtyShipped() ? (int)$orderItem->getQtyShipped() : 0;
             $orderedQty = $orderItem->getQtyOrdered() ? (int)$orderItem->getQtyOrdered() : 0;
             $unshippedQty = $orderItem->getQtyOrdered() - $shippedQty;
-            $refundedQty = $orderItem->getQtyRefunded() ? (int)$orderItem->getQtyRefunded() : 0;
             if ($orderedQty > 0) {
                 $shippedSubtotal += self::transformPrice(
                     ($orderItem->getRowTotalInclTax() ?? 0) * $shippedQty / $orderedQty
@@ -220,12 +218,9 @@ class TransformEntityService
                 $unShippedSubtotal += self::transformPrice(
                     ($orderItem->getRowTotalInclTax() ?? 0) * $unshippedQty / $orderedQty
                 );
-                $refundedSubtotal += self::transformPrice(
-                    ($orderItem->getRowTotalInclTax() ?? 0) * $refundedQty / $orderedQty
-                );
             }
         }
-        return ['shipped' => $shippedSubtotal, 'unshipped' => $unShippedSubtotal, 'refunded' => $refundedSubtotal];
+        return ['shipped' => $shippedSubtotal, 'unshipped' => $unShippedSubtotal];
     }
 
     /**
