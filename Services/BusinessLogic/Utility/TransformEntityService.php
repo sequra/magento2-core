@@ -102,7 +102,8 @@ class TransformEntityService
     {
         $items = [];
         $cartSubTotal = self::cartSubTotal($orderData);
-        $shippedRatio = self::isFullyShipped($orderData) ? 1 : $cartSubTotal['shipped'] / ($cartSubTotal['shipped'] + $cartSubTotal['unshipped']);
+        $shippedRatio = self::isFullyShipped($orderData) ?
+            1 : $cartSubTotal['shipped'] / ($cartSubTotal['shipped'] + $cartSubTotal['unshipped']);
         $unShippedRatio = 1 - $shippedRatio;
         $ratio = ($isShipped ) ? $shippedRatio : $unShippedRatio;
         /** @var MagentoOrder\Item $orderItem */
@@ -113,7 +114,7 @@ class TransformEntityService
             $refundedQty = $orderItem->getQtyRefunded() ? (int)$orderItem->getQtyRefunded() : 0;
             $quantityToRefund = ($isShipped) ? max(0, $refundedQty - $unshippedQty) : min($refundedQty, $unshippedQty);
             $quantity = ($isShipped) ? $shippedQty - $quantityToRefund : $unshippedQty - $quantityToRefund;
-            if ($quantity <= 0 ) {
+            if ($quantity <= 0) {
                 continue;
             }
             $product = $orderItem->getProduct();
@@ -134,7 +135,8 @@ class TransformEntityService
 
         $refundedShippingAmount = $orderData->getShippingRefunded() ?
         self::transformPrice($orderData->getShippingRefunded()) : 0;
-        $shippingAmount = $orderData->getShippingInclTax() ? self::transformPrice($orderData->getShippingInclTax()) : 0;
+        $shippingAmount = $orderData->getShippingInclTax() ?
+            self::transformPrice($orderData->getShippingInclTax()) : 0;
         $totalShipmentCost = round(($shippingAmount - $refundedShippingAmount) * $ratio);
         if ($totalShipmentCost > 0) {
             $items[] = HandlingItem::fromArray([
@@ -183,12 +185,16 @@ class TransformEntityService
         }, 0);
 
         if ($cartTotal < 0) {
-            throw new LocalizedException($this->translationProvider->translate('sequra.error.invalidRefundAmount'));
+            throw new LocalizedException(
+                $this->translationProvider->translate('sequra.error.invalidRefundAmount')
+            );
         }
 
         return $items;
     }
-
+    // TODO: Static method cannot be intercepted and its use is discouraged.
+    // phpcs:disable Magento2.Functions.StaticFunction.StaticFunction
+    
     /**
      * Calculates the subtotal of the cart.
      *
@@ -207,9 +213,15 @@ class TransformEntityService
             $orderedQty = $orderItem->getQtyOrdered() ? (int)$orderItem->getQtyOrdered() : 0;
             $unshippedQty = $orderItem->getQtyOrdered() - $shippedQty;
             $refundedQty = $orderItem->getQtyRefunded() ? (int)$orderItem->getQtyRefunded() : 0;
-            $shippedSubtotal += self::transformPrice(($orderItem->getRowTotalInclTax() ?? 0) * $shippedQty / $orderedQty) ;
-            $unShippedSubtotal += self::transformPrice(($orderItem->getRowTotalInclTax() ?? 0) * $unshippedQty / $orderedQty);
-            $refundedSubtotal += self::transformPrice(($orderItem->getRowTotalInclTax() ?? 0) * $refundedQty / $orderedQty);
+            $shippedSubtotal += self::transformPrice(
+                ($orderItem->getRowTotalInclTax() ?? 0) * $shippedQty / $orderedQty
+            ) ;
+            $unShippedSubtotal += self::transformPrice(
+                ($orderItem->getRowTotalInclTax() ?? 0) * $unshippedQty / $orderedQty
+            );
+            $refundedSubtotal += self::transformPrice(
+                ($orderItem->getRowTotalInclTax() ?? 0) * $refundedQty / $orderedQty
+            );
         }
         return ['shipped' => $shippedSubtotal, 'unshipped' => $unShippedSubtotal, 'refunded' => $refundedSubtotal];
     }
@@ -228,16 +240,13 @@ class TransformEntityService
             $shippedQty = $orderItem->getQtyShipped() ? (int)$orderItem->getQtyShipped() : 0;
             $orderedQty = $orderItem->getQtyOrdered() ? (int)$orderItem->getQtyOrdered() : 0;
             $refundedQty = $orderItem->getQtyRefunded() ? (int)$orderItem->getQtyRefunded() : 0;
-            if($orderedQty - $shippedQty - $refundedQty > 0) {
+            if ($orderedQty - $shippedQty - $refundedQty > 0) {
                 return false;
             }
         }
         return true;
     }
 
-    // TODO: Static method cannot be intercepted and its use is discouraged.
-    // phpcs:disable Magento2.Functions.StaticFunction.StaticFunction
-    
     /**
      * Transform price to format.
      *
