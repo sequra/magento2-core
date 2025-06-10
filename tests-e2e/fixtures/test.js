@@ -1,7 +1,8 @@
 import { test as baseTest, expect } from "@playwright/test";
-import { ConnectionSettingsPage, DataProvider, GeneralSettingsPage, OnboardingSettingsPage, PaymentMethodsSettingsPage, WidgetSettingsPage } from "playwright-fixture-for-plugins";
+import { ConnectionSettingsPage, GeneralSettingsPage, OnboardingSettingsPage, PaymentMethodsSettingsPage, WidgetSettingsPage } from "playwright-fixture-for-plugins";
 import BackOffice from "./base/BackOffice";
 import SeQuraHelper from "./utils/SeQuraHelper";
+import DataProvider from "./utils/DataProvider";
 import ProductPage from "./pages/ProductPage";
 import CheckoutPage from "./pages/CheckoutPage";
 
