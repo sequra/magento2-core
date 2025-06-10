@@ -10,6 +10,13 @@ if (!window.SequraFE) {
      * @property {string} message The error message.
      */
 
+     /**
+     * @typedef CategoryPaymentMethod
+     * @property {string|null} category
+     * @property {string|null} product
+     * @property {string|null} title
+     */
+
     const validationRule = {
         numeric: 'numeric',
         integer: 'integer',
@@ -257,7 +264,7 @@ if (!window.SequraFE) {
      * @param {string} value[].selForTarget CSS selector for the target element.
      * @param {string} value[].widgetStyles JSON string representing the styles for the widget.
      * @param {string} value[].product Product name.
-     * @param {Array<string>} allowedPaymentMethods Array of allowed payment methods.
+     * @param {CategoryPaymentMethod[]} allowedPaymentMethods Array of allowed payment methods.
      * @return {boolean}
      */
     const validateCustomLocations = (element, value, allowedPaymentMethods) => {
