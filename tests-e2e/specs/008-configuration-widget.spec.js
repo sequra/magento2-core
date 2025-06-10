@@ -10,41 +10,8 @@ test.describe('Widget settings', () => {
 
     const defaultSettings = dataProvider.defaultWidgetOptions();
     const widgetOptions = dataProvider.widgetOptions();
-    const newSettings = {
-      ...widgetOptions,
-      product: {
-        ...widgetOptions.product,
-        priceSel: '.product-info-price [data-price-type="finalPrice"] .price',
-        locationSel: '.product.info',
-        customLocations: [
-          {
-            ...widgetOptions.product.customLocations[0],
-            locationSel: '#product-addtocart-button'
-          }
-        ]
-      },
-      cart: {
-        ...widgetOptions.cart,
-        priceSel: '.cart-totals .grand.totals .price',
-        locationSel: '.cart-totals',
-      },
-      productListing: {
-        ...widgetOptions.productListing,
-        display: false, // Disable product listing widgets.
-        useSelectors: false, // Disable selectors for product listing.
-      }
-    }
-    const onlyProductSettings = {
-      ...defaultSettings,
-      product: {
-        ...newSettings.product,
-        customLocations: []
-      }
-    }
-    const onlyCartSettings = {
-      ...defaultSettings,
-      cart: newSettings.cart
-    }
+    const onlyProductSettings = dataProvider.onlyProductWidgetOptions();
+    const onlyCartSettings = dataProvider.onlyCartWidgetOptions();
 
     const emptyStr = "";
     const invalidSelector = "!.summary .price>.amount,.summary .price ins .amount";
@@ -59,8 +26,8 @@ test.describe('Widget settings', () => {
       { ...onlyProductSettings, product: { ...onlyProductSettings.product, altPriceTriggerSel: invalidSelector } },
       { ...onlyProductSettings, product: { ...onlyProductSettings.product, locationSel: emptyStr } },
       { ...onlyProductSettings, product: { ...onlyProductSettings.product, locationSel: invalidSelector } },
-      { ...onlyProductSettings, product: { ...onlyProductSettings.product, customLocations: [{ ...newSettings.product.customLocations[0], locationSel: invalidSelector }] } },
-      { ...onlyProductSettings, product: { ...onlyProductSettings.product, customLocations: [{ ...newSettings.product.customLocations[0], widgetConfig: invalidJSON }] } },
+      { ...onlyProductSettings, product: { ...onlyProductSettings.product, customLocations: [{ ...widgetOptions.product.customLocations[0], locationSel: invalidSelector }] } },
+      { ...onlyProductSettings, product: { ...onlyProductSettings.product, customLocations: [{ ...widgetOptions.product.customLocations[0], widgetConfig: invalidJSON }] } },
       { ...onlyCartSettings, cart: { ...onlyCartSettings.cart, priceSel: emptyStr } },
       { ...onlyCartSettings, cart: { ...onlyCartSettings.cart, priceSel: invalidSelector } },
       { ...onlyCartSettings, cart: { ...onlyCartSettings.cart, locationSel: emptyStr } },
@@ -72,7 +39,7 @@ test.describe('Widget settings', () => {
     await widgetSettingsPage.expectLoadingShowAndHide();
 
     // Test cancellation of the changes.
-    await widgetSettingsPage.fillForm(newSettings);
+    await widgetSettingsPage.fillForm(widgetOptions);
     await widgetSettingsPage.cancel();
     await widgetSettingsPage.expectConfigurationMatches(defaultSettings);
 
@@ -85,13 +52,13 @@ test.describe('Widget settings', () => {
     }
 
     // Test valid values.
-    await widgetSettingsPage.fillForm(newSettings);
+    await widgetSettingsPage.fillForm(widgetOptions);
     await widgetSettingsPage.save();
-    await widgetSettingsPage.expectConfigurationMatches(newSettings);
+    await widgetSettingsPage.expectConfigurationMatches(widgetOptions);
     // Test if changes persist after reload.
     await page.reload();
     await widgetSettingsPage.expectLoadingShowAndHide();
-    await widgetSettingsPage.expectConfigurationMatches(newSettings);
+    await widgetSettingsPage.expectConfigurationMatches(widgetOptions);
   });
 
   test('Show widget on product page', async ({ helper, widgetSettingsPage, dataProvider, productPage }) => {
@@ -100,71 +67,19 @@ test.describe('Widget settings', () => {
     await helper.executeWebhook({ webhook: clear_config }); // Clear the configuration.
     await helper.executeWebhook({ webhook: dummy_config, args: [{ name: 'widgets', value: '0' }] }); // Setup with widgets disabled.
 
-    const widgetOptions = dataProvider.widgetOptions();
-    const newSettings = {
-      ...widgetOptions,
-      product: {
-        ...widgetOptions.product,
-        priceSel: '.product-info-price [data-price-type="finalPrice"] .price',
-        locationSel: '.product.info',
-        customLocations: [
-          {
-            ...widgetOptions.product.customLocations[0],
-            locationSel: '#product-addtocart-button'
-          }
-        ]
-      },
-      cart: {
-        ...widgetOptions.cart,
-        display: false, // Disable cart widgets.
-      },
-      productListing: {
-        ...widgetOptions.productListing,
-        display: false, // Disable product listing widgets.
-        useSelectors: false, // Disable selectors for product listing.
-      }
-    }
-
-    const pp3Opt = {
-      locationSel: newSettings.product.locationSel,
-      widgetConfig: newSettings.widgetConfig,
-      product: 'pp3',
-      amount: 5900,
-      registrationAmount: null,
-      campaign: null
-    }
-
-    const sp1Opt = {
-      locationSel: newSettings.product.locationSel,
-      widgetConfig: newSettings.widgetConfig,
-      product: 'sp1',
-      amount: 5900,
-      registrationAmount: null,
-      campaign: 'permanente'
-    }
-
-    const i1Opt = {
-      locationSel: newSettings.product.customLocations[0].locationSel || newSettings.product.locationSel,
-      widgetConfig: newSettings.product.customLocations[0].widgetConfig || newSettings.product.widgetConfig,
-      product: 'i1',
-      amount: 5900,
-      registrationAmount: null,
-      campaign: null
-    }
-
     // Execution
     await widgetSettingsPage.goto();
     await widgetSettingsPage.expectLoadingShowAndHide();
-    await widgetSettingsPage.fillForm(newSettings);
+    await widgetSettingsPage.fillForm(dataProvider.widgetOptions());
     await widgetSettingsPage.save();
 
     await helper.executeWebhook({ webhook: clear_front_end_cache }); // Clear the page cache.
 
     await productPage.goto({ slug: 'fusion-backpack' });
 
-    await productPage.expectWidgetToBeVisible(pp3Opt);
-    await productPage.expectWidgetToBeVisible(sp1Opt);
-    await productPage.expectWidgetToBeVisible(i1Opt);
+    await productPage.expectWidgetToBeVisible(dataProvider.pp3FrontEndWidgetOptions());
+    await productPage.expectWidgetToBeVisible(dataProvider.sp1FrontEndWidgetOptions());
+    await productPage.expectWidgetToBeVisible(dataProvider.i1FrontEndWidgetOptions());
   });
 
   test('Do not display the widget on the product page when the selector is invalid', async ({ helper, widgetSettingsPage, dataProvider, productPage }) => {
@@ -173,71 +88,46 @@ test.describe('Widget settings', () => {
     await helper.executeWebhook({ webhook: clear_config }); // Clear the configuration.
     await helper.executeWebhook({ webhook: dummy_config, args: [{ name: 'widgets', value: '0' }] }); // Setup with widgets disabled.
 
-    const widgetOptions = dataProvider.widgetOptions();
-    const newSettings = {
-      ...widgetOptions,
-      product: {
-        ...widgetOptions.product,
-        priceSel: '.product-info-price [data-price-type="finalPrice"] .price',
-        locationSel: '.product.info',
-        customLocations: [
-          {
-            ...widgetOptions.product.customLocations[0],
-            locationSel: '#product-addtocart-button-bad-selector' // Invalid selector.
-          }
-        ]
-      },
-      cart: {
-        ...widgetOptions.cart,
-        display: false, // Disable cart widgets.
-      },
-      productListing: {
-        ...widgetOptions.productListing,
-        display: false, // Disable product listing widgets.
-        useSelectors: false, // Disable selectors for product listing.
-      }
-    }
-
-    const pp3Opt = {
-      locationSel: newSettings.product.locationSel,
-      widgetConfig: newSettings.widgetConfig,
-      product: 'pp3',
-      amount: 5900,
-      registrationAmount: null,
-      campaign: null
-    }
-
-    const sp1Opt = {
-      locationSel: newSettings.product.locationSel,
-      widgetConfig: newSettings.widgetConfig,
-      product: 'sp1',
-      amount: 5900,
-      registrationAmount: null,
-      campaign: 'permanente'
-    }
-
-    const i1Opt = {
-      locationSel: newSettings.product.customLocations[0].locationSel || newSettings.product.locationSel,
-      widgetConfig: newSettings.product.customLocations[0].widgetConfig || newSettings.product.widgetConfig,
-      product: 'i1',
-      amount: 5900,
-      registrationAmount: null,
-      campaign: null
-    }
+    const widgetOptions = dataProvider.onlyProductWidgetOptions();
+    widgetOptions.product.customLocations[0].locationSel = '#product-addtocart-button-bad-selector';
 
     // Execution
     await widgetSettingsPage.goto();
     await widgetSettingsPage.expectLoadingShowAndHide();
-    await widgetSettingsPage.fillForm(newSettings);
+    await widgetSettingsPage.fillForm(widgetOptions);
     await widgetSettingsPage.save();
 
     await helper.executeWebhook({ webhook: clear_front_end_cache }); // Clear the page cache.
 
     await productPage.goto({ slug: 'fusion-backpack' });
 
-    await productPage.expectWidgetToBeVisible(pp3Opt);
-    await productPage.expectWidgetToBeVisible(sp1Opt);
-    await productPage.expectWidgetNotToBeVisible(i1Opt);
+    await productPage.expectWidgetToBeVisible(dataProvider.pp3FrontEndWidgetOptions());
+    await productPage.expectWidgetToBeVisible(dataProvider.sp1FrontEndWidgetOptions());
+    await productPage.expectWidgetNotToBeVisible(dataProvider.i1FrontEndWidgetOptions());
+  });
+
+  test('Do not display the widget on the product page when custom location is disabled', async ({ helper, widgetSettingsPage, dataProvider, productPage }) => {
+    // Setup
+    const { dummy_config, clear_config, clear_front_end_cache } = helper.webhooks;
+    await helper.executeWebhook({ webhook: clear_config }); // Clear the configuration.
+    await helper.executeWebhook({ webhook: dummy_config, args: [{ name: 'widgets', value: '0' }] }); // Setup with widgets disabled.
+
+    const widgetOptions = dataProvider.onlyProductWidgetOptions();
+    widgetOptions.product.customLocations[0].display = false;
+
+    // Execution
+    await widgetSettingsPage.goto();
+    await widgetSettingsPage.expectLoadingShowAndHide();
+    await widgetSettingsPage.fillForm(widgetOptions);
+    await widgetSettingsPage.save();
+
+    await helper.executeWebhook({ webhook: clear_front_end_cache }); // Clear the page cache.
+
+    await productPage.goto({ slug: 'fusion-backpack' });
+
+    await productPage.expectWidgetToBeVisible(dataProvider.pp3FrontEndWidgetOptions());
+    await productPage.expectWidgetToBeVisible(dataProvider.sp1FrontEndWidgetOptions());
+    await productPage.expectWidgetNotToBeVisible(dataProvider.i1FrontEndWidgetOptions());
   });
 
   // test('Don\'t show widget for banned product', async ({ productPage, generalSettingsPage, widgetSettingsPage, wpAdmin, request }) => {
