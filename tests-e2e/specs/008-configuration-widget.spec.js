@@ -94,9 +94,9 @@ test.describe('Widget settings', () => {
     await widgetSettingsPage.expectConfigurationMatches(newSettings);
   });
 
-  test('Show widget on product page', async ({ page, helper, widgetSettingsPage, dataProvider, productPage }) => {
+  test('Show widget on product page', async ({ helper, widgetSettingsPage, dataProvider, productPage }) => {
     // Setup
-    const { dummy_config, clear_config } = helper.webhooks;
+    const { dummy_config, clear_config, clear_front_end_cache } = helper.webhooks;
     await helper.executeWebhook({ webhook: clear_config }); // Clear the configuration.
     await helper.executeWebhook({ webhook: dummy_config, args: [{ name: 'widgets', value: '0' }] }); // Setup with widgets disabled.
 
@@ -158,11 +158,86 @@ test.describe('Widget settings', () => {
     await widgetSettingsPage.fillForm(newSettings);
     await widgetSettingsPage.save();
 
+    await helper.executeWebhook({ webhook: clear_front_end_cache }); // Clear the page cache.
+
     await productPage.goto({ slug: 'fusion-backpack' });
 
     await productPage.expectWidgetToBeVisible(pp3Opt);
     await productPage.expectWidgetToBeVisible(sp1Opt);
     await productPage.expectWidgetToBeVisible(i1Opt);
+  });
+
+  test('Do not display the widget on the product page when the selector is invalid', async ({ helper, widgetSettingsPage, dataProvider, productPage }) => {
+    // Setup
+    const { dummy_config, clear_config, clear_front_end_cache } = helper.webhooks;
+    await helper.executeWebhook({ webhook: clear_config }); // Clear the configuration.
+    await helper.executeWebhook({ webhook: dummy_config, args: [{ name: 'widgets', value: '0' }] }); // Setup with widgets disabled.
+
+    const widgetOptions = dataProvider.widgetOptions();
+    const newSettings = {
+      ...widgetOptions,
+      product: {
+        ...widgetOptions.product,
+        priceSel: '.product-info-price [data-price-type="finalPrice"] .price',
+        locationSel: '.product.info',
+        customLocations: [
+          {
+            ...widgetOptions.product.customLocations[0],
+            locationSel: '#product-addtocart-button-bad-selector' // Invalid selector.
+          }
+        ]
+      },
+      cart: {
+        ...widgetOptions.cart,
+        display: false, // Disable cart widgets.
+      },
+      productListing: {
+        ...widgetOptions.productListing,
+        display: false, // Disable product listing widgets.
+        useSelectors: false, // Disable selectors for product listing.
+      }
+    }
+
+    const pp3Opt = {
+      locationSel: newSettings.product.locationSel,
+      widgetConfig: newSettings.widgetConfig,
+      product: 'pp3',
+      amount: 5900,
+      registrationAmount: null,
+      campaign: null
+    }
+
+    const sp1Opt = {
+      locationSel: newSettings.product.locationSel,
+      widgetConfig: newSettings.widgetConfig,
+      product: 'sp1',
+      amount: 5900,
+      registrationAmount: null,
+      campaign: 'permanente'
+    }
+
+    const i1Opt = {
+      locationSel: newSettings.product.customLocations[0].locationSel || newSettings.product.locationSel,
+      widgetConfig: newSettings.product.customLocations[0].widgetConfig || newSettings.product.widgetConfig,
+      product: 'i1',
+      amount: 5900,
+      registrationAmount: null,
+      campaign: null
+    }
+
+    // Execution
+    await widgetSettingsPage.goto();
+    await widgetSettingsPage.expectLoadingShowAndHide();
+    await widgetSettingsPage.fillForm(newSettings);
+    await widgetSettingsPage.save();
+
+    await helper.executeWebhook({ webhook: clear_front_end_cache }); // Clear the page cache.
+
+    await productPage.goto({ slug: 'fusion-backpack' });
+
+    await productPage.expectWidgetToBeVisible(pp3Opt);
+    await productPage.expectWidgetToBeVisible(sp1Opt);
+    await productPage.expectWidgetNotToBeVisible(i1Opt);
   });
 
   // test('Don\'t show widget for banned product', async ({ productPage, generalSettingsPage, widgetSettingsPage, wpAdmin, request }) => {
