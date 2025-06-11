@@ -75,11 +75,12 @@ test.describe('Widget settings', () => {
 
     await helper.executeWebhook({ webhook: clear_front_end_cache }); // Clear the page cache.
 
-    await productPage.goto({ slug: 'fusion-backpack' });
+    const slugOpt = { slug: 'fusion-backpack' };
+    await productPage.goto(slugOpt);
 
-    await productPage.expectWidgetToBeVisible(dataProvider.pp3FrontEndWidgetOptions());
-    await productPage.expectWidgetToBeVisible(dataProvider.sp1FrontEndWidgetOptions());
-    await productPage.expectWidgetToBeVisible(dataProvider.i1FrontEndWidgetOptions());
+    await productPage.expectWidgetToBeVisible(dataProvider.pp3FrontEndWidgetOptions(slugOpt));
+    await productPage.expectWidgetToBeVisible(dataProvider.sp1FrontEndWidgetOptions(slugOpt));
+    await productPage.expectWidgetToBeVisible(dataProvider.i1FrontEndWidgetOptions(slugOpt));
   });
 
   test('Do not display the widget on the product page when the selector is invalid', async ({ helper, widgetSettingsPage, dataProvider, productPage }) => {
@@ -99,11 +100,12 @@ test.describe('Widget settings', () => {
 
     await helper.executeWebhook({ webhook: clear_front_end_cache }); // Clear the page cache.
 
-    await productPage.goto({ slug: 'fusion-backpack' });
+    const slugOpt = { slug: 'fusion-backpack' };
+    await productPage.goto(slugOpt);
 
-    await productPage.expectWidgetToBeVisible(dataProvider.pp3FrontEndWidgetOptions());
-    await productPage.expectWidgetToBeVisible(dataProvider.sp1FrontEndWidgetOptions());
-    await productPage.expectWidgetNotToBeVisible(dataProvider.i1FrontEndWidgetOptions());
+    await productPage.expectWidgetToBeVisible(dataProvider.pp3FrontEndWidgetOptions(slugOpt));
+    await productPage.expectWidgetToBeVisible(dataProvider.sp1FrontEndWidgetOptions(slugOpt));
+    await productPage.expectWidgetNotToBeVisible(dataProvider.i1FrontEndWidgetOptions(slugOpt));
   });
 
   test('Do not display the widget on the product page when custom location is disabled', async ({ helper, widgetSettingsPage, dataProvider, productPage }) => {
@@ -123,68 +125,11 @@ test.describe('Widget settings', () => {
 
     await helper.executeWebhook({ webhook: clear_front_end_cache }); // Clear the page cache.
 
-    await productPage.goto({ slug: 'fusion-backpack' });
+    const slugOpt = { slug: 'fusion-backpack' };
+    await productPage.goto(slugOpt);
 
-    await productPage.expectWidgetToBeVisible(dataProvider.pp3FrontEndWidgetOptions());
-    await productPage.expectWidgetToBeVisible(dataProvider.sp1FrontEndWidgetOptions());
-    await productPage.expectWidgetNotToBeVisible(dataProvider.i1FrontEndWidgetOptions());
+    await productPage.expectWidgetToBeVisible(dataProvider.pp3FrontEndWidgetOptions(slugOpt));
+    await productPage.expectWidgetToBeVisible(dataProvider.sp1FrontEndWidgetOptions(slugOpt));
+    await productPage.expectWidgetNotToBeVisible(dataProvider.i1FrontEndWidgetOptions(slugOpt));
   });
-
-  // test('Don\'t show widget for banned product', async ({ productPage, generalSettingsPage, widgetSettingsPage, wpAdmin, request }) => {
-  //   const helper = new SeQuraHelper(request, expect);
-  //   await helper.executeWebhook({ webhook: helper.webhooks.SET_THEME, args: [{ name: 'theme', value: 'twentytwentyfour' }] });
-  //   await helper.executeWebhook({ webhook: helper.webhooks.SET_THEME, args: [{ name: 'theme', value: 'twentytwentyfour' }] });
-  //   const productId = 13;
-
-  //   await widgetSettingsPage.goto();
-  //   await widgetSettingsPage.expectLoadingShowAndHide();
-  //   await widgetSettingsPage.fill({
-  //     ...widgetSettingsPage.getDefaultSettings(),
-  //     enabled: true,
-  //     priceSel: ".wc-block-components-product-price>.amount,.wc-block-components-product-price ins .amount",
-  //     locationSel: ".wc-block-components-product-price"
-  //   });
-  //   await widgetSettingsPage.save({ expectLoadingShowAndHide: true, skipIfDisabled: true });
-
-  //   const expectWidgetNotToBeVisible = async () => {
-  //     await productPage.goto({ slug: 'sunglasses' });
-  //     await productPage.expectWidgetsNotToBeVisible();
-  //   }
-
-  //   // Test by including the product SKU in "Excluded products" list.
-  //   await generalSettingsPage.goto();
-  //   await generalSettingsPage.expectLoadingShowAndHide();
-  //   await generalSettingsPage.fillExcludedProducts(['woo-sunglasses']);
-  //   await generalSettingsPage.save({});
-  //   await expectWidgetNotToBeVisible();
-
-  //   // Test by including the product ID in "Excluded products" list.
-  //   await generalSettingsPage.goto();
-  //   await generalSettingsPage.expectLoadingShowAndHide();
-  //   await generalSettingsPage.fillExcludedProducts([`${productId}`]);
-  //   await generalSettingsPage.save({});
-  //   await expectWidgetNotToBeVisible();
-
-  //   await generalSettingsPage.goto();
-  //   await generalSettingsPage.expectLoadingShowAndHide();
-  //   await generalSettingsPage.fillExcludedProducts([]); // Clear the excluded products.
-
-  //   // Test by including the product category in "Excluded category" list.
-  //   await generalSettingsPage.selectExcludedCategories(['Accessories']);
-  //   await generalSettingsPage.save({});
-  //   await expectWidgetNotToBeVisible();
-
-  //   await generalSettingsPage.goto();
-  //   await generalSettingsPage.expectLoadingShowAndHide();
-  //   await generalSettingsPage.selectExcludedCategories([]); // Clear the excluded categories.
-  //   await generalSettingsPage.save({});
-
-  //   // Test by checking "Do not offer seQura for this product" on the product back-office page.
-  //   await wpAdmin.gotoProduct({ productId });
-  //   await wpAdmin.setProductAsBanned();
-  //   await expectWidgetNotToBeVisible();
-
-  //   await wpAdmin.gotoProduct({ productId });
-  //   await wpAdmin.setProductAsBanned(false); // Restore previous state.
-  // });
 });
