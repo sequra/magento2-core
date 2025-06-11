@@ -65,5 +65,6 @@ class ClearFrontEndCacheTask extends Task
         foreach ($this->cacheFrontendPool as $cacheFrontend) {
             $cacheFrontend->getBackend()->clean();
         }
+        return $this->httpSuccessResponse();
     }
 }
