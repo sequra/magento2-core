@@ -132,4 +132,57 @@ test.describe('Widget settings', () => {
     await productPage.expectWidgetToBeVisible(dataProvider.sp1FrontEndWidgetOptions(slugOpt));
     await productPage.expectWidgetNotToBeVisible(dataProvider.i1FrontEndWidgetOptions(slugOpt));
   });
+
+  // TODO: Add the following tests:
+  // - Do not display widgets in the product listing page when "Show installment amount in product listing" toggle is OFF
+  // - Display widgets in the product listing page when settings are valid.
+  // - Display widgets in the cart page when settings are valid and check if text changes cart quantity changes.
+
+  test('Do not display widgets when promotional components are disabled', async ({ helper, widgetSettingsPage, productPage, cartPage }) => {
+    // Setup
+    const { dummy_config, clear_config, clear_front_end_cache } = helper.webhooks;
+    await helper.executeWebhook({ webhook: clear_config }); // Clear the configuration.
+    await helper.executeWebhook({ webhook: dummy_config, args: [{ name: 'widgets', value: '0' }] }); // Setup with widgets disabled.
+
+    // Execution
+    await widgetSettingsPage.goto();
+    await widgetSettingsPage.expectLoadingShowAndHide();
+    await widgetSettingsPage.changeUsePromotionalComponentsOption(false);
+    await widgetSettingsPage.save();
+    await helper.executeWebhook({ webhook: clear_front_end_cache }); // Clear the page cache.
+    
+    // Check product page
+    const slugOpt = { slug: 'fusion-backpack' };
+    await productPage.goto(slugOpt);
+    await productPage.expectWidgetsNotToBeVisible();
+
+    // Check cart page
+    await productPage.addToCart({ ...slugOpt, quantity: 1 });
+    await cartPage.goto();
+    await cartPage.expectWidgetsNotToBeVisible();
+
+    // TODO: Check product listing page
+  });
+
+  test('Do not display widgets in the cart page when toggle is OFF', async ({ helper, widgetSettingsPage, dataProvider, cartPage, productPage }) => {
+    // Setup
+    const { dummy_config, clear_config, clear_front_end_cache } = helper.webhooks;
+    await helper.executeWebhook({ webhook: clear_config }); // Clear the configuration.
+    await helper.executeWebhook({ webhook: dummy_config, args: [{ name: 'widgets', value: '0' }] }); // Setup with widgets disabled.
+
+    const widgetOptions = dataProvider.widgetOptions();
+    widgetOptions.cart.display = false;
+
+    // Execution
+    await widgetSettingsPage.goto();
+    await widgetSettingsPage.expectLoadingShowAndHide();
+    await widgetSettingsPage.fillForm(widgetOptions);
+    await widgetSettingsPage.save();
+
+    await helper.executeWebhook({ webhook: clear_front_end_cache }); // Clear the page cache.
+
+    await productPage.addToCart({ slug: 'fusion-backpack', quantity: 1 });
+    await cartPage.goto();
+    await cartPage.expectWidgetsNotToBeVisible();
+  });
 });
