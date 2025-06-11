@@ -68,7 +68,7 @@ export default class DataProvider extends BaseDataProvider {
         if (!args) {
             throw new Error(`No front-end widget arguments found for slug: ${JSON.stringify(options)}`);
         }
-        this.frontEndWidgetOptions('sp1', 'permanente', args.amount, args.registrationAmount);
+        return this.frontEndWidgetOptions('sp1', 'permanente', args.amount, args.registrationAmount);
     }
 
     /**
