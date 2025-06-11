@@ -1,8 +1,33 @@
 import { test, expect } from '../fixtures/test';
 
+async function assertWidgetAndPaymentMethodVisibility(available, productPage, cartPage, checkoutPage, generalSettingsPage, dataProvider) {
+  const slugOpt = { slug: 'push-it-messenger-bag' };
+  await productPage.goto(slugOpt);
+  if (available) {
+    await productPage.expectWidgetToBeVisible(dataProvider.pp3FrontEndWidgetOptions(slugOpt));
+    await productPage.expectWidgetToBeVisible(dataProvider.sp1FrontEndWidgetOptions(slugOpt));
+    await productPage.expectWidgetToBeVisible(dataProvider.i1FrontEndWidgetOptions(slugOpt));
+  } else {
+    await productPage.expectWidgetsNotToBeVisible();
+  }
+  await productPage.addToCart({ ...slugOpt, quantity: 1 });
+  // TODO: Uncomment this when the additional validation for the cart page is implemented.
+  // await cartPage.goto();
+  // if (available) {
+  //   await cartPage.expectWidgetToBeVisible(
+  //     dataProvider.cartFrontEndWidgetOptions({ amount: 4500, registrationAmount: null })
+  //   );
+  // } else {
+  //   await cartPage.expectWidgetsNotToBeVisible();
+  // }
+  await checkoutPage.goto();
+  await checkoutPage.fillForm(dataProvider.shopper());
+  await checkoutPage.expectAnyPaymentMethod({ available });
+}
+
 test.describe('Configuration', () => {
 
-  test('Change allowed IP addresses', async ({ helper, dataProvider, backOffice, page, generalSettingsPage, productPage, checkoutPage }) => {
+  test('Change allowed IP addresses', async ({ helper, dataProvider, backOffice, page, generalSettingsPage, productPage, checkoutPage, cartPage }) => {
     // Setup
     const { dummy_config, clear_config } = helper.webhooks;
     await helper.executeWebhook({ webhook: clear_config }); // Clear the configuration.
@@ -28,10 +53,9 @@ test.describe('Configuration', () => {
       await generalSettingsPage.fillAllowedIPAddresses(ipAddresses);
       await generalSettingsPage.save({ skipIfDisabled: true });
       await backOffice.logout();
-      await productPage.addToCart({ slug: 'push-it-messenger-bag', quantity: 1 });
-      await checkoutPage.goto();
-      await checkoutPage.fillForm(dataProvider.shopper());
-      await checkoutPage.expectAnyPaymentMethod({ available });
+
+      await assertWidgetAndPaymentMethodVisibility(available, productPage, cartPage, checkoutPage, generalSettingsPage, dataProvider);
+
       await generalSettingsPage.goto();
       await generalSettingsPage.expectLoadingShowAndHide();
     }
@@ -66,7 +90,7 @@ test.describe('Configuration', () => {
     }
   });
 
-  test('Change excluded categories', async ({ helper, dataProvider, backOffice, generalSettingsPage, productPage, checkoutPage }) => {
+  test('Change excluded categories', async ({ helper, dataProvider, backOffice, generalSettingsPage, productPage, checkoutPage, cartPage }) => {
 
     // Setup
     const { dummy_config, clear_config } = helper.webhooks;
@@ -88,10 +112,7 @@ test.describe('Configuration', () => {
       await generalSettingsPage.selectExcludedCategories(categories);
       await generalSettingsPage.save({ skipIfDisabled: true });
       await backOffice.logout();
-      await productPage.addToCart({ slug: 'push-it-messenger-bag', quantity: 1 });
-      await checkoutPage.goto();
-      await checkoutPage.fillForm(dataProvider.shopper());
-      await checkoutPage.expectAnyPaymentMethod({ available });
+      await assertWidgetAndPaymentMethodVisibility(available, productPage, cartPage, checkoutPage, generalSettingsPage, dataProvider);
       await generalSettingsPage.goto();
       await generalSettingsPage.expectLoadingShowAndHide();
     }
@@ -116,12 +137,12 @@ test.describe('Configuration', () => {
     }
   });
 
-  test('Change excluded products', async ({ helper, dataProvider, backOffice, generalSettingsPage, productPage, checkoutPage }) => {
+  test('Change excluded products', async ({ helper, dataProvider, backOffice, generalSettingsPage, productPage, checkoutPage, cartPage }) => {
 
     // Setup
-    const { dummy_config, clear_config } = helper.webhooks;
+    const { dummy_config, clear_config, clear_front_end_cache } = helper.webhooks;
     await helper.executeWebhook({ webhook: clear_config }); // Clear the configuration.
-    await helper.executeWebhook({ webhook: dummy_config }); // Setup for physical products.
+    await helper.executeWebhook({ webhook: dummy_config, args: [{ name: 'widgets', value: '1' }] });
 
     const sku = '24-WB04';// The product SKU.
     const allowedValuesMatrix = [
@@ -138,10 +159,7 @@ test.describe('Configuration', () => {
       await generalSettingsPage.fillExcludedProducts(values);
       await generalSettingsPage.save({ skipIfDisabled: true });
       await backOffice.logout();
-      await productPage.addToCart({ slug: 'push-it-messenger-bag', quantity: 1 });
-      await checkoutPage.goto();
-      await checkoutPage.fillForm(dataProvider.shopper());
-      await checkoutPage.expectAnyPaymentMethod({ available });
+      await assertWidgetAndPaymentMethodVisibility(available, productPage, cartPage, checkoutPage, generalSettingsPage, dataProvider);
       await generalSettingsPage.goto();
       await generalSettingsPage.expectLoadingShowAndHide();
     }
