@@ -37,8 +37,16 @@ class ClearFrontEndCacheTask extends Task
     public function __construct(ResourceConnection $resourceConnection)
     {
         parent::__construct($resourceConnection);
-        $this->cacheTypeList = ObjectManager::getInstance()->get(TypeListInterface::class);
-        $this->cacheFrontendPool = ObjectManager::getInstance()->get(Pool::class);
+        /**
+         * @var TypeListInterface $cacheTypeList
+         */
+        $cacheTypeList = ObjectManager::getInstance()->get(TypeListInterface::class);
+        $this->cacheTypeList = $cacheTypeList;
+        /**
+         * @var Pool $cacheFrontendPool
+         */
+        $cacheFrontendPool = ObjectManager::getInstance()->get(Pool::class);
+        $this->cacheFrontendPool = $cacheFrontendPool;
     }
 
     /**
