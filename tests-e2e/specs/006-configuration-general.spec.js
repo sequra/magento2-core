@@ -186,7 +186,7 @@ test.describe('Configuration', () => {
     }
   });
 
-  test.only('Change available countries', async ({ helper, dataProvider, page, generalSettingsPage, checkoutPage }) => {
+  test('Change available countries', async ({ helper, dataProvider, page, generalSettingsPage, checkoutPage }) => {
     // Setup
     const { dummy_config, clear_config } = helper.webhooks;
     await helper.executeWebhook({ webhook: clear_config }); // Clear the configuration.
