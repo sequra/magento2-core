@@ -37,7 +37,7 @@ async function assertMiniWidgetVisibility(available, categoryPage) {
 
 test.describe('Configuration', () => {
 
-  test('Change allowed IP addresses', async ({ helper, dataProvider, backOffice, page, generalSettingsPage, productPage, checkoutPage, cartPage }) => {
+  test('Change allowed IP addresses', async ({ helper, dataProvider, backOffice, page, generalSettingsPage, productPage, checkoutPage, cartPage, categoryPage }) => {
     // Setup
     const { dummy_config, clear_config } = helper.webhooks;
     await helper.executeWebhook({ webhook: clear_config }); // Clear the configuration.
