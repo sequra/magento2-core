@@ -50,8 +50,7 @@ export default class CartPage extends BaseCartPage {
      * @returns {import("@playwright/test").Locator}
      */
     quantityInputLocator(options) {
-        // TODO: Implement this method
-        throw new Error('Not implemented');
+        return this.page.locator('.field.qty input');
     }
 
     /**
@@ -60,8 +59,7 @@ export default class CartPage extends BaseCartPage {
      * @returns {import("@playwright/test").Locator|null} The locator for the update cart button, or null if not applicable
      */
     updateCartBtnLocator(options) {
-        // TODO: Implement this method
-        throw new Error('Not implemented');
+        return this.page.locator('.action.update');
     }
 
     /**
