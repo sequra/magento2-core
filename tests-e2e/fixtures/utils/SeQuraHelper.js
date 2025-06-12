@@ -11,8 +11,7 @@ export default class SeQuraHelper extends BaseSeQuraHelper {
         return {
             clear_config: 'clear_config',
             dummy_config: 'dummy_config',
-            // dummyServicesConfig: 'dummy_services_config',
-            // removeDbTables: 'remove_db_tables'
+            clear_front_end_cache: 'clear_front_end_cache'
         };
     }
 
