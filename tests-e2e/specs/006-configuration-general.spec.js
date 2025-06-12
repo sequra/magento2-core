@@ -59,11 +59,11 @@ test.describe('Configuration', () => {
       [publicIP, ...notAllowedIPAddressesMatrix[0]]
     ]
 
-    const fillAndAssert = async (ipAddresses, available) => {
+    const fillAndAssert = async (ipAddresses, available, categoryPage) => {
       await generalSettingsPage.fillAllowedIPAddresses(ipAddresses);
       await generalSettingsPage.save({ skipIfDisabled: true });
       await backOffice.logout();
-      await assertWidgetAndPaymentMethodVisibility(available, productPage, cartPage, checkoutPage, generalSettingsPage, dataProvider, helper);
+      await assertWidgetAndPaymentMethodVisibility(available, productPage, cartPage, checkoutPage, dataProvider, helper);
       await assertMiniWidgetVisibility(available, categoryPage);
       await generalSettingsPage.goto();
       await generalSettingsPage.expectLoadingShowAndHide();
@@ -90,12 +90,12 @@ test.describe('Configuration', () => {
     // Test with valid IP addresses
     for (const ipAddresses of notAllowedIPAddressesMatrix) {
       console.log('Fill not allowed IP addresses:', ipAddresses);
-      await fillAndAssert(ipAddresses, false);
+      await fillAndAssert(ipAddresses, false, categoryPage);
     }
 
     for (const ipAddresses of allowedIPAddressesMatrix) {
       console.log('Fill allowed IP addresses:', ipAddresses);
-      await fillAndAssert(ipAddresses, true);
+      await fillAndAssert(ipAddresses, true, categoryPage);
     }
   });
 
@@ -121,7 +121,7 @@ test.describe('Configuration', () => {
       await generalSettingsPage.selectExcludedCategories(categories);
       await generalSettingsPage.save({ skipIfDisabled: true });
       await backOffice.logout();
-      await assertWidgetAndPaymentMethodVisibility(available, productPage, cartPage, checkoutPage, generalSettingsPage, dataProvider, helper);
+      await assertWidgetAndPaymentMethodVisibility(available, productPage, cartPage, checkoutPage, dataProvider, helper);
       await assertMiniWidgetVisibility(available, categoryPage);
       await generalSettingsPage.goto();
       await generalSettingsPage.expectLoadingShowAndHide();
@@ -169,7 +169,7 @@ test.describe('Configuration', () => {
       await generalSettingsPage.fillExcludedProducts(values);
       await generalSettingsPage.save({ skipIfDisabled: true });
       await backOffice.logout();
-      await assertWidgetAndPaymentMethodVisibility(available, productPage, cartPage, checkoutPage, generalSettingsPage, dataProvider, helper);
+      await assertWidgetAndPaymentMethodVisibility(available, productPage, cartPage, checkoutPage, dataProvider, helper);
       await generalSettingsPage.goto();
       await generalSettingsPage.expectLoadingShowAndHide();
     }
@@ -199,8 +199,7 @@ test.describe('Configuration', () => {
     const { dummy_config, clear_config } = helper.webhooks;
     await helper.executeWebhook({ webhook: clear_config }); // Clear the configuration.
     await helper.executeWebhook({ webhook: dummy_config }); // Setup for physical products.
-    // Remove entry having code: 'FR'
-    const countries = dataProvider.countriesMerchantRefs().filter(country => country.code !== 'FR');
+    const countries = dataProvider.countriesMerchantRefs()
 
     // Execution
     await generalSettingsPage.goto();
