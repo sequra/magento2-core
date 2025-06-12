@@ -1,6 +1,6 @@
 import { test, expect } from '../fixtures/test';
 
-async function assertWidgetAndPaymentMethodVisibility(available, productPage, cartPage, checkoutPage, generalSettingsPage, dataProvider, helper) {
+async function assertWidgetAndPaymentMethodVisibility(available, productPage, cartPage, checkoutPage, dataProvider, helper) {
   await helper.executeWebhook({ webhook: helper.webhooks.clear_front_end_cache });
   const slugOpt = { slug: 'push-it-messenger-bag' };
   await productPage.goto(slugOpt);
@@ -24,6 +24,15 @@ async function assertWidgetAndPaymentMethodVisibility(available, productPage, ca
   await checkoutPage.goto();
   await checkoutPage.fillForm(dataProvider.shopper());
   await checkoutPage.expectAnyPaymentMethod({ available });
+}
+
+async function assertMiniWidgetVisibility(available, categoryPage) {
+  await categoryPage.goto({ slug: 'gear/bags' });
+  if (available) {
+    await categoryPage.expectAnyVisibleMiniWidget();
+  } else {
+    await categoryPage.expectMiniWidgetsNotToBeVisible();
+  }
 }
 
 test.describe('Configuration', () => {
@@ -53,11 +62,9 @@ test.describe('Configuration', () => {
     const fillAndAssert = async (ipAddresses, available) => {
       await generalSettingsPage.fillAllowedIPAddresses(ipAddresses);
       await generalSettingsPage.save({ skipIfDisabled: true });
-      await
-        await backOffice.logout();
-
+      await backOffice.logout();
       await assertWidgetAndPaymentMethodVisibility(available, productPage, cartPage, checkoutPage, generalSettingsPage, dataProvider, helper);
-
+      await assertMiniWidgetVisibility(available, categoryPage);
       await generalSettingsPage.goto();
       await generalSettingsPage.expectLoadingShowAndHide();
     }
@@ -92,7 +99,7 @@ test.describe('Configuration', () => {
     }
   });
 
-  test('Change excluded categories', async ({ helper, dataProvider, backOffice, generalSettingsPage, productPage, checkoutPage, cartPage }) => {
+  test('Change excluded categories', async ({ helper, dataProvider, backOffice, generalSettingsPage, productPage, checkoutPage, cartPage, categoryPage }) => {
 
     // Setup
     const { dummy_config, clear_config } = helper.webhooks;
@@ -115,6 +122,7 @@ test.describe('Configuration', () => {
       await generalSettingsPage.save({ skipIfDisabled: true });
       await backOffice.logout();
       await assertWidgetAndPaymentMethodVisibility(available, productPage, cartPage, checkoutPage, generalSettingsPage, dataProvider, helper);
+      await assertMiniWidgetVisibility(available, categoryPage);
       await generalSettingsPage.goto();
       await generalSettingsPage.expectLoadingShowAndHide();
     }
