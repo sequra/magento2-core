@@ -29,9 +29,9 @@ async function assertWidgetAndPaymentMethodVisibility(available, productPage, ca
 async function assertMiniWidgetVisibility(available, categoryPage) {
   await categoryPage.goto({ slug: 'gear/bags' });
   if (available) {
-    await categoryPage.expectAnyVisibleMiniWidget();
+    await categoryPage.expectAnyVisibleMiniWidget('pp3');
   } else {
-    await categoryPage.expectMiniWidgetsNotToBeVisible();
+    await categoryPage.expectMiniWidgetsNotToBeVisible('pp3');
   }
 }
 
