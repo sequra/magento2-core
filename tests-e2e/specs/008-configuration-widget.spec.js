@@ -138,7 +138,7 @@ test.describe('Widget settings', () => {
   // - Display widgets in the product listing page when settings are valid.
   // - Display widgets in the cart page when settings are valid and check if text changes cart quantity changes.
 
-  test('Do not display widgets when promotional components are disabled', async ({ helper, widgetSettingsPage, productPage, cartPage }) => {
+  test('Do not display widgets when promotional components are disabled', async ({ helper, widgetSettingsPage, productPage, cartPage, categoryPage }) => {
     // Setup
     const { dummy_config, clear_config, clear_front_end_cache } = helper.webhooks;
     await helper.executeWebhook({ webhook: clear_config }); // Clear the configuration.
@@ -161,7 +161,9 @@ test.describe('Widget settings', () => {
     await cartPage.goto();
     await cartPage.expectWidgetsNotToBeVisible();
 
-    // TODO: Check product listing page
+    // Check category page
+    await categoryPage.goto({ slug: 'gear/bags' });
+    await categoryPage.expectWidgetsNotToBeVisible();
   });
 
   test('Do not display widgets in the cart page when toggle is OFF', async ({ helper, widgetSettingsPage, dataProvider, cartPage, productPage }) => {
