@@ -142,7 +142,7 @@ class MiniWidgets
 
         if (!$this->productAvailabilityValidator->validate($subject)->isValid()) {
             // TODO: Log product is not eligible for widgets
-            return '';
+            return $result;
         }
 
         $store = $this->_storeManager->getStore();
