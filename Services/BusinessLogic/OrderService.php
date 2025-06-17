@@ -304,7 +304,7 @@ class OrderService implements ShopOrderService
             $this->getOrderPaymentMethodInfo(
                 $updatedSeQuraOrder->getReference(),
                 $webhook->getProductCode(),
-                $updatedSeQuraOrder->getMerchant()->getId()
+                (string)$updatedSeQuraOrder->getMerchant()->getId()
             )
         );
 
