@@ -90,14 +90,14 @@ class OrderService implements ShopOrderService
      * @param CreateOrderRequestBuilderFactory $createOrderRequestBuilderFactory
      */
     public function __construct(
-        SearchCriteriaBuilder            $searchOrderCriteriaBuilder,
-        OrderCollectionFactory           $collectionFactory,
-        OrderRepositoryInterface         $shopOrderRepository,
-        OrderManagementInterface         $orderManagement,
-        CartManagementInterface          $cartManagement,
-        SeQuraOrderRepositoryInterface   $seQuraOrderRepository,
-        SeQuraTranslationProvider        $translationProvider,
-        CartRepositoryInterface          $cartProvider,
+        SearchCriteriaBuilder $searchOrderCriteriaBuilder,
+        OrderCollectionFactory $collectionFactory,
+        OrderRepositoryInterface $shopOrderRepository,
+        OrderManagementInterface $orderManagement,
+        CartManagementInterface $cartManagement,
+        SeQuraOrderRepositoryInterface $seQuraOrderRepository,
+        SeQuraTranslationProvider $translationProvider,
+        CartRepositoryInterface $cartProvider,
         CreateOrderRequestBuilderFactory $createOrderRequestBuilderFactory
     ) {
         $this->searchOrderCriteriaBuilder = $searchOrderCriteriaBuilder;
@@ -426,8 +426,12 @@ class OrderService implements ShopOrderService
         string $paymentMethodId,
         string $merchantId
     ): ?PaymentMethod {
-        $methodCategories = $this->getSeQuraOrderService()->getAvailablePaymentMethodsInCategories($orderReference,
-            $merchantId);
+        $methodCategories = $this->getSeQuraOrderService()
+            ->getAvailablePaymentMethodsInCategories(
+                $orderReference,
+                $merchantId
+            );
+
         foreach ($methodCategories as $category) {
             foreach ($category->getMethods() as $method) {
                 if ($method->getProduct() === $paymentMethodId) {
