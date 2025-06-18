@@ -90,14 +90,14 @@ class OrderService implements ShopOrderService
      * @param CreateOrderRequestBuilderFactory $createOrderRequestBuilderFactory
      */
     public function __construct(
-        SearchCriteriaBuilder            $searchOrderCriteriaBuilder,
-        OrderCollectionFactory           $collectionFactory,
-        OrderRepositoryInterface         $shopOrderRepository,
-        OrderManagementInterface         $orderManagement,
-        CartManagementInterface          $cartManagement,
-        SeQuraOrderRepositoryInterface   $seQuraOrderRepository,
-        SeQuraTranslationProvider        $translationProvider,
-        CartRepositoryInterface          $cartProvider,
+        SearchCriteriaBuilder $searchOrderCriteriaBuilder,
+        OrderCollectionFactory $collectionFactory,
+        OrderRepositoryInterface $shopOrderRepository,
+        OrderManagementInterface $orderManagement,
+        CartManagementInterface $cartManagement,
+        SeQuraOrderRepositoryInterface $seQuraOrderRepository,
+        SeQuraTranslationProvider $translationProvider,
+        CartRepositoryInterface $cartProvider,
         CreateOrderRequestBuilderFactory $createOrderRequestBuilderFactory
     ) {
         $this->searchOrderCriteriaBuilder = $searchOrderCriteriaBuilder;
@@ -204,7 +204,7 @@ class OrderService implements ShopOrderService
         if (!$seQuraOrder) {
             throw new NoSuchEntityException();
         }
-        $quote = $this->cartRepository->get((int) $seQuraOrder->getCartId());
+        $quote = $this->cartRepository->get((int)$seQuraOrder->getCartId());
 
         $builder = $this->createOrderRequestBuilderFactory->create([
             'cartId' => $quote->getId(),
@@ -281,7 +281,7 @@ class OrderService implements ShopOrderService
 
         /** @var Order $order */
         $order = $this->getOrderById(
-            $this->cartManagement->placeOrder((int) $seQuraOrder->getCartId())
+            $this->cartManagement->placeOrder((int)$seQuraOrder->getCartId())
         );
 
         $updatedSeQuraOrder = (new CreateOrderRequest(
@@ -301,7 +301,11 @@ class OrderService implements ShopOrderService
         ))->toSequraOrderInstance($webhook->getOrderRef());
 
         $updatedSeQuraOrder->setPaymentMethod(
-            $this->getOrderPaymentMethodInfo($updatedSeQuraOrder->getReference(), $webhook->getProductCode())
+            $this->getOrderPaymentMethodInfo(
+                $updatedSeQuraOrder->getReference(),
+                $webhook->getProductCode(),
+                (string)$updatedSeQuraOrder->getMerchant()->getId()
+            )
         );
 
         // Update order with merchant order references so that core can update order state with all required data
@@ -411,14 +415,23 @@ class OrderService implements ShopOrderService
      *
      * @param string $orderReference
      * @param string $paymentMethodId
+     * @param string $merchantId
      *
      * @return PaymentMethod|null
      *
      * @throws HttpRequestException
      */
-    private function getOrderPaymentMethodInfo(string $orderReference, string $paymentMethodId): ?PaymentMethod
-    {
-        $methodCategories = $this->getSeQuraOrderService()->getAvailablePaymentMethodsInCategories($orderReference);
+    private function getOrderPaymentMethodInfo(
+        string $orderReference,
+        string $paymentMethodId,
+        string $merchantId
+    ): ?PaymentMethod {
+        $methodCategories = $this->getSeQuraOrderService()
+            ->getAvailablePaymentMethodsInCategories(
+                $orderReference,
+                $merchantId
+            );
+
         foreach ($methodCategories as $category) {
             foreach ($category->getMethods() as $method) {
                 if ($method->getProduct() === $paymentMethodId) {
@@ -428,6 +441,7 @@ class OrderService implements ShopOrderService
 
                     /**
                      * TODO: Parameter #3 $icon of class PaymentMethod constructor expects string, string|null given
+                     *
                      * @var string $icon
                      */
                     $icon = $method->getIcon() ?? '';
