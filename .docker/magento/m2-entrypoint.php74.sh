@@ -92,7 +92,7 @@ if [ ! -f /var/www/html/.post-install-complete ]; then
     && su -s /bin/bash www-data -c "bin/magento config:set dev/template/allow_symlink $M2_ALLOW_SYMLINK" \
     && su -s /bin/bash www-data -c "bin/magento module:enable Sequra_Core" \
     && su -s /bin/bash www-data -c "bin/magento setup:upgrade" \
-    && su -s /bin/bash www-data -c "bin/magento sequra:configure --merchant_ref="$SQ_MERCHANT_REF" --username="$SQ_USER_NAME" --password="$SQ_USER_SECRET" --assets_key="$SQ_ASSETS_KEY" --endpoint="$SQ_ENDPOINT"" || handle_failure
+    && su -s /bin/bash www-data -c "bin/magento sequra:configure --merchant_ref="$SQ_MERCHANT_REF" --username="$SQ_USER_NAME" --password="$SQ_USER_SECRET" --endpoint="$SQ_ENDPOINT"" || handle_failure
 
     touch /var/www/html/.post-install-complete && echo "✅ Magento 2 installed and configured."
 fi

@@ -1,2 +1,2 @@
 #!/bin/bash
-docker compose exec -u www-data magento composer $@
+docker compose run --rm --entrypoint "" -u www-data magento composer $@

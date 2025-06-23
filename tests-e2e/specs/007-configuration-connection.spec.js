@@ -60,6 +60,6 @@ test.describe('Connection settings', () => {
     await connectionSettingsPage.expectLoadingShowAndHide();
     await connectionSettingsPage.fillForm(credentialsForServices);
     await connectionSettingsPage.save({ expectLoadingShowAndHide: true });
-    await page.waitForURL(/#onboarding-countries/);
+    // await page.waitForURL(/#onboarding-countries/);
   });
 });

@@ -60,6 +60,11 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
       testMatch: '007-configuration-connection.spec.js',
     },
+    {
+      name: 'configuration-widget',
+      use: { ...devices['Desktop Chrome'] },
+      testMatch: '008-configuration-widget.spec.js',
+    },
   ],
 });
 
