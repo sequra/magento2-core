@@ -147,9 +147,6 @@
             </argument>
         </arguments>
      </type>
-    <virtualType name="SequraGatewayCurrencyValidator" type="Sequra\Core\Gateway\Validator\CurrencyValidator" />
-    <virtualType name="SequraGatewayIpAddressValidator" type="Sequra\Core\Gateway\Validator\IpAddressVAlidator" /> 
-    <virtualType name="SequraGatewayProductWidgetAvailabilityValidator" type="Sequra\Core\Gateway\Validator\ProductWidgetAvailabilityValidator" /> 
     <!-- CSRF -->
     <type name="Magento\Framework\App\Request\CsrfValidator">
         <plugin name="sequra_disable_form_key_validation" type="Sequra\Core\Plugin\Framework\App\Request\CsrfValidator" />
