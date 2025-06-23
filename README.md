@@ -77,7 +77,7 @@ Additionally, the setup script supports the following arguments:
 
 | Argument | Description |
 | -------- | ------------------------------------------------------------------ |
-| `--ngrok` | Starts an ngrok container to expose the site to internet using HTTPS. An ngrok Auth Token must be provided either as an argument or as a variable in the `.env` file for it to work |
+| `--ngrok` | Starts an ngrok container to expose the site to internet using HTTPS. An ngrok Auth Token must be provided either as an argument or as a variable `NGROK_AUTHTOKEN` in the `.env` file for it to work |
 | `--ngrok-token=YOUR_NGROK_TOKEN` | Define the ngrok Auth Token |
 | `--open-browser` | Open the browser and navigate to the Magento root URL once the installation is complete |
 
@@ -141,6 +141,70 @@ Then start debugging (F5) making sure you have the option `Listen for Xdebug (wo
 
 > [!NOTE]  
 > You need to install and activate [PHP Debug](https://marketplace.visualstudio.com/items?itemName=xdebug.php-debug) extension
+
+## SeQura Helper plugin
+
+This plugin is intended to provide webhooks to setup data or ease common development tasks. A Postman collection is provided in `.docker/magento/HelperModule/Sequra/Helper/Webhooks.postman_collection.json` with the definition of the supported endpoints and parameters.
+
+## End to end Tests
+
+### Installation
+
+First, install NPM on your local machine (NVM is recommended) (See system requirements at: https://playwright.dev/docs/intro#system-requirements).
+
+Then, Install required Node packages by running the following command from the root directory:
+
+```bash
+npx playwright install
+```
+Last, install browsers using this command:
+
+```bash
+npx playwright install
+```
+
+### Usage
+
+You can use the provided utility `bin/playwright` to run E2E tests defined in `tests-e2e` directory. This utility will run tests in a headless mode inside of a Docker container of the official image provided by the Playwright team.
+
+Also, you can pass additional arguments to the utility to configure test execution. Some examples of arguments you can append to the command above:
+
+| Argument | Description |
+| -------- | ------------------------------------------------------------------ |
+| `--debug` | Runs tests in debug mode |
+| `--project=configuration-onboarding` | Execute an specific tests group. Options are defined in the `playwright.config.js` in the `projects` property. See the `name` property of each element of the array   |
+| `./tests-e2e/example.spec.js` | Execute specific test file. Supports multiple file paths space separated. Also supports file name without extension and path like this: `example` |
+
+More info at: https://playwright.dev/docs/intro
+
+> [!IMPORTANT]
+> In order for some tests to succeed, you must expose your Magento container to the internet, so that the callbacks made by SeQura can work. Make sure that you run the setup script passing the `--ngrok` argument.
+
+> [!IMPORTANT]
+> Make sure you wrote values for `SQ_MERCHANT_REF`, `SQ_USER_SECRET` and `SQ_ASSETS_KEY` in the `.env` file before launching e2e tests.
+
+### Running using UI mode
+
+> [!NOTE]  
+> This is the recommended way to execute the E2E tests.
+
+UI Mode lets you explore, run, and debug tests with a time travel experience complete with a watch mode. All test files are displayed in the testing sidebar, allowing you to expand each file and describe block to individually run, view, watch, and debug each test.
+
+Run the following command in the repository root directory:
+
+```bash
+bin/playwright --ui
+```
+
+### Running using headed mode
+
+It's also possible to run Playwright in headed mode. This will open a browser window to execute the tests. This approach could help you when you some debugging is needed. Run the following command in the repository root directory:
+
+```bash
+bin/playwright --headed
+```
+
+Note: append many arguments as needed to the command. For example `--debug`.
 
 ## Building Docker images
 
