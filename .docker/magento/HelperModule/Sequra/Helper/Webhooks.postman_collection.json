@@ -1,0 +1,122 @@
+{
+	"info": {
+		"_postman_id": "2d16b2f3-3b7e-4784-bc6f-142c66390080",
+		"name": "Magento 2 SeQura Helper",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "34793316",
+		"_collection_link": "https://sequra.postman.co/workspace/seQura~f92e360e-cddd-4a48-ad4e-c1de0c324abf/collection/34793316-2d16b2f3-3b7e-4784-bc6f-142c66390080?action=share&source=collection_link&creator=34793316"
+	},
+	"item": [
+		{
+			"name": "Configuration",
+			"item": [
+				{
+					"name": "Set dummy",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}?{{webhook}}=dummy_config&widgets=0",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"query": [
+								{
+									"key": "{{webhook}}",
+									"value": "dummy_config"
+								},
+								{
+									"key": "widgets",
+									"value": "0",
+									"description": "Use 1 to enable widgets or 0 to disable it"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Clear",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}?{{webhook}}=clear_config",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"query": [
+								{
+									"key": "{{webhook}}",
+									"value": "clear_config"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Contains webhooks used to modify the plugin's configuration value in the databasae"
+		},
+		{
+			"name": "UI",
+			"item": [
+				{
+					"name": "Clear Front End Cache",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}?{{webhook}}=clear_front_end_cache",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"query": [
+								{
+									"key": "{{webhook}}",
+									"value": "clear_front_end_cache"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Webhooks to change the user interface settings, such as the WP theme and components style"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "webhook",
+			"value": "sq-webhook",
+			"type": "string"
+		},
+		{
+			"key": "baseUrl",
+			"value": "http://localhost.sequrapi.com:8018/rest/V1/sequrahelper/webhook",
+			"type": "string"
+		}
+	]
+}
