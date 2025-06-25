@@ -7,36 +7,64 @@
      */
 
     /**
-     * @param {{
-     *   deploymentsSettings: Deployment[]
-     * }} data
+     * Handles the deployments settings form logic.
+     *
+     * @param {{ deploymentsSettings: Deployment[] }} data - Preloaded deployments settings.
      * @param {{
      *   saveDeploymentsUrl: string,
      *   page: string,
      *   appState: string
-     * }} configuration
+     * }} configuration - Configuration for current app state.
      * @constructor
      */
     function DeploymentsSettingsForm(data, configuration) {
+        /** @type {AjaxServiceType} */
         const api = SequraFE.ajaxService;
-        const { elementGenerator: generator, validationService: validator, utilities } = SequraFE;
+        const {
+            elementGenerator: generator,
+            validationService: validator,
+            utilities
+        } = SequraFE;
 
+        /** @type {Deployment[]} */
         let allDeployments = (data.deploymentsSettings || []).map(dep => ({
             ...utilities.cloneObject(dep),
             active: dep.active !== false,
         }));
 
+        /** @type {boolean} */
         let deploymentsChanged = false;
 
+        /**
+         * Public render method that initializes the form.
+         */
         this.render = () => {
-            const pageContent = document.querySelector('.sq-content');
-            pageContent.innerHTML = '';
+            removePreviousContent();
+            initForm();
+            utilities.hideLoader();
+        };
 
+        /**
+         * Removes previous inner content of the form if present.
+         */
+        const removePreviousContent = () => {
+            const pageContent = /** @type {HTMLElement|null} */ (document.querySelector('.sq-content'));
+            const inner = pageContent?.querySelector('.sq-content-inner');
+            if (inner) {
+                inner.remove(); // Keeps header intact, removes form content
+            }
+        };
+
+        /**
+         * Initializes the deployment selection form and adds it to the page.
+         */
+        const initForm = () => {
+            const pageContent = /** @type {HTMLElement|null} */ (document.querySelector('.sq-content'));
             const selectedIds = allDeployments
                 .filter(dep => dep.active)
                 .map(dep => dep.id);
 
-            const container = generator.createElement('div', 'sq-content-inner sqv--deployments', '', null, [
+            const content = generator.createElement('div', 'sq-content-inner sqv--deployments', '', null, [
                 generator.createElement('div', 'sqp-flash-message-wrapper'),
                 generator.createPageHeading({
                     title: 'deployments.title',
@@ -61,10 +89,29 @@
                 })
             ]);
 
-            pageContent?.append(container);
-            utilities.hideLoader();
+            pageContent?.append(content);
+
+            if (configuration.appState !== SequraFE.appStates.ONBOARDING) {
+                pageContent?.append(
+                    generator.createPageFooter({
+                        onCancel: () => {
+                            const pageContent = document.querySelector('.sq-content');
+                            while (pageContent?.firstChild) {
+                                pageContent.removeChild(pageContent.firstChild);
+                            }
+                            initForm(); // re-render form
+                        },
+                        onSave: handleSave
+                    })
+                );
+            }
         };
 
+        /**
+         * Handles selection change in the deployments list.
+         *
+         * @param {string[]} selectedIds - Array of selected deployment IDs.
+         */
         const handleDeploymentChange = (selectedIds) => {
             allDeployments.forEach(dep => {
                 dep.active = selectedIds.includes(dep.id);
@@ -72,6 +119,11 @@
             deploymentsChanged = true;
         };
 
+        /**
+         * Validates the form to ensure at least one deployment is selected.
+         *
+         * @returns {boolean} - True if valid, false otherwise.
+         */
         const isFormValid = () => {
             const hasActive = allDeployments.some(dep => dep.active);
             if (!hasActive) {
@@ -84,6 +136,9 @@
             return true;
         };
 
+        /**
+         * Handles save button click.
+         */
         const handleSave = () => {
             if (!isFormValid()) {
                 return;
@@ -93,6 +148,9 @@
             saveChangedData();
         };
 
+        /**
+         * Saves deployment settings and redirects to the next page in onboarding.
+         */
         const saveChangedData = () => {
             deploymentsChanged = false;
 
@@ -105,9 +163,7 @@
                 window.location.hash = nextPage
                     ? `${configuration.appState}-${nextPage}`
                     : SequraFE.appStates.SETTINGS;
-            }
-
-            if (configuration.appState !== SequraFE.appStates.ONBOARDING) {
+            } else {
                 utilities.hideLoader();
             }
         };
