@@ -58,11 +58,15 @@ class Setup extends Command
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         try {
-            return $this->state->emulateAreaCode(
+            /**
+             * @var int $result
+             */
+            $result = $this->state->emulateAreaCode(
                 \Magento\Framework\App\Area::AREA_ADMINHTML,
                 [$this, "executeCallBack"],
                 [$input, $output]
             );
+            return $result;
         } catch (\Exception $e) {
             $output->writeln($e->getMessage());
             return 1;
@@ -75,7 +79,7 @@ class Setup extends Command
      * @param InputInterface  $input  InputInterface
      * @param OutputInterface $output OutputInterface
      *
-     * @return int 0 if everything went fine, or an exit code
+     * @return int
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
     public function executeCallBack(InputInterface $input, OutputInterface $output)
