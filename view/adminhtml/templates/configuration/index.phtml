@@ -34,6 +34,7 @@
             getWidgetSettingsUrl: "<?= $block->getControllerUrl('WidgetSettings', '{storeId}', 'getWidgetSettings'); ?>",
             saveWidgetSettingsUrl: "<?= $block->getControllerUrl('WidgetSettings', '{storeId}', 'setWidgetSettings'); ?>",
             getPaymentMethodsUrl: "<?= $block->getControllerUrl('PaymentMethods', '{storeId}', 'getPaymentMethods', '{merchantId}'); ?>",
+            getDeploymentsUrl: "<?= $block->getControllerUrl('DeploymentsSettings', '{storeId}', 'getDeployments'); ?>",
             getAllAvailablePaymentMethodsUrl: "<?= $block->getControllerUrl('PaymentMethods', '{storeId}', 'getAllAvailablePaymentMethods'); ?>",
             configurableSelectorsForMiniWidgets: "false"
         }
@@ -66,7 +67,7 @@
         });
 
         SequraFE.pages = {
-            onboarding: ['connect','countries', 'widgets'],
+            onboarding: ['deployments','connect', 'countries', 'widgets'],
             settings: ['general','connection','widget'],
             payment: ['methods']
         }

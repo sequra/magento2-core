@@ -89,6 +89,7 @@
     "orderStatusSettings": "Configuración de estado de pedido",
     "widgetSettings": "Configuración de widgets",
     "stepOneLabel": "Instalar integración de comercio electrónico",
+    "stepDeployments": "Selecciona despliegues",
     "stepOneDescription": "Tu integración está lista para la conexión.",
     "stepTwoLabel": "Conectar integración",
     "stepThreeLabel": "Configurar países de venta",
@@ -164,6 +165,14 @@
     "disconnect": {
       "title": "Desconectar",
       "message": "¿Estás seguro de que deseas desconectarte?"
+    }
+  },
+  "deployments": {
+    "title": "Selecciona despliegues",
+    "description": "Por favor, selecciona los despliegues para los que deseas ofrecer los métodos de pago de SeQura",
+    "selector": {
+      "label": "¿En qué despliegues deseas ofrecer los métodos de pago de SeQura?",
+      "description": "Puedes seleccionar uno o más entornos donde se habilitará SeQura."
     }
   },
   "countries": {

@@ -5,12 +5,13 @@ if (!window.SequraFE) {
 SequraFE.appStates = {
     ONBOARDING: 'onboarding',
     SETTINGS: 'settings',
-    PAYMENT: 'payment'
+    PAYMENT: 'payment',
 };
 
 SequraFE.appPages = {
     ONBOARDING: {
         CONNECT: 'connect',
+        DEPLOYMENTS: 'deployments',
         COUNTRIES: 'countries',
         WIDGETS: 'widgets'
     },
@@ -41,6 +42,7 @@ SequraFE.appPages = {
      * @property {string} versionUrl
      * @property {string} shopNameUrl
      * @property {Record<string, any>} pageConfiguration
+     * @property {string [getDeploymentsUrl
      */
 
     /**
@@ -65,7 +67,15 @@ SequraFE.appPages = {
      * @property {WidgetSettings | null} widgetSettings
      * @property {PaymentMethod[] | null} paymentMethods
      * @property {SellingCountry[] | null} sellingCountries
+     * @property {DeploymentSettings[] | null} deploymentsSettings
      * @property {Category[] | null} shopCategories
+     */
+
+    /**
+     * @typedef {Object} DeploymentSettings
+     * @property {string} id
+     * @property {string} name
+     * @property {boolean} [active]
      */
 
     /**
@@ -91,6 +101,7 @@ SequraFE.appPages = {
             stores: null,
             connectionSettings: null,
             countrySettings: null,
+            deploymentsSettings: null,
             generalSettings: null,
             widgetSettings: null,
             paymentMethods: null,
@@ -153,12 +164,14 @@ SequraFE.appPages = {
                 api.get(configuration.pageConfiguration.onboarding.getConnectionDataUrl.replace(encodeURIComponent('{storeId}'), this.getStoreId())),
                 api.get(configuration.pageConfiguration.onboarding.getCountrySettingsUrl.replace(encodeURIComponent('{storeId}'), this.getStoreId())),
                 api.get(configuration.pageConfiguration.onboarding.getWidgetSettingsUrl.replace(encodeURIComponent('{storeId}'), this.getStoreId())),
-            ]).then(([versionRes, storesRes, connectionSettingsRes, countrySettingsRes, widgetSettingsRes]) => {
+                api.get(configuration.pageConfiguration.onboarding.getDeploymentsUrl.replace(encodeURIComponent('{storeId}'), this.getStoreId())),
+            ]).then(([versionRes, storesRes, connectionSettingsRes, countrySettingsRes, widgetSettingsRes,  deploymentsSettingsRes]) => {
                 dataStore.version = versionRes;
                 dataStore.stores = storesRes;
                 dataStore.connectionSettings = connectionSettingsRes;
                 dataStore.countrySettings = countrySettingsRes;
                 dataStore.widgetSettings = widgetSettingsRes;
+                dataStore.deploymentsSettings = deploymentsSettingsRes;
 
                 return api.get(configuration.stateUrl.replace(encodeURIComponent('{storeId}'), this.getStoreId()));
             }).then((stateRes) => {
@@ -219,6 +232,11 @@ SequraFE.appPages = {
                         }
 
                         break;
+                    case SequraFE.appPages.ONBOARDING.DEPLOYMENTS:
+                            page = SequraFE.appPages.ONBOARDING.DEPLOYMENTS;
+
+                            break;
+
                     case SequraFE.appPages.ONBOARDING.WIDGETS:
                         if (dataStore.countrySettings?.length === 0 || SequraFE.state.getCredentialsChanged()) {
                             page = SequraFE.appPages.ONBOARDING.COUNTRIES
@@ -391,6 +409,7 @@ SequraFE.appPages = {
                 version: null,
                 stores: null,
                 connectionSettings: null,
+                deploymentsSettings: null,
                 countrySettings: null,
                 generalSettings: null,
                 widgetSettings: null,

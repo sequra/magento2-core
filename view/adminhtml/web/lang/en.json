@@ -91,6 +91,7 @@
     "stepOneLabel": "Install ecommerce integration",
     "stepOneDescription": "Your integration is ready for connection.",
     "stepTwoLabel": "Connect integration",
+    "stepDeployments": "Select Deployments",
     "stepThreeLabel": "Configure selling countries",
     "stepFourLabel": "Configure widgets",
     "stepFiveLabel": "Start selling with SeQura"
@@ -164,6 +165,14 @@
     "disconnect": {
       "title": "Disconnect",
       "message": "Are you sure you want to disconnect?"
+    }
+  },
+  "deployments": {
+    "title": "Select deployments",
+    "description": "Please select deployments for which you want to offer SeQura payment methods",
+    "selector": {
+      "label": "In which deployments do you want to offer SeQura payment methods?",
+      "description": "You can select one or more environments where SeQura should be enabled."
     }
   },
   "countries": {
