@@ -7,8 +7,8 @@ namespace Sequra\Helper\Console;
 
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Magento\Framework\App\State;
 
 /**
  * Console command to trigger DR report
@@ -19,6 +19,22 @@ class Setup extends Command
      *  Command name
      */
     public const NAME = 'sequra-helper:setup';
+
+    /**
+     * @var State
+     */
+    private $state;
+
+     /**
+      * ProcessSubscriptionsCommand constructor.
+      * @param State $state
+      * @param ObjectManagerInterface $objectManager
+      */
+    public function __construct(State $state)
+    {
+        parent::__construct();
+        $this->state = $state;
+    }
     
    /**
     * Initialize triggerreport command
@@ -41,6 +57,29 @@ class Setup extends Command
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
     protected function execute(InputInterface $input, OutputInterface $output)
+    {
+        try {
+            return $this->state->emulateAreaCode(
+                \Magento\Framework\App\Area::AREA_ADMINHTML,
+                [$this, "executeCallBack"],
+                [$input, $output]
+            );
+        } catch (\Exception $e) {
+            $output->writeln($e->getMessage());
+            return 1;
+        }
+    }
+
+    /**
+     * Callback function to execute the command.
+     *
+     * @param InputInterface  $input  InputInterface
+     * @param OutputInterface $output OutputInterface
+     *
+     * @return int 0 if everything went fine, or an exit code
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+     */
+    public function executeCallBack(InputInterface $input, OutputInterface $output)
     {
         if (empty(getenv('M2_SAMPLE_DATA'))) {
             $output->writeln("Skip setup, M2_SAMPLE_DATA is not set");
@@ -75,7 +114,7 @@ class Setup extends Command
         }
        
         $customerRepository->save($customer);
-        $output->writeln("Dirección actualizada correctamente");
+        $output->writeln("Address updated successfully");
         return 0;
     }
 }
