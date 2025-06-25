@@ -6,6 +6,7 @@ use SeQura\Core\BusinessLogic\BootstrapComponent;
 use SeQura\Core\BusinessLogic\DataAccess\ConnectionData\Entities\ConnectionData;
 use SeQura\Core\BusinessLogic\DataAccess\CountryConfiguration\Entities\CountryConfiguration;
 use SeQura\Core\BusinessLogic\DataAccess\Credentials\Entities\Credentials;
+use SeQura\Core\BusinessLogic\DataAccess\Deployments\Entities\Deployment;
 use SeQura\Core\BusinessLogic\DataAccess\GeneralSettings\Entities\GeneralSettings;
 use SeQura\Core\BusinessLogic\DataAccess\OrderSettings\Entities\OrderStatusSettings;
 use SeQura\Core\BusinessLogic\DataAccess\PaymentMethod\Entities\PaymentMethod;
@@ -344,6 +345,7 @@ class Bootstrap extends BootstrapComponent
         RepositoryRegistry::registerRepository(TransactionLog::class, BaseRepository::class);
         RepositoryRegistry::registerRepository(PaymentMethod::class, BaseRepository::class);
         RepositoryRegistry::registerRepository(Credentials::class, BaseRepository::class);
+        RepositoryRegistry::registerRepository(Deployment::class, BaseRepository::class);
 
         ServiceRegister::registerService(
             OrderStatusSettingsRepositoryInterface::class,
