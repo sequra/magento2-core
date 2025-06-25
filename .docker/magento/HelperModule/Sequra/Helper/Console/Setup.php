@@ -26,9 +26,8 @@ class Setup extends Command
     private $state;
 
      /**
-      * ProcessSubscriptionsCommand constructor.
+      * Constructor.
       * @param State $state
-      * @param ObjectManagerInterface $objectManager
       */
     public function __construct(State $state)
     {
