@@ -114,8 +114,8 @@ if { [ "$M2_VERSION" == "2.4.7-p5" ] || [ "$M2_VERSION" == "2.4.7-p6" ]; } && [ 
     exit 1
 fi
 
-if { [ "$M2_VERSION" == "2.4.8" ] || [ "$M2_VERSION" == "2.4.8-p1" ]; } && [ "$PHP_VERSION" != "8.4" ]; then
-    echo "❌ Magento version $M2_VERSION is not compatible with PHP version $PHP_VERSION. Please use PHP version 8.4"
+if { [ "$M2_VERSION" == "2.4.8" ] || [ "$M2_VERSION" == "2.4.8-p1" ]; } && { [ "$PHP_VERSION" != "8.3" ] && [ "$PHP_VERSION" != "8.4" ]; }; then
+    echo "❌ Magento version $M2_VERSION is not compatible with PHP version $PHP_VERSION. Please use PHP version 8.3 or 8.4"
     exit 1
 fi
 
