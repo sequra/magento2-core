@@ -51,27 +51,28 @@ class Onboarding extends BaseConfigurationController
         $data = $this->getSequraPostData();
 
         /**
-         * @var string $environment
-         */
-        $environment = $data['environment'] ?? '';
-        /**
-         * @var string $username
-         */
-        $username = $data['username'] ?? '';
-        /**
-         * @var string $password
-         */
-        $password = $data['password'] ?? '';
-        /**
          * @var bool $sendStatisticalData
          */
         $sendStatisticalData = $data['sendStatisticalData'] ?? true;
+        $connectionDataArray = $data['connectionData'] ?? [];
+
+        $environment =  $data['environment'] ?? '';
+
+        $connectionRequests = [];
+
+        foreach ($connectionDataArray as $connData) {
+            $connectionRequests[] = new ConnectionRequest(
+                $environment,
+                $connData['merchantId'] ?? '',
+                $connData['username'] ?? '',
+                $connData['password'] ?? '',
+                $connData['deployment'] ?? null
+            );
+        }
 
         // @phpstan-ignore-next-line
         $response = AdminAPI::get()->connection($this->storeId)->connect(new OnboardingRequest(
-            $environment,
-            $username,
-            $password,
+            $connectionRequests,
             $sendStatisticalData
         ));
 
@@ -108,12 +109,18 @@ class Onboarding extends BaseConfigurationController
          */
         $password = $data['password'] ?? '';
 
+        /**
+         * @var string $deploymentId
+         */
+        $deploymentId = $data['deploymentId'] ?? '';
+
         // @phpstan-ignore-next-line
         $response = AdminAPI::get()->connection($this->storeId)->isConnectionDataValid(new ConnectionRequest(
             $environment,
             $merchantId,
             $username,
-            $password
+            $password,
+            $deploymentId
         ));
 
         $this->addResponseCode($response);

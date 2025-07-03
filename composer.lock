@@ -4,15 +4,15 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "3d02aebeaba22bf19cfd8daf552f0380",
+    "content-hash": "d896bcd9151b224fd25063e98baed592",
     "packages": [
         {
             "name": "sequra/integration-core",
             "version": "dev-feature/LIS-74",
-            "dist": {
-                "type": "path",
-                "url": "/var/www/workspace/sequra/integration-core",
-                "reference": "f8a85ab92f18f3206676c60f596b2c03ac96319e"
+            "source": {
+                "type": "git",
+                "url": "git@github.com:sequra/integration-core.git",
+                "reference": "04a7e6ef28ce82936701da5920491e7d4221c090"
             },
             "require": {
                 "ext-ctype": "*",
@@ -43,10 +43,7 @@
                 "proprietary"
             ],
             "description": "Core SeQura integration library",
-            "transport-options": {
-                "symlink": false,
-                "relative": false
-            }
+            "time": "2025-07-02T08:34:07+00:00"
         }
     ],
     "packages-dev": [
