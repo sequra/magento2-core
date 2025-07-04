@@ -144,6 +144,9 @@
         "sandbox": "Sandbox"
       }
     },
+    "deployments": {
+      "manage": "Manage Deployments"
+    },
     "username": {
       "label": "Username",
       "description": "You can find your username in the email sent by SeQura."

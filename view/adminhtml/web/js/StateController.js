@@ -42,7 +42,7 @@ SequraFE.appPages = {
      * @property {string} versionUrl
      * @property {string} shopNameUrl
      * @property {Record<string, any>} pageConfiguration
-     * @property {string [getDeploymentsUrl
+     * @property {string} [getDeploymentsUrl]
      */
 
     /**
@@ -165,7 +165,7 @@ SequraFE.appPages = {
                 api.get(configuration.pageConfiguration.onboarding.getCountrySettingsUrl.replace(encodeURIComponent('{storeId}'), this.getStoreId())),
                 api.get(configuration.pageConfiguration.onboarding.getWidgetSettingsUrl.replace(encodeURIComponent('{storeId}'), this.getStoreId())),
                 api.get(configuration.pageConfiguration.onboarding.getDeploymentsUrl.replace(encodeURIComponent('{storeId}'), this.getStoreId())),
-            ]).then(([versionRes, storesRes, connectionSettingsRes, countrySettingsRes, widgetSettingsRes,  deploymentsSettingsRes]) => {
+            ]).then(([versionRes, storesRes, connectionSettingsRes, countrySettingsRes, widgetSettingsRes, deploymentsSettingsRes]) => {
                 dataStore.version = versionRes;
                 dataStore.stores = storesRes;
                 dataStore.connectionSettings = connectionSettingsRes;
@@ -213,7 +213,9 @@ SequraFE.appPages = {
             let [controllerName, page] = state.split('-');
 
             if (controllerName === SequraFE.appStates.ONBOARDING) {
-                if (dataStore.connectionSettings?.username && dataStore.countrySettings?.length && dataStore.widgetSettings?.useWidgets !== undefined && !SequraFE.state.getCredentialsChanged()) {
+                if (dataStore.connectionSettings?.connectionData?.every(c => c.username && c.password)
+                    && dataStore.countrySettings?.length &&
+                    dataStore.widgetSettings?.useWidgets !== undefined && !SequraFE.state.getCredentialsChanged()) {
                     currentState.split('-')[0] === SequraFE.appStates.ONBOARDING ?
                         this.goToState(SequraFE.appStates.PAYMENT + '-' + SequraFE.appPages.PAYMENT.METHODS) :
                         this.goToState(currentState, null, true);
@@ -227,22 +229,22 @@ SequraFE.appPages = {
 
                 switch (page) {
                     case SequraFE.appPages.ONBOARDING.COUNTRIES:
-                        if (!dataStore.connectionSettings?.username) {
+                        if (!dataStore.connectionSettings?.connectionData?.every(c => c.username)) {
                             page = SequraFE.appPages.ONBOARDING.CONNECT
                         }
 
                         break;
                     case SequraFE.appPages.ONBOARDING.DEPLOYMENTS:
-                            page = SequraFE.appPages.ONBOARDING.DEPLOYMENTS;
+                        page = SequraFE.appPages.ONBOARDING.DEPLOYMENTS;
 
-                            break;
+                        break;
 
                     case SequraFE.appPages.ONBOARDING.WIDGETS:
                         if (dataStore.countrySettings?.length === 0 || SequraFE.state.getCredentialsChanged()) {
                             page = SequraFE.appPages.ONBOARDING.COUNTRIES
                         }
 
-                        if (!dataStore.connectionSettings?.username) {
+                        if (!dataStore.connectionSettings?.connectionData?.every(c => c.username)) {
                             page = SequraFE.appPages.ONBOARDING.CONNECT
                         }
                         break;
@@ -255,7 +257,12 @@ SequraFE.appPages = {
                 return;
             }
 
-            if (!dataStore.connectionSettings?.username || dataStore.countrySettings?.length === 0 || dataStore.widgetSettings?.useWidgets === undefined || SequraFE.state.getCredentialsChanged()) {
+            if (
+                !dataStore.connectionSettings?.connectionData?.every(c => c.username && c.password) ||
+                dataStore.countrySettings?.length === 0 ||
+                dataStore.widgetSettings?.useWidgets === undefined ||
+                SequraFE.state.getCredentialsChanged()
+            ) {
                 this.goToState(SequraFE.appStates.ONBOARDING, additionalConfig, true);
 
                 return;

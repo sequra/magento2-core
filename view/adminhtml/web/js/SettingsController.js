@@ -111,9 +111,12 @@ if (!window.SequraFE) {
          * Renders the connection settings form.
          */
         const renderConnectionSettingsForm = () => {
+            const activeDeploymentsIds = connectionSettings?.connectionData?.map(cd => cd.deployment).filter(Boolean) || [];
+
+
             const form = formFactory.getInstance(
                 'connectionSettings',
-                {connectionSettings, countrySettings},
+                {connectionSettings, countrySettings, activeDeploymentsIds},
                 {...configuration, appState: SequraFE.appStates.SETTINGS}
             );
 
