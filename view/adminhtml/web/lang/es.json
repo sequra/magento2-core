@@ -144,6 +144,9 @@
         "sandbox": "Sandbox"
       }
     },
+    "deployments": {
+      "manage": "Gestionar implementaciones"
+    },
     "username": {
       "label": "Nombre de usuario",
       "description": "Puedes encontrar tu nombre de usuario en el correo electrónico enviado por SeQura."

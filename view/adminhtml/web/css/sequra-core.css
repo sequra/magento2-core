@@ -668,6 +668,15 @@ table tr th {
     color: #69778c;
 }
 
+.sq-heading-wrapper {
+    display: flex;
+}
+
+.sq-heading-wrapper .sqm--deployment {
+    margin-left: auto;
+    width: auto;
+}
+
 .sq-page-header {
     margin-bottom: 16px;
 }
@@ -794,6 +803,16 @@ table tr th {
     transition: all 0.2s;
 }
 
+.sq-page-header .sqp-menu-items span {
+    display: flex;
+    justify-content: center;
+    flex: 1;
+    color: #656566;
+    font-size: 14px;
+    padding: 8px;
+    transition: all 0.2s;
+}
+
 .sq-page-header .sqp-menu-items a:hover, .sq-page-header .sqp-menu-items a:focus {
     color: #ffffff;
     background: #1c1c1c;
@@ -804,6 +823,18 @@ table tr th {
     color: #ffffff;
     background: #1c1c1c;
     pointer-events: none;
+}
+
+.sq-page-header .sqp-menu-items span.sqs--active {
+    color: #ffffff;
+    background: #1c1c1c;
+}
+
+.sq-page-header .sqp-menu-items span:hover,
+.sq-page-header .sqp-menu-items span:focus {
+    color: #ffffff;
+    background: #1c1c1c;
+    text-decoration: none;
 }
 
 .sq-page-header .sq-mode-badge {
