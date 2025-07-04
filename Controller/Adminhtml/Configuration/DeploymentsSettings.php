@@ -19,7 +19,7 @@ class DeploymentsSettings extends BaseConfigurationController
     {
         parent::__construct($context, $jsonFactory);
 
-        $this->allowedActions = ['getDeployments'];
+        $this->allowedActions = ['getDeployments', 'getNotConnectedDeployments'];
     }
 
     /**
@@ -31,6 +31,21 @@ class DeploymentsSettings extends BaseConfigurationController
     {
         // @phpstan-ignore-next-line
         $response = AdminAPI::get()->deployments($this->storeId)->getAllDeployments();
+
+        $this->addResponseCode($response);
+
+        return $this->result->setData($response->toArray());
+    }
+
+    /**
+     * Returns all deployments options.
+     *
+     * @return Json
+     */
+    protected function getNotConnectedDeployments(): Json
+    {
+        // @phpstan-ignore-next-line
+        $response = AdminAPI::get()->deployments($this->storeId)->getNotConnectedDeployments();
 
         $this->addResponseCode($response);
 

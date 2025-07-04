@@ -31,6 +31,7 @@
         <link src="Sequra_Core::js/OnboardingController.js"/>
         <link src="Sequra_Core::js/PaymentController.js"/>
         <link src="Sequra_Core::js/SettingsController.js"/>
+        <link src="Sequra_Core::js/ShowDeploymentsModal.js"/>
     </head>
     <body>
         <referenceContainer name="page.messages">

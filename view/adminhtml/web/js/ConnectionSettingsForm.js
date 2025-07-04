@@ -70,8 +70,11 @@ if (!window.SequraFE) {
             }))
         };
 
-        console.log('Default settings: ', defaultFormData);
+        const notConnectedDeployments = data.notConnectedDeployments || [];
+
         let activeDeploymentId = (activeDeployments || [])[0]?.id || null;
+
+        let manageButton = null;
 
         const getSettingsForActiveDeployment = (settings) => {
             return settings.connectionData.find(c => c.deployment === activeDeploymentId) || {};
@@ -124,8 +127,21 @@ if (!window.SequraFE) {
             initSettings();
 
             initForm();
+
+            if (!notConnectedDeployments || notConnectedDeployments.length === 0) {
+                disableMenageButton(true);
+            }
+
             disableFooter(true);
             utilities.hideLoader();
+        }
+
+        const disableMenageButton = (status) => {
+            const button = document.querySelector('.sq-field-wrapper.sqm--deployment button');
+
+            if (button) {
+                button.disabled = status;
+            }
         }
 
         /**
@@ -146,12 +162,14 @@ if (!window.SequraFE) {
             }));
 
             if (configuration.appState === SequraFE.appStates.SETTINGS) {
-                const manageButton = generator.createButtonField({
+                manageButton = generator.createButtonField({
                     className: 'sqm--deployment',
                     buttonType: 'primary',
                     buttonSize: 'medium',
                     buttonLabel: 'connection.deployments.manage',
-                    onClick: {}
+                    onClick: () => {
+                        SequraFE.showDeploymentsModal({ generator, components, validator, notConnectedDeployments, changedSettings, activeSettings });
+                    }
                 })
 
                 headingWrapper.append(manageButton);
