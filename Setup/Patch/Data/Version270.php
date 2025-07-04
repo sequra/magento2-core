@@ -85,6 +85,7 @@ class Version270 implements DataPatchInterface
 
             // Fetch all Sequra teasers from Magento 2 database and remove them
             $teasers = $this->fetchAllTeasersAndRemoveThem($connection);
+            $this->removeAllTeaserLayoutBlocks($connection);
             if (empty($teasers)) {
                 $connection->commit();
                 $this->moduleDataSetup->endSetup();
@@ -185,6 +186,35 @@ class Version270 implements DataPatchInterface
         $connection->delete($widgetInstance, ['instance_id IN (?)' => $ids]);
 
         return $teasers;
+    }
+
+    /**
+     * Removes all Sequra Teaser Layout Blocks from database
+     *
+     * @param AdapterInterface $connection
+     *
+     * @return void
+     */
+    private function removeAllTeaserLayoutBlocks(AdapterInterface $connection): void
+    {
+        $layoutUpdate = $this->moduleDataSetup->getTable('layout_update');
+        $query = $connection->select()->from($layoutUpdate)->where(
+            'xml LIKE ?',
+            '%Sequra_Core_Block_Widget_Teaser%',
+        );
+        $layoutBlocks = $connection->fetchAll($query);
+
+        if (empty($layoutBlocks)) {
+            return;
+        }
+
+        //Remove all Sequra layout blocks from database
+        $ids = [];
+        foreach ($layoutBlocks as $layoutBlock) {
+            $ids[] = $layoutBlock['layout_update_id'];
+        }
+
+        $connection->delete($layoutUpdate, ['layout_update_id IN (?)' => $ids]);
     }
 
     /**
