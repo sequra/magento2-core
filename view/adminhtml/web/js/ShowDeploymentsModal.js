@@ -15,21 +15,33 @@ if (!window.SequraFE) {
  *
  * @returns {Promise<boolean>} Resolves true if confirmed, false if canceled
  */
-window.SequraFE.showDeploymentsModal = function ({ generator, components, validator,notConnectedDeployments, changedSettings, activeSettings }) {
+window.SequraFE.showDeploymentsModal = function ({
+                                                     api, configuration, generator, components, validator, utilities,
+                                                     notConnectedDeployments, activeSettings
+                                                 }) {
     return new Promise((resolve) => {
         if (!notConnectedDeployments || notConnectedDeployments.length === 0) {
-            resolve({ confirmed: false, selectedDeploymentId: null });
+            resolve({confirmed: false, selectedDeploymentId: null});
             return;
         }
 
-        const getSettingsForDeployment = (deploymentId) =>
-            changedSettings.connectionData.find(c => c.deployment === deploymentId) || { username: '', password: '' };
+        changedSettings = utilities.cloneObject(activeSettings);
 
+        let hasChanges = false;
         let activeDeploymentId = notConnectedDeployments[0].id;
 
-        const headerWrapper = generator.createElement('div', 'sq-page-header');
+        const getSettingsForDeployment = (deploymentId) => {
+            let entry = changedSettings.connectionData.find(c => c.deployment === deploymentId);
+            if (!entry) {
+                entry = {username: '', password: '', merchantId: '', deployment: deploymentId};
+                changedSettings.connectionData.push(entry);
+            }
+            return entry;
+        };
 
+        const headerWrapper = generator.createElement('div', 'sq-page-header');
         const menuWrapper = generator.createElement('div', 'sqp-menu-items sqm-deployments');
+
         const deploymentItems = notConnectedDeployments.map(deployment => {
             const item = generator.createElement(
                 'span',
@@ -42,9 +54,12 @@ window.SequraFE.showDeploymentsModal = function ({ generator, components, valida
                 if (deployment.id !== activeDeploymentId) {
                     activeDeploymentId = deployment.id;
 
-                    // update active class
                     deploymentItems.forEach(el => el.classList.remove('sqs--active'));
                     item.classList.add('sqs--active');
+
+                    const settings = getSettingsForDeployment(activeDeploymentId);
+                    usernameInput.value = settings.username;
+                    passwordInput.value = settings.password;
                 }
             });
 
@@ -58,6 +73,8 @@ window.SequraFE.showDeploymentsModal = function ({ generator, components, valida
             generator.createElement('p', '', 'deployments.description'),
             headerWrapper
         ]);
+        let errorContainer = generator.createElement('div', 'sqp-flash-message-wrapper');
+        content.append(errorContainer);
 
         const usernameInput = generator.createTextField({
             name: 'username-input',
@@ -76,16 +93,9 @@ window.SequraFE.showDeploymentsModal = function ({ generator, components, valida
             label: 'connection.password.label',
             description: 'connection.password.description',
             onChange: (value) => handleChange('password', value)
-
         });
         content.append(passwordInput);
 
-        /**
-         * Handles form input changes.
-         *
-         * @param name
-         * @param value
-         */
         const handleChange = (name, value) => {
             if (['username', 'password'].includes(name)) {
                 validator.validateRequiredField(
@@ -93,12 +103,115 @@ window.SequraFE.showDeploymentsModal = function ({ generator, components, valida
                     'validation.requiredField'
                 );
 
-                const current = getSettingsForDeployment(changedSettings);
+                const current = getSettingsForDeployment(activeDeploymentId);
                 if (current) {
                     current[name] = value;
+                    hasChanges = true;
                 }
             }
         };
+
+        /**
+         * Validates form inputs.
+         *
+         * @returns {boolean}
+         */
+        const isFormValid = () => {
+            let errorCount = 0;
+
+            !validator.validateRequiredField(
+                document.querySelector('[name="username-input"]'),
+                'validation.requiredField'
+            ) && errorCount++;
+
+            !validator.validateRequiredField(
+                document.querySelector('[name="password-input"]'),
+                'validation.requiredField'
+            ) && errorCount++;
+
+            return errorCount === 0;
+        }
+
+        const handleSave = async () => {
+            if (!isFormValid()) {
+                return;
+            }
+
+            utilities.showLoader();
+
+            try {
+                const finalSettings = utilities.cloneObject(activeSettings);
+
+                const updatedConnection = getSettingsForDeployment(activeDeploymentId);
+
+                const existingIndex = finalSettings.connectionData.findIndex(c => c.deployment === activeDeploymentId);
+                if (existingIndex >= 0) {
+                    finalSettings.connectionData[existingIndex] = updatedConnection;
+                } else {
+                    finalSettings.connectionData.push(updatedConnection);
+                }
+
+                const result = await api.post(configuration.connectUrl, finalSettings);
+
+                if (!areCredentialsValid(result)) {
+                    handleValidationError();
+                    return;
+                }
+
+                modal.close();
+                resolve({
+                    confirmed: true,
+                    selectedDeploymentId: activeDeploymentId,
+                    hasChanges,
+                    updatedSettings: changedSettings,
+                    activatedDeployment: notConnectedDeployments.find(deployment => deployment.id === activeDeploymentId)
+                });
+
+            } catch (error) {
+                handleValidationError();
+            } finally {
+                utilities.hideLoader();
+            }
+        };
+
+        /**
+         * Returns true if username and password are valid.
+         *
+         * @param {{isValid: boolean, reason: string|null}} result
+         */
+        const areCredentialsValid = (result) => {
+            if (!result.isValid && result.reason.includes('merchantId')) {
+                navigateToOnboarding = true;
+            }
+
+            return result.isValid || result.reason.includes('merchantId');
+        }
+
+        this.errorHandler = (response) => {
+            const {utilities, templateService, elementGenerator} = SequraFE;
+
+            templateService.clearComponent(errorContainer);
+
+            if (response.errorCode) {
+                errorContainer.prepend(utilities.createFlashMessage(response.errorCode, 'error'));
+            } else if (response.errorMessage) {
+                errorContainer.prepend(utilities.createFlashMessage(response.errorMessage, 'error'));
+            } else {
+                errorContainer.prepend(utilities.createFlashMessage('general.errors.unknown', 'error'));
+            }
+
+            return Promise.reject(response);
+        };
+
+        /**
+         * Handle connection validation error.
+         */
+        const handleValidationError = () => {
+            this.errorHandler({errorCode: 'general.errors.connection.invalidUsernameOrPassword'}).catch(() => {
+            });
+
+            utilities.hideLoader();
+        }
 
         const modal = components.Modal.create({
             title: 'deployments.title',
@@ -111,16 +224,14 @@ window.SequraFE.showDeploymentsModal = function ({ generator, components, valida
                     label: 'general.cancel',
                     onClick: () => {
                         modal.close();
-                        resolve(false);
+                        resolve({confirmed: false, selectedDeploymentId: null});
                     }
                 },
                 {
                     className: 'sqp-save',
                     type: 'primary',
                     label: 'general.saveChanges',
-                    onClick: () => {
-                        modal.close();
-                    }
+                    onClick: handleSave
                 }
             ]
         });

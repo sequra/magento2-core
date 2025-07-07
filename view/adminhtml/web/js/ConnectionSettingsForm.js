@@ -70,7 +70,7 @@ if (!window.SequraFE) {
             }))
         };
 
-        const notConnectedDeployments = data.notConnectedDeployments || [];
+        let notConnectedDeployments = data.notConnectedDeployments || [];
 
         let activeDeploymentId = (activeDeployments || [])[0]?.id || null;
 
@@ -168,7 +168,37 @@ if (!window.SequraFE) {
                     buttonSize: 'medium',
                     buttonLabel: 'connection.deployments.manage',
                     onClick: () => {
-                        SequraFE.showDeploymentsModal({ generator, components, validator, notConnectedDeployments, changedSettings, activeSettings });
+                        SequraFE.showDeploymentsModal({
+                            api, configuration, generator, components, validator, utilities,
+                            notConnectedDeployments,
+                            activeSettings
+                        }).then(({ confirmed, updatedSettings, activatedDeployment }) => {
+                            if (confirmed && updatedSettings) {
+                                activeSettings = updatedSettings;
+                                changedSettings = utilities.cloneObject(updatedSettings);
+                                SequraFE.state.setData('connectionSettings', activeSettings);
+                                data.connectionSettings = activeSettings;
+
+
+                                if (activatedDeployment) {
+                                    const alreadyExists = activeDeployments.some(d => d.id === activatedDeployment.id);
+                                    if (!alreadyExists) {
+                                        activeDeployments.push(activatedDeployment);
+                                    }
+
+                                    activeDeploymentId = activatedDeployment.id;
+                                    notConnectedDeployments = notConnectedDeployments.filter(d => d.id !== activatedDeployment.id);
+                                    SequraFE.state.setData('notConnectedDeployments', activeSettings);
+                                }
+
+                                const pageContent = document.querySelector('.sq-content');
+                                while (pageContent?.firstChild) {
+                                    pageContent.removeChild(pageContent.firstChild);
+                                }
+
+                                this.render();
+                            }
+                        });
                     }
                 })
 
@@ -464,6 +494,7 @@ if (!window.SequraFE) {
                     }
 
                     activeSettings = utilities.cloneObject(changedSettings);
+
                     SequraFE.state.setData('connectionSettings', activeSettings);
 
                     disableFooter(true);
