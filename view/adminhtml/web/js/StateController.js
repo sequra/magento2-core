@@ -237,6 +237,10 @@ SequraFE.appPages = {
                             page = SequraFE.appPages.ONBOARDING.CONNECT
                         }
 
+                        if(!dataStore.deploymentsSettings?.some(deployment => deployment.active === true)) {
+                            page = SequraFE.appPages.DEPLOYMENTS;
+                        }
+
                         break;
                     case SequraFE.appPages.ONBOARDING.DEPLOYMENTS:
                         page = SequraFE.appPages.ONBOARDING.DEPLOYMENTS;
@@ -245,15 +249,24 @@ SequraFE.appPages = {
 
                     case SequraFE.appPages.ONBOARDING.WIDGETS:
                         if (dataStore.countrySettings?.length === 0 || SequraFE.state.getCredentialsChanged()) {
-                            page = SequraFE.appPages.ONBOARDING.COUNTRIES
+                            page = SequraFE.appPages.ONBOARDING.COUNTRIES;
                         }
 
                         if (!dataStore.connectionSettings?.connectionData?.every(c => c.username)) {
-                            page = SequraFE.appPages.ONBOARDING.CONNECT
+                            page = SequraFE.appPages.ONBOARDING.CONNECT;
                         }
+
+                        if(!dataStore.deploymentsSettings?.some(deployment => deployment.active === true)) {
+                            page = SequraFE.appPages.DEPLOYMENTS;
+                        }
+
                         break;
                     default:
-                        page = SequraFE.appPages.ONBOARDING.CONNECT
+                        page = SequraFE.appPages.ONBOARDING.CONNECT;
+
+                        if(!dataStore.deploymentsSettings?.some(deployment => deployment.active === true)) {
+                            page = SequraFE.appPages.DEPLOYMENTS;
+                        }
                 }
 
                 displayPage(controllerName + '-' + page, additionalConfig);
@@ -420,6 +433,7 @@ SequraFE.appPages = {
                 version: null,
                 stores: null,
                 connectionSettings: null,
+                notConnectedDeployments: null,
                 deploymentsSettings: null,
                 countrySettings: null,
                 generalSettings: null,

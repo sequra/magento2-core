@@ -115,6 +115,11 @@ if (!window.SequraFE) {
         const renderConnectionSettingsForm = (notConnectedDeployments) => {
             const activeDeploymentsIds = connectionSettings?.connectionData?.map(cd => cd.deployment).filter(Boolean) || [];
 
+            notConnectedDeployments = notConnectedDeployments
+                ?.filter(deployment => !activeDeploymentsIds.includes(deployment.id)) || [];
+
+            // Ažuriraj stanje (ako koristiš state)
+            SequraFE.state.setData('notConnectedDeployments', notConnectedDeployments);
 
             const form = formFactory.getInstance(
                 'connectionSettings',
