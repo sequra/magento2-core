@@ -30,7 +30,7 @@ use SeQura\Core\Infrastructure\ServiceRegister;
 class Version270 implements DataPatchInterface
 {
 
-    const WIDGET_STYLE_MAP= [
+    private const WIDGET_STYLE_MAP = [
         'L'        => '{"alignment":"left"}',
         'R'        => '{"alignment":"right"}',
         'legacy'   => '{"type":"legacy"}',
@@ -231,6 +231,13 @@ class Version270 implements DataPatchInterface
         $connection->delete($layoutUpdate, ['layout_update_id IN (?)' => $ids]);
     }
 
+    /**
+     * Returns mapped value for given theme value
+     *
+     * @param string $theme
+     *
+     * @return string
+     */
     private function getValidatedThemeJson(string $theme): string
     {
         $decoded = json_decode($theme, true);
@@ -239,7 +246,7 @@ class Version270 implements DataPatchInterface
             return $theme;
         }
 
-        if (array_key_exists($theme, self::WIDGET_STYLE_MAP) ) {
+        if (array_key_exists($theme, self::WIDGET_STYLE_MAP)) {
             return self::WIDGET_STYLE_MAP[$theme];
         }
 
@@ -384,7 +391,9 @@ class Version270 implements DataPatchInterface
 
         $paymentMethods = array_diff($paymentMethods, $updatedPaymentMethods);
         $newCustomWidgetSettings = $this->createCustomWidgetSettings($paymentMethods, $theme, $destinationSelector);
-        $widgetSettingsForProduct->setCustomWidgetsSettings(array_merge($customWidgetSettings, $newCustomWidgetSettings));
+        $widgetSettingsForProduct->setCustomWidgetsSettings(
+            array_merge($customWidgetSettings, $newCustomWidgetSettings)
+        );
 
         return $widgetSettingsForProduct;
     }
