@@ -29,6 +29,17 @@ use SeQura\Core\Infrastructure\ServiceRegister;
  */
 class Version270 implements DataPatchInterface
 {
+
+    const WIDGET_STYLE_MAP= [
+        'L'        => '{"alignment":"left"}',
+        'R'        => '{"alignment":"right"}',
+        'legacy'   => '{"type":"legacy"}',
+        'legacyL'  => '{"type":"legacy","alignment":"left"}',
+        'legacyR'  => '{"type":"legacy","alignment":"right"}',
+        'minimal'  => '{"type":"text","branding":"none","size":"S","starting-text":"as-low-as"}',
+        'minimalL' => '{"type":"text","branding":"none","size":"S","starting-text":"as-low-as","alignment":"left"}',
+        'minimalR' => '{"type":"text","branding":"none","size":"S","starting-text":"as-low-as","alignment":"right"}'
+    ];
     /**
      * @var ModuleDataSetupInterface
      */
@@ -105,8 +116,11 @@ class Version270 implements DataPatchInterface
                 $priceSelector = $widgetParameters['price_sel'];
                 /** @var string $destinationSelector */
                 $destinationSelector = $widgetParameters['dest_sel'];
+
                 /** @var string $theme */
                 $theme = $widgetParameters['theme'];
+                $theme= $this->getValidatedThemeJson($theme);
+
                 /** @var array<string> $paymentMethods */
                 $paymentMethods = array_key_exists('payment_methods', $widgetParameters) ?
                     $widgetParameters['payment_methods'] : [];
@@ -215,6 +229,21 @@ class Version270 implements DataPatchInterface
         }
 
         $connection->delete($layoutUpdate, ['layout_update_id IN (?)' => $ids]);
+    }
+
+    private function getValidatedThemeJson(string $theme): string
+    {
+        $decoded = json_decode($theme, true);
+        $isJsonFormat = (json_last_error() === JSON_ERROR_NONE) && is_array($decoded);
+        if ($isJsonFormat) {
+            return $theme;
+        }
+
+        if (array_key_exists($theme, self::WIDGET_STYLE_MAP) ) {
+            return self::WIDGET_STYLE_MAP[$theme];
+        }
+
+        return '';
     }
 
     /**
