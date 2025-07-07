@@ -294,6 +294,7 @@ class Version270 implements DataPatchInterface
             if (is_array($teaserPaymentMethod)
                 && isset($teaserPaymentMethod['countryCode'], $teaserPaymentMethod['product'])
                 && in_array($teaserPaymentMethod['countryCode'], $availableCountries, true)
+                && !in_array($teaserPaymentMethod['product'], $paymentMethods, true)
             ) {
                 $paymentMethods[] = $teaserPaymentMethod['product'];
             }
@@ -382,8 +383,8 @@ class Version270 implements DataPatchInterface
         }
 
         $paymentMethods = array_diff($paymentMethods, $updatedPaymentMethods);
-        $customWidgetSettings = $this->createCustomWidgetSettings($paymentMethods, $theme, $destinationSelector);
-        $widgetSettingsForProduct->setCustomWidgetsSettings($customWidgetSettings);
+        $newCustomWidgetSettings = $this->createCustomWidgetSettings($paymentMethods, $theme, $destinationSelector);
+        $widgetSettingsForProduct->setCustomWidgetsSettings(array_merge($customWidgetSettings, $newCustomWidgetSettings));
 
         return $widgetSettingsForProduct;
     }
