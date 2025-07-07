@@ -286,7 +286,6 @@ class OrderService implements ShopOrderService
 
         $updatedSeQuraOrder = (new CreateOrderRequest(
             OrderRequestStatusMapping::mapOrderRequestStatus($webhook->getSqState()),
-            $seQuraOrder->getMerchant(),
             $seQuraOrder->getUnshippedCart(),
             $seQuraOrder->getDeliveryMethod(),
             $seQuraOrder->getCustomer(),
@@ -294,6 +293,7 @@ class OrderService implements ShopOrderService
             $seQuraOrder->getDeliveryAddress(),
             $seQuraOrder->getInvoiceAddress(),
             $seQuraOrder->getGui(),
+            $seQuraOrder->getMerchant(),
             MerchantReference::fromArray([
                 'order_ref_1' => $order->getIncrementId(),
                 'order_ref_2' => $webhook->getOrderRef()

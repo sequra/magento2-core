@@ -36,4 +36,12 @@ class OrderStatusMappingRepositoryOverride implements OrderStatusSettingsReposit
         // Magento has strict order status transition therefore merchants do not set order map.
     }
     // phpcs:enable Magento2.CodeAnalysis.EmptyBlock.DetectedFunction
+
+    /**
+     * @return void
+     */
+    public function deleteOrderStatusMapping(): void
+    {
+        // nothing to delete
+    }
 }
