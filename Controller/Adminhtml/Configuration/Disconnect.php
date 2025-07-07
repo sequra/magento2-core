@@ -6,6 +6,7 @@ use Magento\Backend\App\Action\Context;
 use Magento\Framework\Controller\Result\Json;
 use Magento\Framework\Controller\Result\JsonFactory;
 use SeQura\Core\BusinessLogic\AdminAPI\AdminAPI;
+use SeQura\Core\BusinessLogic\AdminAPI\Disconnect\Requests\DisconnectRequest;
 
 class Disconnect extends BaseConfigurationController
 {
@@ -29,8 +30,20 @@ class Disconnect extends BaseConfigurationController
      */
     protected function disconnect(): Json
     {
+        /**
+         * @var bool $fullDisconnect
+         */
+        $fullDisconnect = $data['isFullDisconnect'] ?? '';
+
+        /**
+         * @var string $deploymentId
+         */
+        $deploymentId = $data['deploymentId'] ?? '';
+
         // @phpstan-ignore-next-line
-        $data = AdminAPI::get()->disconnect($this->storeId)->disconnect();
+        $data = AdminAPI::get()->disconnect($this->storeId)->disconnect(
+            new DisconnectRequest($deploymentId, $fullDisconnect));
+
         $this->addResponseCode($data);
 
         return $this->result->setData($data->toArray());
