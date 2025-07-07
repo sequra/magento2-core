@@ -68,6 +68,7 @@ SequraFE.appPages = {
      * @property {PaymentMethod[] | null} paymentMethods
      * @property {SellingCountry[] | null} sellingCountries
      * @property {DeploymentSettings[] | null} deploymentsSettings
+     * @property {DeploymentSettings[] | null} notConnectedDeployments
      * @property {Category[] | null} shopCategories
      */
 
@@ -102,6 +103,7 @@ SequraFE.appPages = {
             connectionSettings: null,
             countrySettings: null,
             deploymentsSettings: null,
+            notConnectedDeployments: null,
             generalSettings: null,
             widgetSettings: null,
             paymentMethods: null,
@@ -165,13 +167,15 @@ SequraFE.appPages = {
                 api.get(configuration.pageConfiguration.onboarding.getCountrySettingsUrl.replace(encodeURIComponent('{storeId}'), this.getStoreId())),
                 api.get(configuration.pageConfiguration.onboarding.getWidgetSettingsUrl.replace(encodeURIComponent('{storeId}'), this.getStoreId())),
                 api.get(configuration.pageConfiguration.onboarding.getDeploymentsUrl.replace(encodeURIComponent('{storeId}'), this.getStoreId())),
-            ]).then(([versionRes, storesRes, connectionSettingsRes, countrySettingsRes, widgetSettingsRes, deploymentsSettingsRes]) => {
+                api.get(configuration.pageConfiguration.onboarding.getNotConnectedDeploymentsUrl.replace(encodeURIComponent('{storeId}'), this.getStoreId())),
+            ]).then(([versionRes, storesRes, connectionSettingsRes, countrySettingsRes, widgetSettingsRes, deploymentsSettingsRes, notConnectedDeployments]) => {
                 dataStore.version = versionRes;
                 dataStore.stores = storesRes;
                 dataStore.connectionSettings = connectionSettingsRes;
                 dataStore.countrySettings = countrySettingsRes;
                 dataStore.widgetSettings = widgetSettingsRes;
                 dataStore.deploymentsSettings = deploymentsSettingsRes;
+                dataStore.notConnectedDeployments = notConnectedDeployments;
 
                 return api.get(configuration.stateUrl.replace(encodeURIComponent('{storeId}'), this.getStoreId()));
             }).then((stateRes) => {
