@@ -31,6 +31,11 @@ class Disconnect extends BaseConfigurationController
     protected function disconnect(): Json
     {
         /**
+         * @var array<string, string|bool>
+         */
+        $data = $this->getSequraPostData();
+
+        /**
          * @var bool $fullDisconnect
          */
         $fullDisconnect = $data['isFullDisconnect'] ?? '';

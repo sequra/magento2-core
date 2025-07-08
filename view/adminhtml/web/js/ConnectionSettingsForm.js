@@ -518,11 +518,28 @@ if (!window.SequraFE) {
                 }
 
                 utilities.showLoader();
-                api.post(configuration.disconnectUrl, null)
+
+                api.post(configuration.disconnectUrl, createPayload())
                     .then(() => SequraFE.state.display())
                     .finally(utilities.hideLoader);
             })
         }
+
+        /**
+         * Handles the disconnect button click.
+         */
+        const createPayload = () => {
+            const isFullDisconnect = activeDeployments.length <= 1;
+            const deploymentId = activeDeploymentId;
+
+            const payload = {
+                isFullDisconnect,
+                deploymentId
+            };
+
+            return payload;
+        }
+
 
         /**
          * Disables the form footer controls.
