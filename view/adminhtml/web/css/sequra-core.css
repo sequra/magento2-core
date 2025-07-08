@@ -793,6 +793,18 @@ table tr th {
     width: 100%;
 }
 
+.sq-page-header .sqp-menu-items-deployments {
+    display: flex;
+    align-items: center;
+    column-gap: 1px;
+    padding: 0;
+    border-radius: 50px;
+    overflow: hidden;
+    background-color: #f4f4f4;
+    max-width: 300px;
+    width: 100%;
+}
+
 .sq-page-header .sqp-menu-items a {
     display: flex;
     justify-content: center;
@@ -803,7 +815,7 @@ table tr th {
     transition: all 0.2s;
 }
 
-.sq-page-header .sqp-menu-items span {
+.sq-page-header .sqp-menu-items-deployments span{
     display: flex;
     justify-content: center;
     flex: 1;
@@ -825,13 +837,13 @@ table tr th {
     pointer-events: none;
 }
 
-.sq-page-header .sqp-menu-items span.sqs--active {
+.sq-page-header .sqp-menu-items-deployments span.sqs--active {
     color: #ffffff;
     background: #1c1c1c;
 }
 
-.sq-page-header .sqp-menu-items span:hover,
-.sq-page-header .sqp-menu-items span:focus {
+.sq-page-header .sqp-menu-items-deployments span:hover,
+.sq-page-header .sqp-menu-items-deployments span:focus {
     color: #ffffff;
     background: #1c1c1c;
     text-decoration: none;

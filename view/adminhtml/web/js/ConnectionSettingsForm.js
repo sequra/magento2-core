@@ -89,7 +89,7 @@ if (!window.SequraFE) {
         };
 
         const updateDeploymentMenuActiveState = () => {
-            const menuWrapper = document.querySelector('.sqp-menu-items.sqm-deployments');
+            const menuWrapper = document.querySelector('.sqp-menu-items-deployments');
             if (!menuWrapper) return;
 
             const items = menuWrapper.querySelectorAll('.sqp-menu-item');
@@ -210,7 +210,7 @@ if (!window.SequraFE) {
             const headerWrapper = generator.createElement('div', 'sq-page-header');
 
             if (activeDeployments.length > 0) {
-                const menuWrapper = generator.createElement('div', 'sqp-menu-items sqm-deployments');
+                const menuWrapper = generator.createElement('div', 'sqp-menu-items-deployments');
                 menuWrapper.append(
                     ...activeDeployments.map(deployment => {
                         const item = generator.createElement(

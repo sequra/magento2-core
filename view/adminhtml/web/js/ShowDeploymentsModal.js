@@ -40,7 +40,7 @@ window.SequraFE.showDeploymentsModal = function ({
         };
 
         const headerWrapper = generator.createElement('div', 'sq-page-header');
-        const menuWrapper = generator.createElement('div', 'sqp-menu-items sqm-deployments');
+        const menuWrapper = generator.createElement('div', 'sqp-menu-items-deployments');
 
         const deploymentItems = notConnectedDeployments.map(deployment => {
             const item = generator.createElement(
@@ -77,7 +77,7 @@ window.SequraFE.showDeploymentsModal = function ({
         content.append(errorContainer);
 
         const usernameInput = generator.createTextField({
-            name: 'username-input',
+            name: 'new-username-input',
             value: getSettingsForDeployment(activeDeploymentId).username,
             className: 'sq-text-input',
             label: 'connection.username.label',
@@ -87,7 +87,7 @@ window.SequraFE.showDeploymentsModal = function ({
         content.append(usernameInput);
 
         const passwordInput = generator.createPasswordField({
-            name: 'password-input',
+            name: 'new-password-input',
             value: getSettingsForDeployment(activeDeploymentId).password,
             className: 'sq-password-input',
             label: 'connection.password.label',
@@ -99,7 +99,7 @@ window.SequraFE.showDeploymentsModal = function ({
         const handleChange = (name, value) => {
             if (['username', 'password'].includes(name)) {
                 validator.validateRequiredField(
-                    document.querySelector(`[name="${name}-input"]`),
+                    document.querySelector(`[name="new-${name}-input"]`),
                     'validation.requiredField'
                 );
 
@@ -120,12 +120,12 @@ window.SequraFE.showDeploymentsModal = function ({
             let errorCount = 0;
 
             !validator.validateRequiredField(
-                document.querySelector('[name="username-input"]'),
+                document.querySelector('[name="new-username-input"]'),
                 'validation.requiredField'
             ) && errorCount++;
 
             !validator.validateRequiredField(
-                document.querySelector('[name="password-input"]'),
+                document.querySelector('[name="new-password-input"]'),
                 'validation.requiredField'
             ) && errorCount++;
 
