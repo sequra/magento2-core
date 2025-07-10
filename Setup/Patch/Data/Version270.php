@@ -284,16 +284,23 @@ class Version270 implements DataPatchInterface
      */
     private function getValidatedThemeJson(string $theme): string
     {
-        $decoded = json_decode($theme, true, 512, JSON_THROW_ON_ERROR);
-        $isJsonFormat = (json_last_error() === JSON_ERROR_NONE) && is_array($decoded);
-        if ($isJsonFormat) {
-            return $theme;
+        // If input is valid JSON and decodes to array, return it as-is
+        try {
+            $decoded = json_decode($theme, true, 512, JSON_THROW_ON_ERROR);
+            if (is_array($decoded)) {
+                return $theme;
+            }
+        } catch (JsonException $e) {
+            Logger::logInfo('Sequra teaser theme is not JSON formatted.');
+            // Continue to try mapping if not valid JSON
         }
 
-        if (array_key_exists($theme, self::WIDGET_STYLE_MAP)) {
+        // If theme is a known key, return mapped style as JSON
+        if (isset(self::WIDGET_STYLE_MAP[$theme])) {
             return json_encode(self::WIDGET_STYLE_MAP[$theme], JSON_THROW_ON_ERROR);
         }
 
+        // Return empty string if neither valid JSON nor known key
         return '';
     }
 
@@ -547,26 +554,26 @@ class Version270 implements DataPatchInterface
                 foreach ($customWidgetSettings as $customPaymentMethodConfig) {
                     $paymentMethods[] = $customPaymentMethodConfig->getProduct();
                 }
-
-                $methodsThatShouldBeDisabled = $this->getDisabledPaymentMethods(
-                    $paymentMethods,
-                    $arrayOfAvailablePaymentMethodsPerStore[$storeId]
-                );
-                foreach ($methodsThatShouldBeDisabled as $paymentMethod) {
-                    $customWidgetSettings[] = new CustomWidgetsSettings(
-                        '',
-                        $paymentMethod,
-                        false,
-                        ''
-                    );
-                }
             } else {
                 $customWidgetSettings = [];
                 $widgetSettingsForProduct = new WidgetSelectorSettings('', '');
-                foreach ($arrayOfAvailablePaymentMethodsPerStore[$storeId] as $paymentMethod) {
+            }
+
+            $disabledPaymentMethods = [];
+            foreach ($arrayOfAvailablePaymentMethodsPerStore[$storeId] as $availablePaymentMethod) {
+                $product = $availablePaymentMethod->getProduct();
+                if (!in_array($product, $paymentMethods, true) &&
+                    !in_array($product, $disabledPaymentMethods, true) &&
+                    in_array(
+                        $availablePaymentMethod->getCategory(),
+                        WidgetSettingsService::WIDGET_SUPPORTED_CATEGORIES_ON_PRODUCT_PAGE,
+                        true
+                    )
+                ) {
+                    $disabledPaymentMethods[] = $product;
                     $customWidgetSettings[] = new CustomWidgetsSettings(
                         '',
-                        $paymentMethod->getProduct(),
+                        $product,
                         false,
                         ''
                     );
@@ -579,32 +586,6 @@ class Version270 implements DataPatchInterface
             );
             $this->getWidgetSettingRepository()->update($widgetSettingsEntity);
         }
-    }
-
-    /**
-     * Returns available payment methods on the product page, that were not configured prior to migration.
-     *
-     * @param array<string> $paymentMethodsForMigration
-     * @param array<SeQuraPaymentMethod> $availablePaymentMethods
-     *
-     * @return array<string>
-     */
-    private function getDisabledPaymentMethods(array $paymentMethodsForMigration, array $availablePaymentMethods): array
-    {
-        $disabledPaymentMethods = [];
-        foreach ($availablePaymentMethods as $availablePaymentMethod) {
-            if (!in_array($availablePaymentMethod->getProduct(), $paymentMethodsForMigration, true) &&
-                in_array(
-                    $availablePaymentMethod->getCategory(),
-                    WidgetSettingsService::WIDGET_SUPPORTED_CATEGORIES_ON_PRODUCT_PAGE,
-                    true
-                )
-            ) {
-                $disabledPaymentMethods[] = $availablePaymentMethod->getProduct();
-            }
-        }
-
-        return $disabledPaymentMethods;
     }
 
     /**
