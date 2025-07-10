@@ -518,7 +518,7 @@ class Version270 implements DataPatchInterface
     /**
      * Disables widgets for payment methods that were not configured prior to migration.
      *
-     * @param array<string,SeQuraPaymentMethod> $arrayOfAvailablePaymentMethodsPerStore
+     * @param array<string,array<SeQuraPaymentMethod>> $arrayOfAvailablePaymentMethodsPerStore
      *
      * @return void
      * @throws RepositoryNotRegisteredException
