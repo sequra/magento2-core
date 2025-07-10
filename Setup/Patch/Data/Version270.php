@@ -192,7 +192,7 @@ class Version270 implements DataPatchInterface
     /**
      * Migrates data from all Sequra teasers to new widget configurations.
      *
-     * @param array<array<string, mixed>> $teasers
+     * @param mixed[] $teasers
      * @param array<WidgetSettingsEntity> $arrayOfWidgetSettingsEntities
      *
      * @return void
@@ -312,7 +312,7 @@ class Version270 implements DataPatchInterface
      * @param string $priceSelector
      * @param string $destinationsSelector
      * @param string $theme
-     * @param array<array<string, mixed>> $teaserPaymentMethods
+     * @param mixed[] $teaserPaymentMethods
      * @param WidgetSettingsEntity $widgetSettingsEntity
      *
      * @return void
