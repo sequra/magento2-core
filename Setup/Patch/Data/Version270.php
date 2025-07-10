@@ -92,7 +92,7 @@ class Version270 implements DataPatchInterface
             // Get available Sequra payment methods with new category property and cache them for every store
             foreach ($widgetSettingsEntities as $widgetSettingsEntity) {
                 $storeId = $widgetSettingsEntity->getStoreId();
-                /** @var SeQuraPaymentMethod $paymentMethods */
+                /** @var SeQuraPaymentMethod[] $paymentMethods */
                 $paymentMethods = StoreContext::doWithStore($storeId, function () {
                     return $this->getPaymentMethodsService()->getAvailablePaymentMethodsForAllMerchants(true);
                 });
