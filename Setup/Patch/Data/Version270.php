@@ -33,14 +33,26 @@ class Version270 implements DataPatchInterface
 {
 
     private const WIDGET_STYLE_MAP = [
-        'L'        => '{"alignment":"left"}',
-        'R'        => '{"alignment":"right"}',
-        'legacy'   => '{"type":"legacy"}',
-        'legacyL'  => '{"type":"legacy","alignment":"left"}',
-        'legacyR'  => '{"type":"legacy","alignment":"right"}',
-        'minimal'  => '{"type":"text","branding":"none","size":"S","starting-text":"as-low-as"}',
-        'minimalL' => '{"type":"text","branding":"none","size":"S","starting-text":"as-low-as","alignment":"left"}',
-        'minimalR' => '{"type":"text","branding":"none","size":"S","starting-text":"as-low-as","alignment":"right"}'
+        'L'        => ['alignment' => 'left'],
+        'R'        => ['alignment' => 'right'],
+        'legacy'   => ['type' => 'legacy'],
+        'legacyL'  => ['type' => 'legacy', 'alignment' => 'left'],
+        'legacyR'  => ['type' => 'legacy', 'alignment' => 'right'],
+        'minimal'  => ['type' => 'text', 'branding' => 'none', 'size' => 'S', 'starting-text' => 'as-low-as'],
+        'minimalL' => [
+            'type' => 'text',
+            'branding' => 'none',
+            'size' => 'S',
+            'starting-text' => 'as-low-as',
+            'alignment' => 'left'
+        ],
+        'minimalR' => [
+            'type' => 'text',
+            'branding' => 'none',
+            'size' => 'S',
+            'starting-text' => 'as-low-as',
+            'alignment' => 'right'
+        ]
     ];
     /**
      * @var ModuleDataSetupInterface
@@ -279,7 +291,7 @@ class Version270 implements DataPatchInterface
         }
 
         if (array_key_exists($theme, self::WIDGET_STYLE_MAP)) {
-            return self::WIDGET_STYLE_MAP[$theme];
+            return json_encode(self::WIDGET_STYLE_MAP[$theme], JSON_THROW_ON_ERROR);
         }
 
         return '';
