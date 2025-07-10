@@ -572,8 +572,8 @@ class Version270 implements DataPatchInterface
     /**
      * Returns available payment methods on the product page, that were not configured prior to migration.
      *
-     * @param string[] $paymentMethodsForMigration
-     * @param SeQuraPaymentMethod[] $availablePaymentMethods
+     * @param array<string> $paymentMethodsForMigration
+     * @param array<SeQuraPaymentMethod> $availablePaymentMethods
      *
      * @return array<string>
      */
@@ -581,7 +581,8 @@ class Version270 implements DataPatchInterface
     {
         $disabledPaymentMethods = [];
         foreach ($availablePaymentMethods as $availablePaymentMethod) {
-            if (!in_array($availablePaymentMethod->getProduct(), $paymentMethodsForMigration, true) &&
+            if (
+                !in_array($availablePaymentMethod->getProduct(), $paymentMethodsForMigration, true) &&
                 in_array(
                     $availablePaymentMethod->getCategory(),
                     WidgetSettingsService::WIDGET_SUPPORTED_CATEGORIES_ON_PRODUCT_PAGE,
