@@ -581,8 +581,7 @@ class Version270 implements DataPatchInterface
     {
         $disabledPaymentMethods = [];
         foreach ($availablePaymentMethods as $availablePaymentMethod) {
-            if (
-                !in_array($availablePaymentMethod->getProduct(), $paymentMethodsForMigration, true) &&
+            if (!in_array($availablePaymentMethod->getProduct(), $paymentMethodsForMigration, true) &&
                 in_array(
                     $availablePaymentMethod->getCategory(),
                     WidgetSettingsService::WIDGET_SUPPORTED_CATEGORIES_ON_PRODUCT_PAGE,
