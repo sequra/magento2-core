@@ -134,7 +134,7 @@ class Version270 implements DataPatchInterface
      *
      * @param AdapterInterface $connection
      *
-     * @return array<array<string, mixed>>
+     * @return array<string>
      */
     private function fetchAllTeasersAndRemoveThem(AdapterInterface $connection): array
     {
@@ -192,7 +192,7 @@ class Version270 implements DataPatchInterface
     /**
      * Migrates data from all Sequra teasers to new widget configurations.
      *
-     * @param mixed[] $teasers
+     * @param array<string> $teasers
      * @param array<WidgetSettingsEntity> $arrayOfWidgetSettingsEntities
      *
      * @return void
@@ -290,7 +290,7 @@ class Version270 implements DataPatchInterface
      *
      * @param array<string> $paymentMethods
      *
-     * @return array<array<string, mixed>>
+     * @return array<mixed>
      *
      * @throws JsonException
      */
@@ -518,7 +518,7 @@ class Version270 implements DataPatchInterface
     /**
      * Disables widgets for payment methods that were not configured prior to migration.
      *
-     * @param array<SeQuraPaymentMethod[]> $arrayOfAvailablePaymentMethodsPerStore
+     * @param array<string,SeQuraPaymentMethod> $arrayOfAvailablePaymentMethodsPerStore
      *
      * @return void
      * @throws RepositoryNotRegisteredException
@@ -572,10 +572,10 @@ class Version270 implements DataPatchInterface
     /**
      * Returns available payment methods on the product page, that were not configured prior to migration.
      *
-     * @param string[] $paymentMethodsForMigration
-     * @param SeQuraPaymentMethod[] $availablePaymentMethods
+     * @param array<string> $paymentMethodsForMigration
+     * @param array<SeQuraPaymentMethod> $availablePaymentMethods
      *
-     * @return array
+     * @return array<string>
      */
     private function getDisabledPaymentMethods(array $paymentMethodsForMigration, array $availablePaymentMethods): array
     {
