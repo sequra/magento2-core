@@ -11,9 +11,11 @@ use SeQura\Core\BusinessLogic\DataAccess\PromotionalWidgets\Entities\WidgetSetti
 use SeQura\Core\BusinessLogic\Domain\CountryConfiguration\Models\CountryConfiguration;
 use SeQura\Core\BusinessLogic\Domain\CountryConfiguration\Services\CountryConfigurationService;
 use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
+use SeQura\Core\BusinessLogic\Domain\PaymentMethod\Models\SeQuraPaymentMethod;
 use SeQura\Core\BusinessLogic\Domain\PaymentMethod\Services\PaymentMethodsService;
 use SeQura\Core\BusinessLogic\Domain\PromotionalWidgets\Models\CustomWidgetsSettings;
 use SeQura\Core\BusinessLogic\Domain\PromotionalWidgets\Models\WidgetSelectorSettings;
+use SeQura\Core\BusinessLogic\Domain\PromotionalWidgets\Services\WidgetSettingsService;
 use SeQura\Core\Infrastructure\Logger\Logger;
 use SeQura\Core\Infrastructure\ORM\Exceptions\RepositoryNotRegisteredException;
 use SeQura\Core\Infrastructure\ORM\Interfaces\RepositoryInterface;
@@ -29,6 +31,29 @@ use SeQura\Core\Infrastructure\ServiceRegister;
  */
 class Version270 implements DataPatchInterface
 {
+
+    private const WIDGET_STYLE_MAP = [
+        'L'        => ['alignment' => 'left'],
+        'R'        => ['alignment' => 'right'],
+        'legacy'   => ['type' => 'legacy'],
+        'legacyL'  => ['type' => 'legacy', 'alignment' => 'left'],
+        'legacyR'  => ['type' => 'legacy', 'alignment' => 'right'],
+        'minimal'  => ['type' => 'text', 'branding' => 'none', 'size' => 'S', 'starting-text' => 'as-low-as'],
+        'minimalL' => [
+            'type' => 'text',
+            'branding' => 'none',
+            'size' => 'S',
+            'starting-text' => 'as-low-as',
+            'alignment' => 'left'
+        ],
+        'minimalR' => [
+            'type' => 'text',
+            'branding' => 'none',
+            'size' => 'S',
+            'starting-text' => 'as-low-as',
+            'alignment' => 'right'
+        ]
+    ];
     /**
      * @var ModuleDataSetupInterface
      */
@@ -74,14 +99,22 @@ class Version270 implements DataPatchInterface
 
             $widgetSettingsEntities = $this->getAllWidgetSettingsEntities();
             $arrayOfWidgetSettingsEntities = [];
+            $arrayOfAvailablePaymentMethodsPerStore = [];
+
+            // Get available Sequra payment methods with new category property and cache them for every store
             foreach ($widgetSettingsEntities as $widgetSettingsEntity) {
                 $storeId = $widgetSettingsEntity->getStoreId();
-                StoreContext::doWithStore($storeId, function () {
+                /** @var SeQuraPaymentMethod[] $paymentMethods */
+                $paymentMethods = StoreContext::doWithStore($storeId, function () {
                     return $this->getPaymentMethodsService()->getAvailablePaymentMethodsForAllMerchants(true);
                 });
 
                 $arrayOfWidgetSettingsEntities[$storeId] = $widgetSettingsEntity;
+                $arrayOfAvailablePaymentMethodsPerStore[$storeId] = $paymentMethods;
             }
+
+            // Remove all Sequra layout blocks from Magento 2 database
+            $this->removeAllTeaserLayoutBlocks($connection);
 
             // Fetch all Sequra teasers from Magento 2 database and remove them
             $teasers = $this->fetchAllTeasersAndRemoveThem($connection);
@@ -92,57 +125,9 @@ class Version270 implements DataPatchInterface
                 return;
             }
 
-            foreach ($teasers as $teaser) {
-                if (!isset($teaser['store_ids'])) {
-                    continue;
-                }
+            $this->migrateTeasersData($teasers, $arrayOfWidgetSettingsEntities);
 
-                $storeIds = explode(',', $teaser['store_ids']);
-                /** @var array<string, mixed> $widgetParameters */
-                $widgetParameters = json_decode($teaser['widget_parameters'], true, 512, JSON_THROW_ON_ERROR);
-                /** @var string $priceSelector */
-                $priceSelector = $widgetParameters['price_sel'];
-                /** @var string $destinationSelector */
-                $destinationSelector = $widgetParameters['dest_sel'];
-                /** @var string $theme */
-                $theme = $widgetParameters['theme'];
-                /** @var array<string> $paymentMethods */
-                $paymentMethods = array_key_exists('payment_methods', $widgetParameters) ?
-                    $widgetParameters['payment_methods'] : [];
-                /** @var array<mixed> $teaserPaymentMethods */
-                $teaserPaymentMethods = $this->getPaymentMethodsData($paymentMethods);
-
-                if (in_array('0', $storeIds)) {
-                    foreach ($arrayOfWidgetSettingsEntities as $key => $widgetSettingsEntity) {
-                        $this->migrateWidgetConfigurationForStore(
-                            $key,
-                            $priceSelector,
-                            $destinationSelector,
-                            $theme,
-                            $teaserPaymentMethods,
-                            $widgetSettingsEntity
-                        );
-                    }
-
-                    continue;
-                }
-
-                foreach ($storeIds as $storeId) {
-                    if (!array_key_exists($storeId, $arrayOfWidgetSettingsEntities)) {
-                        continue;
-                    }
-
-                    $widgetSettingsEntity = $arrayOfWidgetSettingsEntities[$storeId];
-                    $this->migrateWidgetConfigurationForStore(
-                        $storeId,
-                        $priceSelector,
-                        $destinationSelector,
-                        $theme,
-                        $teaserPaymentMethods,
-                        $widgetSettingsEntity
-                    );
-                }
-            }
+            $this->disableUnconfiguredPaymentMethods($arrayOfAvailablePaymentMethodsPerStore);
 
             $connection->commit();
             Logger::logInfo('Migration ' . self::class . ' has been successfully finished.');
@@ -161,7 +146,7 @@ class Version270 implements DataPatchInterface
      *
      * @param AdapterInterface $connection
      *
-     * @return string[]
+     * @return array<string>
      */
     private function fetchAllTeasersAndRemoveThem(AdapterInterface $connection): array
     {
@@ -185,6 +170,138 @@ class Version270 implements DataPatchInterface
         $connection->delete($widgetInstance, ['instance_id IN (?)' => $ids]);
 
         return $teasers;
+    }
+
+    /**
+     * Removes all Sequra Teaser Layout Blocks from database
+     *
+     * @param AdapterInterface $connection
+     *
+     * @return void
+     */
+    private function removeAllTeaserLayoutBlocks(AdapterInterface $connection): void
+    {
+        $layoutUpdate = $this->moduleDataSetup->getTable('layout_update');
+        $query = $connection->select()->from($layoutUpdate)->where(
+            'xml LIKE ?',
+            '%Sequra_Core_Block_Widget_Teaser%',
+        );
+        $layoutBlocks = $connection->fetchAll($query);
+
+        if (empty($layoutBlocks)) {
+            return;
+        }
+
+        //Remove all Sequra layout blocks from database
+        $ids = [];
+        foreach ($layoutBlocks as $layoutBlock) {
+            $ids[] = $layoutBlock['layout_update_id'];
+        }
+
+        $connection->delete($layoutUpdate, ['layout_update_id IN (?)' => $ids]);
+    }
+
+    /**
+     * Migrates data from all Sequra teasers to new widget configurations.
+     *
+     * @param array<string> $teasers
+     * @param array<WidgetSettingsEntity> $arrayOfWidgetSettingsEntities
+     *
+     * @return void
+     * @throws JsonException
+     * @throws RepositoryNotRegisteredException
+     */
+    private function migrateTeasersData(array $teasers, array $arrayOfWidgetSettingsEntities): void
+    {
+        foreach ($teasers as $teaser) {
+            if (!isset($teaser['store_ids'])) {
+                continue;
+            }
+
+            $storeIds = explode(',', $teaser['store_ids']);
+            /** @var array<string, mixed> $widgetParameters */
+            $widgetParameters = json_decode(
+                $teaser['widget_parameters'],
+                true,
+                512,
+                JSON_THROW_ON_ERROR
+            );
+            /** @var string $priceSelector */
+            $priceSelector = $widgetParameters['price_sel'];
+            /** @var string $destinationSelector */
+            $destinationSelector = $widgetParameters['dest_sel'];
+
+            /** @var string $theme */
+            $theme = $widgetParameters['theme'];
+            $theme = $this->getValidatedThemeJson($theme);
+
+            /** @var array<string> $paymentMethods */
+            $paymentMethods = array_key_exists('payment_methods', $widgetParameters) ?
+                $widgetParameters['payment_methods'] : [];
+            /** @var array<array<string, mixed>> $teaserPaymentMethods */
+            $teaserPaymentMethods = $this->getPaymentMethodsData($paymentMethods);
+
+            if (in_array('0', $storeIds, true)) {
+                foreach ($arrayOfWidgetSettingsEntities as $key => $widgetSettingsEntity) {
+                    $this->migrateWidgetConfigurationForStore(
+                        $key,
+                        $priceSelector,
+                        $destinationSelector,
+                        $theme,
+                        $teaserPaymentMethods,
+                        $widgetSettingsEntity
+                    );
+                }
+
+                continue;
+            }
+
+            foreach ($storeIds as $storeId) {
+                if (!array_key_exists($storeId, $arrayOfWidgetSettingsEntities)) {
+                    continue;
+                }
+
+                $widgetSettingsEntity = $arrayOfWidgetSettingsEntities[$storeId];
+                $this->migrateWidgetConfigurationForStore(
+                    $storeId,
+                    $priceSelector,
+                    $destinationSelector,
+                    $theme,
+                    $teaserPaymentMethods,
+                    $widgetSettingsEntity
+                );
+            }
+        }
+    }
+
+    /**
+     * Returns mapped value for given theme value
+     *
+     * @param string $theme
+     *
+     * @return string
+     * @throws JsonException
+     */
+    private function getValidatedThemeJson(string $theme): string
+    {
+        // If input is valid JSON and decodes to array, return it as-is
+        try {
+            $decoded = json_decode($theme, true, 512, JSON_THROW_ON_ERROR);
+            if (is_array($decoded)) {
+                return $theme;
+            }
+        } catch (JsonException $e) {
+            Logger::logInfo('Sequra teaser theme is not JSON formatted.');
+            // Continue to try mapping if not valid JSON
+        }
+
+        // If theme is a known key, return mapped style as JSON
+        if (isset(self::WIDGET_STYLE_MAP[$theme])) {
+            return json_encode(self::WIDGET_STYLE_MAP[$theme], JSON_THROW_ON_ERROR);
+        }
+
+        // Return empty string if neither valid JSON nor known key
+        return '';
     }
 
     /**
@@ -235,6 +352,7 @@ class Version270 implements DataPatchInterface
             if (is_array($teaserPaymentMethod)
                 && isset($teaserPaymentMethod['countryCode'], $teaserPaymentMethod['product'])
                 && in_array($teaserPaymentMethod['countryCode'], $availableCountries, true)
+                && !in_array($teaserPaymentMethod['product'], $paymentMethods, true)
             ) {
                 $paymentMethods[] = $teaserPaymentMethod['product'];
             }
@@ -323,8 +441,14 @@ class Version270 implements DataPatchInterface
         }
 
         $paymentMethods = array_diff($paymentMethods, $updatedPaymentMethods);
-        $customWidgetSettings = $this->createCustomWidgetSettings($paymentMethods, $theme, $destinationSelector);
-        $widgetSettingsForProduct->setCustomWidgetsSettings($customWidgetSettings);
+        $newCustomWidgetSettings = $this->createCustomWidgetSettings(
+            $paymentMethods,
+            $theme,
+            $destinationSelector
+        );
+        $widgetSettingsForProduct->setCustomWidgetsSettings(
+            array_merge($customWidgetSettings, $newCustomWidgetSettings)
+        );
 
         return $widgetSettingsForProduct;
     }
@@ -349,7 +473,11 @@ class Version270 implements DataPatchInterface
             $destinationSelector
         );
 
-        $customWidgetSettings = $this->createCustomWidgetSettings($paymentMethods, $theme, $destinationSelector);
+        $customWidgetSettings = $this->createCustomWidgetSettings(
+            $paymentMethods,
+            $theme,
+            $destinationSelector
+        );
         $widgetSettingsForProduct->setCustomWidgetsSettings($customWidgetSettings);
 
         return $widgetSettingsForProduct;
@@ -364,7 +492,7 @@ class Version270 implements DataPatchInterface
      * @return array<CustomWidgetsSettings>
      */
     private function createCustomWidgetSettings(
-        array $paymentMethods,
+        array  $paymentMethods,
         string $theme,
         string $destinationSelector
     ): array {
@@ -404,6 +532,60 @@ class Version270 implements DataPatchInterface
         return array_map(static function ($country) {
             return $country->getCountryCode();
         }, $countries);
+    }
+
+    /**
+     * Disables widgets for payment methods that were not configured prior to migration.
+     *
+     * @param array<string,array<SeQuraPaymentMethod>> $arrayOfAvailablePaymentMethodsPerStore
+     *
+     * @return void
+     * @throws RepositoryNotRegisteredException
+     */
+    private function disableUnconfiguredPaymentMethods(array $arrayOfAvailablePaymentMethodsPerStore): void
+    {
+        $widgetSettingsEntities = $this->getAllWidgetSettingsEntities();
+        foreach ($widgetSettingsEntities as $widgetSettingsEntity) {
+            $storeId = $widgetSettingsEntity->getStoreId();
+            $paymentMethods = [];
+            $widgetSettingsForProduct = $widgetSettingsEntity->getWidgetSettings()->getWidgetSettingsForProduct();
+            if ($widgetSettingsForProduct) {
+                $customWidgetSettings = $widgetSettingsForProduct->getCustomWidgetsSettings();
+                foreach ($customWidgetSettings as $customPaymentMethodConfig) {
+                    $paymentMethods[] = $customPaymentMethodConfig->getProduct();
+                }
+            } else {
+                $customWidgetSettings = [];
+                $widgetSettingsForProduct = new WidgetSelectorSettings('', '');
+            }
+
+            $disabledPaymentMethods = [];
+            foreach ($arrayOfAvailablePaymentMethodsPerStore[$storeId] as $availablePaymentMethod) {
+                $product = $availablePaymentMethod->getProduct();
+                if (!in_array($product, $paymentMethods, true) &&
+                    !in_array($product, $disabledPaymentMethods, true) &&
+                    in_array(
+                        $availablePaymentMethod->getCategory(),
+                        WidgetSettingsService::WIDGET_SUPPORTED_CATEGORIES_ON_PRODUCT_PAGE,
+                        true
+                    )
+                ) {
+                    $disabledPaymentMethods[] = $product;
+                    $customWidgetSettings[] = new CustomWidgetsSettings(
+                        '',
+                        $product,
+                        false,
+                        ''
+                    );
+                }
+            }
+
+            $widgetSettingsForProduct->setCustomWidgetsSettings($customWidgetSettings);
+            $widgetSettingsEntity->getWidgetSettings()->setWidgetSettingsForProduct(
+                $widgetSettingsForProduct
+            );
+            $this->getWidgetSettingRepository()->update($widgetSettingsEntity);
+        }
     }
 
     /**
