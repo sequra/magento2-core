@@ -15,17 +15,20 @@ if (!window.SequraFE) {
  *
  * @returns {Promise<boolean>} Resolves true if confirmed, false if canceled
  */
-window.SequraFE.showDeploymentsModal = function ({
-                                                     api, configuration, generator, components, validator, utilities,
-                                                     notConnectedDeployments, activeSettings
-                                                 }) {
+window.SequraFE.showDeploymentsModal = function (
+    {
+        api, configuration, generator, components, validator, utilities,
+        notConnectedDeployments, activeSettings
+    }
+) {
     return new Promise((resolve) => {
         if (!notConnectedDeployments || notConnectedDeployments.length === 0) {
             resolve({confirmed: false, selectedDeploymentId: null});
+
             return;
         }
 
-        changedSettings = utilities.cloneObject(activeSettings);
+        let changedSettings = utilities.cloneObject(activeSettings);
 
         let hasChanges = false;
         let activeDeploymentId = notConnectedDeployments[0].id;
@@ -36,6 +39,7 @@ window.SequraFE.showDeploymentsModal = function ({
                 entry = {username: '', password: '', merchantId: '', deployment: deploymentId};
                 changedSettings.connectionData.push(entry);
             }
+
             return entry;
         };
 
@@ -140,9 +144,7 @@ window.SequraFE.showDeploymentsModal = function ({
 
             try {
                 const finalSettings = utilities.cloneObject(activeSettings);
-
                 const updatedConnection = getSettingsForDeployment(activeDeploymentId);
-
                 const existingIndex = finalSettings.connectionData.findIndex(c => c.deployment === activeDeploymentId);
                 if (existingIndex >= 0) {
                     finalSettings.connectionData[existingIndex] = updatedConnection;
@@ -151,9 +153,9 @@ window.SequraFE.showDeploymentsModal = function ({
                 }
 
                 const result = await api.post(configuration.connectUrl, finalSettings);
-
                 if (!areCredentialsValid(result)) {
                     handleValidationError();
+
                     return;
                 }
 
@@ -165,7 +167,6 @@ window.SequraFE.showDeploymentsModal = function ({
                     updatedSettings: changedSettings,
                     activatedDeployment: notConnectedDeployments.find(deployment => deployment.id === activeDeploymentId)
                 });
-
             } catch (error) {
                 handleValidationError();
             } finally {
@@ -179,10 +180,6 @@ window.SequraFE.showDeploymentsModal = function ({
          * @param {{isValid: boolean, reason: string|null}} result
          */
         const areCredentialsValid = (result) => {
-            if (!result.isValid && result.reason.includes('merchantId')) {
-                navigateToOnboarding = true;
-            }
-
             return result.isValid || result.reason.includes('merchantId');
         }
 
