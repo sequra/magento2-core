@@ -145,7 +145,7 @@
       }
     },
     "deployments": {
-      "manage": "Gestionar implementaciones"
+      "manage": "Gestionar Instancias de Despliegue"
     },
     "username": {
       "label": "Nombre de usuario",
@@ -171,11 +171,11 @@
     }
   },
   "deployments": {
-    "title": "Selecciona despliegues",
-    "description": "Por favor, selecciona los despliegues para los que deseas ofrecer los métodos de pago de SeQura",
+    "title": "Selecciona las Instancias de Despliegue",
+    "description": "Por favor, selecciona las Instancias de Despliegue para los que deseas ofrecer los métodos de pago de SeQura",
     "selector": {
-      "label": "¿En qué despliegues deseas ofrecer los métodos de pago de SeQura?",
-      "description": "Puedes seleccionar uno o más entornos donde se habilitará SeQura."
+      "label": "¿En cuáles Instancias de Despliegue deseas ofrecer los métodos de pago de SeQura?",
+      "description": "Cada Instancia de Despliegue sirve a un grupo diferente de países."
     }
   },
   "countries": {

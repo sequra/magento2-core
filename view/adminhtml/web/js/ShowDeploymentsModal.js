@@ -70,7 +70,6 @@ window.SequraFE.showDeploymentsModal = function ({
         headerWrapper.append(menuWrapper);
 
         const content = generator.createElement('div', 'sq-content-inner sqv--deployments', '', null, [
-            generator.createElement('p', '', 'deployments.description'),
             headerWrapper
         ]);
         let errorContainer = generator.createElement('div', 'sqp-flash-message-wrapper');

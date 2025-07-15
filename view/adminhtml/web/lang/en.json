@@ -145,7 +145,7 @@
       }
     },
     "deployments": {
-      "manage": "Manage Deployments"
+      "manage": "Manage Deployment Targets"
     },
     "username": {
       "label": "Username",
@@ -171,11 +171,11 @@
     }
   },
   "deployments": {
-    "title": "Select deployments",
-    "description": "Please select deployments for which you want to offer SeQura payment methods",
+    "title": "Select Deployment Targets",
+    "description": "Please select Deployment Targets for which you want to offer SeQura payment methods",
     "selector": {
-      "label": "In which deployments do you want to offer SeQura payment methods?",
-      "description": "You can select one or more environments where SeQura should be enabled."
+      "label": "In which Deployment Targets do you want to offer SeQura payment methods?",
+      "description": "Each Deployment Target serves a different group of countries."
     }
   },
   "countries": {
