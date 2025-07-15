@@ -6,11 +6,6 @@ use Magento\Framework\UrlInterface;
 use SeQura\Core\BusinessLogic\Domain\Integration\Order\MerchantDataProviderInterface;
 use SeQura\Core\BusinessLogic\Domain\Order\Models\OrderRequest\Options;
 
-/**
- * Class MerchantDataProvider.
- *
- * @package Sequra\Core\Services\BusinessLogic\Order
- */
 class MerchantDataProvider implements MerchantDataProviderInterface
 {
     /**
@@ -27,6 +22,8 @@ class MerchantDataProvider implements MerchantDataProviderInterface
     }
 
     /**
+     * Returns approved callback
+     *
      * @return ?string
      */
     public function getApprovedCallback(): ?string
@@ -35,6 +32,8 @@ class MerchantDataProvider implements MerchantDataProviderInterface
     }
 
     /**
+     * Returns rejected callback
+     *
      * @return ?string
      */
     public function getRejectedCallback(): ?string
@@ -43,6 +42,8 @@ class MerchantDataProvider implements MerchantDataProviderInterface
     }
 
     /**
+     * Returns part payment details
+     *
      * @return ?string
      */
     public function getPartPaymentDetailsGetter(): ?string
@@ -51,6 +52,8 @@ class MerchantDataProvider implements MerchantDataProviderInterface
     }
 
     /**
+     * Returns notify url
+     *
      * @return ?string
      */
     public function getNotifyUrl(): ?string
@@ -59,16 +62,20 @@ class MerchantDataProvider implements MerchantDataProviderInterface
     }
 
     /**
+     * Returns return url for given cart id
+     *
      * @param string $cartId
      *
      * @return ?string
      */
     public function getReturnUrlForCartId(string $cartId): ?string
     {
-      return $this->urlBuilder->getUrl('sequra/comeback', ['cartId' => $cartId]);
+        return $this->urlBuilder->getUrl('sequra/comeback', ['cartId' => $cartId]);
     }
 
     /**
+     * Returns edit url
+     *
      * @return ?string
      */
     public function getEditUrl(): ?string
@@ -77,6 +84,8 @@ class MerchantDataProvider implements MerchantDataProviderInterface
     }
 
     /**
+     * Returns abort url
+     *
      * @return ?string
      */
     public function getAbortUrl(): ?string
@@ -85,6 +94,8 @@ class MerchantDataProvider implements MerchantDataProviderInterface
     }
 
     /**
+     * Returns approved url
+     *
      * @return ?string
      */
     public function getApprovedUrl(): ?string
@@ -93,7 +104,9 @@ class MerchantDataProvider implements MerchantDataProviderInterface
     }
 
     /**
-     * @return ?string
+     * Returns options
+     *
+     * @return Options|null
      */
     public function getOptions(): ?Options
     {
@@ -101,6 +114,8 @@ class MerchantDataProvider implements MerchantDataProviderInterface
     }
 
     /**
+     * Returns events webhook url
+     *
      * @return string
      */
     public function getEventsWebhookUrl(): string
@@ -109,6 +124,10 @@ class MerchantDataProvider implements MerchantDataProviderInterface
     }
 
     /**
+     * Returns notifications parameters for cart id
+     *
+     * @param string $cartId
+     *
      * @return string[]
      */
     public function getNotificationParametersForCartId(string $cartId): array
@@ -117,6 +136,10 @@ class MerchantDataProvider implements MerchantDataProviderInterface
     }
 
     /**
+     * Returns events webhook parameters for cart id
+     *
+     * @param string $cartId
+     *
      * @return string[]
      */
     public function getEventsWebhookParametersForCartId(string $cartId): array

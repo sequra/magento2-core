@@ -219,12 +219,12 @@ class OrderService implements ShopOrderService
         if ($order) {
             $orderReference = $order->getIncrementId();
             $this->sequraOrderService->updateSeQuraOrderStatus($webhook);
-        } else{
+        } else {
             $orderReference = $this->sequraOrderService->createOrder($webhook);
             $order = $this->getOrderByIncrementId($orderReference);
         }
 
-        if (!$order){
+        if (!$order) {
             return;
         }
 

@@ -25,8 +25,7 @@ class OrderCreation implements OrderCreationInterface
     public function __construct(
         CartManagementInterface $cartManagement,
         OrderRepositoryInterface $shopOrderRepository
-    )
-    {
+    ) {
         $this->cartManagement = $cartManagement;
         $this->shopOrderRepository = $shopOrderRepository;
     }

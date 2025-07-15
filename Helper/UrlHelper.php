@@ -118,9 +118,10 @@ class UrlHelper
          * @var \SeQura\Core\BusinessLogic\Domain\Connection\Models\ConnectionData|null $connectionSettings
          */
         $connectionSettings = StoreContext::doWithStore(
-            (string) $storeId,
-            function () use ($merchantId){
-                return ServiceRegister::getService(ConnectionService::class)->getConnectionDataByMerchantId($merchantId);
+            (string)$storeId,
+            function () use ($merchantId) {
+                return ServiceRegister::getService(ConnectionService::class)
+                    ->getConnectionDataByMerchantId($merchantId);
             }
         );
         $baseUrl = $connectionSettings && $connectionSettings->getEnvironment() === BaseProxy::LIVE_MODE ?

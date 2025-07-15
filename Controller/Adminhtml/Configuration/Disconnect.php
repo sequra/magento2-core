@@ -47,7 +47,8 @@ class Disconnect extends BaseConfigurationController
 
         // @phpstan-ignore-next-line
         $data = AdminAPI::get()->disconnect($this->storeId)->disconnect(
-            new DisconnectRequest($deploymentId, $fullDisconnect));
+            new DisconnectRequest($deploymentId, $fullDisconnect)
+        );
         $this->addResponseCode($data);
 
         return $this->result->setData($data->toArray());

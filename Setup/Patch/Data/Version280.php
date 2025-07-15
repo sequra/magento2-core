@@ -7,11 +7,6 @@ use SeQura\Core\BusinessLogic\Domain\Migration\Tasks\DeploymentMigrateTask;
 use SeQura\Core\Infrastructure\Logger\Logger;
 use Throwable;
 
-/**
- * Class Version280.
- *
- * @package Sequra\Core\Setup\Patch\Data
- */
 class Version280 implements DataPatchInterface
 {
     /**
