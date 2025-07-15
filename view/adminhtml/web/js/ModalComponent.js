@@ -66,7 +66,7 @@ if (!window.SequraFE.components) {
         /**
          * Opens the modal.
          */
-        this.open = () => {
+        this.open = (contentWrapper = null) => {
             const modalTemplate =
                 '<div id="sq-modal" class="sq-modal sqs--hidden">\n' +
                 '    <div class="sqp-modal-content">' +
@@ -124,7 +124,12 @@ if (!window.SequraFE.components) {
                 });
             }
 
-            templateService.getContentWrapper().appendChild(modal);
+            if(contentWrapper) {
+                document.querySelector(contentWrapper).appendChild(modal);
+            } else {
+                templateService.getContentWrapper().appendChild(modal);
+            }
+
             if (config.onOpen) {
                 config.onOpen(modal);
             }
