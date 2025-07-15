@@ -20,7 +20,7 @@
   "prefer-stable": true,
   "require": {
     "php": ">=7.4",
-    "sequra/integration-core": "dev-feature/LIS-74",
+    "sequra/integration-core": "dev-temp",
     "ext-json": "*"
   },
   "autoload": {

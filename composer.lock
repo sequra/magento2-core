@@ -4,11 +4,11 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "d896bcd9151b224fd25063e98baed592",
+    "content-hash": "b595422dfc0c412f7b748798c4d6e7c9",
     "packages": [
         {
             "name": "sequra/integration-core",
-            "version": "dev-feature/LIS-74",
+            "version": "dev-temp",
             "source": {
                 "type": "git",
                 "url": "git@github.com:sequra/integration-core.git",
