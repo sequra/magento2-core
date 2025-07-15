@@ -111,13 +111,16 @@ class UrlHelper
         if (!$storeId) {
             return '#';
         }
+
+        $merchantId = $this->getMerchantId($orderReference);
+
         /**
          * @var \SeQura\Core\BusinessLogic\Domain\Connection\Models\ConnectionData|null $connectionSettings
          */
         $connectionSettings = StoreContext::doWithStore(
             (string) $storeId,
-            function () {
-                return ServiceRegister::getService(ConnectionService::class)->getConnectionData();
+            function () use ($merchantId){
+                return ServiceRegister::getService(ConnectionService::class)->getConnectionDataByMerchantId($merchantId);
             }
         );
         $baseUrl = $connectionSettings && $connectionSettings->getEnvironment() === BaseProxy::LIVE_MODE ?
@@ -141,6 +144,24 @@ class UrlHelper
         }
         $order->loadByIncrementId($seQuraOrder->getOrderRef1());
         return $order ? $order->getStoreId() : null;
+    }
+
+    /**
+     * Returns merchant id from orderReference
+     *
+     * @param string $orderReference
+     *
+     * @return null|string
+     */
+    private function getMerchantId($orderReference): ?string
+    {
+        $seQuraOrder = $this->getOrderRepository()->getByOrderReference($orderReference);
+
+        if (!$seQuraOrder || !$seQuraOrder->getMerchant()) {
+            return null;
+        }
+
+        return $seQuraOrder->getMerchant()->getId();
     }
 
     /**
