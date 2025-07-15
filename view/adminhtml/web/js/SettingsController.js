@@ -118,7 +118,6 @@ if (!window.SequraFE) {
             notConnectedDeployments = notConnectedDeployments
                 ?.filter(deployment => !activeDeploymentsIds.includes(deployment.id)) || [];
 
-            // Ažuriraj stanje (ako koristiš state)
             SequraFE.state.setData('notConnectedDeployments', notConnectedDeployments);
 
             const form = formFactory.getInstance(

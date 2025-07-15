@@ -235,6 +235,6 @@ window.SequraFE.showDeploymentsModal = function ({
             ]
         });
 
-        modal.open();
+        modal.open('.sq-content');
     });
 };
