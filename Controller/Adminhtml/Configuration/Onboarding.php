@@ -55,11 +55,9 @@ class Onboarding extends BaseConfigurationController
          */
         $sendStatisticalData = $data['sendStatisticalData'] ?? true;
         $connectionDataArray = $data['connectionData'] ?? [];
-
-        $environment =  $data['environment'] ?? '';
+        $environment = $data['environment'] ?? '';
 
         $connectionRequests = [];
-
         foreach ($connectionDataArray as $connData) {
             $connectionRequests[] = new ConnectionRequest(
                 $environment,
@@ -75,7 +73,6 @@ class Onboarding extends BaseConfigurationController
             $connectionRequests,
             $sendStatisticalData
         ));
-
         $this->addResponseCode($response);
 
         return $this->result->setData($response->toArray());

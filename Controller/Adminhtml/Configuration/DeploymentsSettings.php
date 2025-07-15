@@ -31,7 +31,6 @@ class DeploymentsSettings extends BaseConfigurationController
     {
         // @phpstan-ignore-next-line
         $response = AdminAPI::get()->deployments($this->storeId)->getAllDeployments();
-
         $this->addResponseCode($response);
 
         return $this->result->setData($response->toArray());
@@ -46,7 +45,6 @@ class DeploymentsSettings extends BaseConfigurationController
     {
         // @phpstan-ignore-next-line
         $response = AdminAPI::get()->deployments($this->storeId)->getNotConnectedDeployments();
-
         $this->addResponseCode($response);
 
         return $this->result->setData($response->toArray());
