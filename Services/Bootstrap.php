@@ -17,6 +17,7 @@ use SeQura\Core\BusinessLogic\DataAccess\TransactionLog\Entities\TransactionLog;
 use SeQura\Core\BusinessLogic\Domain\Integration\Category\CategoryServiceInterface;
 use SeQura\Core\BusinessLogic\Domain\Integration\Disconnect\DisconnectServiceInterface;
 use SeQura\Core\BusinessLogic\Domain\Integration\Order\MerchantDataProviderInterface;
+use SeQura\Core\BusinessLogic\Domain\Integration\Order\OrderCreationInterface;
 use SeQura\Core\BusinessLogic\Domain\Integration\OrderReport\OrderReportServiceInterface;
 use SeQura\Core\BusinessLogic\Domain\Integration\Product\ProductServiceInterface;
 use SeQura\Core\BusinessLogic\Domain\Integration\PromotionalWidgets\MiniWidgetMessagesProviderInterface;
@@ -27,6 +28,7 @@ use SeQura\Core\BusinessLogic\Domain\Integration\Store\StoreServiceInterface;
 use SeQura\Core\BusinessLogic\Domain\Integration\Version\VersionServiceInterface;
 use SeQura\Core\BusinessLogic\Domain\Order\Models\SeQuraOrder;
 use SeQura\Core\BusinessLogic\Domain\Order\RepositoryContracts\SeQuraOrderRepositoryInterface;
+use SeQura\Core\BusinessLogic\Domain\Order\Service\OrderService;
 use SeQura\Core\BusinessLogic\Domain\OrderStatusSettings\RepositoryContracts\OrderStatusSettingsRepositoryInterface;
 use SeQura\Core\BusinessLogic\Domain\SendReport\RepositoryContracts\SendReportRepositoryInterface;
 use SeQura\Core\BusinessLogic\Domain\StatisticalData\RepositoryContracts\StatisticalDataRepositoryInterface;
@@ -51,6 +53,7 @@ use Sequra\Core\Services\BusinessLogic\CategoryService;
 use Sequra\Core\Services\BusinessLogic\ConfigurationService;
 use Sequra\Core\Services\BusinessLogic\DisconnectService;
 use Sequra\Core\Services\BusinessLogic\Order\MerchantDataProvider;
+use Sequra\Core\Services\BusinessLogic\Order\OrderCreation;
 use Sequra\Core\Services\BusinessLogic\OrderReportService;
 use Sequra\Core\Services\BusinessLogic\OrderServiceFactory;
 use Sequra\Core\Services\BusinessLogic\PaymentMethodsService;
@@ -126,6 +129,9 @@ class Bootstrap extends BootstrapComponent
     /** @var MerchantDataProvider */
     private $merchantDataProvider;
 
+    /** @var OrderCreation */
+    private $orderCreation;
+
     /**
      *  Constructor for Bootstrap
      *
@@ -143,6 +149,7 @@ class Bootstrap extends BootstrapComponent
      * @param MiniWidgetMessagesProvider $miniWidgetMessagesProvider
      * @param ProductService $productService
      * @param MerchantDataProvider $merchantDataProvider
+     * @param OrderCreation $orderCreation
      */
     public function __construct(
         LoggerService $loggerService,
@@ -158,7 +165,8 @@ class Bootstrap extends BootstrapComponent
         WidgetConfigurator $widgetConfigurator,
         MiniWidgetMessagesProvider $miniWidgetMessagesProvider,
         ProductService $productService,
-        MerchantDataProvider $merchantDataProvider
+        MerchantDataProvider $merchantDataProvider,
+        OrderCreation $orderCreation
     ) {
         $this->loggerService = $loggerService;
         $this->configurationService = $configurationService;
@@ -174,6 +182,7 @@ class Bootstrap extends BootstrapComponent
         $this->miniWidgetMessagesProvider = $miniWidgetMessagesProvider;
         $this->productService = $productService;
         $this->merchantDataProvider = $merchantDataProvider;
+        $this->orderCreation = $orderCreation;
 
         static::$instance = $this;
     }
@@ -229,7 +238,8 @@ class Bootstrap extends BootstrapComponent
             ShopOrderService::class,
             function () {
                 return static::$instance->orderServiceFactory->create([
-                    'seQuraOrderRepository' => ServiceRegister::getService(SeQuraOrderRepositoryInterface::class)
+                    'seQuraOrderRepository' => ServiceRegister::getService(SeQuraOrderRepositoryInterface::class),
+                    'sequraOrderService' => ServiceRegister::getService(OrderService::class)
                 ]);
             }
         );
@@ -287,6 +297,13 @@ class Bootstrap extends BootstrapComponent
             MerchantDataProviderInterface::class,
             static function () {
                 return static::$instance->merchantDataProvider;
+            }
+        );
+
+        ServiceRegister::registerService(
+            OrderCreationInterface::class,
+            static function () {
+                return static::$instance->orderCreation;
             }
         );
 
