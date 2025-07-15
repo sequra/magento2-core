@@ -3,33 +3,28 @@
      * @typedef Deployment
      * @property {string} id
      * @property {string} name
-     * @property {boolean} [active]
+     * @property {boolean} active
      */
 
     /**
      * Handles the deployments settings form logic.
      *
-     * @param {{ deploymentsSettings: Deployment[] }} data - Preloaded deployments settings.
      * @param {{
-     *   saveDeploymentsUrl: string,
-     *   page: string,
-     *   appState: string
+     * deploymentsSettings: Deployment[],
+     * }} data - Preloaded deployments settings.
+     * @param {{
+     * appState: string
      * }} configuration - Configuration for current app state.
      * @constructor
      */
     function DeploymentsSettingsForm(data, configuration) {
-        /** @type {AjaxServiceType} */
-        const api = SequraFE.ajaxService;
         const {
-            elementGenerator: generator,
-            validationService: validator,
-            utilities
+            elementGenerator: generator, validationService: validator, utilities
         } = SequraFE;
 
         /** @type {Deployment[]} */
         let allDeployments = (data.deploymentsSettings || []).map(dep => ({
-            ...utilities.cloneObject(dep),
-            active: dep.active !== false,
+            ...utilities.cloneObject(dep), active: dep.active !== false,
         }));
 
         /** @type {boolean} */
@@ -48,7 +43,8 @@
          * Removes previous inner content of the form if present.
          */
         const removePreviousContent = () => {
-            const pageContent = /** @type {HTMLElement|null} */ (document.querySelector('.sq-content'));
+            const pageContent =
+                /** @type {HTMLElement|null} */ (document.querySelector('.sq-content'));
             const inner = pageContent?.querySelector('.sq-content-inner');
             if (inner) {
                 inner.remove(); // Keeps header intact, removes form content
@@ -59,7 +55,8 @@
          * Initializes the deployment selection form and adds it to the page.
          */
         const initForm = () => {
-            const pageContent = /** @type {HTMLElement|null} */ (document.querySelector('.sq-content'));
+            const pageContent =
+                /** @type {HTMLElement|null} */ (document.querySelector('.sq-content'));
             const selectedIds = allDeployments
                 .filter(dep => dep.active)
                 .map(dep => dep.id);
@@ -92,18 +89,15 @@
             pageContent?.append(content);
 
             if (configuration.appState !== SequraFE.appStates.ONBOARDING) {
-                pageContent?.append(
-                    generator.createPageFooter({
-                        onCancel: () => {
-                            const pageContent = document.querySelector('.sq-content');
-                            while (pageContent?.firstChild) {
-                                pageContent.removeChild(pageContent.firstChild);
-                            }
-                            initForm(); // re-render form
-                        },
-                        onSave: handleSave
-                    })
-                );
+                pageContent?.append(generator.createPageFooter({
+                    onCancel: () => {
+                        const pageContent = document.querySelector('.sq-content');
+                        while (pageContent?.firstChild) {
+                            pageContent.removeChild(pageContent.firstChild);
+                        }
+                        initForm(); // re-render form
+                    }, onSave: handleSave
+                }));
             }
         };
 
@@ -131,8 +125,10 @@
                     document.querySelector(`[name="deployments-selector"]`),
                     'validation.requiredField'
                 );
+
                 return false;
             }
+
             return true;
         };
 
@@ -160,9 +156,7 @@
                 const index = SequraFE.pages.onboarding.indexOf(SequraFE.appPages.ONBOARDING.DEPLOYMENTS);
                 const nextPage = SequraFE.pages.onboarding[index + 1];
 
-                window.location.hash = nextPage
-                    ? `${configuration.appState}-${nextPage}`
-                    : SequraFE.appStates.SETTINGS;
+                window.location.hash = nextPage ? `${configuration.appState}-${nextPage}` : SequraFE.appStates.SETTINGS;
             } else {
                 utilities.hideLoader();
             }

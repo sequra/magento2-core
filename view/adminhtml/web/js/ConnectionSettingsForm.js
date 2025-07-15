@@ -119,13 +119,11 @@ if (!window.SequraFE) {
         this.render = () => {
             if (activeDeployments.length === 0) return;
 
-
             if (!activeDeploymentId) {
                 activeDeploymentId = activeDeployments[0].id;
             }
 
             initSettings();
-
             initForm();
 
             if (!notConnectedDeployments || notConnectedDeployments.length === 0) {
@@ -149,13 +147,9 @@ if (!window.SequraFE) {
          */
         const initForm = () => {
             const pageContent = document.querySelector('.sq-content');
-
             const contentInner = generator.createElement('div', 'sq-content-inner sqv--connect', '', null, []);
-
             contentInner.append(generator.createElement('div', 'sqp-flash-message-wrapper'));
-
             const headingWrapper = generator.createElement('div', 'sq-heading-wrapper', '', null, []);
-
             headingWrapper.append(generator.createPageHeading({
                 title: `connection.title.${configuration.appState}`,
                 text: `connection.description.${configuration.appState}`
@@ -172,22 +166,25 @@ if (!window.SequraFE) {
                             api, configuration, generator, components, validator, utilities,
                             notConnectedDeployments,
                             activeSettings
-                        }).then(({ confirmed, updatedSettings, activatedDeployment }) => {
+                        }).then(({confirmed, updatedSettings, activatedDeployment}) => {
                             if (confirmed && updatedSettings) {
                                 activeSettings = updatedSettings;
                                 changedSettings = utilities.cloneObject(updatedSettings);
                                 SequraFE.state.setData('connectionSettings', activeSettings);
                                 data.connectionSettings = activeSettings;
 
-
                                 if (activatedDeployment) {
-                                    const alreadyExists = activeDeployments.some(d => d.id === activatedDeployment.id);
+                                    const alreadyExists = activeDeployments.some(
+                                        d => d.id === activatedDeployment.id
+                                    );
                                     if (!alreadyExists) {
                                         activeDeployments.push(activatedDeployment);
                                     }
 
                                     activeDeploymentId = activatedDeployment.id;
-                                    notConnectedDeployments = notConnectedDeployments.filter(d => d.id !== activatedDeployment.id);
+                                    notConnectedDeployments = notConnectedDeployments.filter(
+                                        d => d.id !== activatedDeployment.id
+                                    );
                                     SequraFE.state.setData('notConnectedDeployments', activeSettings);
                                 }
 
@@ -236,8 +233,6 @@ if (!window.SequraFE) {
             }
 
             contentInner.append(headerWrapper);
-
-
             contentInner.append(generator.createRadioGroupField({
                 name: 'environment-input',
                 value: changedSettings.environment,
@@ -248,7 +243,6 @@ if (!window.SequraFE) {
                 ],
                 onChange: (value) => handleChange('environment', value)
             }));
-
             contentInner.append(generator.createTextField({
                 name: 'username-input',
                 value: getSettingsForActiveDeployment(changedSettings).username,
@@ -257,7 +251,6 @@ if (!window.SequraFE) {
                 description: 'connection.username.description',
                 onChange: (value) => handleChange('username', value)
             }));
-
             contentInner.append(generator.createPasswordField({
                 name: 'password-input',
                 value: getSettingsForActiveDeployment(changedSettings).password,
@@ -462,7 +455,9 @@ if (!window.SequraFE) {
          * Handle connection validation error.
          */
         const handleValidationError = () => {
-            SequraFE.responseService.errorHandler({errorCode: 'general.errors.connection.invalidUsernameOrPassword'}).catch(() => {
+            SequraFE.responseService.errorHandler(
+                {errorCode: 'general.errors.connection.invalidUsernameOrPassword'}
+            ).catch(() => {
             });
 
             utilities.hideLoader();
@@ -480,10 +475,13 @@ if (!window.SequraFE) {
                         return;
                     }
 
-
                     if (configuration.appState === SequraFE.appStates.ONBOARDING) {
                         const currentConnection = getSettingsForActiveDeployment(activeSettings);
-                        if (currentConnection && currentConnection.username && currentConnection.username.length !== 0) {
+                        if (
+                            currentConnection &&
+                            currentConnection.username &&
+                            currentConnection.username.length !== 0
+                        ) {
                             SequraFE.state.setCredentialsChanged();
                         }
 
@@ -532,12 +530,10 @@ if (!window.SequraFE) {
             const isFullDisconnect = activeDeployments.length <= 1;
             const deploymentId = activeDeploymentId;
 
-            const payload = {
+            return {
                 isFullDisconnect,
                 deploymentId
             };
-
-            return payload;
         }
 
 

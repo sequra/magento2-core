@@ -76,7 +76,11 @@ if (!window.SequraFE) {
                 case SequraFE.appPages.SETTINGS.CONNECTION:
                     renderer = renderConnectionSettingsForm;
                     promises = Promise.all([
-                        SequraFE.state.getData('notConnectedDeployments') ?? api.get(configuration.pageConfiguration.onboarding.getNotConnectedDeploymentsUrl.replace(encodeURIComponent('{storeId}'), this.getStoreId())),
+                        SequraFE.state.getData('notConnectedDeployments') ?? api.get(
+                            configuration.pageConfiguration.onboarding.getNotConnectedDeploymentsUrl.replace(
+                                encodeURIComponent('{storeId}'), SequraFE.state.getStoreId()
+                            )
+                        ),
                     ])
                     break;
                 case SequraFE.appPages.SETTINGS.ORDER_STATUS:
@@ -113,12 +117,13 @@ if (!window.SequraFE) {
          * Renders the connection settings form.
          */
         const renderConnectionSettingsForm = (notConnectedDeployments) => {
-            const activeDeploymentsIds = connectionSettings?.connectionData?.map(cd => cd.deployment).filter(Boolean) || [];
+            const activeDeploymentsIds = connectionSettings?.connectionData?.map(
+                cd => cd.deployment
+            ).filter(Boolean) || [];
 
             notConnectedDeployments = notConnectedDeployments
                 ?.filter(deployment => !activeDeploymentsIds.includes(deployment.id)) || [];
 
-            // Ažuriraj stanje (ako koristiš state)
             SequraFE.state.setData('notConnectedDeployments', notConnectedDeployments);
 
             const form = formFactory.getInstance(

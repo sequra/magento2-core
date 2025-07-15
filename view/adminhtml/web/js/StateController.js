@@ -217,9 +217,12 @@ SequraFE.appPages = {
             let [controllerName, page] = state.split('-');
 
             if (controllerName === SequraFE.appStates.ONBOARDING) {
-                if (dataStore.connectionSettings?.connectionData?.every(c => c.username && c.password)
-                    && dataStore.countrySettings?.length &&
-                    dataStore.widgetSettings?.useWidgets !== undefined && !SequraFE.state.getCredentialsChanged()) {
+                if (
+                    dataStore.connectionSettings?.connectionData?.every(c => c.username && c.password) &&
+                    dataStore.countrySettings?.length &&
+                    dataStore.widgetSettings?.useWidgets !== undefined &&
+                    !SequraFE.state.getCredentialsChanged()
+                ) {
                     currentState.split('-')[0] === SequraFE.appStates.ONBOARDING ?
                         this.goToState(SequraFE.appStates.PAYMENT + '-' + SequraFE.appPages.PAYMENT.METHODS) :
                         this.goToState(currentState, null, true);
@@ -237,16 +240,14 @@ SequraFE.appPages = {
                             page = SequraFE.appPages.ONBOARDING.CONNECT
                         }
 
-                        if(!dataStore.deploymentsSettings?.some(deployment => deployment.active === true)) {
+                        if (!dataStore.deploymentsSettings?.some(deployment => deployment.active === true)) {
                             page = SequraFE.appPages.DEPLOYMENTS;
                         }
 
                         break;
                     case SequraFE.appPages.ONBOARDING.DEPLOYMENTS:
                         page = SequraFE.appPages.ONBOARDING.DEPLOYMENTS;
-
                         break;
-
                     case SequraFE.appPages.ONBOARDING.WIDGETS:
                         if (dataStore.countrySettings?.length === 0 || SequraFE.state.getCredentialsChanged()) {
                             page = SequraFE.appPages.ONBOARDING.COUNTRIES;
@@ -256,7 +257,7 @@ SequraFE.appPages = {
                             page = SequraFE.appPages.ONBOARDING.CONNECT;
                         }
 
-                        if(!dataStore.deploymentsSettings?.some(deployment => deployment.active === true)) {
+                        if (!dataStore.deploymentsSettings?.some(deployment => deployment.active === true)) {
                             page = SequraFE.appPages.DEPLOYMENTS;
                         }
 
@@ -264,7 +265,7 @@ SequraFE.appPages = {
                     default:
                         page = SequraFE.appPages.ONBOARDING.CONNECT;
 
-                        if(!dataStore.deploymentsSettings?.some(deployment => deployment.active === true)) {
+                        if (!dataStore.deploymentsSettings?.some(deployment => deployment.active === true)) {
                             page = SequraFE.appPages.DEPLOYMENTS;
                         }
                 }
@@ -326,7 +327,6 @@ SequraFE.appPages = {
             Object.keys(config).forEach((key) => {
                 config[key] = config[key].replace(encodeURIComponent('{storeId}'), this.getStoreId);
             });
-
             page && (config.page = page);
 
             return config;
@@ -357,6 +357,7 @@ SequraFE.appPages = {
                     }
                 }
             }
+
             return localStorage.getItem('sq-page');
         }
 

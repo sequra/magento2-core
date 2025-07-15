@@ -51,7 +51,7 @@ if (!window.SequraFE) {
          *
          * @param {{ state?: string, storeId: string }} config
          */
-        this.display = ({ storeId }) => {
+        this.display = ({storeId}) => {
             utilities.showLoader();
             currentStoreId = storeId;
             templateService.clearMainPage();
@@ -61,7 +61,6 @@ if (!window.SequraFE) {
             countrySettings = SequraFE.state.getData('countrySettings');
             widgetSettings = SequraFE.state.getData('widgetSettings');
             deploymentsSettings = SequraFE.state.getData('deploymentsSettings');
-
 
             initializePage();
             renderPage();
@@ -126,24 +125,22 @@ if (!window.SequraFE) {
 
             const form = formFactory.getInstance(
                 'generalSettings',
-                { countrySettings, sellingCountries, connectionSettings },
-                { ...configuration, appState: SequraFE.appStates.ONBOARDING }
+                {countrySettings, sellingCountries, connectionSettings},
+                {...configuration, appState: SequraFE.appStates.ONBOARDING}
             );
 
             form?.render();
         }
 
         const renderDeploymentsSettingForm = (deploymentsSettings) => {
-
             if (!SequraFE.state.getData('deploymentsSettings')) {
                 SequraFE.state.setData('deploymentsSettings', deploymentsSettings);
             }
 
-
             const form = formFactory.getInstance(
                 'deploymentsSettings',
-                { deploymentsSettings },
-                { ...configuration, appState: SequraFE.appStates.ONBOARDING }
+                {deploymentsSettings},
+                {...configuration, appState: SequraFE.appStates.ONBOARDING}
             );
 
             form?.render();
@@ -166,8 +163,8 @@ if (!window.SequraFE) {
 
             const form = formFactory.getInstance(
                 'widgetSettings',
-                { widgetSettings, connectionSettings, countrySettings, paymentMethods, allAvailablePaymentMethods },
-                { ...configuration, appState: SequraFE.appStates.ONBOARDING }
+                {widgetSettings, connectionSettings, countrySettings, paymentMethods, allAvailablePaymentMethods},
+                {...configuration, appState: SequraFE.appStates.ONBOARDING}
             );
 
             form?.render();
@@ -179,73 +176,73 @@ if (!window.SequraFE) {
         const renderConnectionSettingsForm = () => {
             const form = formFactory.getInstance(
                 'connectionSettings',
-                { connectionSettings },
-                { ...configuration, appState: SequraFE.appStates.ONBOARDING }
+                {connectionSettings},
+                {...configuration, appState: SequraFE.appStates.ONBOARDING}
             );
 
             form?.render();
         }
 
-            /**
-             * Returns sidebar steps.
-             *
-             * @returns {unknown[]}
-             */
-            const getStepConfiguration = () => {
-                const firstStep = {
-                    label: 'sidebar.stepOneLabel',
-                    description: 'sidebar.stepOneDescription',
-                    href: '#',
-                    isCompleted: true
-                };
+        /**
+         * Returns sidebar steps.
+         *
+         * @returns {unknown[]}
+         */
+        const getStepConfiguration = () => {
+            const firstStep = {
+                label: 'sidebar.stepOneLabel',
+                description: 'sidebar.stepOneDescription',
+                href: '#',
+                isCompleted: true
+            };
 
-                const lastStep = {
-                    label: 'sidebar.stepFiveLabel',
-                    href: '#',
-                }
-
-                const pageSteps = SequraFE.pages.onboarding.map((page) => {
-                    const activePage = SequraFE.state.getPage() ?? SequraFE.pages.settings[0];
-
-                    switch (page) {
-                        case SequraFE.appPages.ONBOARDING.DEPLOYMENTS:
-                            return {
-                                label: 'sidebar.stepDeployments',
-                                href: '#onboarding-deployments',
-                                isCompleted: SequraFE.pages.onboarding.indexOf(SequraFE.state.getPage()) >
-                                    SequraFE.pages.onboarding.indexOf(SequraFE.appPages.ONBOARDING.DEPLOYMENTS),
-                                isActive: activePage === SequraFE.appPages.ONBOARDING.DEPLOYMENTS
-                            }
-
-                        case SequraFE.appPages.ONBOARDING.CONNECT:
-                            return {
-                                label: 'sidebar.stepTwoLabel',
-                                href: '#onboarding-connect',
-                                isCompleted: SequraFE.pages.onboarding.indexOf(SequraFE.state.getPage()) >
-                                    SequraFE.pages.onboarding.indexOf(SequraFE.appPages.ONBOARDING.CONNECT),
-                                isActive: activePage === SequraFE.appPages.ONBOARDING.CONNECT
-                            }
-                        case SequraFE.appPages.ONBOARDING.COUNTRIES:
-                            return {
-                                label: 'sidebar.stepThreeLabel',
-                                href: '#onboarding-countries',
-                                isCompleted: SequraFE.pages.onboarding.indexOf(SequraFE.state.getPage()) >
-                                    SequraFE.pages.onboarding.indexOf(SequraFE.appPages.ONBOARDING.COUNTRIES),
-                                isActive: activePage === SequraFE.appPages.ONBOARDING.COUNTRIES
-                            }
-                        case SequraFE.appPages.ONBOARDING.WIDGETS:
-                            return {
-                                label: 'sidebar.stepFourLabel',
-                                href: '#onboarding-widgets',
-                                isCompleted: SequraFE.pages.onboarding.indexOf(SequraFE.state.getPage()) >
-                                    SequraFE.pages.onboarding.indexOf(SequraFE.appPages.ONBOARDING.WIDGETS),
-                                isActive: activePage === SequraFE.appPages.ONBOARDING.WIDGETS
-                            }
-                    }
-                });
-
-                return [firstStep, ...pageSteps, lastStep]
+            const lastStep = {
+                label: 'sidebar.stepFiveLabel',
+                href: '#',
             }
+
+            const pageSteps = SequraFE.pages.onboarding.map((page) => {
+                const activePage = SequraFE.state.getPage() ?? SequraFE.pages.settings[0];
+
+                switch (page) {
+                    case SequraFE.appPages.ONBOARDING.DEPLOYMENTS:
+                        return {
+                            label: 'sidebar.stepDeployments',
+                            href: '#onboarding-deployments',
+                            isCompleted: SequraFE.pages.onboarding.indexOf(SequraFE.state.getPage()) >
+                                SequraFE.pages.onboarding.indexOf(SequraFE.appPages.ONBOARDING.DEPLOYMENTS),
+                            isActive: activePage === SequraFE.appPages.ONBOARDING.DEPLOYMENTS
+                        }
+
+                    case SequraFE.appPages.ONBOARDING.CONNECT:
+                        return {
+                            label: 'sidebar.stepTwoLabel',
+                            href: '#onboarding-connect',
+                            isCompleted: SequraFE.pages.onboarding.indexOf(SequraFE.state.getPage()) >
+                                SequraFE.pages.onboarding.indexOf(SequraFE.appPages.ONBOARDING.CONNECT),
+                            isActive: activePage === SequraFE.appPages.ONBOARDING.CONNECT
+                        }
+                    case SequraFE.appPages.ONBOARDING.COUNTRIES:
+                        return {
+                            label: 'sidebar.stepThreeLabel',
+                            href: '#onboarding-countries',
+                            isCompleted: SequraFE.pages.onboarding.indexOf(SequraFE.state.getPage()) >
+                                SequraFE.pages.onboarding.indexOf(SequraFE.appPages.ONBOARDING.COUNTRIES),
+                            isActive: activePage === SequraFE.appPages.ONBOARDING.COUNTRIES
+                        }
+                    case SequraFE.appPages.ONBOARDING.WIDGETS:
+                        return {
+                            label: 'sidebar.stepFourLabel',
+                            href: '#onboarding-widgets',
+                            isCompleted: SequraFE.pages.onboarding.indexOf(SequraFE.state.getPage()) >
+                                SequraFE.pages.onboarding.indexOf(SequraFE.appPages.ONBOARDING.WIDGETS),
+                            isActive: activePage === SequraFE.appPages.ONBOARDING.WIDGETS
+                        }
+                }
+            });
+
+            return [firstStep, ...pageSteps, lastStep]
+        }
 
         /**
          * Initializes general onboarding state content.
