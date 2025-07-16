@@ -30,7 +30,7 @@ services:
     volumes:
       - m2_db:/var/lib/mysql
     healthcheck:
-      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      test: [ "CMD", "sh", "-c", "mysqladmin ping -h localhost || mariadb-admin ping -h localhost" ]
       interval: 1s
       timeout: 3s
       retries: 10
@@ -67,6 +67,12 @@ services:
       - m2_elasticsearch:/usr/share/elasticsearch/data
     profiles:
       - elasticsearch
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9200"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
   opensearch:
     image: opensearchproject/opensearch:$OPENSEARCH_TAG
     ports:
@@ -83,6 +89,12 @@ services:
       - m2_opensearch:/usr/share/opensearch/data
     profiles:
       - opensearch
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9200"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
 
 volumes:
   m2_db:

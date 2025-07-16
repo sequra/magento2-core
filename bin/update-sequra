@@ -5,4 +5,4 @@ docker compose exec -u www-data magento /bin/bash -c \
 && composer clear-cache \
 && COMPOSER_MIRROR_PATH_REPOS=1 composer require sequra/magento2-core \
 && bin/magento module:enable --clear-static-content Sequra_Core \
-&& bin/magento setup:upgrade && bin/magento setup:di:compile"
+&& bin/magento setup:upgrade"

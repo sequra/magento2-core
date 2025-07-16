@@ -32,6 +32,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     sockets \
     xsl \
     zip \
+    ftp \
     && docker-php-ext-enable \
     redis \
     xdebug \
