@@ -76,10 +76,7 @@ class CreateOrderRequestBuilder implements CoreCreateOrderRequestBuilder
      * @var ScopeConfigInterface
      */
     private $scopeConfig;
-    /**
-     * @var UrlInterface
-     */
-    private $urlBuilder;
+
     /**
      * @var ProductService
      */
@@ -102,7 +99,6 @@ class CreateOrderRequestBuilder implements CoreCreateOrderRequestBuilder
      * @param DeploymentConfig $deploymentConfig
      * @param SqlVersionProvider $sqlVersionProvider
      * @param ScopeConfigInterface $scopeConfig
-     * @param UrlInterface $urlBuilder
      * @param string $cartId
      * @param string $storeId
      * @param ProductService $productService
@@ -116,7 +112,6 @@ class CreateOrderRequestBuilder implements CoreCreateOrderRequestBuilder
         DeploymentConfig $deploymentConfig,
         SqlVersionProvider $sqlVersionProvider,
         ScopeConfigInterface $scopeConfig,
-        UrlInterface $urlBuilder,
         string $cartId,
         string $storeId,
         ProductService $productService,
@@ -129,7 +124,6 @@ class CreateOrderRequestBuilder implements CoreCreateOrderRequestBuilder
         $this->deploymentConfig = $deploymentConfig;
         $this->sqlVersionProvider = $sqlVersionProvider;
         $this->scopeConfig = $scopeConfig;
-        $this->urlBuilder = $urlBuilder;
         $this->cartId = $cartId;
         $this->storeId = $storeId;
         $this->productService = $productService;

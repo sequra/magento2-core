@@ -28,7 +28,7 @@ class Version280 implements DataPatchInterface
     /**
      * @inheritDoc
      */
-    public function apply()
+    public function apply() : void
     {
         try {
             (new DeploymentMigrateTask())->execute();

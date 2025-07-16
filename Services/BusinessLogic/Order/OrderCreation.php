@@ -2,6 +2,7 @@
 
 namespace Sequra\Core\Services\BusinessLogic\Order;
 
+use Magento\Framework\Exception\CouldNotSaveException;
 use SeQura\Core\BusinessLogic\Domain\Integration\Order\OrderCreationInterface;
 use Magento\Quote\Api\CartManagementInterface;
 use Magento\Sales\Api\OrderRepositoryInterface;
@@ -36,12 +37,13 @@ class OrderCreation implements OrderCreationInterface
      * @param string $idReference
      *
      * @return string
+     * @throws CouldNotSaveException
      */
     public function getShopOrderReference(string $idReference): string
     {
         /** @var Order $order */
         $order = $this->getOrderById(
-            $this->cartManagement->placeOrder($idReference)
+            $this->cartManagement->placeOrder((int)$idReference)
         );
 
         return $order->getIncrementId();

@@ -5,6 +5,7 @@ namespace Sequra\Core\Controller\Adminhtml\Configuration;
 use Magento\Backend\App\Action\Context;
 use Magento\Framework\Controller\Result\Json;
 use Magento\Framework\Controller\Result\JsonFactory;
+use Magento\Tests\NamingConvention\true\string;
 use SeQura\Core\BusinessLogic\AdminAPI\AdminAPI;
 use SeQura\Core\BusinessLogic\AdminAPI\Connection\Requests\ConnectionRequest;
 use SeQura\Core\BusinessLogic\AdminAPI\Connection\Requests\OnboardingRequest;
@@ -46,7 +47,7 @@ class Onboarding extends BaseConfigurationController
     protected function connect(): Json
     {
         /**
-         * @var array<string, string|bool>
+         * @var array<string, string|bool|array> $data
          */
         $data = $this->getSequraPostData();
 
@@ -54,7 +55,15 @@ class Onboarding extends BaseConfigurationController
          * @var bool $sendStatisticalData
          */
         $sendStatisticalData = $data['sendStatisticalData'] ?? true;
+
+        /**
+         * @var array $connectionDataArray
+         */
         $connectionDataArray = $data['connectionData'] ?? [];
+
+        /**
+         * @var string $environment
+         */
         $environment = $data['environment'] ?? '';
 
         $connectionRequests = [];
@@ -64,7 +73,7 @@ class Onboarding extends BaseConfigurationController
                 $connData['merchantId'] ?? '',
                 $connData['username'] ?? '',
                 $connData['password'] ?? '',
-                $connData['deployment'] ?? null
+                $connData['deployment'] ?? ''
             );
         }
 

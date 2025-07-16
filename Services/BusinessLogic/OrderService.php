@@ -48,8 +48,9 @@ class OrderService implements ShopOrderService
      * @var SeQuraTranslationProvider
      */
     private $translationProvider;
+
     /**
-     * @var SeQuraOrderService|null
+     * @var SeQuraOrderService
      */
     private $sequraOrderService;
     /**

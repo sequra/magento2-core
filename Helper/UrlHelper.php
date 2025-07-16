@@ -8,6 +8,7 @@ use Magento\Store\Model\StoreManagerInterface;
 use Magento\Framework\Url as MagentoUrl;
 use Magento\Sales\Model\OrderFactory;
 use Magento\Framework\UrlInterface;
+use Magento\Tests\NamingConvention\true\string;
 use SeQura\Core\BusinessLogic\SeQuraAPI\BaseProxy;
 use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
 use SeQura\Core\BusinessLogic\Domain\Connection\Services\ConnectionService;
@@ -113,6 +114,9 @@ class UrlHelper
         }
 
         $merchantId = $this->getMerchantId($orderReference);
+        if (!$merchantId) {
+            return '#';
+        }
 
         /**
          * @var \SeQura\Core\BusinessLogic\Domain\Connection\Models\ConnectionData|null $connectionSettings
@@ -158,11 +162,11 @@ class UrlHelper
     {
         $seQuraOrder = $this->getOrderRepository()->getByOrderReference($orderReference);
 
-        if (!$seQuraOrder || !$seQuraOrder->getMerchant()) {
+        if (!$seQuraOrder) {
             return null;
         }
 
-        return $seQuraOrder->getMerchant()->getId();
+        return (string)$seQuraOrder->getMerchant()->getId();
     }
 
     /**
