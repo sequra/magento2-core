@@ -7,6 +7,7 @@ use SeQura\Core\BusinessLogic\Domain\Integration\Order\OrderCreationInterface;
 use Magento\Quote\Api\CartManagementInterface;
 use Magento\Sales\Api\OrderRepositoryInterface;
 use Magento\Sales\Model\Order;
+use SeQura\Core\BusinessLogic\Webhook\Exceptions\OrderNotFoundException;
 
 class OrderCreation implements OrderCreationInterface
 {
@@ -32,25 +33,31 @@ class OrderCreation implements OrderCreationInterface
     }
 
     /**
-     * Returns shop order reference.
+     * Creates shop order and returns shop order reference.
      *
-     * @param string $idReference
+     * @param string $cartId
      *
      * @return string
+     *
+     * @throws OrderNotFoundException
      * @throws CouldNotSaveException
      */
-    public function getShopOrderReference(string $idReference): string
+    public function createOrder(string $cartId): string
     {
-        /** @var Order $order */
+        /** @var null|Order $order */
         $order = $this->getOrderById(
-            $this->cartManagement->placeOrder((int)$idReference)
+            $this->cartManagement->placeOrder((int)$cartId)
         );
+
+        if (!$order) {
+            throw new OrderNotFoundException("Magento order with cart id {$cartId} not found.", 404);
+        }
 
         return $order->getIncrementId();
     }
 
     /**
-     * Get the Magento order by id.
+     * Returns the Magento order by id.
      *
      * @param int $orderId
      *
@@ -58,7 +65,7 @@ class OrderCreation implements OrderCreationInterface
      */
     protected function getOrderById(int $orderId): ?Order
     {
-        /** @var Order $order */
+        /** @var null|Order $order */
         $order = $this->shopOrderRepository->get($orderId);
 
         return $order;
