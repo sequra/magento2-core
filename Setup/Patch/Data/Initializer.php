@@ -332,7 +332,7 @@ class Initializer implements DataPatchInterface
             $connectionDataList[] = new ConnectionData(
                 $endpoint === 'https://sandbox.sequrapi.com/orders' ? BaseProxy::TEST_MODE : BaseProxy::LIVE_MODE,
                 '',
-                $deployment,
+                $deployment->getId(),
                 new AuthorizationCredentials($username, $password)
             );
         }

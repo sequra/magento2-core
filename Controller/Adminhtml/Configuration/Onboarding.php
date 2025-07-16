@@ -46,7 +46,16 @@ class Onboarding extends BaseConfigurationController
     protected function connect(): Json
     {
         /**
-         * @var array<string, string|bool|array> $data
+         * @var array{
+         *     environment?: string,
+         *     sendStatisticalData?: bool,
+         *     connectionData?: array<array{
+         *         merchantId?: string,
+         *         username?: string,
+         *         password?: string,
+         *         deployment?: string
+         *     }>
+         * } $data
          */
         $data = $this->getSequraPostData();
 
@@ -56,7 +65,10 @@ class Onboarding extends BaseConfigurationController
         $sendStatisticalData = $data['sendStatisticalData'] ?? true;
 
         /**
-         * @var array $connectionDataArray
+         * @var array<array{merchantId?: string,
+         *     username?: string,
+         *     password?: string,
+         *     deployment?: string}> $connectionDataArray
          */
         $connectionDataArray = $data['connectionData'] ?? [];
 
