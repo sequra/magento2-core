@@ -5,7 +5,6 @@
 
 namespace Sequra\Core\Console;
 
-use Magento\Tests\NamingConvention\true\string;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -249,7 +248,7 @@ class Configure extends Command
      *
      * @return void
      */
-    private function saveConnectionData(string $endpoint, string $username, string $password,  string $deploymentId)
+    private function saveConnectionData(string $endpoint, string $username, string $password, string $deploymentId)
     {
         $connectionData = new ConnectionData(
             $endpoint === 'https://sandbox.sequrapi.com/orders' ? BaseProxy::TEST_MODE : BaseProxy::LIVE_MODE,

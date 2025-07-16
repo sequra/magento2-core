@@ -8,7 +8,6 @@ use Magento\Store\Model\StoreManagerInterface;
 use Magento\Framework\Url as MagentoUrl;
 use Magento\Sales\Model\OrderFactory;
 use Magento\Framework\UrlInterface;
-use Magento\Tests\NamingConvention\true\string;
 use SeQura\Core\BusinessLogic\SeQuraAPI\BaseProxy;
 use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
 use SeQura\Core\BusinessLogic\Domain\Connection\Services\ConnectionService;
