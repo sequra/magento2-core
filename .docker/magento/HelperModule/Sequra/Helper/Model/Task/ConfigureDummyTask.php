@@ -151,12 +151,12 @@ class ConfigureDummyTask extends Task
                 'data'    => '{"class_name":"SeQura\\\\Core\\\\BusinessLogic\\\\DataAccess\\\\Deployments\\\\Entities\\\\Deployment","id":' . $id . ',"storeId":"1","deploymentId":"svea","deployment":{"id":"svea","name":"SVEA","live":{"api_base_url":"https:\/\/live.sequra.svea.com\/","assets_base_url":"https:\/\/live.cdn.sequra.svea.com\/assets\/"},"sandbox":{"api_base_url":"https:\/\/next-sandbox.sequra.svea.com\/","assets_base_url":"https:\/\/next-sandbox.cdn.sequra.svea.com\/assets\/"}}}',
             ]
         );
-        // PaymentMethod
+        // PaymentMethods
         $conn->insert(
             $table_name,
             [
                 'id'      => ++$id,
-                'type'    => 'PaymentMethod',
+                'type'    => 'PaymentMethods',
                 'index_1' => '1',
                 'index_2' => 'dummy_automated_tests_fr',
                 'index_3' => 'pp3',
@@ -167,7 +167,7 @@ class ConfigureDummyTask extends Task
             $table_name,
             [
                 'id'      => ++$id,
-                'type'    => 'PaymentMethod',
+                'type'    => 'PaymentMethods',
                 'index_1' => '1',
                 'index_2' => 'dummy_automated_tests_it',
                 'index_3' => 'pp3',
@@ -178,7 +178,7 @@ class ConfigureDummyTask extends Task
             $table_name,
             [
                 'id'      => ++$id,
-                'type'    => 'PaymentMethod',
+                'type'    => 'PaymentMethods',
                 'index_1' => '1',
                 'index_2' => 'dummy_automated_tests_pt',
                 'index_3' => 'pp3',
@@ -189,7 +189,7 @@ class ConfigureDummyTask extends Task
             $table_name,
             [
                 'id'      => ++$id,
-                'type'    => 'PaymentMethod',
+                'type'    => 'PaymentMethods',
                 'index_1' => '1',
                 'index_2' => 'dummy_automated_tests',
                 'index_3' => 'i1',
@@ -200,7 +200,7 @@ class ConfigureDummyTask extends Task
             $table_name,
             [
                 'id'      => ++$id,
-                'type'    => 'PaymentMethod',
+                'type'    => 'PaymentMethods',
                 'index_1' => '1',
                 'index_2' => 'dummy_automated_tests',
                 'index_3' => 'sp1',
@@ -211,7 +211,7 @@ class ConfigureDummyTask extends Task
             $table_name,
             [
                 'id'      => ++$id,
-                'type'    => 'PaymentMethod',
+                'type'    => 'PaymentMethods',
                 'index_1' => '1',
                 'index_2' => 'dummy_automated_tests',
                 'index_3' => 'pp3',
