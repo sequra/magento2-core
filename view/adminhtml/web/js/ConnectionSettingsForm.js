@@ -61,7 +61,7 @@ if (!window.SequraFE) {
         /** @type ConnectionSettings */
         const defaultFormData = {
             environment: 'sandbox',
-            sendStatisticalData: false,
+            sendStatisticalData: true,
             connectionData: activeDeployments.map(deployment => ({
                 username: '',
                 password: '',
@@ -454,11 +454,21 @@ if (!window.SequraFE) {
         /**
          * Handle connection validation error.
          */
-        const handleValidationError = () => {
-            SequraFE.responseService.errorHandler(
-                {errorCode: 'general.errors.connection.invalidUsernameOrPassword'}
-            ).catch(() => {
-            });
+        const handleValidationError = (result = null) => {
+            if (result.reason.includes('deployment')) {
+                const deployment = result.reason.split('/')[1] || '';
+                const deployments = deployment.split(',').filter(Boolean);
+
+                const errorKey = deployments.length > 1
+                    ? 'general.errors.connection.invalidUsernameOrPasswordForDeployments'
+                    : 'general.errors.connection.invalidUsernameOrPasswordForDeploymetn';
+
+                SequraFE.responseService.errorHandler({errorCode: `${errorKey}|${deployment}`}).catch(() => {
+                });
+            } else {
+                SequraFE.responseService.errorHandler({errorCode: 'general.errors.connection.invalidUsernameOrPassword'}).catch(() => {
+                });
+            }
 
             utilities.hideLoader();
         }
@@ -470,7 +480,7 @@ if (!window.SequraFE) {
                 .then((result) => {
 
                     if (!areCredentialsValid(result)) {
-                        handleValidationError();
+                        handleValidationError(result);
 
                         return;
                     }

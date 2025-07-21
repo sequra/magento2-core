@@ -37,6 +37,8 @@
       },
       "connection": {
         "invalidUsernameOrPassword": "Invalid username or password. Validate connection data.",
+        "invalidUsernameOrPasswordForDeployments": "Invalid username or password. Validate connection data for deploymet targets %s.",
+        "invalidUsernameOrPasswordForDeployment": "Invalid username or password. Validate connection data for deploymet target %s.",
         "invalidMerchantId": "Invalid merchant id.",
         "invalidEnvironment": "Invalid environment.",
         "emptyStoreId": "Empty store id.",
@@ -91,7 +93,7 @@
     "stepOneLabel": "Install ecommerce integration",
     "stepOneDescription": "Your integration is ready for connection.",
     "stepTwoLabel": "Connect integration",
-    "stepDeployments": "Select Deployments",
+    "stepDeployments": "Select Deployment Targets",
     "stepThreeLabel": "Configure selling countries",
     "stepFourLabel": "Configure widgets",
     "stepFiveLabel": "Start selling with SeQura"
