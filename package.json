@@ -11,6 +11,6 @@
   "devDependencies": {
     "@playwright/test": "^1.49.1",
     "@types/node": "^22.10.7",
-    "playwright-fixture-for-plugins": "github:sequra/playwright-fixture-for-plugins"
+    "playwright-fixture-for-plugins": "github:sequra/playwright-fixture-for-plugins#refactor/Update-E2E-tests-to-support-multiple-deployment-targets"
   }
 }
