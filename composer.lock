@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "d896bcd9151b224fd25063e98baed592",
+    "content-hash": "bbf08a9470fd3033cbd7bb8ffdce3321",
     "packages": [
         {
             "name": "sequra/integration-core",
@@ -12,7 +12,7 @@
             "source": {
                 "type": "git",
                 "url": "git@github.com:sequra/integration-core.git",
-                "reference": "26492a4cbcccdde5495db0453f648f8ec7b04ad6"
+                "reference": "1097a3bcc1024e5453f7bdd9c5b342b7e5419418"
             },
             "require": {
                 "ext-ctype": "*",
@@ -43,7 +43,7 @@
                 "proprietary"
             ],
             "description": "Core SeQura integration library",
-            "time": "2025-07-15T06:26:25+00:00"
+            "time": "2025-07-21T15:39:17+00:00"
         }
     ],
     "packages-dev": [
@@ -611,14 +611,14 @@
         }
     ],
     "aliases": [],
-    "minimum-stability": "stable",
+    "minimum-stability": "dev",
     "stability-flags": {
         "sequra/integration-core": 20
     },
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
-        "php": ">=7.4",
+        "php": ">=7.4 <8.4",
         "ext-json": "*"
     },
     "platform-dev": [],

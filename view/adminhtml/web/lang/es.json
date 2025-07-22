@@ -37,6 +37,8 @@
       },
       "connection": {
         "invalidUsernameOrPassword": "Nombre de usuario o contraseña no válidos. Valida los datos de conexión.",
+        "invalidUsernameOrPasswordForDeployments": "Nombre de usuario o contraseña no válidos. Valida los datos de conexión  para las instancias de despliegue %s.",
+        "invalidUsernameOrPasswordForDeployment": "Nombre de usuario o contraseña no válidos. Valida los datos de conexión para la instancia de despliegue  %s.",
         "invalidMerchantId": "ID de comerciante no válido.",
         "invalidEnvironment": "Entorno no válido.",
         "emptyStoreId": "ID de tienda vacío.",
@@ -89,7 +91,7 @@
     "orderStatusSettings": "Configuración de estado de pedido",
     "widgetSettings": "Configuración de widgets",
     "stepOneLabel": "Instalar integración de comercio electrónico",
-    "stepDeployments": "Selecciona despliegues",
+    "stepDeployments": "Selecciona las Instancias de Despliegue",
     "stepOneDescription": "Tu integración está lista para la conexión.",
     "stepTwoLabel": "Conectar integración",
     "stepThreeLabel": "Configurar países de venta",
