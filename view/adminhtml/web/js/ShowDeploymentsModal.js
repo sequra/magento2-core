@@ -43,7 +43,7 @@ window.SequraFE.showDeploymentsModal = function (
             return entry;
         };
 
-        const headerWrapper = generator.createElement('div', 'sq-page-header');
+        const fieldWrapper = generator.createElement('div', 'sq-field-wrapper');
         const menuWrapper = generator.createElement('div', 'sqp-menu-items-deployments');
 
         const deploymentItems = notConnectedDeployments.map(deployment => {
@@ -71,10 +71,10 @@ window.SequraFE.showDeploymentsModal = function (
         });
 
         menuWrapper.append(...deploymentItems);
-        headerWrapper.append(menuWrapper);
+        fieldWrapper.append(menuWrapper);
 
         const content = generator.createElement('div', 'sq-content-inner sqv--deployments', '', null, [
-            headerWrapper
+            fieldWrapper
         ]);
         let errorContainer = generator.createElement('div', 'sqp-flash-message-wrapper');
         content.append(errorContainer);

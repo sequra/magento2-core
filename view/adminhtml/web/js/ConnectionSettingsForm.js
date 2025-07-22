@@ -127,18 +127,18 @@ if (!window.SequraFE) {
             initForm();
 
             if (!notConnectedDeployments || notConnectedDeployments.length === 0) {
-                disableMenageButton(true);
+                hideMenageButton();
             }
 
             disableFooter(true);
             utilities.hideLoader();
         }
 
-        const disableMenageButton = (status) => {
+        const hideMenageButton = () => {
             const button = document.querySelector('.sq-field-wrapper.sqm--deployment button');
 
             if (button) {
-                button.disabled = status;
+                button.style.display = 'none';
             }
         }
 
@@ -203,8 +203,18 @@ if (!window.SequraFE) {
             }
 
             contentInner.append(headingWrapper);
+            contentInner.append(generator.createRadioGroupField({
+                name: 'environment-input',
+                value: changedSettings.environment,
+                label: 'connection.environment.label',
+                options: [
+                    {label: 'connection.environment.options.live', value: 'live'},
+                    {label: 'connection.environment.options.sandbox', value: 'sandbox'}
+                ],
+                onChange: (value) => handleChange('environment', value)
+            }));
 
-            const headerWrapper = generator.createElement('div', 'sq-page-header');
+            const fieldWrapper = generator.createElement('div', 'sq-field-wrapper');
 
             if (activeDeployments.length > 0) {
                 const menuWrapper = generator.createElement('div', 'sqp-menu-items-deployments');
@@ -229,36 +239,41 @@ if (!window.SequraFE) {
                         return item;
                     })
                 );
-                headerWrapper.append(menuWrapper);
+                fieldWrapper.append(menuWrapper);
             }
 
-            contentInner.append(headerWrapper);
-            contentInner.append(generator.createRadioGroupField({
-                name: 'environment-input',
-                value: changedSettings.environment,
-                label: 'connection.environment.label',
-                options: [
-                    {label: 'connection.environment.options.live', value: 'live'},
-                    {label: 'connection.environment.options.sandbox', value: 'sandbox'}
-                ],
-                onChange: (value) => handleChange('environment', value)
-            }));
-            contentInner.append(generator.createTextField({
+            const username = generator.createTextField({
                 name: 'username-input',
                 value: getSettingsForActiveDeployment(changedSettings).username,
                 className: 'sq-text-input',
                 label: 'connection.username.label',
                 description: 'connection.username.description',
                 onChange: (value) => handleChange('username', value)
-            }));
-            contentInner.append(generator.createPasswordField({
+            });
+            const password = generator.createPasswordField({
                 name: 'password-input',
                 value: getSettingsForActiveDeployment(changedSettings).password,
                 className: 'sq-password-input',
                 label: 'connection.password.label',
                 description: 'connection.password.description',
                 onChange: (value) => handleChange('password', value)
-            }));
+            });
+
+            if (configuration.appState === SequraFE.appStates.ONBOARDING) {
+                const connectionDataFrame = generator.createElement('div', 'sq-data-frame');
+
+                connectionDataFrame.append(fieldWrapper);
+                connectionDataFrame.append(username);
+                connectionDataFrame.append(password);
+
+                contentInner.append(connectionDataFrame);
+
+            } else {
+                contentInner.append(fieldWrapper);
+                contentInner.append(username);
+                contentInner.append(password);
+            }
+
 
             pageContent?.append(contentInner);
 
