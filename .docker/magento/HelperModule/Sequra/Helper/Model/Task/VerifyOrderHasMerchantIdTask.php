@@ -41,6 +41,10 @@ class VerifyOrderHasMerchantIdTask extends Task
         if (!isset($result[0]['data'])) {
             $this->httpErrorResponse('Order not found', 404);
         }
+        /**
+         * @var array $data
+         * @phpstan-var array<string, array<string, string>>
+         */
         $data = json_decode($result[0]['data'], true);
         if (!is_array($data) || !is_array($data['merchant']) || !isset($data['merchant']['id'])) {
             $this->httpErrorResponse('Merchant ID not found in order data', 404);
