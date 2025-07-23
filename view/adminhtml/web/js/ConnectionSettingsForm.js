@@ -476,13 +476,15 @@ if (!window.SequraFE) {
 
                 const errorKey = deployments.length > 1
                     ? 'general.errors.connection.invalidUsernameOrPasswordForDeployments'
-                    : 'general.errors.connection.invalidUsernameOrPasswordForDeploymetn';
+                    : 'general.errors.connection.invalidUsernameOrPasswordForDeployment';
 
-                SequraFE.responseService.errorHandler({errorCode: `${errorKey}|${deployment}`}).catch(() => {
-                });
+                SequraFE.responseService.errorHandler(
+                    {errorCode: `${errorKey}|${deployment}`}
+                ).catch(() => {});
             } else {
-                SequraFE.responseService.errorHandler({errorCode: 'general.errors.connection.invalidUsernameOrPassword'}).catch(() => {
-                });
+                SequraFE.responseService.errorHandler(
+                    {errorCode: 'general.errors.connection.invalidUsernameOrPassword'}
+                ).catch(() => {});
             }
 
             utilities.hideLoader();
