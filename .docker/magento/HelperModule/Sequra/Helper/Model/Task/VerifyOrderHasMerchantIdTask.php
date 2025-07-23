@@ -17,24 +17,6 @@ use Magento\Framework\Encryption\EncryptorInterface;
  */
 class VerifyOrderHasMerchantIdTask extends Task
 {
-
-    /**
-     * Check if dummy merchant configuration is in use
-     *
-     * @param bool $widgets
-     */
-    private function isDummyConfigInUse(bool $widgets): bool
-    {
-        $expected_rows = $widgets ? 2 : 1;
-        $table_name = DatabaseHandler::SEQURA_ENTITY_TABLE;
-        $query      = "SELECT * FROM $table_name 
-        WHERE (`type` = 'ConnectionData' 
-        AND `data` LIKE '%\"username\":\"dummy_automated_tests\"%') 
-        OR (`type` = 'WidgetSettings' AND `data` LIKE '%\"displayOnProductPage\":true%')";
-        $result     = $this->conn->getConnection()->fetchAll($query);
-        return is_array($result) && count($result) === $expected_rows;
-    }
-
     /**
      * Execute the task
      *
@@ -60,9 +42,12 @@ class VerifyOrderHasMerchantIdTask extends Task
             $this->httpErrorResponse('Order not found', 404);
         }
         $data = json_decode($result[0]['data'], true);
-        if (!isset($data['merchant']['id'])) {
+        if (!is_array($data) || !is_array($data['merchant']) || !isset($data['merchant']['id'])) {
             $this->httpErrorResponse('Merchant ID not found in order data', 404);
         }
+        /**
+         * @var string $currentMerchantId
+         */
         $currentMerchantId = $data['merchant']['id'];
         if ($currentMerchantId !== $merchantId) {
             $this->httpErrorResponse("Merchant ID '$currentMerchantId' does not match '$merchantId'", 400);
