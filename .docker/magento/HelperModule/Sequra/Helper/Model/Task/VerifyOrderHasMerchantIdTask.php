@@ -56,11 +56,11 @@ class VerifyOrderHasMerchantIdTask extends Task
         $table_name = DatabaseHandler::SEQURA_ORDER_TABLE;
         $query      = "SELECT `data` FROM $table_name WHERE `index_3` = '$orderId' LIMIT 1";
         $result     = $this->conn->getConnection()->fetchAll($query);
-        if(!isset($result[0]['data'])) {
+        if (!isset($result[0]['data'])) {
             $this->httpErrorResponse('Order not found', 404);
         }
         $data = json_decode($result[0]['data'], true);
-        if(!isset($data['merchant']['id'])) {
+        if (!isset($data['merchant']['id'])) {
             $this->httpErrorResponse('Merchant ID not found in order data', 404);
         }
         $currentMerchantId = $data['merchant']['id'];
