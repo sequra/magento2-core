@@ -166,7 +166,7 @@ if (!window.SequraFE) {
                             api, configuration, generator, components, validator, utilities,
                             notConnectedDeployments,
                             activeSettings
-                        }).then(({confirmed, updatedSettings, activatedDeployment}) => {
+                        }).then(({ confirmed, updatedSettings, activatedDeployment }) => {
                             if (confirmed && updatedSettings) {
                                 activeSettings = updatedSettings;
                                 changedSettings = utilities.cloneObject(updatedSettings);
@@ -208,8 +208,8 @@ if (!window.SequraFE) {
                 value: changedSettings.environment,
                 label: 'connection.environment.label',
                 options: [
-                    {label: 'connection.environment.options.live', value: 'live'},
-                    {label: 'connection.environment.options.sandbox', value: 'sandbox'}
+                    { label: 'connection.environment.options.live', value: 'live' },
+                    { label: 'connection.environment.options.sandbox', value: 'sandbox' }
                 ],
                 onChange: (value) => handleChange('environment', value)
             }));
@@ -466,25 +466,36 @@ if (!window.SequraFE) {
             return result.isValid || result.reason.includes('merchantId');
         }
 
+        const sanitizeDeploymentTargetsErrorReason = (reason) => {
+            const namesMap = {
+                'sequra': 'seQura',
+                'svea': 'SVEA'
+            }
+            const deployments = (reason.split('/')[1] || '').split(',').filter(Boolean).map(name => {
+                name = name.trim();
+                return namesMap[name] || name;
+            });
+            if (deployments.length > 1) {
+                return deployments.slice(0, -1).join(', ') + SequraFE.translationService.translate('general.and') + deployments.slice(-1);
+            }
+            return deployments[0];
+        }
+
         /**
          * Handle connection validation error.
          */
         const handleValidationError = (result = null) => {
-            if (result.reason.includes('deployment')) {
-                const deployment = result.reason.split('/')[1] || '';
-                const deployments = deployment.split(',').filter(Boolean);
-
-                const errorKey = deployments.length > 1
-                    ? 'general.errors.connection.invalidUsernameOrPasswordForDeployments'
-                    : 'general.errors.connection.invalidUsernameOrPasswordForDeployment';
+            if (result && typeof result.reason === 'string' && result.reason.includes('deployment')) {
+                const deployment = sanitizeDeploymentTargetsErrorReason(result.reason);
+                const errorKey = 'general.errors.connection.invalidUsernameOrPasswordForDeployment';
 
                 SequraFE.responseService.errorHandler(
-                    {errorCode: `${errorKey}|${deployment}`}
-                ).catch(() => {});
+                    { errorCode: `${errorKey}|${deployment}` }
+                ).catch(() => { });
             } else {
                 SequraFE.responseService.errorHandler(
-                    {errorCode: 'general.errors.connection.invalidUsernameOrPassword'}
-                ).catch(() => {});
+                    { errorCode: 'general.errors.connection.invalidUsernameOrPassword' }
+                ).catch(() => { });
             }
 
             utilities.hideLoader();

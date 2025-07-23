@@ -16,6 +16,7 @@
     "paymentMethods": "Payment methods",
     "changesSaved": "Changes saved successfully.",
     "noItemsAvailable": "No items available",
+    "and": " and ",
     "mode": {
       "test": "Sandbox mode",
       "live": "Live mode"
@@ -36,9 +37,8 @@
         "failed": "Failed to retrieve version."
       },
       "connection": {
-        "invalidUsernameOrPassword": "Invalid username or password. Validate connection data.",
-        "invalidUsernameOrPasswordForDeployments": "Invalid username or password. Validate connection data for deploymet targets %s.",
-        "invalidUsernameOrPasswordForDeployment": "Invalid username or password. Validate connection data for deploymet target %s.",
+        "invalidUsernameOrPassword": "Invalid username or password. Check your connection credentials.",
+        "invalidUsernameOrPasswordForDeployment": "Invalid username or password. Check your %s connection credentials.",
         "invalidMerchantId": "Invalid merchant id.",
         "invalidEnvironment": "Invalid environment.",
         "emptyStoreId": "Empty store id.",

@@ -36,9 +36,8 @@
         "failed": "No se pudo recuperar la versión."
       },
       "connection": {
-        "invalidUsernameOrPassword": "Nombre de usuario o contraseña no válidos. Valida los datos de conexión.",
-        "invalidUsernameOrPasswordForDeployments": "Nombre de usuario o contraseña no válidos. Valida los datos de conexión  para las instancias de despliegue %s.",
-        "invalidUsernameOrPasswordForDeployment": "Nombre de usuario o contraseña no válidos. Valida los datos de conexión para la instancia de despliegue  %s.",
+        "invalidUsernameOrPassword": "Nombre de usuario o contraseña no válidos. Verifica las credenciales.",
+        "invalidUsernameOrPasswordForDeployment": "Nombre de usuario o contraseña no válidos. Verifica las credenciales para %s.",
         "invalidMerchantId": "ID de comerciante no válido.",
         "invalidEnvironment": "Entorno no válido.",
         "emptyStoreId": "ID de tienda vacío.",
