@@ -31,6 +31,7 @@ test.describe('Product checkout', () => {
     await checkoutPage.openAndCloseEducationalPopup({ product: 'i1' });
     await checkoutPage.placeOrder({ ...shopper, product: 'i1' });
     await checkoutPage.waitForOrderSuccess();
+    await checkoutPage.expectOrderHasTheCorrectMerchantId('ES', helper, dataProvider);
   });
 
   test('Complete a successful payment with SVEA', async ({ helper, dataProvider, productPage, checkoutPage }) => {
@@ -46,6 +47,7 @@ test.describe('Product checkout', () => {
     await checkoutPage.openAndCloseEducationalPopup({ product: 'pp3' });
     await checkoutPage.placeOrder({ ...shopper, product: 'pp3' });
     await checkoutPage.waitForOrderSuccess();
+    await checkoutPage.expectOrderHasTheCorrectMerchantId('FR', helper, dataProvider);
   });
 
   test('Make a 🍊 payment with "Review test approve" names', async ({ helper, dataProvider, backOffice, productPage, checkoutPage }) => {
@@ -60,6 +62,7 @@ test.describe('Product checkout', () => {
     await checkoutPage.fillForm(shopper);
     await checkoutPage.placeOrder({ ...shopper, product: 'i1' });
     await checkoutPage.waitForOrderSuccess();
+    await checkoutPage.expectOrderHasTheCorrectMerchantId('ES', helper, dataProvider);
     await checkoutPage.expectOrderChangeTo(backOffice, { fromStatus: 'Pending Payment', toStatus: 'Processing' });
   });
 
@@ -75,6 +78,7 @@ test.describe('Product checkout', () => {
     await checkoutPage.fillForm(shopper);
     await checkoutPage.placeOrder({ ...shopper, product: 'i1' });
     await checkoutPage.waitForOrderSuccess();
+    await checkoutPage.expectOrderHasTheCorrectMerchantId('ES', helper, dataProvider);
     await checkoutPage.expectOrderChangeTo(backOffice, { fromStatus: 'Pending Payment', toStatus: 'Canceled' });
   });
 });
