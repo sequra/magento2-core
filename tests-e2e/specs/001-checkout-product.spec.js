@@ -18,7 +18,7 @@ test.describe('Product checkout', () => {
     }
   });
 
-  test('Make a successful payment using any shopper name', async ({ helper, dataProvider, productPage, checkoutPage }) => {
+  test('Complete a successful payment with SeQura', async ({ helper, dataProvider, productPage, checkoutPage }) => {
     // Setup
     const { dummy_config } = helper.webhooks;
     await helper.executeWebhook({ webhook: dummy_config }); // Setup for physical products.
@@ -30,6 +30,21 @@ test.describe('Product checkout', () => {
     await checkoutPage.fillForm(shopper);
     await checkoutPage.openAndCloseEducationalPopup({ product: 'i1' });
     await checkoutPage.placeOrder({ ...shopper, product: 'i1' });
+    await checkoutPage.waitForOrderSuccess();
+  });
+
+  test('Complete a successful payment with SVEA', async ({ helper, dataProvider, productPage, checkoutPage }) => {
+    // Setup
+    const { dummy_config } = helper.webhooks;
+    await helper.executeWebhook({ webhook: dummy_config }); // Setup for physical products.
+    const shopper = dataProvider.shopper('france');
+
+    // Execution
+    await productPage.addToCart({ slug: 'push-it-messenger-bag', quantity: 1 });
+    await checkoutPage.goto();
+    await checkoutPage.fillForm(shopper);
+    await checkoutPage.openAndCloseEducationalPopup({ product: 'pp3' });
+    await checkoutPage.placeOrder({ ...shopper, product: 'pp3' });
     await checkoutPage.waitForOrderSuccess();
   });
 
