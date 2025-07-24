@@ -82,10 +82,10 @@ if (!window.SequraFE) {
 
         const updateFormFields = () => {
             const usernameInput = document.querySelector('[name="username-input"]');
-            if (usernameInput) usernameInput.value = getSettingsForActiveDeployment(changedSettings).username;
+            if (usernameInput) usernameInput.value = getSettingsForActiveDeployment(changedSettings).username ?? '';
 
             const passwordInput = document.querySelector('[name="password-input"]');
-            if (passwordInput) passwordInput.value = getSettingsForActiveDeployment(changedSettings).password;
+            if (passwordInput) passwordInput.value = getSettingsForActiveDeployment(changedSettings).password ?? '';
         };
 
         const updateDeploymentMenuActiveState = () => {
@@ -244,7 +244,7 @@ if (!window.SequraFE) {
 
             const username = generator.createTextField({
                 name: 'username-input',
-                value: getSettingsForActiveDeployment(changedSettings).username,
+                value: getSettingsForActiveDeployment(changedSettings).username ?? '',
                 className: 'sq-text-input',
                 label: 'connection.username.label',
                 description: 'connection.username.description',
@@ -252,7 +252,7 @@ if (!window.SequraFE) {
             });
             const password = generator.createPasswordField({
                 name: 'password-input',
-                value: getSettingsForActiveDeployment(changedSettings).password,
+                value: getSettingsForActiveDeployment(changedSettings).password ?? '',
                 className: 'sq-password-input',
                 label: 'connection.password.label',
                 description: 'connection.password.description',
