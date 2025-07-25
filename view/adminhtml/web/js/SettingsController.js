@@ -121,8 +121,9 @@ if (!window.SequraFE) {
                 cd => cd.deployment
             ).filter(Boolean) || [];
 
-            notConnectedDeployments = notConnectedDeployments
-                ?.filter(deployment => !activeDeploymentsIds.includes(deployment.id)) || [];
+            notConnectedDeployments = Array.isArray(notConnectedDeployments)
+                ? notConnectedDeployments.filter(deployment => !activeDeploymentsIds.includes(deployment.id))
+                : [];
 
             SequraFE.state.setData('notConnectedDeployments', notConnectedDeployments);
 
