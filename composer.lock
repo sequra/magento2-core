@@ -12,7 +12,7 @@
             "source": {
                 "type": "git",
                 "url": "git@github.com:sequra/integration-core.git",
-                "reference": "f53c61c6974ba2612dc1507798eaa1c7e4b53b9b"
+                "reference": "611fff5006df9e1911be17154232c9d9419e0f03"
             },
             "require": {
                 "ext-ctype": "*",
@@ -43,7 +43,7 @@
                 "proprietary"
             ],
             "description": "Core SeQura integration library",
-            "time": "2025-07-23T15:18:19+00:00"
+            "time": "2025-07-25T11:26:11+00:00"
         }
     ],
     "packages-dev": [
