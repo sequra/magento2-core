@@ -24,7 +24,7 @@ define(
     ) {
         'use strict';
         return {
-            paymentMethods: ko.observable({}),
+            paymentMethods: ko.observable([]),
 
             /**
              * Retrieve the list of available payment methods from SeQura
