@@ -27,7 +27,6 @@
             <argument name="requestBuilder" xsi:type="object">Sequra\Core\Gateway\Request\OrderUpdateBuilder</argument>
             <argument name="transferFactory" xsi:type="object">Sequra\Core\Gateway\Http\TransferFactory</argument>
             <argument name="client" xsi:type="object">Sequra\Core\Gateway\Http\Client\OrderUpdateTransaction</argument>
-            <argument name="validator" xsi:type="object">Sequra\Core\Gateway\Validator\GeneralResponseValidator</argument>
             <argument name="handler" xsi:type="object">Sequra\Core\Gateway\Response\RefundHandler</argument>
         </arguments>
     </virtualType>

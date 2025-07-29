@@ -16,6 +16,7 @@
     "paymentMethods": "Payment methods",
     "changesSaved": "Changes saved successfully.",
     "noItemsAvailable": "No items available",
+    "and": " and ",
     "mode": {
       "test": "Sandbox mode",
       "live": "Live mode"
@@ -36,7 +37,8 @@
         "failed": "Failed to retrieve version."
       },
       "connection": {
-        "invalidUsernameOrPassword": "Invalid username or password. Validate connection data.",
+        "invalidUsernameOrPassword": "Invalid username or password. Check your connection credentials.",
+        "invalidUsernameOrPasswordForDeployment": "Invalid username or password. Check your %s connection credentials.",
         "invalidMerchantId": "Invalid merchant id.",
         "invalidEnvironment": "Invalid environment.",
         "emptyStoreId": "Empty store id.",
@@ -91,6 +93,7 @@
     "stepOneLabel": "Install ecommerce integration",
     "stepOneDescription": "Your integration is ready for connection.",
     "stepTwoLabel": "Connect integration",
+    "stepDeployments": "Select Deployment Targets",
     "stepThreeLabel": "Configure selling countries",
     "stepFourLabel": "Configure widgets",
     "stepFiveLabel": "Start selling with SeQura"
@@ -143,6 +146,9 @@
         "sandbox": "Sandbox"
       }
     },
+    "deployments": {
+      "manage": "Manage Deployment Targets"
+    },
     "username": {
       "label": "Username",
       "description": "You can find your username in the email sent by SeQura."
@@ -164,6 +170,14 @@
     "disconnect": {
       "title": "Disconnect",
       "message": "Are you sure you want to disconnect?"
+    }
+  },
+  "deployments": {
+    "title": "Select Deployment Targets",
+    "description": "Please select Deployment Targets for which you want to offer SeQura payment methods",
+    "selector": {
+      "label": "In which Deployment Targets do you want to offer SeQura payment methods?",
+      "description": "Each Deployment Target serves a different group of countries."
     }
   },
   "countries": {

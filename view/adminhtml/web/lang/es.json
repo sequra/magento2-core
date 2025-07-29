@@ -36,7 +36,8 @@
         "failed": "No se pudo recuperar la versión."
       },
       "connection": {
-        "invalidUsernameOrPassword": "Nombre de usuario o contraseña no válidos. Valida los datos de conexión.",
+        "invalidUsernameOrPassword": "Nombre de usuario o contraseña no válidos. Verifica las credenciales.",
+        "invalidUsernameOrPasswordForDeployment": "Nombre de usuario o contraseña no válidos. Verifica las credenciales para %s.",
         "invalidMerchantId": "ID de comerciante no válido.",
         "invalidEnvironment": "Entorno no válido.",
         "emptyStoreId": "ID de tienda vacío.",
@@ -89,6 +90,7 @@
     "orderStatusSettings": "Configuración de estado de pedido",
     "widgetSettings": "Configuración de widgets",
     "stepOneLabel": "Instalar integración de comercio electrónico",
+    "stepDeployments": "Selecciona las Instancias de Despliegue",
     "stepOneDescription": "Tu integración está lista para la conexión.",
     "stepTwoLabel": "Conectar integración",
     "stepThreeLabel": "Configurar países de venta",
@@ -143,6 +145,9 @@
         "sandbox": "Sandbox"
       }
     },
+    "deployments": {
+      "manage": "Gestionar Instancias de Despliegue"
+    },
     "username": {
       "label": "Nombre de usuario",
       "description": "Puedes encontrar tu nombre de usuario en el correo electrónico enviado por SeQura."
@@ -164,6 +169,14 @@
     "disconnect": {
       "title": "Desconectar",
       "message": "¿Estás seguro de que deseas desconectarte?"
+    }
+  },
+  "deployments": {
+    "title": "Selecciona las Instancias de Despliegue",
+    "description": "Por favor, selecciona las Instancias de Despliegue para los que deseas ofrecer los métodos de pago de SeQura",
+    "selector": {
+      "label": "¿En cuáles Instancias de Despliegue deseas ofrecer los métodos de pago de SeQura?",
+      "description": "Cada Instancia de Despliegue sirve a un grupo diferente de países."
     }
   },
   "countries": {

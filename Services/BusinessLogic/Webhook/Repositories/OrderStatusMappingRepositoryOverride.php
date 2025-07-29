@@ -9,7 +9,6 @@ use SeQura\Core\BusinessLogic\Domain\OrderStatusSettings\RepositoryContracts\Ord
 
 class OrderStatusMappingRepositoryOverride implements OrderStatusSettingsRepositoryInterface
 {
-
     /**
      * Get the order status mapping
      *
@@ -34,6 +33,15 @@ class OrderStatusMappingRepositoryOverride implements OrderStatusSettingsReposit
     {
         // Intentionally left blank.
         // Magento has strict order status transition therefore merchants do not set order map.
+    }
+    /**
+     * Deletes order status mapping
+     *
+     * @return void
+     */
+    public function deleteOrderStatusMapping(): void
+    {
+        // nothing to delete
     }
     // phpcs:enable Magento2.CodeAnalysis.EmptyBlock.DetectedFunction
 }
