@@ -61,6 +61,11 @@ class Configure extends Command
      * Values of input arguments or options
      */
     public const INPUT_KEY_STOREID = 'store_id';
+
+    /**
+     * Values of input arguments or options
+     */
+    public const INPUT_DEPLOYMENT_ID =  'deployment_id';
     
     /**
      * @var ConnectionService
@@ -131,7 +136,14 @@ class Configure extends Command
                 null,
                 InputOption::VALUE_OPTIONAL,
                 'Coma separated store ids'
+            )
+            ->addOption(
+                self::INPUT_DEPLOYMENT_ID,
+                null,
+                InputOption::VALUE_OPTIONAL,
+                'Deployment id'
             );
+
         parent::configure();
     }
 
@@ -212,7 +224,13 @@ class Configure extends Command
          */
         $merchantId = $input->getOption(self::INPUT_KEY_MERCHANT_REF);
 
-        $this->saveConnectionData($endpoint, $username, $password);
+        /**
+         * @var string $deploymentId
+         */
+        $deploymentId = $input->getOption(self::INPUT_DEPLOYMENT_ID);
+
+        $this->saveConnectionData($endpoint, $username, $password, $deploymentId);
+
         $this->saveCountriesConfig($this->getSellingCountriesService()->getSellingCountries(), $merchantId);
         $generalSettings = new GeneralSettings(false, true, [], [], []);
         $this->getGeneralSettingsService()->saveGeneralSettings($generalSettings);
@@ -224,18 +242,21 @@ class Configure extends Command
      * @param string $endpoint
      * @param string $username
      * @param string $password
+     * @param string $deploymentId
      *
      * @throws InvalidEnvironmentException
      *
      * @return void
      */
-    private function saveConnectionData(string $endpoint, string $username, string $password)
+    private function saveConnectionData(string $endpoint, string $username, string $password, string $deploymentId)
     {
         $connectionData = new ConnectionData(
             $endpoint === 'https://sandbox.sequrapi.com/orders' ? BaseProxy::TEST_MODE : BaseProxy::LIVE_MODE,
             '',
+            $deploymentId,
             new AuthorizationCredentials($username, $password)
         );
+
         $this->getConnectionService()->saveConnectionData($connectionData);
     }
 

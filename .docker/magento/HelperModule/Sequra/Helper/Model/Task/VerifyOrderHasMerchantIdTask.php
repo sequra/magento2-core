@@ -1,0 +1,61 @@
+<?php
+
+/**
+ * Task class
+ *
+ * @package SeQura/Helper
+ */
+
+namespace Sequra\Helper\Model\Task;
+
+use Sequra\Core\Setup\DatabaseHandler;
+use Magento\Framework\App\ObjectManager;
+use Magento\Framework\Encryption\EncryptorInterface;
+
+/**
+ * Task class
+ */
+class VerifyOrderHasMerchantIdTask extends Task
+{
+    /**
+     * Execute the task
+     *
+     * @param string[] $args Arguments for the task
+     *
+     * @return array<string, mixed>
+     *
+     * @throws \Exception If the task fails
+     */
+    public function execute(array $args = [])
+    {
+        if (! isset($args['order_id']) || ! isset($args['merchant_id'])) {
+            $this->httpErrorResponse('Missing required arguments: order_id OR merchant_id', 400);
+        }
+
+        $orderId = $args['order_id'];
+        $merchantId = $args['merchant_id'];
+
+        $table_name = DatabaseHandler::SEQURA_ORDER_TABLE;
+        $query      = "SELECT `data` FROM $table_name WHERE `index_3` = '$orderId' LIMIT 1";
+        $result     = $this->conn->getConnection()->fetchAll($query);
+        if (!isset($result[0]['data'])) {
+            $this->httpErrorResponse('Order not found', 404);
+        }
+        /**
+         * @var array $data
+         * @phpstan-var array<string, array<string, string>>
+         */
+        $data = json_decode($result[0]['data'], true);
+        if (!is_array($data) || !is_array($data['merchant']) || !isset($data['merchant']['id'])) {
+            $this->httpErrorResponse('Merchant ID not found in order data', 404);
+        }
+        /**
+         * @var string $currentMerchantId
+         */
+        $currentMerchantId = $data['merchant']['id'];
+        if ($currentMerchantId !== $merchantId) {
+            $this->httpErrorResponse("Merchant ID '$currentMerchantId' does not match '$merchantId'", 400);
+        }
+        return $this->httpSuccessResponse();
+    }
+}

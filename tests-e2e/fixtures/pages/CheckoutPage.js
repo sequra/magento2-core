@@ -149,7 +149,7 @@ export default class CheckoutPage extends BaseCheckoutPage {
     * @param {Object} options 
     * @param {string} options.product seQura product (i1, pp3, etc)
     * @param {string} options.dateOfBirth Date of birth
-    * @param {string} options.dni National identification number
+    * @param {string} options.nin National identification number
     * @param {string[]} options.otp Digits of the OTP
     */
     async placeOrder(options) {
