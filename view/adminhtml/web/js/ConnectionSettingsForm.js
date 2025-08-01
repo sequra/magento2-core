@@ -157,7 +157,7 @@ if (!window.SequraFE) {
 
             if (configuration.appState === SequraFE.appStates.SETTINGS) {
                 manageButton = generator.createButtonField({
-                    className: 'sqm--deployment',
+                    className: 'sq-button sqm--deployment',
                     buttonType: 'primary',
                     buttonSize: 'medium',
                     buttonLabel: 'connection.deployments.manage',
@@ -217,7 +217,7 @@ if (!window.SequraFE) {
             const fieldWrapper = generator.createElement('div', 'sq-field-wrapper');
 
             if (activeDeployments.length > 0) {
-                const menuWrapper = generator.createElement('div', 'sqp-menu-items-deployments');
+                const menuWrapper = generator.createElement('div', 'items sqp-menu-items-deployments');
                 menuWrapper.append(
                     ...activeDeployments.map(deployment => {
                         const item = generator.createElement(
