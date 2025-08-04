@@ -157,7 +157,7 @@ if (!window.SequraFE) {
 
             if (configuration.appState === SequraFE.appStates.SETTINGS) {
                 manageButton = generator.createButtonField({
-                    className: 'sq-button sqm--deployment',
+                    className: 'sqm-button sqm--deployment',
                     buttonType: 'primary',
                     buttonSize: 'medium',
                     buttonLabel: 'connection.deployments.manage',
