@@ -86,14 +86,14 @@ class BaseRepository implements RepositoryInterface
     /**
      * Executes select query.
      *
-     * @param QueryFilter $filter Filter for query.
+     * @param QueryFilter|null $filter Filter for query.
      *
      * @return Entity[] A list of found entities ot empty array.
      *
      * @throws QueryFilterInvalidParamException
      * @throws \Magento\Framework\Exception\LocalizedException
      */
-    public function select(QueryFilter $filter = null)
+    public function select(?QueryFilter $filter = null)
     {
         /** @var Entity $entity */
         $entity = new $this->entityClass;
@@ -105,14 +105,14 @@ class BaseRepository implements RepositoryInterface
     /**
      * Executes select query and returns first result.
      *
-     * @param QueryFilter $filter Filter for query.
+     * @param QueryFilter|null $filter Filter for query.
      *
      * @return Entity|null First found entity or NULL.
      *
      * @throws QueryFilterInvalidParamException
      * @throws \Magento\Framework\Exception\LocalizedException
      */
-    public function selectOne(QueryFilter $filter = null)
+    public function selectOne(?QueryFilter $filter = null)
     {
         if ($filter === null) {
             $filter = new QueryFilter();
@@ -173,14 +173,14 @@ class BaseRepository implements RepositoryInterface
     /**
      * Counts records that match filter criteria.
      *
-     * @param QueryFilter $filter Filter for query.
+     * @param QueryFilter|null $filter Filter for query.
      *
      * @return int Number of records that match filter criteria.
      *
      * @throws QueryFilterInvalidParamException
      * @throws \Magento\Framework\Exception\LocalizedException
      */
-    public function count(QueryFilter $filter = null)
+    public function count(?QueryFilter $filter = null)
     {
         return count($this->select($filter));
     }

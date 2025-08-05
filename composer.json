@@ -19,8 +19,8 @@
     "minimum-stability": "dev",
     "prefer-stable": true,
     "require": {
-        "php": ">=7.4 <8.4",
-        "sequra/integration-core": "v2.2.0",
+        "php": ">=7.4",
+        "sequra/integration-core": "dev-feature/support-php8.4",
         "ext-json": "*"
     },
     "autoload": {
@@ -60,7 +60,7 @@
         ]
     },
     "require-dev": {
-        "magento/magento-coding-standard": "^33.0"
+        "magento/magento-coding-standard": "^38.0"
     },
     "config": {
         "allow-plugins": {
