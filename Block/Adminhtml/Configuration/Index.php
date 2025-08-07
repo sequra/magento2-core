@@ -54,7 +54,7 @@ class Index extends Template
         string $controllerName,
         string $storeId,
         string $action,
-        string $identifier = null
+        ?string $identifier = null
     ): string {
         $routeParams = [
             'storeId' => $storeId,

@@ -33,6 +33,24 @@ jobs:
           chmod +x ./bin/phpcs-bin/install
           ./bin/phpcs-bin/install
 
+      - name: PHP 7.4 Syntax check
+        run: docker run --rm -v "$(pwd)":/app -w /app php:7.4-cli-alpine sh -c "! (find . -type f -name \"*.php\" ! -path \"./Tests/*\" ! -path \"./vendor/*\" ! -path \"./tests-e2e/*\" ! -path \"./node_modules/*\" ! -path \"./bin/*\" -exec php -l -n {} \; | grep -v \"No syntax errors detected\")"
+
+      - name: PHP 8.0 Syntax check
+        run: docker run --rm -v "$(pwd)":/app -w /app php:8.0-cli-alpine sh -c "! (find . -type f -name \"*.php\" ! -path \"./Tests/*\" ! -path \"./vendor/*\" ! -path \"./tests-e2e/*\" ! -path \"./node_modules/*\" ! -path \"./bin/*\" -exec php -l -n {} \; | grep -v \"No syntax errors detected\")"
+
+      - name: PHP 8.1 Syntax check
+        run: docker run --rm -v "$(pwd)":/app -w /app php:8.1-cli-alpine sh -c "! (find . -type f -name \"*.php\" ! -path \"./Tests/*\" ! -path \"./vendor/*\" ! -path \"./tests-e2e/*\" ! -path \"./node_modules/*\" ! -path \"./bin/*\" -exec php -l -n {} \; | grep -v \"No syntax errors detected\")"
+
+      - name: PHP 8.2 Syntax check
+        run: docker run --rm -v "$(pwd)":/app -w /app php:8.2-cli-alpine sh -c "! (find . -type f -name \"*.php\" ! -path \"./Tests/*\" ! -path \"./vendor/*\" ! -path \"./tests-e2e/*\" ! -path \"./node_modules/*\" ! -path \"./bin/*\" -exec php -l -n {} \; | grep -v \"No syntax errors detected\")"
+
+      - name: PHP 8.3 Syntax check
+        run: docker run --rm -v "$(pwd)":/app -w /app php:8.3-cli-alpine sh -c "! (find . -type f -name \"*.php\" ! -path \"./Tests/*\" ! -path \"./vendor/*\" ! -path \"./tests-e2e/*\" ! -path \"./node_modules/*\" ! -path \"./bin/*\" -exec php -l -n {} \; | grep -v \"No syntax errors detected\")"
+
+      - name: PHP 8.4 Syntax check
+        run: docker run --rm -v "$(pwd)":/app -w /app php:8.4-cli-alpine sh -c "! (find . -type f -name \"*.php\" ! -path \"./Tests/*\" ! -path \"./vendor/*\" ! -path \"./tests-e2e/*\" ! -path \"./node_modules/*\" ! -path \"./bin/*\" -exec php -l -n {} \; | grep -v \"No syntax errors detected\")"
+
       - name: PHPCS
         run: |
           chmod +x ./bin/phpcs

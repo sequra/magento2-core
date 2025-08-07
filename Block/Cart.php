@@ -35,7 +35,7 @@ class Cart extends Template
         ResolverInterface $localeResolver,
         Context $context,
         Session $checkoutSession,
-        Request $request,
+        Request $request
     ) {
         parent::__construct($context);
         $this->scopeResolver = $scopeResolver;
