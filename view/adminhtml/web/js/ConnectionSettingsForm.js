@@ -259,22 +259,12 @@ if (!window.SequraFE) {
                 onChange: (value) => handleChange('password', value)
             });
 
-            if (configuration.appState === SequraFE.appStates.ONBOARDING) {
-                const connectionDataFrame = generator.createElement('div', 'sq-data-frame');
+            const connectionDataFrame = generator.createElement('div', 'sq-data-frame');
+            connectionDataFrame.append(fieldWrapper);
+            connectionDataFrame.append(username);
+            connectionDataFrame.append(password);
 
-                connectionDataFrame.append(fieldWrapper);
-                connectionDataFrame.append(username);
-                connectionDataFrame.append(password);
-
-                contentInner.append(connectionDataFrame);
-
-            } else {
-                contentInner.append(fieldWrapper);
-                contentInner.append(username);
-                contentInner.append(password);
-            }
-
-
+            contentInner.append(connectionDataFrame);
             pageContent?.append(contentInner);
 
             document.querySelector('.sqp-description')?.append(
@@ -326,7 +316,7 @@ if (!window.SequraFE) {
 
             pageInnerContent?.append(
                 generator.createButtonField({
-                    className: 'sqm--block',
+                    className: 'sqm--block sqm--bellow-frame',
                     buttonType: 'danger',
                     buttonSize: 'medium',
                     buttonLabel: 'general.disconnect',

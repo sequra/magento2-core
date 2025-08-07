@@ -579,6 +579,7 @@ table tr th {
 
 .sqp-page-heading {
   margin-bottom: 21px;
+  width: 60%;
 }
 .sqp-page-heading .sqp-page-title {
   font-weight: 600;
@@ -1282,6 +1283,9 @@ table tr th {
 }
 .sq-field-wrapper.sqm--block {
   display: block;
+}
+.sq-field-wrapper.sqm--block.sqm--bellow-frame {
+  margin-top: 30px;
 }
 .sq-field-wrapper .items {
   display: flex;

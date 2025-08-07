@@ -58,6 +58,33 @@ If you are not a seQura merchant yet, you can sign up [here](https://sqra.es/sig
 
 ## For developers
 
+### Importing CORE UI resources
+
+This section provides steps for importing CORE UI resources and keeping them up to date.
+
+#### 1. Install/update dependencies
+
+Make sure to install required Node.js dependencies:
+
+```bash
+npm install
+```
+
+If you have already installed the Node.js dependencies,
+ensure that you are using the latest version of the ```sequra-core-admin-fe``` package by running:
+```bash
+npm update
+```
+#### 2. Copy CORE UI resources to the appropriate location in the project
+
+Once the dependencies are installed, import the latest CORE UI resources by running:
+
+```bash
+npm run copy-resources
+```
+
+This command will copy the latest resources from the ```sequra-core-admin-fe``` package into the local project structure.
+
 ### Starting the environment
 
 The repository includes a docker-compose file to easily test the module. You can start the environment with the following command:
