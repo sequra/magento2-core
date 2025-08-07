@@ -118,7 +118,7 @@
   },
   "payments": {
     "title": "Payment methods",
-    "description": "Payment methods description",
+    "description": "See which seQura payment options are available for each country.",
     "countries": {
       "label": "Countries",
       "description": "Select customer country"
@@ -135,8 +135,8 @@
       "settings": "Connection settings"
     },
     "description": {
-      "onboarding": "Make sure you're logged in the merchant portal because you need to copy several settings from there to fill in the following information. If you dont have an account, contact us ",
-      "settings": "Settings description",
+      "onboarding": "Make sure you're logged in the merchant portal because you need to copy several settings from there to fill in the following information. If you don't have an account, contact us ",
+      "settings": "Set up your seQura account and choose the environment to start processing payments. If you don't have an account, contact us ",
       "endLink": "here"
     },
     "environment": {
@@ -302,7 +302,7 @@
   },
   "orderStatusSettings": {
     "title": "Order status settings",
-    "description": "Order status settings description",
+    "description": "Order status Set up your seQura account and choose the environment to start processing payments. ",
     "paid": {
       "label": "Paid",
       "description": "When a payment has status Paid."
@@ -322,7 +322,7 @@
   },
   "generalSettings": {
     "title": "General settings",
-    "description": "General settings description",
+    "description": "Control the main settings for how seQura works in your store",
     "showCheckoutAsHostedPage": {
       "label": "Show SeQura checkout as hosted page",
       "description": "Specify whether SeQura checkout should be displayed as hosted page or popup."
