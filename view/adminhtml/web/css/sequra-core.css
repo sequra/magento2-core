@@ -579,7 +579,6 @@ table tr th {
 
 .sqp-page-heading {
   margin-bottom: 21px;
-  width: 60%;
 }
 .sqp-page-heading .sqp-page-title {
   font-weight: 600;
@@ -1340,6 +1339,13 @@ table tr th {
 .sq-heading-wrapper .sqm-button {
   margin-left: auto;
   width: auto;
+}
+.sq-heading-wrapper .sqm-button.sqm--deployment {
+  width: 100%;
+}
+.sq-heading-wrapper .sqm-button.sqm--deployment .sq-button {
+  display: flex;
+  margin-left: auto;
 }
 
 .sq-table {

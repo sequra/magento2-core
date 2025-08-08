@@ -136,9 +136,11 @@ if (!window.SequraFE) {
 
         const hideMenageButton = () => {
             const button = document.querySelector('.sq-field-wrapper.sqm--deployment button');
+            const buttonWrapper = document.querySelector('.sq-field-wrapper.sqm--deployment');
 
             if (button) {
                 button.style.display = 'none';
+                buttonWrapper.style.width= 'auto';
             }
         }
 
