@@ -4,6 +4,8 @@
 2. [Installation guide](https://sequra.atlassian.net/wiki/spaces/DOC/pages/1377304583/MAGENTO+2)
 3. [Sign-up](#sign-up)
 4. [For developers](#for-developers)
+   - [Importing CORE UI resources](#importing-core-ui-resources)
+   - [Starting the environment](#starting-the-environment)
 
 ## About seQura
 ### Description
