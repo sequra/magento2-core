@@ -136,9 +136,11 @@ if (!window.SequraFE) {
 
         const hideMenageButton = () => {
             const button = document.querySelector('.sq-field-wrapper.sqm--deployment button');
+            const buttonWrapper = document.querySelector('.sq-field-wrapper.sqm--deployment');
 
             if (button) {
                 button.style.display = 'none';
+                buttonWrapper.style.width= 'auto';
             }
         }
 
@@ -157,7 +159,7 @@ if (!window.SequraFE) {
 
             if (configuration.appState === SequraFE.appStates.SETTINGS) {
                 manageButton = generator.createButtonField({
-                    className: 'sqm--deployment',
+                    className: 'sqm-button sqm--deployment',
                     buttonType: 'primary',
                     buttonSize: 'medium',
                     buttonLabel: 'connection.deployments.manage',
@@ -217,7 +219,7 @@ if (!window.SequraFE) {
             const fieldWrapper = generator.createElement('div', 'sq-field-wrapper');
 
             if (activeDeployments.length > 0) {
-                const menuWrapper = generator.createElement('div', 'sqp-menu-items-deployments');
+                const menuWrapper = generator.createElement('div', 'items sqp-menu-items-deployments');
                 menuWrapper.append(
                     ...activeDeployments.map(deployment => {
                         const item = generator.createElement(
@@ -259,22 +261,12 @@ if (!window.SequraFE) {
                 onChange: (value) => handleChange('password', value)
             });
 
-            if (configuration.appState === SequraFE.appStates.ONBOARDING) {
-                const connectionDataFrame = generator.createElement('div', 'sq-data-frame');
+            const connectionDataFrame = generator.createElement('div', 'sq-data-frame');
+            connectionDataFrame.append(fieldWrapper);
+            connectionDataFrame.append(username);
+            connectionDataFrame.append(password);
 
-                connectionDataFrame.append(fieldWrapper);
-                connectionDataFrame.append(username);
-                connectionDataFrame.append(password);
-
-                contentInner.append(connectionDataFrame);
-
-            } else {
-                contentInner.append(fieldWrapper);
-                contentInner.append(username);
-                contentInner.append(password);
-            }
-
-
+            contentInner.append(connectionDataFrame);
             pageContent?.append(contentInner);
 
             document.querySelector('.sqp-description')?.append(
@@ -326,7 +318,7 @@ if (!window.SequraFE) {
 
             pageInnerContent?.append(
                 generator.createButtonField({
-                    className: 'sqm--block',
+                    className: 'sqm--block sqm--bellow-frame',
                     buttonType: 'danger',
                     buttonSize: 'medium',
                     buttonLabel: 'general.disconnect',

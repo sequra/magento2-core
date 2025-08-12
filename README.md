@@ -4,6 +4,8 @@
 2. [Installation guide](https://sequra.atlassian.net/wiki/spaces/DOC/pages/1377304583/MAGENTO+2)
 3. [Sign-up](#sign-up)
 4. [For developers](#for-developers)
+   - [Importing CORE UI resources](#importing-core-ui-resources)
+   - [Starting the environment](#starting-the-environment)
 
 ## About seQura
 ### Description
@@ -58,12 +60,18 @@ If you are not a seQura merchant yet, you can sign up [here](https://sqra.es/sig
 
 ## For developers
 
+### Importing CORE UI resources
+
+The seQura Magento 2 module uses the CORE UI resources from the `sequra-core-admin-fe` package. To update the resources, you need can use the provided utility script `bin/update-integration-core-ui`.
+
+When the setup script runs, it will automatically call this utility to ensure that the latest CORE UI resources are copied into the project if the `--install` argument is provided. However, you can also run this utility manually to update the resources at any time.
+
 ### Starting the environment
 
 The repository includes a docker-compose file to easily test the module. You can start the environment with the following command:
 
 ```bash
-./setup.sh
+./setup.sh --install
 ```
 This will start a Magento 2 instance with the seQura module installed. You can access the admin panel at `http://localhost.sequrapi.com:8018/admin` with the credentials `admin`/`Admin123`.
 
@@ -77,6 +85,7 @@ Additionally, the setup script supports the following arguments:
 
 | Argument | Description |
 | -------- | ------------------------------------------------------------------ |
+| `--install` | Install and copy the required assets to the module before starting the containers |
 | `--ngrok` | Starts an ngrok container to expose the site to internet using HTTPS. An ngrok Auth Token must be provided either as an argument or as a variable `NGROK_AUTHTOKEN` in the `.env` file for it to work |
 | `--ngrok-token=YOUR_NGROK_TOKEN` | Define the ngrok Auth Token |
 | `--open-browser` | Open the browser and navigate to the Magento root URL once the installation is complete |
@@ -105,7 +114,13 @@ This repo contains a group of utility scripts under `bin/` directory. The goal i
 | `bin/magento <arguments>` | This is a wrapper to run Magento CLI commands. |
 | `bin/n98-magerun2 <arguments>` | This is a wrapper to run n98 magerun CLI commands. |
 | `bin/update-sequra` | Reinstall the seQura plugin in Magento's `vendor` directory using the project files as the repository. |
-| `bin/xdebug` | Toggle XDebug on/off. By default XDebug comes disabled by default. |
+| `bin/xdebug --mode=<mode>` | Toggle XDebug on/off. Supported modes are: `off`, `profile`, `debug`. |
+| `bin/playwright <arguments>` | This is a wrapper to run Playwright E2E tests. It runs the tests in a headless mode inside of a Docker container of the official image provided by the Playwright team. |
+| `bin/update-integration-core-ui` | Install and copy the latest resources for the integration core UI. |
+| `bin/npm` | Wrapper for npm commands. |
+| `bin/phpcbf` | Wrapper for phpcbf commands. |
+| `bin/phpcs` | Wrapper for phpcs commands. |
+| `bin/phpstan` | Wrapper for phpstan commands. |
 
 ## Debugging with XDebug
 

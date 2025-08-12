@@ -1,0 +1,3 @@
+#!/bin/bash
+BASEDIR="$(dirname $(realpath $0))/.."
+docker run --rm -v "$BASEDIR":/app -w /app timbru31/node-alpine-git:20 npm $@

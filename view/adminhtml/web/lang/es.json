@@ -119,8 +119,8 @@
     "title": "Métodos de pago",
     "description": "Descripción de los métodos de pago",
     "countries": {
-      "label": "Countries",
-      "description": "Seleccionar país del cliente"
+      "label": "Países",
+      "description": "Selecciona el país del cliente"
     },
     "paymentMethods": "Métodos de pago",
     "minimumAmount": "Importe mínimo",
@@ -283,8 +283,8 @@
       "description": "Selector CSS para definir el elemento contenedor del widget del carrito"
     },
     "widgetOnCartPage": {
-      "label": "Select payment method",
-      "description": "Choose which payment method you want to display as widget on the cart page"
+      "label": "Selecciona el método de pago",
+      "description": "Elige qué método de pago quieres mostrar como widget en la página de carrito"
     },
     "listingPriceSelector": {
       "label": "Selector de precio en la lista de productos",
@@ -295,8 +295,8 @@
       "description": "Selector CSS para definir el elemento contenedor del widget en la lista de productos"
     },
     "widgetOnListingPage": {
-      "label": "Select payment method",
-      "description": "Choose which payment method you want to display as mini-widget on the product listing page"
+      "label": "Selecciona el método de pago",
+      "description": "Elige qué método de pago quieres mostrar como mini-widget en la página de listado de productos"
     }
   },
   "orderStatusSettings": {

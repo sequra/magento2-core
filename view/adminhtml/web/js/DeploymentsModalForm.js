@@ -44,7 +44,7 @@ window.SequraFE.showDeploymentsModal = function (
         };
 
         const fieldWrapper = generator.createElement('div', 'sq-field-wrapper');
-        const menuWrapper = generator.createElement('div', 'sqp-menu-items-deployments');
+        const menuWrapper = generator.createElement('div', 'items sqp-menu-items-deployments');
 
         const deploymentItems = notConnectedDeployments.map(deployment => {
             const item = generator.createElement(
