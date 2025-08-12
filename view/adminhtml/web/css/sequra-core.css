@@ -112,7 +112,8 @@ button[disabled] > * {
   text-rendering: geometricPrecision;
 }
 
-/* @doc(group) { name: 'sass-extend', title: 'Sass extend' } */ /* @doc(group) { name: 'helpers', title: 'Helpers'} */
+/* @doc(group) { name: 'sass-extend', title: 'Sass extend' } */
+/* @doc(group) { name: 'helpers', title: 'Helpers'} */
 /* @doc(function) {
   description: 'Concatenate strings',
   return: 'string that is joined from items',
@@ -411,8 +412,8 @@ table tr th {
   border-color: #c00e0e;
 }
 .sq-button.sqt--danger:hover, .sq-button.sqt--danger:focus {
-  background-color: #d81010;
-  border-color: #d81010;
+  background-color: rgb(215.7669902913, 15.7330097087, 15.7330097087);
+  border-color: rgb(215.7669902913, 15.7330097087, 15.7330097087);
 }
 .sq-button.sqs--disabled, .sq-button:disabled {
   background-color: #dce0e5;
