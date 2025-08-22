@@ -7,6 +7,12 @@
                 <value id="sequra-production-cdn" type="host">live.sequracdn.com</value>
                 <value id="sequra-sandbox-api" type="host">sandbox.sequrapi.com</value>
                 <value id="sequra-production-api" type="host">live.sequrapi.com</value>
+                <value id="svea-live-cdn" type="host">live.cdn.sequra.svea.com</value>
+                <value id="svea-production-api-next" type="host">next-live.sequra.svea.com</value>
+                <value id="svea-production-api" type="host">live.sequra.svea.com</value>
+                <value id="svea-sandbox-cdn" type="host">sandbox.cdn.sequra.svea.com</value>
+                <value id="svea-sandbox-api-next" type="host">next-sandbox.sequra.svea.com</value>
+                <value id="svea-sandbox-api" type="host">sandbox.sequra.svea.com</value>
             </values>
         </policy>
         <policy id="script-src">
@@ -15,6 +21,12 @@
                 <value id="sequra-production-cdn" type="host">live.sequracdn.com</value>
                 <value id="sequra-sandbox-api" type="host">sandbox.sequrapi.com</value>
                 <value id="sequra-production-api" type="host">live.sequrapi.com</value>
+                <value id="svea-live-cdn" type="host">live.cdn.sequra.svea.com</value>
+                <value id="svea-production-api-next" type="host">next-live.sequra.svea.com</value>
+                <value id="svea-production-api" type="host">live.sequra.svea.com</value>
+                <value id="svea-sandbox-cdn" type="host">sandbox.cdn.sequra.svea.com</value>
+                <value id="svea-sandbox-api-next" type="host">next-sandbox.sequra.svea.com</value>
+                <value id="svea-sandbox-api" type="host">sandbox.sequra.svea.com</value>
             </values>
         </policy>
         <policy id="connect-src">
@@ -23,6 +35,12 @@
                 <value id="sequra-production-cdn" type="host">live.sequracdn.com</value>
                 <value id="sequra-sandbox-api" type="host">sandbox.sequrapi.com</value>
                 <value id="sequra-production-api" type="host">live.sequrapi.com</value>
+                <value id="svea-live-cdn" type="host">live.cdn.sequra.svea.com</value>
+                <value id="svea-production-api-next" type="host">next-live.sequra.svea.com</value>
+                <value id="svea-production-api" type="host">live.sequra.svea.com</value>
+                <value id="svea-sandbox-cdn" type="host">sandbox.cdn.sequra.svea.com</value>
+                <value id="svea-sandbox-api-next" type="host">next-sandbox.sequra.svea.com</value>
+                <value id="svea-sandbox-api" type="host">sandbox.sequra.svea.com</value>
             </values>
         </policy>
         <policy id="frame-src">
@@ -31,6 +49,12 @@
                 <value id="sequra-production-cdn" type="host">live.sequracdn.com</value>
                 <value id="sequra-sandbox-api" type="host">sandbox.sequrapi.com</value>
                 <value id="sequra-production-api" type="host">live.sequrapi.com</value>
+                <value id="svea-live-cdn" type="host">live.cdn.sequra.svea.com</value>
+                <value id="svea-production-api-next" type="host">next-live.sequra.svea.com</value>
+                <value id="svea-production-api" type="host">live.sequra.svea.com</value>
+                <value id="svea-sandbox-cdn" type="host">sandbox.cdn.sequra.svea.com</value>
+                <value id="svea-sandbox-api-next" type="host">next-sandbox.sequra.svea.com</value>
+                <value id="svea-sandbox-api" type="host">sandbox.sequra.svea.com</value>
             </values>
         </policy>
     </policies>
