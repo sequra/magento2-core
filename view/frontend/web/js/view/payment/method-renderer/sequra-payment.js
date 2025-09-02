@@ -78,25 +78,13 @@ define([
 
             self.loadSequraPaymentMethods(paymentMethodsObserver());
 
-            quote.billingAddress.subscribe(function (address) {
-                if (!address || !canReloadPayments()) {
-                    return;
-                }
-
-                canReloadPayments(false);
-
-                fullScreenLoader.startLoader();
-
-                sequraPaymentService.retrievePaymentMethods().done(function (paymentMethods) {
-                    sequraPaymentService.setPaymentMethods(paymentMethods);
-                    fullScreenLoader.stopLoader();
-                }).fail(function () {
-                    console.log('Fetching the payment methods failed!');
-                }).always(function () {
-                    fullScreenLoader.stopLoader();
-                    canReloadPayments(true);
+            [quote.billingAddress, quote.shippingAddress, quote.shippingMethod].forEach(function (observable) {
+                observable.subscribe(function (value) {
+                    self.reloadPaymentMethods(value);
                 });
-            }, this);
+            });
+
+            // Add compatibility to One Step Checkout module
 
             uiRegistry.async("checkout.iosc.payments")(
                 function (payments) {
@@ -168,6 +156,27 @@ define([
             sequraPaymentMethods(enrichedPaymentMethods);
 
             fullScreenLoader.stopLoader();
+        },
+
+        reloadPaymentMethods: function (value) {
+            if (!value || !canReloadPayments()) {
+                return;
+            }
+
+            canReloadPayments(false);
+            fullScreenLoader.startLoader();
+
+            sequraPaymentService.retrievePaymentMethods()
+                .done(function (paymentMethods) {
+                    sequraPaymentService.setPaymentMethods(paymentMethods);
+                })
+                .fail(function () {
+                    console.log('Fetching the payment methods failed!');
+                })
+                .always(function () {
+                    fullScreenLoader.stopLoader();
+                    canReloadPayments(true);
+                });
         },
 
         getCode: function () {
