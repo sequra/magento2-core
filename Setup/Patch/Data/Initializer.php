@@ -14,6 +14,7 @@ use SeQura\Core\BusinessLogic\Domain\Connection\Exceptions\WrongCredentialsExcep
 use SeQura\Core\BusinessLogic\Domain\Connection\Models\AuthorizationCredentials;
 use SeQura\Core\BusinessLogic\Domain\Connection\Models\ConnectionData;
 use SeQura\Core\BusinessLogic\Domain\Connection\Services\ConnectionService;
+use SeQura\Core\BusinessLogic\Domain\Deployments\Services\DeploymentsService;
 use SeQura\Core\BusinessLogic\Domain\GeneralSettings\Models\GeneralSettings;
 use SeQura\Core\BusinessLogic\Domain\GeneralSettings\Services\GeneralSettingsService;
 use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
@@ -324,13 +325,19 @@ class Initializer implements DataPatchInterface
      */
     private function connect(string $endpoint, string $username, string $password): void
     {
-        $connectionData = new ConnectionData(
-            $endpoint === 'https://sandbox.sequrapi.com/orders' ? BaseProxy::TEST_MODE : BaseProxy::LIVE_MODE,
-            '',
-            new AuthorizationCredentials($username, $password)
-        );
+        $deployments = $this->getDeploymentsService()->getDeployments();
+        $connectionDataList = [];
 
-        $this->getConnectionService()->connect($connectionData);
+        foreach ($deployments as $deployment) {
+            $connectionDataList[] = new ConnectionData(
+                $endpoint === 'https://sandbox.sequrapi.com/orders' ? BaseProxy::TEST_MODE : BaseProxy::LIVE_MODE,
+                '',
+                $deployment->getId(),
+                new AuthorizationCredentials($username, $password)
+            );
+        }
+
+        $this->getConnectionService()->connect($connectionDataList);
     }
 
     /**
@@ -395,5 +402,15 @@ class Initializer implements DataPatchInterface
     private function getEncryptor(): EncryptorInterface
     {
         return ServiceRegister::getService(EncryptorInterface::class);
+    }
+
+    /**
+     * Returns an instance of the DeploymentsService.
+     *
+     * @return DeploymentsService
+     */
+    protected function getDeploymentsService(): DeploymentsService
+    {
+        return ServiceRegister::getService(DeploymentsService::class);
     }
 }

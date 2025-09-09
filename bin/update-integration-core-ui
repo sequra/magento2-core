@@ -1,0 +1,22 @@
+#!/bin/bash
+# This script handles the update of the assets required for the integration core UI.
+BASEDIR="$(dirname $(realpath $0))"
+# Run npm i
+echo "Running npm install..."
+"$BASEDIR/npm" install --no-update-notifier --no-progress --silent  || {
+    echo "❌ npm install failed. Please check the output for errors."
+    exit 1
+}
+# Run npm update
+echo "Running npm update..."
+"$BASEDIR/npm" update --no-update-notifier --no-progress --silent || {
+    echo "❌ npm update failed. Please check the output for errors."
+    exit 1
+}
+# Copy the assets to the appropriate directory
+echo "Copying resources..."
+"$BASEDIR/npm" run copy-resources --no-update-notifier --no-progress --silent || {
+    echo "❌ Copying resources failed. Please check the output for errors."
+    exit 1
+}
+echo "✅ Integration core UI assets updated successfully."

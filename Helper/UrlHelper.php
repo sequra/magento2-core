@@ -8,10 +8,13 @@ use Magento\Store\Model\StoreManagerInterface;
 use Magento\Framework\Url as MagentoUrl;
 use Magento\Sales\Model\OrderFactory;
 use Magento\Framework\UrlInterface;
+use SeQura\Core\BusinessLogic\Domain\Connection\Exceptions\CredentialsNotFoundException;
+use SeQura\Core\BusinessLogic\Domain\Connection\Models\ConnectionData;
 use SeQura\Core\BusinessLogic\SeQuraAPI\BaseProxy;
 use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
 use SeQura\Core\BusinessLogic\Domain\Connection\Services\ConnectionService;
 use SeQura\Core\BusinessLogic\Domain\Order\RepositoryContracts\SeQuraOrderRepositoryInterface;
+use SeQura\Core\Infrastructure\Logger\Logger;
 use SeQura\Core\Infrastructure\ServiceRegister;
 
 class UrlHelper
@@ -74,7 +77,7 @@ class UrlHelper
      *
      * @throws NoSuchEntityException
      */
-    public function getFrontendUrl(string $routePath, array $routeParams = null): string
+    public function getFrontendUrl(string $routePath, ?array $routeParams = null): string
     {
         $storeView = $this->storeManager->getStore();
         $url = $this->urlHelper->setScope($storeView)->getUrl($routePath, $routeParams);
@@ -95,7 +98,7 @@ class UrlHelper
      *
      * @return string Publicly visible URL of the requested back-end controller.
      */
-    public function getBackendUrl(string $routePath, array $routeParams = null): string
+    public function getBackendUrl(string $routePath, ?array $routeParams = null): string
     {
         return $this->backendUrlHelper->getUrl($routePath, $routeParams);
     }
@@ -111,17 +114,31 @@ class UrlHelper
         if (!$storeId) {
             return '#';
         }
-        /**
-         * @var \SeQura\Core\BusinessLogic\Domain\Connection\Models\ConnectionData|null $connectionSettings
-         */
-        $connectionSettings = StoreContext::doWithStore(
-            (string) $storeId,
-            function () {
-                return ServiceRegister::getService(ConnectionService::class)->getConnectionData();
-            }
-        );
+
+        $merchantId = $this->getMerchantId($orderReference);
+        if (!$merchantId) {
+            return '#';
+        }
+
+        try {
+            /**
+             * @var ConnectionData $connectionSettings
+             */
+            $connectionSettings = StoreContext::doWithStore(
+                (string)$storeId,
+                function () use ($merchantId) {
+                    return ServiceRegister::getService(ConnectionService::class)
+                        ->getConnectionDataByMerchantId($merchantId);
+                }
+            );
+        } catch (CredentialsNotFoundException $exception) {
+            Logger::logInfo($exception->getMessage());
+            $connectionSettings = null;
+        }
+
         $baseUrl = $connectionSettings && $connectionSettings->getEnvironment() === BaseProxy::LIVE_MODE ?
             self::SEQURA_PORTAL_URL : self::SEQURA_PORTAL_SANDBOX_URL;
+
         return $this->urlBuilder->getUrl($baseUrl . $orderReference);
     }
 
@@ -141,6 +158,24 @@ class UrlHelper
         }
         $order->loadByIncrementId($seQuraOrder->getOrderRef1());
         return $order ? $order->getStoreId() : null;
+    }
+
+    /**
+     * Returns merchant id from orderReference
+     *
+     * @param string $orderReference
+     *
+     * @return null|string
+     */
+    private function getMerchantId($orderReference): ?string
+    {
+        $seQuraOrder = $this->getOrderRepository()->getByOrderReference($orderReference);
+
+        if (!$seQuraOrder) {
+            return null;
+        }
+
+        return (string)$seQuraOrder->getMerchant()->getId();
     }
 
     /**

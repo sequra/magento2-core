@@ -10,7 +10,9 @@ define([
     'Magento_Checkout/js/checkout-data',
     'Magento_Checkout/js/model/full-screen-loader',
     'Sequra_Core/js/model/sequra-payment-service',
-    'Magento_Checkout/js/model/payment/additional-validators'
+    'Magento_Checkout/js/model/payment/additional-validators',
+    "uiRegistry",
+    "mage/utils/wrapper"
 ], function (
     Component,
     ko,
@@ -23,7 +25,9 @@ define([
     checkoutData,
     fullScreenLoader,
     sequraPaymentService,
-    additionalValidators
+    additionalValidators,
+    uiRegistry,
+    wrapper
 ) {
     'use strict';
 
@@ -74,31 +78,73 @@ define([
 
             self.loadSequraPaymentMethods(paymentMethodsObserver());
 
-            quote.billingAddress.subscribe(function (address) {
-                if (!address || !canReloadPayments()) {
-                    return;
-                }
-
-                canReloadPayments(false);
-
-                fullScreenLoader.startLoader();
-
-                sequraPaymentService.retrievePaymentMethods().done(function (paymentMethods) {
-                    sequraPaymentService.setPaymentMethods(paymentMethods);
-                    fullScreenLoader.stopLoader();
-                }).fail(function () {
-                    console.log('Fetching the payment methods failed!');
-                }).always(function () {
-                    fullScreenLoader.stopLoader();
-                    canReloadPayments(true);
+            [quote.billingAddress, quote.shippingAddress, quote.shippingMethod].forEach(function (observable) {
+                observable.subscribe(function (value) {
+                    self.reloadPaymentMethods(value);
                 });
-            }, this);
+            });
+
+            // Add compatibility to One Step Checkout module
+
+            uiRegistry.async("checkout.iosc.payments")(
+                function (payments) {
+                    if (typeof payments.getObservableId === 'function') {
+                        payments.getObservableId = wrapper.wrap(
+                            payments.getObservableId, function (originalMethod, observable) {
+                                if (
+                                    observable.method === 'sequra_payment' &&
+                                    observable.additional_data !== undefined &&
+                                    observable.additional_data.sequra_product !== undefined
+                                ) {
+                                    return "#sequra_" + observable.additional_data.sequra_product;
+                                }
+
+                                return originalMethod(observable);
+                            });
+                    }
+
+                    if (typeof payments.getComponentFromButton === 'function') {
+                        payments.getComponentFromButton = wrapper.wrap(
+                            payments.getComponentFromButton, function (originalMethod, buttonElem) {
+                                if (![...buttonElem.classList].some(cls => cls.startsWith('sequra_'))) {
+                                    return originalMethod(buttonElem);
+                                }
+
+                                let component = originalMethod(buttonElem);
+                                if (typeof component.isPlaceOrderActionAllowed !== 'function') {
+                                    component.isPlaceOrderActionAllowed = ko.observable(true);
+                                }
+
+                                if (typeof component.getData !== 'function') {
+                                    component.$parent = ko.contextFor(buttonElem).$parent;
+                                    component.getData = function () {
+                                        let innerSelf = this.$parent;
+                                        let data = {};
+                                        data.method = innerSelf.index;
+
+                                        let additionalData = {};
+                                        additionalData.sequra_product = "#sequra_" + this.product;
+                                        data.additional_data = additionalData;
+
+                                        return data;
+
+                                    }.bind(component);
+                                }
+
+                                return component;
+                            });
+                    }
+                }.bind(this)
+            );
         },
 
         loadSequraPaymentMethods: function (paymentMethodsResponse) {
-            var self = this;
+            if (JSON.stringify(paymentMethodsResponse) === '{}') {
+                return;
+            }
 
-            var enrichedPaymentMethods = paymentMethodsResponse.map(function (method) {
+            const self = this;
+            const enrichedPaymentMethods = paymentMethodsResponse.map(function (method) {
                 return Object.assign({}, method, {
                     getCode: function () {
                         return 'sequra_payment';
@@ -110,6 +156,27 @@ define([
             sequraPaymentMethods(enrichedPaymentMethods);
 
             fullScreenLoader.stopLoader();
+        },
+
+        reloadPaymentMethods: function (value) {
+            if (!value || !canReloadPayments()) {
+                return;
+            }
+
+            canReloadPayments(false);
+            fullScreenLoader.startLoader();
+
+            sequraPaymentService.retrievePaymentMethods()
+                .done(function (paymentMethods) {
+                    sequraPaymentService.setPaymentMethods(paymentMethods);
+                })
+                .fail(function () {
+                    console.log('Fetching the payment methods failed!');
+                })
+                .always(function () {
+                    fullScreenLoader.stopLoader();
+                    canReloadPayments(true);
+                });
         },
 
         getCode: function () {

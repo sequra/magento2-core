@@ -8,7 +8,7 @@
         "pagos",
         "magento2"
     ],
-    "version": "2.7.1",
+    "version": "3.0.0",
     "license": "MIT",
     "authors": [
         {
@@ -16,11 +16,11 @@
             "email": "dev@sequra.es"
         }
     ],
-    "minimum-stability": "stable",
+    "minimum-stability": "dev",
     "prefer-stable": true,
     "require": {
-        "php": ">=7.4 <8.4",
-        "sequra/integration-core": "v2.1.0",
+        "php": ">=7.4",
+        "sequra/integration-core": "~2.3.0",
         "ext-json": "*"
     },
     "autoload": {
@@ -60,11 +60,17 @@
         ]
     },
     "require-dev": {
-        "magento/magento-coding-standard": "^33.0"
+        "magento/magento-coding-standard": "^38.0"
     },
     "config": {
         "allow-plugins": {
             "dealerdirect/phpcodesniffer-composer-installer": true
         }
-    }
+    },
+    "repositories": [
+        {
+            "type": "git",
+            "url": "git@github.com:sequra/integration-core.git"
+        }
+    ]
 }

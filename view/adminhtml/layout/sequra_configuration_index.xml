@@ -22,6 +22,7 @@
         <link src="Sequra_Core::js/DataTableComponent.js"/>
         <link src="Sequra_Core::js/PageHeaderComponent.js"/>
         <link src="Sequra_Core::js/ConnectionSettingsForm.js"/>
+        <link src="Sequra_Core::js/DeploymentsSettingsForm.js"/>
         <link src="Sequra_Core::js/WidgetSettingsForm.js"/>
         <link src="Sequra_Core::js/RepeaterFieldsComponent.js"/>
         <link src="Sequra_Core::js/GeneralSettingsForm.js"/>
@@ -30,6 +31,7 @@
         <link src="Sequra_Core::js/OnboardingController.js"/>
         <link src="Sequra_Core::js/PaymentController.js"/>
         <link src="Sequra_Core::js/SettingsController.js"/>
+        <link src="Sequra_Core::js/DeploymentsModalForm.js"/>
     </head>
     <body>
         <referenceContainer name="page.messages">

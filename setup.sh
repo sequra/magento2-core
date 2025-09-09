@@ -12,11 +12,14 @@ fi
 
 ngrok=0
 open_browser=0
+install=0
+BASEDIR="$(dirname $(realpath $0))"
 
 # Parse arguments:
 # --ngrok-token=YOUR_NGROK_TOKEN: Override the ngrok token in .env
 # --ngrok: Use ngrok to expose the site
 # --open-browser: Open the browser after the installation is complete
+# --install: Run the installation process before starting the containers
 while [[ "$#" -gt 0 ]]; do
     if [ "$1" == "--ngrok" ]; then
         ngrok=1
@@ -26,6 +29,8 @@ while [[ "$#" -gt 0 ]]; do
         rm .env.bak
     elif [ "$1" == "--open-browser" ]; then
         open_browser=1
+    elif [ "$1" == "--install" ]; then
+        install=1
     fi
     shift
 done
@@ -46,6 +51,14 @@ fi
 if [ -z "$M2_COMPOSER_REPO_SECRET" ]; then
     echo "❌ Please set M2_COMPOSER_REPO_SECRET with your Magento repo private key in your .env file"
     exit 1
+fi
+
+if [ $install -eq 1 ]; then
+    echo "🚀 Running installation process..."
+    "$BASEDIR/bin/update-integration-core-ui" || {
+        echo "❌ Failed to update integration core UI. Please check the output for errors."
+        exit 1
+    }
 fi
 
 if [ $ngrok -eq 1 ]; then

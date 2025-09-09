@@ -49,8 +49,11 @@
                         data-bind="
                     click: $parent.placeOrder.bind($parent),
                     attr: {title: $t('Place Order')},
-                    css: {disabled: !$parent.isPlaceOrderActionAllowed()},
-                    enable: ($parent.getCode() == $parent.isChecked())
+                    enable: ($parent.getCode() == $parent.isChecked()),
+                    css: {
+                        disabled: !$parent.isPlaceOrderActionAllowed(),
+                        ['sequra_' + product]: true
+                    }
                     "
                         disabled>
                     <span data-bind="i18n: 'Place Order'"></span>

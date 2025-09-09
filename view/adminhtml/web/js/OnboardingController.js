@@ -43,13 +43,15 @@ if (!window.SequraFE) {
         let connectionSettings;
         /** @type WidgetSettings **/
         let widgetSettings;
+        /** @type DeploymentSettings[] **/
+        let deploymentsSettings;
 
         /**
          * Displays page content.
          *
          * @param {{ state?: string, storeId: string }} config
          */
-        this.display = ({ storeId }) => {
+        this.display = ({storeId}) => {
             utilities.showLoader();
             currentStoreId = storeId;
             templateService.clearMainPage();
@@ -58,6 +60,7 @@ if (!window.SequraFE) {
             connectionSettings = SequraFE.state.getData('connectionSettings');
             countrySettings = SequraFE.state.getData('countrySettings');
             widgetSettings = SequraFE.state.getData('widgetSettings');
+            deploymentsSettings = SequraFE.state.getData('deploymentsSettings');
 
             initializePage();
             renderPage();
@@ -89,6 +92,14 @@ if (!window.SequraFE) {
                         SequraFE.state.getData('allAvailablePaymentMethods') ?? api.get(configuration.getAllAvailablePaymentMethodsUrl),
                     ])
                     break;
+
+                case SequraFE.appPages.ONBOARDING.DEPLOYMENTS:
+                    renderer = renderDeploymentsSettingForm;
+                    promises = Promise.all([
+                        SequraFE.state.getData('deploymentsSettings') ?? api.get(configuration.getDeploymentSettingsUrl)
+                    ]);
+                    break;
+
                 default:
                     renderer = renderConnectionSettingsForm;
                     promises = Promise.all([])
@@ -114,12 +125,26 @@ if (!window.SequraFE) {
 
             const form = formFactory.getInstance(
                 'generalSettings',
-                { countrySettings, sellingCountries, connectionSettings },
-                { ...configuration, appState: SequraFE.appStates.ONBOARDING }
+                {countrySettings, sellingCountries, connectionSettings},
+                {...configuration, appState: SequraFE.appStates.ONBOARDING}
             );
 
             form?.render();
         }
+
+        const renderDeploymentsSettingForm = (deploymentsSettings) => {
+            if (!SequraFE.state.getData('deploymentsSettings')) {
+                SequraFE.state.setData('deploymentsSettings', deploymentsSettings);
+            }
+
+            const form = formFactory.getInstance(
+                'deploymentsSettings',
+                {deploymentsSettings},
+                {...configuration, appState: SequraFE.appStates.ONBOARDING}
+            );
+
+            form?.render();
+        };
 
         /**
          * Renders the widgets settings form.
@@ -138,8 +163,8 @@ if (!window.SequraFE) {
 
             const form = formFactory.getInstance(
                 'widgetSettings',
-                { widgetSettings, connectionSettings, countrySettings, paymentMethods, allAvailablePaymentMethods },
-                { ...configuration, appState: SequraFE.appStates.ONBOARDING }
+                {widgetSettings, connectionSettings, countrySettings, paymentMethods, allAvailablePaymentMethods},
+                {...configuration, appState: SequraFE.appStates.ONBOARDING}
             );
 
             form?.render();
@@ -151,8 +176,8 @@ if (!window.SequraFE) {
         const renderConnectionSettingsForm = () => {
             const form = formFactory.getInstance(
                 'connectionSettings',
-                { connectionSettings },
-                { ...configuration, appState: SequraFE.appStates.ONBOARDING }
+                {connectionSettings},
+                {...configuration, appState: SequraFE.appStates.ONBOARDING}
             );
 
             form?.render();
@@ -180,6 +205,15 @@ if (!window.SequraFE) {
                 const activePage = SequraFE.state.getPage() ?? SequraFE.pages.settings[0];
 
                 switch (page) {
+                    case SequraFE.appPages.ONBOARDING.DEPLOYMENTS:
+                        return {
+                            label: 'sidebar.stepDeployments',
+                            href: '#onboarding-deployments',
+                            isCompleted: SequraFE.pages.onboarding.indexOf(SequraFE.state.getPage()) >
+                                SequraFE.pages.onboarding.indexOf(SequraFE.appPages.ONBOARDING.DEPLOYMENTS),
+                            isActive: activePage === SequraFE.appPages.ONBOARDING.DEPLOYMENTS
+                        }
+
                     case SequraFE.appPages.ONBOARDING.CONNECT:
                         return {
                             label: 'sidebar.stepTwoLabel',
