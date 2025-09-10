@@ -3,6 +3,8 @@
 namespace Sequra\Core\Block;
 
 use Exception;
+use Magento\Bundle\Pricing\Price\BundleRegularPrice;
+use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\Catalog\Helper\Data;
 use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\ProductRepository;
@@ -151,13 +153,13 @@ class WidgetInitializer extends Template
                 'catalogsearch_result_index'
             ]
         )) {
-            return json_encode([]);
+            return json_encode([], JSON_THROW_ON_ERROR);
         }
 
         $amount = 0;
 
         if ($actionName === 'catalog_product_view') {
-            $productId = $this->request->getParam('id');
+            $productId = (int)$this->request->getParam('id');
             $product = $this->productRepository->getById($productId);
 
             $amount = $this->getProductPrice($product);
@@ -165,7 +167,9 @@ class WidgetInitializer extends Template
 
         if ($actionName === 'checkout_cart_index') {
             $totals = $this->cart->getTotals();
-            $amount = $totals['grand_total']['value'] * 100;
+            $amount = isset($totals['grand_total']['value'])
+                ? (float)$totals['grand_total']['value'] * 100
+                : 0.0;
         }
 
         $config = array_merge(
@@ -173,7 +177,8 @@ class WidgetInitializer extends Template
             ['amount' => (int)round($amount), 'action_name' => $actionName]
         );
 
-        $config['products'] = array_map(fn($value) => ['id' => $value], $config['products'] ?? []);
+        $products = $config['products'] ?? [];
+        $config['products'] = array_map(fn($value) => ['id' => $value], (array)$products);
 
         return json_encode(
             [
@@ -182,7 +187,8 @@ class WidgetInitializer extends Template
                         'widgetConfig' => $config,
                     ]
                 ]
-            ]
+            ],
+            JSON_THROW_ON_ERROR
         );
     }
 
@@ -201,23 +207,31 @@ class WidgetInitializer extends Template
     /**
      * Returns the product price in cents.
      *
-     * @param Product $product
+     * @param ProductInterface $product
      *
-     * @return float|int
+     * @return int
      *
      * @throws NoSuchEntityException
      */
-    private function getProductPrice(Product $product)
+    private function getProductPrice(ProductInterface $product): int
     {
-        $price = ($product->getTypeId() === 'bundle' ?
-            $product->getPriceInfo()->getPrice('regular_price')->getMinimalPrice()->getValue() :
-            $product->getFinalPrice());
+        $productId = $product->getId() ?? 0;
+        /** @var Product $productModel */
+        $productModel = $product instanceof Product ? $product : $this->productRepository->getById($productId);
+        $price = $productModel->getFinalPrice();
 
-        if ($product->getTypeId() === 'bundle' || !$this->isTaxEnabled()) {
-            return $price * 100;
+        if ($productModel->getTypeId() === 'bundle') {
+            $regularPrice = $productModel->getPriceInfo()->getPrice('regular_price');
+            if ($regularPrice instanceof BundleRegularPrice) {
+                $price = $regularPrice->getMinimalPrice()->getValue();
+            }
         }
 
-        return $this->catalogHelper->getTaxPrice($product, $price, true) * 100;
+        if ($this->isTaxEnabled() && $productModel->getTypeId() !== 'bundle') {
+            $price = $this->catalogHelper->getTaxPrice($productModel, $price, true);
+        }
+
+        return (int)round($price * 100);
     }
 
     /**
