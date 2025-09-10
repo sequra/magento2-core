@@ -153,7 +153,7 @@ class WidgetInitializer extends Template
                 'catalogsearch_result_index'
             ]
         )) {
-            return json_encode([]);
+            return json_encode([], JSON_THROW_ON_ERROR);
         }
 
         $amount = 0;
@@ -167,7 +167,9 @@ class WidgetInitializer extends Template
 
         if ($actionName === 'checkout_cart_index') {
             $totals = $this->cart->getTotals();
-            $amount = $totals['grand_total']['value'] * 100;
+            $amount = isset($totals['grand_total']['value'])
+                ? (float)$totals['grand_total']['value'] * 100
+                : 0.0;
         }
 
         $config = array_merge(
@@ -175,16 +177,18 @@ class WidgetInitializer extends Template
             ['amount' => (int)round($amount), 'action_name' => $actionName]
         );
 
-        $config['products'] = array_map(fn($value) => ['id' => $value], (array)$config['products'] ?? []);
+        $products = $config['products'] ?? [];
+        $config['products'] = array_map(fn($value) => ['id' => $value], (array) $products);
 
-        return (string)json_encode(
+        return json_encode(
             [
                 '[data-content-type="sequra_core"]' => [
                     'Sequra_Core/js/content-type/sequra-core/appearance/default/widget' => [
                         'widgetConfig' => $config,
                     ]
                 ]
-            ]
+            ],
+            JSON_THROW_ON_ERROR
         );
     }
 
@@ -203,7 +207,7 @@ class WidgetInitializer extends Template
     /**
      * Returns the product price in cents.
      *
-     * @param Product $product
+     * @param ProductInterface  $product
      *
      * @return int
      *
@@ -211,20 +215,22 @@ class WidgetInitializer extends Template
      */
     private function getProductPrice(ProductInterface $product): int
     {
-        $price = $product->getFinalPrice();
+        /** @var Product $productModel */
+        $productModel = $product instanceof Product ? $product : $this->productRepository->getById($product->getId());
+        $price = $productModel->getFinalPrice();
 
-        if ($product->getTypeId() === 'bundle') {
-            $regularPrice = $product->getPriceInfo()->getPrice('regular_price');
+        if ($productModel->getTypeId() === 'bundle') {
+            $regularPrice = $productModel->getPriceInfo()->getPrice('regular_price');
             if ($regularPrice instanceof BundleRegularPrice) {
                 $price = $regularPrice->getMinimalPrice()->getValue();
             }
         }
 
-        if ($this->isTaxEnabled() && $product->getTypeId() !== 'bundle') {
-            $price = $this->catalogHelper->getTaxPrice($product, $price, true);
+        if ($this->isTaxEnabled() && $productModel->getTypeId() !== 'bundle') {
+            $price = $this->catalogHelper->getTaxPrice($productModel, $price, true);
         }
 
-        return (int) round($price * 100);
+        return (int)round($price * 100);
     }
 
     /**
