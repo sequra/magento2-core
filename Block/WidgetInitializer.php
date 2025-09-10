@@ -199,6 +199,8 @@ class WidgetInitializer extends Template
     }
 
     /**
+     * Returns the product price in cents.
+     *
      * @param Product $product
      *
      * @return float|int
@@ -219,6 +221,8 @@ class WidgetInitializer extends Template
     }
 
     /**
+     * Returns whether tax is enabled for the current store.
+     *
      * @return bool
      *
      * @throws NoSuchEntityException
