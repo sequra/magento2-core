@@ -3,6 +3,8 @@
 namespace Sequra\Core\Block;
 
 use Exception;
+use Magento\Bundle\Pricing\Price\BundleRegularPrice;
+use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\Catalog\Helper\Data;
 use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\ProductRepository;
@@ -157,7 +159,7 @@ class WidgetInitializer extends Template
         $amount = 0;
 
         if ($actionName === 'catalog_product_view') {
-            $productId = $this->request->getParam('id');
+            $productId = (int)$this->request->getParam('id');
             $product = $this->productRepository->getById($productId);
 
             $amount = $this->getProductPrice($product);
@@ -173,9 +175,9 @@ class WidgetInitializer extends Template
             ['amount' => (int)round($amount), 'action_name' => $actionName]
         );
 
-        $config['products'] = array_map(fn($value) => ['id' => $value], $config['products'] ?? []);
+        $config['products'] = array_map(fn($value) => ['id' => $value], (array)$config['products'] ?? []);
 
-        return json_encode(
+        return (string)json_encode(
             [
                 '[data-content-type="sequra_core"]' => [
                     'Sequra_Core/js/content-type/sequra-core/appearance/default/widget' => [
@@ -203,21 +205,26 @@ class WidgetInitializer extends Template
      *
      * @param Product $product
      *
-     * @return float|int
+     * @return int
      *
      * @throws NoSuchEntityException
      */
-    private function getProductPrice(Product $product)
+    private function getProductPrice(ProductInterface $product): int
     {
-        $price = ($product->getTypeId() === 'bundle' ?
-            $product->getPriceInfo()->getPrice('regular_price')->getMinimalPrice()->getValue() :
-            $product->getFinalPrice());
+        $price = $product->getFinalPrice();
 
-        if ($product->getTypeId() === 'bundle' || !$this->isTaxEnabled()) {
-            return $price * 100;
+        if ($product->getTypeId() === 'bundle') {
+            $regularPrice = $product->getPriceInfo()->getPrice('regular_price');
+            if ($regularPrice instanceof BundleRegularPrice) {
+                $price = $regularPrice->getMinimalPrice()->getValue();
+            }
         }
 
-        return $this->catalogHelper->getTaxPrice($product, $price, true) * 100;
+        if ($this->isTaxEnabled() && $product->getTypeId() !== 'bundle') {
+            $price = $this->catalogHelper->getTaxPrice($product, $price, true);
+        }
+
+        return (int) round($price * 100);
     }
 
     /**
