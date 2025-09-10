@@ -159,7 +159,8 @@ class WidgetInitializer extends Template
         $amount = 0;
 
         if ($actionName === 'catalog_product_view') {
-            $productId = (int)$this->request->getParam('id');
+            $idParam = $this->request->getParam('id');
+            $productId = is_numeric($idParam) ? (int)$idParam : 0;
             $product = $this->productRepository->getById($productId);
 
             $amount = $this->getProductPrice($product);
@@ -215,20 +216,24 @@ class WidgetInitializer extends Template
      */
     private function getProductPrice(ProductInterface $product): int
     {
-        $productId = $product->getId() ?? 0;
+        $id = $product->getId();
+        if ($id === null) {
+            throw new \InvalidArgumentException('Cannot get price: Product ID is null.');
+        }
+
         /** @var Product $productModel */
-        $productModel = $product instanceof Product ? $product : $this->productRepository->getById($productId);
-        $price = $productModel->getFinalPrice();
+        $productModel = $product instanceof Product ? $product : $this->productRepository->getById($id);
+        $price = (float)$productModel->getFinalPrice();
 
         if ($productModel->getTypeId() === 'bundle') {
             $regularPrice = $productModel->getPriceInfo()->getPrice('regular_price');
             if ($regularPrice instanceof BundleRegularPrice) {
-                $price = $regularPrice->getMinimalPrice()->getValue();
+                $price = (float)$regularPrice->getMinimalPrice()->getValue();
             }
         }
 
         if ($this->isTaxEnabled() && $productModel->getTypeId() !== 'bundle') {
-            $price = $this->catalogHelper->getTaxPrice($productModel, $price, true);
+            $price = (float)$this->catalogHelper->getTaxPrice($productModel, $price, true);
         }
 
         return (int)round($price * 100);
