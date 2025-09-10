@@ -8,6 +8,10 @@ $availableWidgets = $block->getAvailableWidgets();
 if (!empty($availableWidgets)):
     // phpcs:disable Magento2.Security.XssTemplate.FoundUnescaped
     ?>
+    <div class="sequra-widget-wrapper"
+         data-content-type="sequra_core"
+         data-payment-method="">
+    </div>
     <script type="text/x-magento-init">
         {
             "*": {
