@@ -16,7 +16,7 @@ if (!empty($widgetData)):
                 "thousandSeparator": "<?= $widgetData['thousandSeparator']; ?>",
                 "decimalSeparator": "<?= $widgetData['decimalSeparator']; ?>",
                 "locale": "<?= $widgetData['locale']; ?>",
-                "merchant": "<?= $widgetData['merchant']; ?>",
+                "merchant": "<?= $widgetData['merchantId']; ?>",
                 "assetKey": "<?= $widgetData['assetKey']; ?>",
                 "products": <?= json_encode($widgetData['products'], JSON_THROW_ON_ERROR); ?>
         }
