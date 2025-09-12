@@ -3,26 +3,68 @@
 namespace Sequra\Core\Block;
 
 use Exception;
+use Magento\Bundle\Pricing\Price\BundleRegularPrice;
+use Magento\Catalog\Api\Data\ProductInterface;
+use Magento\Catalog\Helper\Data;
+use Magento\Catalog\Model\Product;
+use Magento\Catalog\Model\ProductRepository;
+use Magento\Checkout\Block\Cart;
+use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\Framework\App\Request\Http;
+use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\View\Element\Template;
 use Magento\Framework\View\Element\Template\Context;
 use Magento\Checkout\Model\Session;
 use Magento\Framework\Locale\ResolverInterface;
+use Magento\Store\Model\ScopeInterface;
+use Magento\Store\Model\StoreManagerInterface;
 use SeQura\Core\BusinessLogic\CheckoutAPI\CheckoutAPI;
 use SeQura\Core\BusinessLogic\CheckoutAPI\PromotionalWidgets\Requests\PromotionalWidgetsCheckoutRequest;
 use SeQura\Core\BusinessLogic\CheckoutAPI\PromotionalWidgets\Responses\PromotionalWidgetsCheckoutResponse;
+use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
 use SeQura\Core\Infrastructure\Logger\Logger;
 
 class WidgetInitializer extends Template
 {
     /**
-     * @var ResolverInterface
+     * @var ResolverInterface $localeResolver
      */
     protected ResolverInterface $localeResolver;
 
     /**
-     * @var Session
+     * @var Session $session
      */
     private Session $session;
+
+    /**
+     * @var ProductRepository $productRepository
+     */
+    private ProductRepository $productRepository;
+
+    /**
+     * @var Http $request
+     */
+    private Http $request;
+
+    /**
+     * @var Cart $cart
+     */
+    private Cart $cart;
+
+    /**
+     * @var Data $catalogHelper
+     */
+    private Data $catalogHelper;
+
+    /**
+     * @var ScopeConfigInterface $scopeConfig
+     */
+    private ScopeConfigInterface $scopeConfig;
+
+    /**
+     * @var StoreManagerInterface $storeManager
+     */
+    private StoreManagerInterface $storeManager;
 
     /**
      * Constructor
@@ -30,17 +72,35 @@ class WidgetInitializer extends Template
      * @param Context $context
      * @param ResolverInterface $localeResolver
      * @param Session $session
+     * @param Http $request
+     * @param ProductRepository $productRepository
+     * @param Cart $cart
+     * @param Data $catalogHelper
+     * @param ScopeConfigInterface $scopeConfig
+     * @param StoreManagerInterface $storeManager
      * @param mixed[] $data
      */
     public function __construct(
         Context $context,
         ResolverInterface $localeResolver,
         Session $session,
+        Http $request,
+        ProductRepository $productRepository,
+        Cart $cart,
+        Data $catalogHelper,
+        ScopeConfigInterface $scopeConfig,
+        StoreManagerInterface $storeManager,
         array $data = []
     ) {
         parent::__construct($context, $data);
         $this->localeResolver = $localeResolver;
         $this->session = $session;
+        $this->request = $request;
+        $this->productRepository = $productRepository;
+        $this->cart = $cart;
+        $this->catalogHelper = $catalogHelper;
+        $this->scopeConfig = $scopeConfig;
+        $this->storeManager = $storeManager;
     }
 
     /**
@@ -73,6 +133,67 @@ class WidgetInitializer extends Template
     }
 
     /**
+     * Used for Hyva theme compatibility.
+     *
+     * @return string
+     *
+     * @throws Exception
+     */
+    public function getWidgetConfig(): string
+    {
+        $actionName = $this->request->getFullActionName();
+
+        if (!in_array(
+            $actionName,
+            [
+                'catalog_product_view',
+                'checkout_cart_index',
+                'catalog_category_view',
+                'cms_index_index',
+                'catalogsearch_result_index'
+            ]
+        )) {
+            return json_encode([], JSON_THROW_ON_ERROR);
+        }
+
+        $amount = 0;
+
+        if ($actionName === 'catalog_product_view') {
+            $idParam = $this->request->getParam('id');
+            $productId = is_numeric($idParam) ? (int)$idParam : 0;
+            $product = $this->productRepository->getById($productId);
+
+            $amount = $this->getProductPrice($product);
+        }
+
+        if ($actionName === 'checkout_cart_index') {
+            $totals = $this->cart->getTotals();
+            $amount = isset($totals['grand_total']['value'])
+                ? (float)$totals['grand_total']['value'] * 100
+                : 0.0;
+        }
+
+        $config = array_merge(
+            $this->getWidgetInitializeData(),
+            ['amount' => (int)round($amount), 'action_name' => $actionName]
+        );
+
+        $products = $config['products'] ?? [];
+        $config['products'] = array_map(fn($value) => ['id' => $value], (array)$products);
+
+        return json_encode(
+            [
+                '[data-content-type="sequra_core"]' => [
+                    'Sequra_Core/js/content-type/sequra-core/appearance/default/widget' => [
+                        'widgetConfig' => $config,
+                    ]
+                ]
+            ],
+            JSON_THROW_ON_ERROR
+        );
+    }
+
+    /**
      * Get current country code
      *
      * @return string
@@ -82,5 +203,71 @@ class WidgetInitializer extends Template
         $parts = explode('_', $this->localeResolver->getLocale());
 
         return strtoupper(count($parts) > 1 ? $parts[1] : $parts[0]);
+    }
+
+    /**
+     * Returns the product price in cents.
+     *
+     * @param ProductInterface $product
+     *
+     * @return int
+     *
+     * @throws NoSuchEntityException
+     */
+    private function getProductPrice(ProductInterface $product): int
+    {
+        $id = $product->getId();
+        if ($id === null) {
+            throw new \InvalidArgumentException('Cannot get price: Product ID is null.');
+        }
+
+        /** @var Product $productModel */
+        $productModel = $product instanceof Product ? $product : $this->productRepository->getById($id);
+        $price = (float)$productModel->getFinalPrice();
+
+        if ($productModel->getTypeId() === 'bundle') {
+            $regularPrice = $productModel->getPriceInfo()->getPrice('regular_price');
+            if ($regularPrice instanceof BundleRegularPrice) {
+                $price = (float)$regularPrice->getMinimalPrice()->getValue();
+            }
+        }
+
+        if ($this->isTaxEnabled() && $productModel->getTypeId() !== 'bundle') {
+            $price = (float)$this->catalogHelper->getTaxPrice($productModel, $price, true);
+        }
+
+        return (int)round($price * 100);
+    }
+
+    /**
+     * Returns whether tax is enabled for the current store.
+     *
+     * @return bool
+     *
+     * @throws NoSuchEntityException
+     */
+    private function isTaxEnabled(): bool
+    {
+        $storeId = StoreContext::getInstance()->getStoreId();
+        $taxSettings = $this->scopeConfig->getValue('tax/display/type', ScopeInterface::SCOPE_STORES, $storeId);
+
+        if ($taxSettings) {
+            return $taxSettings > 1;
+        }
+
+        $store = $this->storeManager->getStore($storeId);
+        $taxSettings = $this->scopeConfig->getValue(
+            'tax/display/type',
+            ScopeInterface::SCOPE_WEBSITES,
+            $store->getWebsiteId()
+        );
+
+        if ($taxSettings) {
+            return $taxSettings > 1;
+        }
+
+        $taxSettings = $this->scopeConfig->getValue('tax/display/type');
+
+        return $taxSettings > 1;
     }
 }
