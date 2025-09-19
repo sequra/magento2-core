@@ -19,7 +19,7 @@ class WidgetConfigurator implements WidgetConfiguratorInterface
      */
     protected $localeResolver;
     /**
-     * @var NumberFormatter
+     * @var NumberFormatter|null
      */
     protected $formatter;
 
@@ -35,7 +35,7 @@ class WidgetConfigurator implements WidgetConfiguratorInterface
     ) {
         $this->scopeResolver = $scopeResolver;
         $this->localeResolver = $localeResolver;
-        $this->formatter = $this->getFormatter();
+        $this->formatter = null;
     }
 
     /**
@@ -70,7 +70,7 @@ class WidgetConfigurator implements WidgetConfiguratorInterface
      */
     public function getDecimalSeparator(): string
     {
-        return (string) $this->formatter->getSymbol(NumberFormatter::DECIMAL_SEPARATOR_SYMBOL);
+        return (string) $this->getFormatter()->getSymbol(NumberFormatter::DECIMAL_SEPARATOR_SYMBOL);
     }
 
     /**
@@ -80,7 +80,7 @@ class WidgetConfigurator implements WidgetConfiguratorInterface
      */
     public function getThousandsSeparator(): string
     {
-        return (string) $this->formatter->getSymbol(NumberFormatter::GROUPING_SEPARATOR_SYMBOL);
+        return (string) $this->getFormatter()->getSymbol(NumberFormatter::GROUPING_SEPARATOR_SYMBOL);
     }
 
     /**
@@ -90,11 +90,14 @@ class WidgetConfigurator implements WidgetConfiguratorInterface
      */
     private function getFormatter(): NumberFormatter
     {
-        $localeCode = $this->localeResolver->getLocale();
+        if ($this->formatter === null) {
+            $localeCode = $this->localeResolver->getLocale();
+            $this->formatter = new NumberFormatter(
+                $localeCode . '@currency=' . $this->getCurrency(),
+                NumberFormatter::CURRENCY
+            );
+        }
 
-        return new NumberFormatter(
-            $localeCode . '@currency=' . $this->getCurrency(),
-            NumberFormatter::CURRENCY
-        );
+        return $this->formatter;
     }
 }
