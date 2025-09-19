@@ -55,7 +55,12 @@ class MiniWidgetMessagesProvider implements MiniWidgetMessagesProviderInterface
         if ($this->countryCode === null) {
             // Only resolve locale when needed
             $locale = $this->localeResolver->getLocale();
-            $this->countryCode = substr($locale, strpos($locale, '_') + 1);
+            $underscorePos = strpos($locale, '_');
+            if ($underscorePos !== false) {
+                $this->countryCode = substr($locale, $underscorePos + 1);
+            } else {
+                $this->countryCode = $locale;
+            }
         }
 
         return $this->countryCode;
