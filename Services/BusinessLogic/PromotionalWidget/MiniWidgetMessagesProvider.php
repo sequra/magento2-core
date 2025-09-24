@@ -13,6 +13,11 @@ class MiniWidgetMessagesProvider implements MiniWidgetMessagesProviderInterface
     protected ResolverInterface $localeResolver;
 
     /**
+     * @var string|null $countryCode
+     */
+    protected ?string $countryCode = null;
+
+    /**
      * @param ResolverInterface $localeResolver
      */
     public function __construct(ResolverInterface $localeResolver)
@@ -47,8 +52,17 @@ class MiniWidgetMessagesProvider implements MiniWidgetMessagesProviderInterface
      */
     protected function getCountryCode(): string
     {
-        $locale = $this->localeResolver->getLocale();
+        if ($this->countryCode === null) {
+            // Only resolve locale when needed
+            $locale = $this->localeResolver->getLocale();
+            $underscorePos = strpos($locale, '_');
+            if ($underscorePos !== false) {
+                $this->countryCode = substr($locale, $underscorePos + 1);
+            } else {
+                $this->countryCode = $locale;
+            }
+        }
 
-        return substr($locale, strpos($locale, '_') + 1);
+        return $this->countryCode;
     }
 }
