@@ -1,6 +1,8 @@
 <!-- ko foreach: sequraPaymentMethods -->
 <div class="payment-method" data-bind="css: {'_active': (product == $parent.getSelectedProduct())},
-                    afterRender: Sequra.refreshComponents">
+                    afterRender: typeof Sequra !== 'undefined' && Sequra.refreshComponents
+                             ? Sequra.refreshComponents
+                             : function() {}">
     <div class="payment-method-title field choice">
         <input type="radio"
                name="payment[method]"
@@ -14,7 +16,7 @@
             <!-- ko if: cost_description -->
             <span class="sequra_partpayment_cost_description" data-bind="text: cost_description"></span>
             <!--/ko-->
-            &nbsp;
+            <!-- ko if: $parent.isSequraObjectAvailable() -->
             <span class="sequra-educational-popup" style="z-index: 1;"
                   data-bind="
                     attr: {
@@ -23,6 +25,7 @@
                         'data-campaign': campaign
                     }
                 "> + info</span>
+            <!--/ko-->
         </label>
     </div>
 
@@ -52,7 +55,7 @@
                     enable: ($parent.getCode() == $parent.isChecked()),
                     css: {
                         disabled: !$parent.isPlaceOrderActionAllowed(),
-                        ['sequra_' + product]: true
+                        ['sequra_' + product]: product
                     }
                     "
                         disabled>

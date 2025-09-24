@@ -306,5 +306,9 @@ define([
         showLogo: function () {
             return window.checkoutConfig.payment.sequra_payment.showlogo;
         },
+
+        isSequraObjectAvailable: function () {
+            return (typeof Sequra !== 'undefined' && typeof Sequra.refreshComponents === 'function');
+        },
     });
 });
