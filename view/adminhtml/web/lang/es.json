@@ -217,13 +217,6 @@
       "settings": "Configuración de widgets promocionales"
     },
     "description": "Etiquetas de widgets",
-    "usePromotionalComponents": {
-      "label": "¿Te gustaría utilizar componentes promocionales?",
-      "options": {
-        "yes": "Sí",
-        "no": "No, gracias"
-      }
-    },
     "displayOnProductPage": {
       "label": "Mostrar widget en la página de productos",
       "description": "Especificar si el icono del método de pago debe mostrarse a los clientes en la página de pago."

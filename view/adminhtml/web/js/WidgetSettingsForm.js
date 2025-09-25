@@ -25,7 +25,6 @@ if (!window.SequraFE) {
 
     /**
      * @typedef WidgetSettings
-     * @property {boolean} useWidgets
      * @property {boolean} displayWidgetOnProductPage
      * @property {boolean} showInstallmentAmountInProductListing
      * @property {boolean} showInstallmentAmountInCartPage
@@ -98,7 +97,6 @@ if (!window.SequraFE) {
 
         /** @type WidgetSettings */
         const defaultFormData = {
-            useWidgets: false,
             displayWidgetOnProductPage: false,
             widgetStyles: '{"alignment":"center","amount-font-bold":"true","amount-font-color":"#1C1C1C","amount-font-size":"15","background-color":"white","border-color":"#B1AEBA","border-radius":"","class":"","font-color":"#1C1C1C","link-font-color":"#1C1C1C","link-underline":"true","no-costs-claim":"","size":"M","starting-text":"only","type":"banner"}',
             showInstallmentAmountInProductListing: false,
@@ -147,15 +145,6 @@ if (!window.SequraFE) {
                         title: `widgets.title.${configuration.appState}`,
                         text: 'widgets.description'
                     }),
-                    generator.createRadioGroupField({
-                        value: changedSettings.useWidgets,
-                        label: 'widgets.usePromotionalComponents.label',
-                        options: [
-                            { label: 'widgets.usePromotionalComponents.options.yes', value: true },
-                            { label: 'widgets.usePromotionalComponents.options.no', value: false }
-                        ],
-                        onChange: (value) => handleChange('useWidgets', value)
-                    })
                 ])
             );
 
@@ -170,10 +159,6 @@ if (!window.SequraFE) {
          * Renders additional widget settings.
          */
         const renderAdditionalSettings = () => {
-            if (!changedSettings.useWidgets) {
-                return;
-            }
-
             const pageInnerContent = document.querySelector('.sq-content-inner');
 
             pageInnerContent?.append(
@@ -338,9 +323,6 @@ if (!window.SequraFE) {
          * @returns {boolean} Returns true if all changedSettings values are valid, false otherwise.
          */
         const validate = () => {
-            if (!changedSettings.useWidgets) {
-                return true;
-            }
             let isValid = validator.validateJSON(
                 document.querySelector(`[name="widget-configurator-input"]`),
                 true,
@@ -512,9 +494,7 @@ if (!window.SequraFE) {
         const handleChange = (name, value) => {
             changedSettings[name] = value;
 
-            if (name === 'useWidgets' || name === 'showInstallmentAmountInProductListing') {
-                refreshForm();
-            } else if (name === 'displayWidgetOnProductPage') {
+            if (name === 'displayWidgetOnProductPage') {
                 showOrHideRelatedFields('.sq-product-related-field', value);
             } else if (name === 'showInstallmentAmountInCartPage') {
                 showOrHideRelatedFields('.sq-cart-related-field', value);
