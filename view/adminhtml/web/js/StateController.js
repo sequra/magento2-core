@@ -220,7 +220,7 @@ SequraFE.appPages = {
                 if (
                     dataStore.connectionSettings?.connectionData?.every(c => c.username && c.password) &&
                     dataStore.countrySettings?.length &&
-                    dataStore.widgetSettings?.useWidgets !== undefined &&
+                    dataStore.widgetSettings?.widgetStyles !== undefined &&
                     !SequraFE.state.getCredentialsChanged()
                 ) {
                     currentState.split('-')[0] === SequraFE.appStates.ONBOARDING ?
@@ -278,7 +278,7 @@ SequraFE.appPages = {
             if (
                 !dataStore.connectionSettings?.connectionData?.every(c => c.username && c.password) ||
                 dataStore.countrySettings?.length === 0 ||
-                dataStore.widgetSettings?.useWidgets === undefined ||
+                dataStore.widgetSettings?.widgetStyles === undefined ||
                 SequraFE.state.getCredentialsChanged()
             ) {
                 this.goToState(SequraFE.appStates.ONBOARDING, additionalConfig, true);
