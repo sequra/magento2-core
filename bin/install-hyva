@@ -1,0 +1,22 @@
+#!/bin/bash
+echo " Install Hyva Sequra Core module"
+docker compose exec magento bash -c "
+    apt-get update && 
+    apt-get install -y git ssh
+"
+docker compose exec -u www-data magento bash -c "
+    composer config repositories.hyva-themes/magento2-theme-module git git@gitlab.hyva.io:hyva-themes/magento2-theme-module.git &&
+    composer config repositories.hyva-themes/magento2-reset-theme git git@gitlab.hyva.io:hyva-themes/magento2-reset-theme.git &&
+    composer config repositories.hyva-themes/magento2-email-module git git@gitlab.hyva.io:hyva-themes/magento2-email-module.git &&
+    composer config repositories.hyva-themes/magento2-default-theme git git@gitlab.hyva.io:hyva-themes/magento2-default-theme.git &&
+    composer config repositories.hyva-themes/magento2-order-cancellation-webapi git git@gitlab.hyva.io:hyva-themes/magento2-order-cancellation-webapi.git &&
+    composer config repositories.hyva-themes/magento2-compat-module-fallback git git@gitlab.hyva.io:hyva-themes/magento2-compat-module-fallback.git &&
+    composer config repositories.hyva-themes/magento2-mollie-theme-bundle git git@gitlab.hyva.io:hyva-themes/hyva-compat/magento2-mollie-theme-bundle.git &&
+    composer config repositories.hyva-themes/magento2-sequra-core git git@gitlab.hyva.io:hyva-themes/hyva-compat/magento2-sequra-core.git &&
+    composer require hyva-themes/magento2-theme-module --prefer-source hyva-themes/magento2-default-theme --prefer-source hyva-themes/magento2-sequra-core:2.0.0 &&
+    (mv vendor/hyva-themes/magento2-reset-theme/Magento_Cms/layout/override/base/cms_index_noroute.xml vendor/hyva-themes/magento2-reset-theme/Magento_Cms/layout/override/base/cms_noroute_index.xml ||echo \"no file to move\" ) &&
+    bin/magento module:enable Hyva_Theme Hyva_SequraCore && 
+    bin/magento setup:upgrade &&
+    rm -rf generated/code/* generated/metadata/* var/cache/* var/page_cache/* var/view_preprocessed/* &&
+    bin/magento cache:flush
+"
