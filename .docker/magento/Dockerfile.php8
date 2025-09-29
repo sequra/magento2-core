@@ -18,6 +18,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     unzip \
     tar \
     libpcre3 \
+    openssh-client \
+    && echo -e "[client]\nskip-ssl=true\n" > /etc/mysql/my.cnf \
     && pecl install xdebug redis oauth \
     && echo "extension=oauth.so" > /usr/local/etc/php/conf.d/docker-php-ext-oauth.ini \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
