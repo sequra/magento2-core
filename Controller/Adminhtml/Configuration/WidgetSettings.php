@@ -94,10 +94,6 @@ class WidgetSettings extends BaseConfigurationController
         $storeConfig = $this->storeConfigManager->getStoreConfigs([$store->getCode()])[0];
 
         /**
-         * @var bool $useWidgets
-         */
-        $useWidgets = $data['useWidgets'] ?? false;
-        /**
          * @var bool $displayWidgetOnProductPage
          */
         $displayWidgetOnProductPage = $data['displayWidgetOnProductPage'] ?? false;
@@ -154,7 +150,6 @@ class WidgetSettings extends BaseConfigurationController
         // @phpstan-ignore-next-line
         $response = AdminAPI::get()->widgetConfiguration($this->storeId)->setWidgetSettings(
             new WidgetSettingsRequest(
-                $useWidgets,
                 $displayWidgetOnProductPage,
                 $showInstallmentAmountInProductListing,
                 $showInstallmentAmountInCartPage,

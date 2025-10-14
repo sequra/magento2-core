@@ -218,13 +218,6 @@
       "settings": "Promotional widgets settings"
     },
     "description": "Promotional components allows you to display promotional widgets and educational pop-ups that shows and explains which SeQura products the shopper offers and how they work, which will help the shop increase average order value and conversion rates.",
-    "usePromotionalComponents": {
-      "label": "Would you like to use promotional components?",
-      "options": {
-        "yes": "Yes",
-        "no": "No, thanks"
-      }
-    },
     "displayOnProductPage": {
       "label": "Display widget on product page",
       "description": "Specify whether payment method icon should be displayed to customers on the checkout."
