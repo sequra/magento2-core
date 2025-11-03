@@ -37,5 +37,5 @@ if [[ "$@" == *"--headed"* || "$@" == *"--ui"* ]]; then
 else
     docker run \
     --env-file "${BASEDIR}"/.env \
-    -it --rm -v "${BASEDIR}":/app -w /app mcr.microsoft.com/playwright:v1.49.1-jammy bash -c "npx playwright test $@"
+    -it --rm -v "${BASEDIR}":/app -w /app mcr.microsoft.com/playwright:v1.56.1-jammy bash -c "npx playwright test $@"
 fi
