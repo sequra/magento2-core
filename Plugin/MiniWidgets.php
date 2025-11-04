@@ -3,7 +3,6 @@
 namespace Sequra\Core\Plugin;
 
 use Exception;
-use Magento\Catalog\Model\Product;
 use Magento\Checkout\Model\Session;
 use Magento\Framework\App\ScopeResolverInterface;
 use Magento\Framework\Escaper;

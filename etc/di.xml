@@ -150,4 +150,20 @@
     <type name="Magento\Framework\App\Request\CsrfValidator">
         <plugin name="sequra_disable_form_key_validation" type="Sequra\Core\Plugin\Framework\App\Request\CsrfValidator" />
     </type>
+    <!-- Fix circular dependency by using proxy for checkout session -->
+    <type name="Sequra\Core\Plugin\MiniWidgets">
+        <arguments>
+            <argument name="checkoutSession" xsi:type="object">Magento\Checkout\Model\Session\Proxy</argument>
+        </arguments>
+    </type>
+    <type name="Sequra\Core\Block\Cart">
+        <arguments>
+            <argument name="checkoutSession" xsi:type="object">Magento\Checkout\Model\Session\Proxy</argument>
+        </arguments>
+    </type>
+    <type name="Sequra\Core\Block\Product">
+        <arguments>
+            <argument name="checkoutSession" xsi:type="object">Magento\Checkout\Model\Session\Proxy</argument>
+        </arguments>
+    </type>
 </config>
