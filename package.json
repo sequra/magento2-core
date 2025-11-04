@@ -16,7 +16,7 @@
   "license": "ISC",
   "devDependencies": {
     "sequra-core-admin-fe": "github:sequra/integration-core-ui#2.0.0",
-    "@playwright/test": "^1.49.1",
+    "@playwright/test": "^1.56.1",
     "@types/node": "^22.10.7",
     "playwright-fixture-for-plugins": "github:sequra/playwright-fixture-for-plugins"
   }
