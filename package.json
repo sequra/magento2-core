@@ -15,16 +15,8 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-<<<<<<< HEAD
-<<<<<<< HEAD
-    "sequra-core-admin-fe": "github:sequra/integration-core-ui#1.0.0",
-    "@playwright/test": "^1.56.1",
-=======
-=======
->>>>>>> 8e6b7b0 (Update CORE UI)
-    "sequra-core-admin-fe": "github:sequra/integration-core-ui#feature/LIS-94",
+    "sequra-core-admin-fe": "github:sequra/integration-core-ui#2.0.0",
     "@playwright/test": "^1.49.1",
->>>>>>> dd25702 (Update CORE UI)
     "@types/node": "^22.10.7",
     "playwright-fixture-for-plugins": "github:sequra/playwright-fixture-for-plugins"
   }
