@@ -19,7 +19,7 @@ trait WidgetTrait
      */
     protected $localeResolver;
     /**
-     * @var Session|\Magento\Checkout\Model\Session\Proxy
+     * @var Session
      */
     protected $checkoutSession;
     /**

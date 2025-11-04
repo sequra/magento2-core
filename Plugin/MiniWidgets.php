@@ -3,6 +3,7 @@
 namespace Sequra\Core\Plugin;
 
 use Exception;
+use Magento\Checkout\Model\Session;
 use Magento\Framework\App\ScopeResolverInterface;
 use Magento\Framework\Escaper;
 use Magento\Framework\Exception\NoSuchEntityException;
@@ -40,7 +41,7 @@ class MiniWidgets
      * @param StoreManagerInterface $storeManager
      * @param ScopeResolverInterface $scopeResolver
      * @param ResolverInterface $localeResolver
-     * @param \Magento\Checkout\Model\Session\Proxy $checkoutSession
+     * @param Session $checkoutSession
      * @param Request $request
      * @param Escaper $htmlEscaper
      */
@@ -48,7 +49,7 @@ class MiniWidgets
         StoreManagerInterface  $storeManager,
         ScopeResolverInterface $scopeResolver,
         ResolverInterface      $localeResolver,
-        \Magento\Checkout\Model\Session\Proxy $checkoutSession,
+        Session                $checkoutSession,
         Request                $request,
         Escaper                $htmlEscaper
     ) {

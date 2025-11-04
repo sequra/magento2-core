@@ -26,3 +26,10 @@ bin/php/*
 .DS_Store
 
 *.gz
+# LLM tooling files (managed by sequcli)
+llm-tooling
+CLAUDE.md
+.claude/
+AGENTS.md
+.opencode/
+opencode.json
