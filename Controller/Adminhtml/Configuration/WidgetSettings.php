@@ -143,7 +143,7 @@ class WidgetSettings extends BaseConfigurationController
          */
         $widgetOnListingPage = $data['widgetOnListingPage'] ?? '';
         /**
-         * @var array<string, string> $customLocations
+         * @var array<int, array<string, bool|string>> $customLocations
          */
         $customLocations = $data['customLocations'] ?? [];
 
