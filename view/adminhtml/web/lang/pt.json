@@ -219,13 +219,6 @@
       "settings": "Definições de widgets promocionais"
     },
     "description": "Os componentes promocionais permitem exibir widgets promocionais e pop-ups educativos que mostram e explicam quais produtos SeQura o lojista oferece e como funcionam, o que ajudará a loja a aumentar o valor médio do pedido e as taxas de conversão.",
-    "usePromotionalComponents": {
-      "label": "Gostaria de usar componentes promocionais?",
-      "options": {
-        "yes": "Sim",
-        "no": "Não, obrigado"
-      }
-    },
     "displayOnProductPage": {
       "label": "Exibir widget na página do produto",
       "description": "Especifique se o ícone do método de pagamento deve ser exibido aos clientes no checkout."

@@ -45,7 +45,7 @@ class PaymentMethodsService
             // @phpstan-ignore-next-line
             $widgetsConfig = AdminAPI::get()->widgetConfiguration($storeId)->getWidgetSettings()->toArray();
 
-            if (isset($widgetsConfig['errorCode']) || !$widgetsConfig['useWidgets']) {
+            if (isset($widgetsConfig['errorCode'])) {
                 continue;
             }
 
