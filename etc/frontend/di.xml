@@ -15,6 +15,12 @@
     <type name="Magento\Framework\Pricing\Render\Amount">
         <plugin name="sequra_mini_widgets" type="Sequra\Core\Plugin\MiniWidgets"/>
     </type>
+    <!-- Fix circular dependency by using proxy for checkout session in MiniWidgets -->
+    <type name="Sequra\Core\Plugin\MiniWidgets">
+        <arguments>
+            <argument name="checkoutSession" xsi:type="object">Magento\Checkout\Model\Session\Proxy</argument>
+        </arguments>
+    </type>
     <type name="Magento\ConfigurableProduct\Block\Product\View\Type\Configurable">
         <plugin disabled="false" name="sequra_config_attributes" sortOrder="10"
                 type="Sequra\Core\Plugin\Magento\ConfigurableProduct\Block\Product\View\Type\Configurable"/>
