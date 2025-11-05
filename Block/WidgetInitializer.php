@@ -6,15 +6,19 @@ use Exception;
 use Magento\Bundle\Pricing\Price\BundleRegularPrice;
 use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\Catalog\Helper\Data;
+use Magento\Catalog\Helper\DataFactory as CatalogHelperFactory;
 use Magento\Catalog\Model\Product;
 use Magento\Catalog\Model\ProductRepository;
+use Magento\Catalog\Model\ProductRepositoryFactory;
 use Magento\Checkout\Block\Cart;
+use Magento\Checkout\Block\CartFactory;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\Request\Http;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\View\Element\Template;
 use Magento\Framework\View\Element\Template\Context;
 use Magento\Checkout\Model\Session;
+use Magento\Checkout\Model\SessionFactory;
 use Magento\Framework\Locale\ResolverInterface;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
@@ -32,14 +36,14 @@ class WidgetInitializer extends Template
     protected ResolverInterface $localeResolver;
 
     /**
-     * @var Session $session
+     * @var SessionFactory $sessionFactory
      */
-    private Session $session;
+    private SessionFactory $sessionFactory;
 
     /**
-     * @var ProductRepository $productRepository
+     * @var ProductRepositoryFactory $productRepositoryFactory
      */
-    private ProductRepository $productRepository;
+    private ProductRepositoryFactory $productRepositoryFactory;
 
     /**
      * @var Http $request
@@ -47,14 +51,14 @@ class WidgetInitializer extends Template
     private Http $request;
 
     /**
-     * @var Cart $cart
+     * @var CartFactory $cartFactory
      */
-    private Cart $cart;
+    private CartFactory $cartFactory;
 
     /**
-     * @var Data $catalogHelper
+     * @var CatalogHelperFactory $catalogHelperFactory
      */
-    private Data $catalogHelper;
+    private CatalogHelperFactory $catalogHelperFactory;
 
     /**
      * @var ScopeConfigInterface $scopeConfig
@@ -71,11 +75,11 @@ class WidgetInitializer extends Template
      *
      * @param Context $context
      * @param ResolverInterface $localeResolver
-     * @param Session $session
+     * @param SessionFactory $sessionFactory
      * @param Http $request
-     * @param ProductRepository $productRepository
-     * @param Cart $cart
-     * @param Data $catalogHelper
+     * @param ProductRepositoryFactory $productRepositoryFactory
+     * @param CartFactory $cartFactory
+     * @param CatalogHelperFactory $catalogHelperFactory
      * @param ScopeConfigInterface $scopeConfig
      * @param StoreManagerInterface $storeManager
      * @param mixed[] $data
@@ -83,22 +87,22 @@ class WidgetInitializer extends Template
     public function __construct(
         Context $context,
         ResolverInterface $localeResolver,
-        Session $session,
+        SessionFactory $sessionFactory,
         Http $request,
-        ProductRepository $productRepository,
-        Cart $cart,
-        Data $catalogHelper,
+        ProductRepositoryFactory $productRepositoryFactory,
+        CartFactory $cartFactory,
+        CatalogHelperFactory $catalogHelperFactory,
         ScopeConfigInterface $scopeConfig,
         StoreManagerInterface $storeManager,
         array $data = []
     ) {
         parent::__construct($context, $data);
         $this->localeResolver = $localeResolver;
-        $this->session = $session;
+        $this->sessionFactory = $sessionFactory;
         $this->request = $request;
-        $this->productRepository = $productRepository;
-        $this->cart = $cart;
-        $this->catalogHelper = $catalogHelper;
+        $this->productRepositoryFactory = $productRepositoryFactory;
+        $this->cartFactory = $cartFactory;
+        $this->catalogHelperFactory = $catalogHelperFactory;
         $this->scopeConfig = $scopeConfig;
         $this->storeManager = $storeManager;
     }
@@ -111,7 +115,8 @@ class WidgetInitializer extends Template
     public function getWidgetInitializeData(): array
     {
         try {
-            $quote = $this->session->getQuote();
+            $session = $this->sessionFactory->create();
+            $quote = $session->getQuote();
             $shippingCountry = $quote->getShippingAddress()->getCountryId() ?? '';
             $storeId = (string)$this->_storeManager->getStore()->getId();
             $currentCountry = $this->getCurrentCountry();
@@ -161,13 +166,15 @@ class WidgetInitializer extends Template
         if ($actionName === 'catalog_product_view') {
             $idParam = $this->request->getParam('id');
             $productId = is_numeric($idParam) ? (int)$idParam : 0;
-            $product = $this->productRepository->getById($productId);
+            $productRepository = $this->productRepositoryFactory->create();
+            $product = $productRepository->getById($productId);
 
             $amount = $this->getProductPrice($product);
         }
 
         if ($actionName === 'checkout_cart_index') {
-            $totals = $this->cart->getTotals();
+            $cart = $this->cartFactory->create();
+            $totals = $cart->getTotals();
             $amount = isset($totals['grand_total']['value'])
                 ? (float)$totals['grand_total']['value'] * 100
                 : 0.0;
@@ -222,7 +229,8 @@ class WidgetInitializer extends Template
         }
 
         /** @var Product $productModel */
-        $productModel = $product instanceof Product ? $product : $this->productRepository->getById($id);
+        $productRepository = $this->productRepositoryFactory->create();
+        $productModel = $product instanceof Product ? $product : $productRepository->getById($id);
         $price = (float)$productModel->getFinalPrice();
 
         if ($productModel->getTypeId() === 'bundle') {
@@ -233,7 +241,8 @@ class WidgetInitializer extends Template
         }
 
         if ($this->isTaxEnabled() && $productModel->getTypeId() !== 'bundle') {
-            $price = (float)$this->catalogHelper->getTaxPrice($productModel, $price, true);
+            $catalogHelper = $this->catalogHelperFactory->create();
+            $price = (float)$catalogHelper->getTaxPrice($productModel, $price, true);
         }
 
         return (int)round($price * 100);
