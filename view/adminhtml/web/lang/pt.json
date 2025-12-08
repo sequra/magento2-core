@@ -14,6 +14,7 @@
     "merchant": "Comerciante:",
     "settings": "Definições",
     "paymentMethods": "Métodos de pagamento",
+    "advanced": "Avançado",
     "changesSaved": "Alterações guardadas com sucesso.",
     "noItemsAvailable": "Nenhum item disponível",
     "and": " e ",
@@ -24,6 +25,7 @@
     "errors": {
       "InvalidOperationException": "Ocorreu um erro no lado do servidor. Por favor, verifique os dados e tente novamente.",
       "unknown": "Ocorreu um erro desconhecido. Por favor, tente novamente mais tarde.",
+      "backgroundDataFetchFailure": "Ocorreu um erro ao atualizar os dados em segundo plano. Por favor, recarregue a página para ver os dados mais recentes.",
       "empty": "O parâmetro não pode estar vazio.",
       "saveEntityFailed": "Falha ao guardar entidade porque %s",
       "getEntityFailed": "Falha ao obter entidade porque %s",
@@ -82,7 +84,9 @@
         "merchantError": "Comerciante com ID %s não encontrado.",
         "failedToRegisterWebhook": "Falha ao registar webhook.",
         "hmacError": "Erro ao gerar HMAC."
-      }
+      },
+      "failedToRetrieveLog": "Falha ao recuperar o conteúdo do log.",
+      "failedToRemoveLog": "Falha ao remover o conteúdo do log."
     }
   },
   "sidebar": {
@@ -115,7 +119,8 @@
     "invalidFieldValue": "O campo deve ser definido como \"%s\".",
     "acceptableRange": "O valor deve estar entre %d e %d.",
     "paymentMethodUnavailable": "Método de pagamento indisponível.",
-    "storeUnavailable": "Loja indisponível."
+    "storeUnavailable": "Loja indisponível.",
+    "invalidTimeDuration": "Este campo deve conter apenas datas como 2017-08-31 ou durações como P3M15D (3 meses e 15 dias). Verifique o formato ISO 8601"
   },
   "payments": {
     "title": "Métodos de pagamento",
@@ -129,6 +134,24 @@
     "maximumAmount": "Montante máximo",
     "availableFrom": "Disponível a partir de",
     "availableTo": "Disponível até"
+  },
+  "debug": {
+    "title": "Habilitar registros",
+    "description": "Ajuda a diagnosticar problemas com a integração SeQura",
+    "noLogs": "Não há registros disponíveis",
+    "log": {
+      "severity": "Severidade",
+      "message": "Mensagem",
+      "datetime": "Data e hora",
+      "removeModal": {
+        "title": "Remover registros",
+        "message": "Tem certeza de que deseja limpar os registros? Você não poderá recuperá-los."
+      },
+      "minLevel": "Nível mínimo de severidade",
+      "minLevelDescription": "Defina o nível mínimo de severidade dos registros a serem gravados no arquivo de log."
+    },
+    "reload": "Recarregar",
+    "remove": "Remover"
   },
   "connection": {
     "title": {
@@ -211,7 +234,8 @@
     "PE": {
       "label": "Peru",
       "description": "Por favor, insira o ID de comerciante SeQura que deve ser usado para clientes peruanos."
-    }
+    },
+    "enabledCountries": "Ativado para {countries}."
   },
   "widgets": {
     "title": {
@@ -296,7 +320,7 @@
   },
   "orderStatusSettings": {
     "title": "Definições de estado do pedido",
-    "description": "Estado do pedido Configure a sua conta seQura e escolha o ambiente para começar a processar pagamentos. ",
+    "description": "Defina como os status do seQura se relacionam com os status de pedido do {shopName}. Os valores padrão devem funcionar na maioria dos casos, portanto, altere-os com cautela.",
     "paid": {
       "label": "Pago",
       "description": "Quando um pagamento tem estado Pago."
@@ -336,6 +360,26 @@
     "excludedProducts": {
       "label": "Produtos excluídos",
       "description": "Os produtos da loja neste campo não serão autorizados a ser comprados com métodos de pagamento SeQura. Por favor, insira um SKU válido para cada produto que gostaria de excluir."
+    },
+    "enabledForServices": {
+      "label": "Habilitado para serviços",
+      "description": "Seu contrato deve permitir a venda de serviços. "
+    },
+    "allowFirstServicePaymentDelay": {
+      "label": "Permitir atraso no primeiro pagamento do serviço",
+      "description": ""
+    },
+    "allowServiceRegistrationItems": {
+      "label": "Permitir itens de registro",
+      "description": "Permite configurar uma parte do preço do produto a ser paga antecipadamente como registro. "
+    },
+    "defaultServicesEndDate": {
+      "label": "Data de término dos serviços padrão",
+      "description": "Datas como 2017-08-31, duração como P3M15D (3 meses e 15 dias). Valor padrão para todos os produtos."
     }
+  },
+  "supportLink": {
+    "label": "Precisa de ajuda?",
+    "link": "https://sqra.es/supportpt"
   }
 }

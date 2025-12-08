@@ -2,6 +2,10 @@ if (!window.SequraFE) {
     window.SequraFE = {};
 }
 
+if (typeof SequraFE.regex === 'undefined'){
+    throw new Error('SequraFE.regex is not defined. Please provide the regex definitions before loading the ValidationService.');
+}
+
 (function () {
     /**
      * @typedef ValidationMessage
@@ -112,9 +116,7 @@ if (!window.SequraFE) {
      * @return {boolean}
      */
     const validateEmail = (input, message) => {
-        let regex =
-            /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-
+        const regex = new RegExp(SequraFE.regex.email);
         return validateField(input, !regex.test(String(input.value).toLowerCase()), message);
     };
 
@@ -126,8 +128,7 @@ if (!window.SequraFE) {
      * @return {boolean}
      */
     const validateUrl = (input, message) => {
-        let regex = /(https?:\/\/)([\w\-])+\.([a-zA-Z]{2,63})([\/\w-]*)*\/?\??([^#\n\r]*)?#?([^\n\r]*)/m;
-
+        const regex = new RegExp(SequraFE.regex.url);
         return validateField(input, !regex.test(String(input.value).toLowerCase()), message);
     };
 
@@ -221,6 +222,29 @@ if (!window.SequraFE) {
     };
 
     /**
+     * Validates if the value is a valid date or duration following ISO 8601 format.
+     *
+     * @param {string} str
+     * @return {boolean}
+     */
+    const validateDateOrDuration = (str) => {
+        const regex = new RegExp(SequraFE.regex.dateOrDuration);
+        return regex.test(str) && 'P' !== str && !str.endsWith('T');
+    };
+
+    /**
+     * Check if a given string is a valid IP address.
+     *
+     * @param {string} str
+     *
+     * @returns {boolean}
+     */
+    const validateIpAddress = (str) => {
+        const regex = new RegExp(SequraFE.regex.ip);
+        return regex.test(str);
+    };
+
+    /**
      * Validates the provided JSON string and marks field invalid if the JSON is invalid.
      *
      * @param {HTMLElement} element
@@ -286,7 +310,7 @@ if (!window.SequraFE) {
                 'validation.invalidJSON'
             ) && isValid;
 
-            isPaymentMethodValid = allowedPaymentMethods.some(pm => pm.product === location.product)
+            let isPaymentMethodValid = allowedPaymentMethods.some(pm => pm.product === location.product)
                 && value.filter(l => l.product === location.product).length === 1;
 
             isValid = validateField(
@@ -339,6 +363,8 @@ if (!window.SequraFE) {
         validateCustomLocations,
         validateField,
         validateRequiredField,
+        validateDateOrDuration,
+        validateIpAddress,
         handleValidationErrors
     };
 })();

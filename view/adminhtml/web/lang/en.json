@@ -14,6 +14,7 @@
     "merchant": "Merchant:",
     "settings": "Settings",
     "paymentMethods": "Payment methods",
+    "advanced": "Advanced",
     "changesSaved": "Changes saved successfully.",
     "noItemsAvailable": "No items available",
     "and": " and ",
@@ -24,6 +25,7 @@
     "errors": {
       "InvalidOperationException": "An error occurred on the server side. Please check the data and try again.",
       "unknown": "An unknown error occurred. Please try again later.",
+      "backgroundDataFetchFailure": "An error occurred while refreshing data in the background. Please reload the page to see the latest data.",
       "empty": "Parameter can't be empty.",
       "saveEntityFailed": "Failed to save entity because %s",
       "getEntityFailed": "Failed to retrieve entity because %s",
@@ -82,7 +84,9 @@
         "merchantError": "Merchant with id %s not found.",
         "failedToRegisterWebhook": "Failed to register webhook.",
         "hmacError": "Error generating HMAC."
-      }
+      },
+      "failedToRetrieveLog": "Failed to retrieve log content.",
+      "failedToRemoveLog": "Failed to remove log content."
     }
   },
   "sidebar": {
@@ -114,7 +118,8 @@
     "invalidFieldValue": "Field must be set to \"%s\".",
     "invalidMaxValue": "Maximal allowed value is %s.",
     "invalidImageType": "Please provide a file in one of the supported image types (PNG, JPG, SVG).",
-    "invalidImageSize": "The selected file exceeds the limit of 10MB."
+    "invalidImageSize": "The selected file exceeds the limit of 10MB.",
+    "invalidTimeDuration": "This field must contain only dates as 2017-08-31 or time duration as P3M15D (3 months and 15 days). Check ISO 8601."
   },
   "payments": {
     "title": "Payment methods",
@@ -128,6 +133,24 @@
     "maximumAmount": "Maximum amount",
     "availableFrom": "Available from",
     "availableTo": "Available to"
+  },
+  "debug": {
+    "title": "Enable logs",
+    "description": "Help to diagnose issues with the seQura integration",
+    "noLogs": "There are no logs available",
+    "log": {
+      "severity": "Severity",
+      "message": "Message",
+      "datetime": "Date and time",
+      "removeModal": {
+        "title": "Delete logs",
+        "message": "Are you sure you want to clear the logs? You won't be able to recover them."
+      },
+      "minLevel": "Minimum severity level",
+      "minLevelDescription": "Set the minimum severity level of logs to write to the log file."
+    },
+    "reload": "Reload",
+    "remove": "Remove"
   },
   "connection": {
     "title": {
@@ -210,7 +233,8 @@
     "PE": {
       "label": "Peru",
       "description": "Please enter SeQura merchant ID that should be used for Peruvian customers."
-    }
+    },
+    "enabledCountries": "Enabled for {countries}."
   },
   "widgets": {
     "title": {
@@ -295,7 +319,7 @@
   },
   "orderStatusSettings": {
     "title": "Order status settings",
-    "description": "Order status Set up your seQura account and choose the environment to start processing payments. ",
+    "description": "Define how seQura statuses map to {shopName} order statuses. The default values should work for most cases, so change them with caution.",
     "paid": {
       "label": "Paid",
       "description": "When a payment has status Paid."
@@ -335,6 +359,26 @@
     "excludedProducts": {
       "label": "Excluded products",
       "description": "The store products in this field will not be allowed to be purchased with SeQura payment methods. Please enter a valid SKU for every product you would like to exclude."
+    },
+    "enabledForServices": {
+      "label": "Enabled for services",
+      "description": "Your contract must allow selling services. "
+    },
+    "allowFirstServicePaymentDelay": {
+      "label": "Allow first service payment delay",
+      "description": ""
+    },
+    "allowServiceRegistrationItems": {
+      "label": "Allow registration items",
+      "description": "Allows configuring part of the product price to be paid in advance as registration. "
+    },
+    "defaultServicesEndDate": {
+      "label": "Default services end date",
+      "description": "Dates as 2017-08-31, time duration as P3M15D (3 months and 15 days). The default value for all products."
     }
+  },
+  "supportLink": {
+    "label": "Need help?",
+    "link": "https://sqra.es/supportes"
   }
 }

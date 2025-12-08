@@ -374,7 +374,6 @@ if (!window.SequraFE) {
                     document.querySelector(`[name="${name}-input"]`),
                     'validation.requiredField'
                 );
-
                 const current = getSettingsForActiveDeployment(changedSettings);
                 if (current) current[name] = value;
             }
@@ -496,7 +495,7 @@ if (!window.SequraFE) {
         const connect = () => {
             utilities.showLoader();
 
-            api.post(configuration.connectUrl, changedSettings)
+            api.post(configuration.connectUrl, changedSettings, SequraFE.customHeader)
                 .then((result) => {
 
                     if (!areCredentialsValid(result)) {
@@ -527,11 +526,20 @@ if (!window.SequraFE) {
 
                     disableFooter(true);
 
-                    if (configuration.appState === SequraFE.appStates.SETTINGS && navigateToOnboarding) {
-                        SequraFE.state.setCredentialsChanged();
-                        SequraFE.state.goToState(SequraFE.appStates.ONBOARDING);
+                    if ( configuration.appState === SequraFE.appStates.SETTINGS) {
+                        if(navigateToOnboarding){
+                            SequraFE.state.setCredentialsChanged();
+                            SequraFE.state.goToState(SequraFE.appStates.ONBOARDING);
+                            return;
+                        }
+                        // Reload GeneralSettings data.
+                        api.get(configuration.getGeneralSettingsUrl, null, SequraFE.customHeader).then(generalSettings => {
+                            SequraFE.state.setData('generalSettings', generalSettings);
+                        }).catch(() => {
+                              SequraFE.responseService.errorHandler({ errorCode: 'general.errors.backgroundDataFetchFailure' }).catch(e => console.error(e));
+                        }).finally(() => utilities.hideLoader());
                     } else {
-                        utilities.hideLoader();
+                      utilities.hideLoader();
                     }
                 });
         }
@@ -547,7 +555,7 @@ if (!window.SequraFE) {
 
                 utilities.showLoader();
 
-                api.post(configuration.disconnectUrl, createPayload())
+                api.post(configuration.disconnectUrl, createPayload(), SequraFE.customHeader)
                     .then(() => SequraFE.state.display())
                     .finally(utilities.hideLoader);
             })
@@ -590,6 +598,7 @@ if (!window.SequraFE) {
                     className: `sq-modal sqv--connection-modal`,
                     content: [generator.createElement('p', '', `connection.disconnect.message`)],
                     footer: true,
+                    canClose: false,
                     buttons: [
                         {
                             type: 'secondary',
@@ -600,7 +609,7 @@ if (!window.SequraFE) {
                             }
                         },
                         {
-                            type: 'primary',
+                            type: 'danger',
                             label: 'general.confirm',
                             onClick: () => {
                                 modal.close();
@@ -626,6 +635,7 @@ if (!window.SequraFE) {
                     className: `sq-modal sqv--connection-modal`,
                     content: [generator.createElement('p', '', `connection.modal.message`)],
                     footer: true,
+                    canClose: false,
                     buttons: [
                         {
                             type: 'secondary',

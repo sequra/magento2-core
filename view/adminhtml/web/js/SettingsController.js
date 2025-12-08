@@ -78,34 +78,36 @@ if (!window.SequraFE) {
                     promises = Promise.all([
                         SequraFE.state.getData('notConnectedDeployments') ?? api.get(
                             configuration.pageConfiguration.onboarding.getNotConnectedDeploymentsUrl.replace(
-                                encodeURIComponent('{storeId}'), SequraFE.state.getStoreId()
-                            )
+                                '{storeId}', SequraFE.state.getStoreId()
+                            ),
+                            null,
+                            SequraFE.customHeader
                         ),
                     ])
                     break;
                 case SequraFE.appPages.SETTINGS.ORDER_STATUS:
                     renderer = renderOrderStatusMappingSettingsForm;
                     promises = Promise.all([
-                        api.get(configuration.getOrderStatusMappingSettingsUrl),
-                        api.get(configuration.getShopOrderStatusesUrl),
+                        api.get(configuration.getOrderStatusMappingSettingsUrl, null, SequraFE.customHeader),
+                        api.get(configuration.getShopOrderStatusesUrl, null, SequraFE.customHeader),
                         SequraFE.state.getShopName()
                     ])
                     break;
                 case SequraFE.appPages.SETTINGS.WIDGET:
                     renderer = renderWidgetSettingsForm;
                     promises = Promise.all([
-                        SequraFE.state.getData('paymentMethods') ?? api.get(configuration.getPaymentMethodsUrl.replace(encodeURIComponent('{merchantId}'), countrySettings[0].merchantId)),
-                        SequraFE.state.getData('allAvailablePaymentMethods') ?? api.get(configuration.getAllAvailablePaymentMethodsUrl),
+                        SequraFE.state.getData('paymentMethods') ?? api.get(configuration.getPaymentMethodsUrl.replace('{merchantId}', countrySettings[0].merchantId), null, SequraFE.customHeader),
+                        SequraFE.state.getData('allAvailablePaymentMethods') ?? api.get(configuration.getAllAvailablePaymentMethodsUrl, null, SequraFE.customHeader),
                     ])
                     break;
                 default:
                     renderer = renderGeneralSettingsForm;
                     promises = Promise.all([
                         SequraFE.isPromotional ? [] :
-                            SequraFE.state.getData('generalSettings') ?? api.get(configuration.getGeneralSettingsUrl),
+                            SequraFE.state.getData('generalSettings') ?? api.get(configuration.getGeneralSettingsUrl, null, SequraFE.customHeader),
                         SequraFE.isPromotional ? [] :
-                            SequraFE.state.getData('shopCategories') ?? api.get(configuration.getShopCategoriesUrl),
-                        SequraFE.state.getData('sellingCountries') ?? api.get(configuration.getSellingCountriesUrl),
+                            SequraFE.state.getData('shopCategories') ?? api.get(configuration.getShopCategoriesUrl, null, SequraFE.customHeader),
+                        SequraFE.state.getData('sellingCountries') ?? api.get(configuration.getSellingCountriesUrl, null, SequraFE.customHeader),
                     ])
             }
 
@@ -287,20 +289,11 @@ if (!window.SequraFE) {
                                     SequraFE.state.display();
                                 }
                             },
-                            menuItems: SequraFE.isPromotional ? [] : [
-                                {
-                                    label: 'general.paymentMethods',
-                                    href: window.location.href.split('#')[0] + '#payment'
-                                },
-                                {
-                                    label: 'general.settings',
-                                    href: window.location.href.split('#')[0] + '#settings',
-                                    isActive: true,
-                                }
-                            ]
+                            menuItems: SequraFE.utilities.getMenuItems(SequraFE.appStates.SETTINGS)
                         }
                     ),
                     generator.createElement('div', 'sq-page-content', '', null, [getSidebarRow()]),
+                    generator.createSupportLink()
                 ]))
         }
 

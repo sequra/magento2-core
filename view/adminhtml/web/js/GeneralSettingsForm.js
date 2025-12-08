@@ -43,6 +43,7 @@ if (!window.SequraFE) {
      * }} data
      * @param {{
      * saveGeneralSettingsUrl: string,
+     * getGeneralSettingsUrl: string,
      * saveCountrySettingsUrl: string,
      * validateConnectionDataUrl: string,
      * page: string,
@@ -56,6 +57,13 @@ if (!window.SequraFE) {
             validationService: validator,
             utilities
         } = SequraFE;
+
+        const classNameServiceRelatedField = 'sq-service-related-field';
+        const classNameEnabledForService = 'sq-field-enabled-for-services';
+        const classNameAllowFirstServicePaymentDelay = 'sq-field-allow-first-service-payment-delay';
+        const classNameAllowServiceRegistrationItems = 'sq-field-allow-service-registration-items';
+        const classNameDefaultServicesEndDate = 'sq-default-services-end-date';
+
         /** @type AjaxServiceType */
         const api = SequraFE.ajaxService;
         /** @type GeneralSettings */
@@ -77,7 +85,11 @@ if (!window.SequraFE) {
             sendOrderReportsPeriodicallyToSeQura: false,
             allowedIPAddresses: [],
             excludedCategories: [],
-            excludedProducts: []
+            excludedProducts: [],
+            enabledForServices: [],
+            allowFirstServicePaymentDelay: [],
+            allowServiceRegistrationItems: [],
+            defaultServicesEndDate: 'P1Y'
         };
 
         /**
@@ -142,13 +154,23 @@ if (!window.SequraFE) {
             }
 
             if (configuration.appState === SequraFE.appStates.SETTINGS && !SequraFE.isPromotional) {
+                const {
+                    isShowCheckoutAsHostedPageFieldVisible,
+                    isServiceSellingAllowed
+                } = SequraFE.flags;
+
+                if (isShowCheckoutAsHostedPageFieldVisible) {
+                    pageInnerContent?.append(
+                        generator.createToggleField({
+                            value: changedGeneralSettings.showSeQuraCheckoutAsHostedPage,
+                            label: 'generalSettings.showCheckoutAsHostedPage.label',
+                            description: 'generalSettings.showCheckoutAsHostedPage.description',
+                            onChange: (value) => handleGeneralSettingsChange('showSeQuraCheckoutAsHostedPage', value)
+                        })
+                    );
+                }
+
                 pageInnerContent?.append(
-                    generator.createToggleField({
-                        value: changedGeneralSettings.showSeQuraCheckoutAsHostedPage,
-                        label: 'generalSettings.showCheckoutAsHostedPage.label',
-                        description: 'generalSettings.showCheckoutAsHostedPage.description',
-                        onChange: (value) => handleGeneralSettingsChange('showSeQuraCheckoutAsHostedPage', value)
-                    }),
                     generator.createMultiItemSelectorField({
                         name: 'allowedIPAddresses-selector',
                         label: 'generalSettings.allowedIPAddresses.label',
@@ -161,7 +183,7 @@ if (!window.SequraFE) {
                         label: 'generalSettings.excludedCategories.label',
                         description: 'generalSettings.excludedCategories.description',
                         value: changedGeneralSettings.excludedCategories?.join(','),
-                        options: data.shopCategories.map((category) => ({label: category.name, value: category.id})),
+                        options: data.shopCategories.map((category) => ({ label: category.name, value: category.id })),
                         onChange: (value) => handleGeneralSettingsChange('excludedCategories', value)
                     }),
                     generator.createMultiItemSelectorField({
@@ -171,7 +193,39 @@ if (!window.SequraFE) {
                         searchable: false,
                         onChange: (value) => handleGeneralSettingsChange('excludedProducts', value)
                     })
-                )
+                );
+
+                if (isServiceSellingAllowed) {
+
+                    pageInnerContent?.append(
+                        generator.createToggleField({
+                            className: classNameEnabledForService,
+                            disabled: true,
+                            label: 'generalSettings.enabledForServices.label',
+                            description: 'generalSettings.enabledForServices.description'
+                        }),
+                        generator.createToggleField({
+                            className: `${classNameServiceRelatedField} ${classNameAllowFirstServicePaymentDelay}`,
+                            disabled: true,
+                            label: 'generalSettings.allowFirstServicePaymentDelay.label',
+                            description: 'generalSettings.allowFirstServicePaymentDelay.description'
+                        }),
+                        generator.createToggleField({
+                            className: `${classNameServiceRelatedField} ${classNameAllowServiceRegistrationItems}`,
+                            disabled: true,
+                            label: 'generalSettings.allowServiceRegistrationItems.label',
+                            description: 'generalSettings.allowServiceRegistrationItems.description'
+                        }),
+                        generator.createTextField({
+                            className: `sq-text-input ${classNameServiceRelatedField} ${classNameDefaultServicesEndDate}`,
+                            label: 'generalSettings.defaultServicesEndDate.label',
+                            description: 'generalSettings.defaultServicesEndDate.description',
+                            onChange: (value) => handleGeneralSettingsChange('defaultServicesEndDate', value)
+                        })
+                    );
+
+                    showOrHideServiceRelatedFields();
+                }
             }
 
             pageInnerContent?.append(
@@ -180,7 +234,7 @@ if (!window.SequraFE) {
                     label: 'countries.selector.label',
                     description: 'countries.selector.description',
                     value: changedCountryConfiguration.map((country) => country.countryCode).join(','),
-                    options: data.sellingCountries.map((country) => ({label: country.name, value: country.code})),
+                    options: data.sellingCountries.map((country) => ({ label: country.name, value: country.code })),
                     onChange: handleCountryChange
                 })
             );
@@ -322,24 +376,76 @@ if (!window.SequraFE) {
             disableFooter(false);
         }
 
-        /**
-         * Check if a given string is a valid IP address.
-         *
-         * @param {string} str
-         *
-         * @returns {boolean}
-         */
-        const checkIfValidIP = (str) => {
-            const regexExp = /^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/gi;
+        const showOrHideServiceRelatedFields = () => {
+            if (!SequraFE.flags.isServiceSellingAllowed) {
+                return;
+            }
+            // Update the values and descriptions of the fields.
+            const countriesString = countries => {
+                // input is like ['ES', 'PT']
+                // output is like 'Spain and Portugal' or 'Spain, France, and Portugal'
+                let countriesString = '';
+                const translate = SequraFE.translationService.translate;
+                for (let i = 0; i < countries.length; i++) {
+                    const country = '<strong>' + translate('countries.' + countries[i] + '.label') + '</strong>';
+                    if (i === 0) {
+                        countriesString += country;
+                    } else if (i === countries.length - 1) {
+                        countriesString += translate('general.and') + country;
+                    } else {
+                        countriesString += ', ' + country;
+                    }
+                }
+                return countriesString ? translate('countries.enabledCountries').replace('{countries}', countriesString) : '';
+            }
+            const descriptionWithCountries = (description, countries) => SequraFE.translationService.translate(description) + countriesString(countries);
 
-            return regexExp.test(str);
+            const enabledForServiceInput = document.querySelector(`.${classNameEnabledForService} input`);
+            if (enabledForServiceInput) {
+                enabledForServiceInput.checked = changedGeneralSettings.enabledForServices.length > 0;
+            }
+            const enabledForServiceSubtitle = document.querySelector(`.${classNameEnabledForService} .sqp-field-subtitle`);
+            if (enabledForServiceSubtitle) {
+                enabledForServiceSubtitle.innerHTML = descriptionWithCountries('generalSettings.enabledForServices.description', changedGeneralSettings.enabledForServices);
+            }
+            const allowFirstServicePaymentDelayInput = document.querySelector(`.${classNameAllowFirstServicePaymentDelay} input`);
+            if (allowFirstServicePaymentDelayInput) {
+                allowFirstServicePaymentDelayInput.checked = changedGeneralSettings.allowFirstServicePaymentDelay.length > 0;
+            }
+            const allowFirstServicePaymentDelaySubtitle = document.querySelector(`.${classNameAllowFirstServicePaymentDelay} .sqp-field-subtitle`);
+            if (allowFirstServicePaymentDelaySubtitle) {
+                allowFirstServicePaymentDelaySubtitle.innerHTML = descriptionWithCountries('generalSettings.allowFirstServicePaymentDelay.description', changedGeneralSettings.allowFirstServicePaymentDelay);
+            }
+            const allowServiceRegistrationItemsInput = document.querySelector(`.${classNameAllowServiceRegistrationItems} input`);
+            if (allowServiceRegistrationItemsInput) {
+                allowServiceRegistrationItemsInput.checked = changedGeneralSettings.allowServiceRegistrationItems.length > 0;
+            }
+            const allowServiceRegistrationItemsSubtitle = document.querySelector(`.${classNameAllowServiceRegistrationItems} .sqp-field-subtitle`);
+            if (allowServiceRegistrationItemsSubtitle) {
+                allowServiceRegistrationItemsSubtitle.innerHTML = descriptionWithCountries('generalSettings.allowServiceRegistrationItems.description', changedGeneralSettings.allowServiceRegistrationItems);
+            }
+            const defaultServicesEndDateInput = document.querySelector(`.${classNameDefaultServicesEndDate}`);
+            if (defaultServicesEndDateInput) {
+                defaultServicesEndDateInput.value = changedGeneralSettings.defaultServicesEndDate;
+            }
+
+            // Update the visibility of the fields.
+            const selector = '.sq-field-wrapper:has(.sq-service-related-field), .sq-field-wrapper.sq-service-related-field'
+            const hiddenClass = 'sqs--hidden';
+            document.querySelectorAll(selector).forEach((el) => {
+                if (changedGeneralSettings.enabledForServices.length > 0) {
+                    el.classList.remove(hiddenClass)
+                } else {
+                    el.classList.add(hiddenClass)
+                }
+            });
         }
 
         const areIPAddressesValid = () => {
             let hasError = false;
 
             changedGeneralSettings.allowedIPAddresses.forEach((address) => {
-                if (!checkIfValidIP(address)) {
+                if (!validator.validateIpAddress(address)) {
                     hasError = true;
                 }
             });
@@ -353,11 +459,22 @@ if (!window.SequraFE) {
             return !hasError;
         }
 
+        const isValidTimeDuration = () => {
+            const valid = validator.validateDateOrDuration(changedGeneralSettings.defaultServicesEndDate);
+            validator.validateField(
+                document.querySelector('.sq-default-services-end-date'),
+                !valid,
+                'validation.invalidTimeDuration'
+            );
+
+            return valid;
+        }
+
         /**
          * Handles saving of the form.
          */
         const handleSave = () => {
-            if (!isCountryConfigurationValid() || !areIPAddressesValid()) {
+            if (!isCountryConfigurationValid() || !areIPAddressesValid() || !isValidTimeDuration()) {
                 return;
             }
 
@@ -365,34 +482,6 @@ if (!window.SequraFE) {
 
             areIPAddressesValid()
             saveChangedData();
-        }
-
-        /**
-         * Handle merchant id validation error.
-         *
-         * @param {[{isValid: boolean, reason: string|null}]} results
-         */
-        const handleValidationError = (results) => {
-            if (results[0].reason && !results[0].reason.includes('merchantId')) {
-                SequraFE.responseService.errorHandler(
-                    {errorCode: 'general.errors.connection.invalidUsernameOrPassword'}
-                ).catch(() => {
-                });
-
-                utilities.hideLoader();
-
-                return;
-            }
-
-            results.forEach((result, index) => {
-                validator.validateField(
-                    document.querySelector(`[name="country_${changedCountryConfiguration[index].countryCode}"]`),
-                    !result.isValid,
-                    'validation.invalidField'
-                );
-            });
-
-            utilities.hideLoader();
         }
 
         /**
@@ -404,19 +493,33 @@ if (!window.SequraFE) {
             const promises = [];
 
             haveGeneralSettingsChanged &&
-            promises.push(api.post(configuration.saveGeneralSettingsUrl, changedGeneralSettings));
+                promises.push(api.post(configuration.saveGeneralSettingsUrl, changedGeneralSettings, SequraFE.customHeader));
 
             hasCountryConfigurationChanged &&
-            promises.push(api.post(configuration.saveCountrySettingsUrl, changedCountryConfiguration));
+                promises.push(api.post(configuration.saveCountrySettingsUrl, changedCountryConfiguration, SequraFE.customHeader));
 
             Promise.all(promises)
-                .then(() => {
+                .then(async () => {
                     disableFooter(true);
-                    activeGeneralSettings = utilities.cloneObject(changedGeneralSettings);
+                    if (configuration.appState === SequraFE.appStates.ONBOARDING) {
+                        activeGeneralSettings = utilities.cloneObject(changedGeneralSettings);
+                    } else {
+                        try {
+                            activeGeneralSettings = await api.get(configuration.getGeneralSettingsUrl, null, SequraFE.customHeader);
+                            if (JSON.stringify(activeGeneralSettings) !== JSON.stringify(changedGeneralSettings)) {
+                                changedGeneralSettings = utilities.cloneObject(activeGeneralSettings);
+                                // Update the service components in the form.
+                                showOrHideServiceRelatedFields();
+                            }
+                        } catch (error) {
+                            activeGeneralSettings = utilities.cloneObject(changedGeneralSettings);
+                            SequraFE.responseService.errorHandler({ errorCode: 'general.errors.backgroundDataFetchFailure' }).catch(e => console.error(e));
+                        }
+                    }
                     activeCountryConfiguration = changedCountryConfiguration.map((utilities.cloneObject))
 
                     configuration.appState === SequraFE.appStates.SETTINGS &&
-                    SequraFE.state.setData('generalSettings', activeGeneralSettings);
+                        SequraFE.state.setData('generalSettings', activeGeneralSettings);
                     SequraFE.state.setData('countrySettings', activeCountryConfiguration);
 
                     haveGeneralSettingsChanged = false;
