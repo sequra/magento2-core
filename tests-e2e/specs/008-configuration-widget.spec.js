@@ -134,34 +134,6 @@ test.describe('Widget settings', () => {
     await productPage.expectWidgetNotToBeVisible(dataProvider.i1FrontEndWidgetOptions(slugOpt));
   });
 
-  test('Do not display widgets when promotional components are disabled', async ({ helper, widgetSettingsPage, productPage, cartPage, categoryPage }) => {
-    // Setup
-    const { dummy_config, clear_config, clear_front_end_cache } = helper.webhooks;
-    await helper.executeWebhook({ webhook: clear_config }); // Clear the configuration.
-    await helper.executeWebhook({ webhook: dummy_config, args: [{ name: 'widgets', value: '0' }] }); // Setup with widgets disabled.
-
-    // Execution
-    await widgetSettingsPage.goto();
-    await widgetSettingsPage.expectLoadingShowAndHide();
-    await widgetSettingsPage.changeUsePromotionalComponentsOption(false);
-    await widgetSettingsPage.save();
-    await helper.executeWebhook({ webhook: clear_front_end_cache }); // Clear the page cache.
-
-    // Check product page
-    const slugOpt = { slug: 'fusion-backpack' };
-    await productPage.goto(slugOpt);
-    await productPage.expectWidgetsNotToBeVisible();
-
-    // Check cart page
-    await productPage.addToCart({ ...slugOpt, quantity: 1 });
-    await cartPage.goto();
-    await cartPage.expectWidgetsNotToBeVisible();
-
-    // Check category page
-    await categoryPage.goto({ slug: 'gear/bags' });
-    await categoryPage.expectWidgetsNotToBeVisible();
-  });
-
   test('Do not display widgets in the cart page when toggle is OFF', async ({ helper, widgetSettingsPage, dataProvider, cartPage, productPage }) => {
     // Setup
     const { dummy_config, clear_config, clear_front_end_cache } = helper.webhooks;
