@@ -71,12 +71,12 @@ define([
 
             var paymentMethodsObserver = sequraPaymentService.getPaymentMethods();
 
-            // Subscribe to any further changes (shipping address might change on the payment page)
+            self.loadSequraPaymentMethods(paymentMethodsObserver());
+
+            // Subscribe to any further changes (shipping address or shipping method might change on the payment page)
             paymentMethodsObserver.subscribe(function (paymentMethodsResponse) {
                 self.loadSequraPaymentMethods(paymentMethodsResponse);
             });
-
-            self.loadSequraPaymentMethods(paymentMethodsObserver());
 
             [quote.billingAddress, quote.shippingAddress, quote.shippingMethod].forEach(function (observable) {
                 observable.subscribe(function (value) {
@@ -85,7 +85,6 @@ define([
             });
 
             // Add compatibility to One Step Checkout module
-
             uiRegistry.async("checkout.iosc.payments")(
                 function (payments) {
                     if (typeof payments.getObservableId === 'function') {
@@ -136,6 +135,8 @@ define([
                     }
                 }.bind(this)
             );
+
+            fullScreenLoader.stopLoader();
         },
 
         loadSequraPaymentMethods: function (paymentMethodsResponse) {
@@ -154,8 +155,6 @@ define([
 
             self.sequraPaymentMethods(enrichedPaymentMethods);
             sequraPaymentMethods(enrichedPaymentMethods);
-
-            fullScreenLoader.stopLoader();
         },
 
         reloadPaymentMethods: function (value) {
@@ -163,8 +162,13 @@ define([
                 return;
             }
 
+            // Enables screen loader management if Sequra method is selected
+            const stopLoaderCondition = quote.paymentMethod()?.method === this.getCode();
+
             canReloadPayments(false);
-            fullScreenLoader.startLoader();
+            if (stopLoaderCondition) {
+                fullScreenLoader.startLoader();
+            }
 
             sequraPaymentService.retrievePaymentMethods()
                 .done(function (paymentMethods) {
@@ -174,7 +178,9 @@ define([
                     console.log('Fetching the payment methods failed!');
                 })
                 .always(function () {
-                    fullScreenLoader.stopLoader();
+                    if (stopLoaderCondition) {
+                        fullScreenLoader.stopLoader();
+                    }
                     canReloadPayments(true);
                 });
         },

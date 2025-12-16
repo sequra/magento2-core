@@ -15,7 +15,8 @@
     },
     "require": {
         "squizlabs/php_codesniffer": "^3.12.0",
-        "magento/magento-coding-standard": "^36"
+        "magento/magento-coding-standard": "^36",
+        "php": "<8.5"
     },
     "prefer-stable": true
 }
