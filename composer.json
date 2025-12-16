@@ -19,7 +19,7 @@
     "minimum-stability": "dev",
     "prefer-stable": true,
     "require": {
-        "php": ">=7.4",
+        "php": ">=7.4 <8.5",
         "sequra/integration-core": "^3.0.0",
         "ext-json": "*"
     },
@@ -74,4 +74,5 @@
         }
     ]
 }
+
 
