@@ -131,6 +131,6 @@ class Index extends Template
     {
         $regex = $this->regexProvider->toArray();
 
-        return json_encode($regex);
+        return json_encode($regex) ?? '';
     }
 }
