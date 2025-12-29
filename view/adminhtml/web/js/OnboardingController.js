@@ -85,10 +85,6 @@ if (!window.SequraFE) {
                 case SequraFE.appPages.ONBOARDING.WIDGETS:
                     renderer = renderWidgetSettingsForm;
                     promises = Promise.all([
-                        SequraFE.state.getData('paymentMethods') ?? api.get(configuration.getPaymentMethodsUrl.replace(
-                            '{merchantId}',
-                            countrySettings[0].merchantId
-                        ), null, SequraFE.customHeader),
                         SequraFE.state.getData('allAvailablePaymentMethods') ?? api.get(configuration.getAllAvailablePaymentMethodsUrl, null, SequraFE.customHeader),
                     ])
                     break;
@@ -153,17 +149,13 @@ if (!window.SequraFE) {
          * @param allAvailablePaymentMethods
          */
         const renderWidgetSettingsForm = (paymentMethods, allAvailablePaymentMethods) => {
-            if (!SequraFE.state.getData('paymentMethods')) {
-                SequraFE.state.setData('paymentMethods', paymentMethods)
-            }
-
             if (!SequraFE.state.getData('allAvailablePaymentMethods')) {
                 SequraFE.state.setData('allAvailablePaymentMethods', allAvailablePaymentMethods)
             }
 
             const form = formFactory.getInstance(
                 'widgetSettings',
-                {widgetSettings, connectionSettings, countrySettings, paymentMethods, allAvailablePaymentMethods},
+                {widgetSettings, connectionSettings, countrySettings, allAvailablePaymentMethods},
                 {...configuration, appState: SequraFE.appStates.ONBOARDING}
             );
 

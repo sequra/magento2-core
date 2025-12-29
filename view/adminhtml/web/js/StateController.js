@@ -8,7 +8,7 @@ SequraFE.flags = {
     configurableSelectorsForMiniWidgets: false,
     isServiceSellingAllowed: false,
     ...(SequraFE.flags || {})
-}
+};
 
 SequraFE.appStates = {
     ONBOARDING: 'onboarding',
