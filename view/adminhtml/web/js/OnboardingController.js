@@ -145,10 +145,9 @@ if (!window.SequraFE) {
         /**
          * Renders the widgets settings form.
          *
-         * @param paymentMethods
          * @param allAvailablePaymentMethods
          */
-        const renderWidgetSettingsForm = (paymentMethods, allAvailablePaymentMethods) => {
+        const renderWidgetSettingsForm = (allAvailablePaymentMethods) => {
             if (!SequraFE.state.getData('allAvailablePaymentMethods')) {
                 SequraFE.state.setData('allAvailablePaymentMethods', allAvailablePaymentMethods)
             }
