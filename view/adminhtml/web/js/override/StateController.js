@@ -1,0 +1,474 @@
+if (!window.SequraFE) {
+    window.SequraFE = {};
+}
+
+// Define the supported configuration capabilities.
+SequraFE.flags = {
+    isShowCheckoutAsHostedPageFieldVisible: true,
+    configurableSelectorsForMiniWidgets: false,
+    isServiceSellingAllowed: false,
+    ...(SequraFE.flags || {})
+};
+
+SequraFE.appStates = {
+    ONBOARDING: 'onboarding',
+    SETTINGS: 'settings',
+    PAYMENT: 'payment',
+    ADVANCED: 'advanced'
+};
+
+SequraFE.appPages = {
+    ONBOARDING: {
+        CONNECT: 'connect',
+        DEPLOYMENTS: 'deployments',
+        COUNTRIES: 'countries',
+        WIDGETS: 'widgets'
+    },
+    SETTINGS: {
+        GENERAL: 'general',
+        CONNECTION: 'connection',
+        ORDER_STATUS: 'order_status',
+        WIDGET: 'widget'
+    },
+    PAYMENT: {
+        METHODS: 'methods'
+    },
+    ADVANCED: {
+        DEBUG: 'debug'
+    }
+};
+
+(function () {
+    /**
+     * @typedef Store
+     * @property {string} storeId
+     * @property {string} storeName
+     */
+
+    /**
+     * @typedef StateConfiguration
+     * @property {string} stateUrl
+     * @property {string} storesUrl
+     * @property {string} currentStoreUrl
+     * @property {string} getConnectionDataUrl
+     * @property {string} versionUrl
+     * @property {string} shopNameUrl
+     * @property {Record<string, any>} pageConfiguration
+     * @property {string} [getDeploymentsUrl]
+     */
+
+    /**
+     * @typedef Version
+     * @property {string} current
+     * @property {string | null} new
+     * @property {string | null} downloadNewVersionUrl
+     */
+
+    /**
+     * @typedef ShopName
+     * @property {string} shopName
+     */
+
+    /**
+     * @typedef DataStore
+     * @property {Version | null} version
+     * @property {Store[] | null} stores
+     * @property {ConnectionSettings | null} connectionSettings
+     * @property {CountrySettings | null} countrySettings
+     * @property {GeneralSettings | null} generalSettings
+     * @property {WidgetSettings | null} widgetSettings
+     * @property {PaymentMethod[] | null} paymentMethods
+     * @property {SellingCountry[] | null} sellingCountries
+     * @property {DeploymentSettings[] | null} deploymentsSettings
+     * @property {DeploymentSettings[] | null} notConnectedDeployments
+     * @property {LogsSettings | null} logsSettings
+     * @property {Category[] | null} shopCategories
+     */
+
+    /**
+     * @typedef {Object} DeploymentSettings
+     * @property {string} id
+     * @property {string} name
+     * @property {boolean} [active]
+     */
+
+    /**
+     * @typedef {Object} LogsSettings
+     * @property {boolean} enabled
+     * @property {int} level
+     */
+
+    /**
+     * Main controller of the application.
+     *
+     * @param {StateConfiguration} configuration
+     *
+     * @constructor
+     */
+    function StateController(configuration) {
+        /** @type AjaxServiceType */
+        const api = SequraFE.ajaxService;
+        const { pageControllerFactory, templateService, utilities } = SequraFE;
+
+        let currentState = '';
+        let previousState = '';
+
+        /**
+         * @type {DataStore}
+         */
+        let dataStore;
+
+        const clearDataStore = () => {
+            dataStore = {
+                version: null,
+                stores: null,
+                connectionSettings: null,
+                notConnectedDeployments: null,
+                deploymentsSettings: null,
+                countrySettings: null,
+                generalSettings: null,
+                widgetSettings: null,
+                paymentMethods: null,
+                sellingCountries: null,
+                shopCategories: null,
+                logsSettings: null
+            };
+        }
+
+        clearDataStore();
+
+        /**
+         * Main entry point for the application.
+         * Determines the current state and runs the start controller.
+         */
+        this.display = () => {
+            utilities.showLoader();
+            clearDataStore();
+            templateService.clearMainPage();
+
+            window.addEventListener('hashchange', updateStateOnHashChange, false);
+
+            api.get(!this.getStoreId() ? configuration.currentStoreUrl : configuration.storesUrl.replace(encodeURIComponent('{storeId}'), this.getStoreId()), () => null, SequraFE.customHeader)
+                .then(
+                    /** @param {Store|Store[]} response */
+                    (response) => {
+                        const loadStore = (store) => {
+                            this.setStoreId(store.storeId);
+
+                            return displayPageBasedOnState();
+                        };
+
+                        let store = !Array.isArray(response) ?
+                            response :
+                            response.find((s) => s.storeId === this.getStoreId());
+
+                        if (!store) {
+                            // the active store is probably deleted, we need to switch to the default store
+                            return api.get(configuration.currentStoreUrl, null, SequraFE.customHeader).then(loadStore);
+                        }
+
+                        return loadStore(store);
+                    }
+                )
+        };
+
+        /**
+         * Updates the application state on a hash change.
+         */
+        const updateStateOnHashChange = () => {
+            const state = window.location.hash.substring(1);
+            state && this.goToState(state);
+        };
+
+        /**
+         * Opens a specific page based on the current state.
+         */
+        const displayPageBasedOnState = () => {
+            utilities.showLoader();
+
+            return Promise.all([
+                api.get(configuration.versionUrl.replace(encodeURIComponent('{storeId}'), this.getStoreId()), null, SequraFE.customHeader),
+                api.get(configuration.storesUrl.replace(encodeURIComponent('{storeId}'), this.getStoreId()), null, SequraFE.customHeader),
+                api.get(configuration.pageConfiguration.onboarding.getConnectionDataUrl.replace(encodeURIComponent('{storeId}'), this.getStoreId()), null, SequraFE.customHeader),
+                api.get(configuration.pageConfiguration.onboarding.getCountrySettingsUrl.replace(encodeURIComponent('{storeId}'), this.getStoreId()), null, SequraFE.customHeader),
+                api.get(configuration.pageConfiguration.onboarding.getWidgetSettingsUrl.replace(encodeURIComponent('{storeId}'), this.getStoreId()), null, SequraFE.customHeader),
+                api.get(configuration.pageConfiguration.onboarding.getDeploymentsUrl.replace(encodeURIComponent('{storeId}'), this.getStoreId()), null, SequraFE.customHeader),
+                api.get(configuration.pageConfiguration.onboarding.getNotConnectedDeploymentsUrl.replace(encodeURIComponent('{storeId}'), this.getStoreId()), null, SequraFE.customHeader),
+            ]).then(([versionRes, storesRes, connectionSettingsRes, countrySettingsRes, widgetSettingsRes, deploymentsSettingsRes, notConnectedDeployments, logsSettingsRes]) => {
+                dataStore.version = versionRes;
+                dataStore.stores = storesRes;
+                dataStore.connectionSettings = connectionSettingsRes;
+                dataStore.countrySettings = countrySettingsRes;
+                dataStore.widgetSettings = widgetSettingsRes;
+                dataStore.deploymentsSettings = deploymentsSettingsRes;
+                dataStore.notConnectedDeployments = notConnectedDeployments;
+                dataStore.logsSettings = logsSettingsRes;
+
+                return api.get(configuration.stateUrl.replace(encodeURIComponent('{storeId}'), this.getStoreId()), null, SequraFE.customHeader);
+            }).then((stateRes) => {
+                if (SequraFE.state.getCredentialsChanged()) {
+                    SequraFE.state.removeCredentialsChanged();
+                }
+
+                const page = this.getPage();
+                if (stateRes.state === SequraFE.appStates.ONBOARDING) {
+                    this.goToState(SequraFE.appStates.ONBOARDING + '-' + page, null, true);
+
+                    return;
+                }
+
+                if (SequraFE.pages?.advanced?.includes(page)) {
+                    this.goToState(SequraFE.appStates.ADVANCED + '-' + page, null, true)
+                    return;
+                }
+
+                if (!page || SequraFE.pages.payment?.includes(page)) {
+                    this.goToState(SequraFE.appStates.PAYMENT + '-' + SequraFE.appPages.PAYMENT.METHODS, null, true)
+
+                    return;
+                }
+
+                this.goToState(SequraFE.appStates.SETTINGS + '-' + page, null, true);
+            }).catch(() => {
+            });
+        };
+
+        /**
+         * Navigates to a state.
+         *
+         * @param {string} state
+         * @param {Record<string, any> | null?} additionalConfig
+         * @param {boolean} [force=false]
+         */
+        this.goToState = (state, additionalConfig = null, force = false) => {
+            if ((currentState === state && !force)) {
+                return;
+            }
+
+            utilities.showLoader();
+            let [controllerName, page] = state.split('-');
+
+            if (controllerName === SequraFE.appStates.ONBOARDING) {
+
+                // To skip Widgets Onboarding we need to make sure that Widgets are configured (styles set and at least one display option enabled)
+                const areWidgetsConfigured = dataStore.widgetSettings?.widgetStyles !== undefined
+                    && (dataStore.widgetSettings?.displayWidgetOnProductPage
+                        || dataStore.widgetSettings?.showInstallmentAmountInCartPage
+                        || dataStore.widgetSettings?.showInstallmentAmountInProductListing
+                    );
+                if (
+                    dataStore.connectionSettings?.connectionData?.every(c => c.username && c.password) &&
+                    dataStore.countrySettings?.length &&
+                    areWidgetsConfigured &&
+                    !SequraFE.state.getCredentialsChanged()
+                ) {
+                    currentState.split('-')[0] === SequraFE.appStates.ONBOARDING ?
+                        this.goToState(SequraFE.appStates.PAYMENT + '-' + SequraFE.appPages.PAYMENT.METHODS) :
+                        this.goToState(currentState, null, true);
+
+                    return;
+                }
+
+                if (!page) {
+                    page = SequraFE.appPages.ONBOARDING.CONNECT;
+                }
+
+                switch (page) {
+                    case SequraFE.appPages.ONBOARDING.COUNTRIES:
+                        if (!dataStore.connectionSettings?.connectionData?.every(c => c.username)) {
+                            page = SequraFE.appPages.ONBOARDING.CONNECT
+                        }
+
+                        if (!dataStore.deploymentsSettings?.some(deployment => deployment.active === true)) {
+                            page = SequraFE.appPages.DEPLOYMENTS;
+                        }
+
+                        break;
+                    case SequraFE.appPages.ONBOARDING.DEPLOYMENTS:
+                        page = SequraFE.appPages.ONBOARDING.DEPLOYMENTS;
+                        break;
+                    case SequraFE.appPages.ONBOARDING.WIDGETS:
+                        if (dataStore.countrySettings?.length === 0 || SequraFE.state.getCredentialsChanged()) {
+                            page = SequraFE.appPages.ONBOARDING.COUNTRIES;
+                        }
+
+                        if (!dataStore.connectionSettings?.connectionData?.every(c => c.username)) {
+                            page = SequraFE.appPages.ONBOARDING.CONNECT;
+                        }
+
+                        if (!dataStore.deploymentsSettings?.some(deployment => deployment.active === true)) {
+                            page = SequraFE.appPages.DEPLOYMENTS;
+                        }
+
+                        break;
+                    default:
+                        page = SequraFE.appPages.ONBOARDING.CONNECT;
+
+                        if (!dataStore.deploymentsSettings?.some(deployment => deployment.active === true)) {
+                            page = SequraFE.appPages.DEPLOYMENTS;
+                        }
+                }
+
+                displayPage(controllerName + '-' + page, additionalConfig);
+
+                return;
+            }
+
+            if (!dataStore.connectionSettings?.connectionData?.every(c => c.username && c.password) || SequraFE.state.getCredentialsChanged()) {
+                this.goToState(SequraFE.appStates.ONBOARDING + '-' + SequraFE.appPages.ONBOARDING.CONNECT, additionalConfig, true);
+                return;
+            }
+            if (dataStore.countrySettings?.length === 0) {
+                this.goToState(SequraFE.appStates.ONBOARDING + '-' + SequraFE.appPages.ONBOARDING.COUNTRIES, additionalConfig, true);
+                return;
+            }
+            if ('undefined' === typeof dataStore.widgetSettings?.widgetStyles) {
+                this.goToState(SequraFE.appStates.ONBOARDING + '-' + SequraFE.appPages.ONBOARDING.WIDGETS, additionalConfig, true);
+                return;
+            }
+
+            displayPage(state, additionalConfig);
+        };
+
+        const displayPage = (state, additionalConfig = null) => {
+            let [controllerName, page] = state.split('-');
+            if (!Object.values(SequraFE.appStates).includes(controllerName)) {
+                SequraFE.state.display();
+            }
+
+            if (!page || !SequraFE.pages[controllerName]?.includes(page)) {
+                page = SequraFE.pages[controllerName]?.[0];
+                state = page ? controllerName + '-' + page : controllerName;
+            }
+
+            const config = { storeId: this.getStoreId(), ...(additionalConfig || {}) };
+            const controller = pageControllerFactory.getInstance(
+                controllerName,
+                getControllerConfiguration(controllerName, page)
+            );
+
+            previousState = currentState;
+            currentState = state;
+            setPage(page);
+
+            window.location.hash = state;
+            controller && controller.display(config);
+        }
+
+        /**
+         * Gets controller configuration.
+         *
+         * @param {string} controllerName
+         * @param {string?} page
+         *
+         * @return {Record<string, any>}
+         */
+        const getControllerConfiguration = (controllerName, page) => {
+            let config = utilities.cloneObject(configuration.pageConfiguration[controllerName] || {});
+            Object.keys(config).forEach((key) => {
+                config[key] = config[key].replace(encodeURIComponent('{storeId}'), encodeURIComponent(this.getStoreId()));
+            });
+            page && (config.page = page);
+
+            return config;
+        };
+
+        /**
+         * Sets the application page to local storage.
+         *
+         * @param {string} page
+         */
+        const setPage = (page) => {
+            localStorage.setItem('sq-page', page);
+        }
+
+        /**
+         * Gets the application page from local storage.
+         *
+         * @returns {string}
+         */
+        this.getPage = () => {
+            if (window.location.hash) {
+                let page = window.location.hash.substring(1);
+                if (page) {
+                    page = page.split('-')[1];
+                    if (page) {
+                        setPage(page);
+                        return page;
+                    }
+                }
+            }
+
+            return localStorage.getItem('sq-page');
+        }
+
+        /**
+         * Sets the credentials changed flag to local storage.
+         */
+        this.setCredentialsChanged = () => {
+            SequraFE.state.setData('paymentMethods', null);
+            localStorage.setItem('sq-password-changed', '1');
+        }
+
+        /**
+         * Removes the credentials changed flag from local storage.
+         *
+         * @returns {string}
+         */
+        this.removeCredentialsChanged = () => {
+            localStorage.removeItem('sq-password-changed');
+        }
+
+        /**
+         * Gets the credentials changed flag from local storage.
+         *
+         * @returns {string}
+         */
+        this.getCredentialsChanged = () => {
+            return localStorage.getItem('sq-password-changed');
+        }
+
+        /**
+         * Sets the store ID to local storage.
+         *
+         * @param {string} storeId
+         */
+        this.setStoreId = (storeId) => {
+            sessionStorage.setItem('sq-active-store-id', storeId);
+        };
+
+        /**
+         * Gets the store ID from local storage.
+         *
+         * @returns {string}
+         */
+        this.getStoreId = () => {
+            return sessionStorage.getItem('sq-active-store-id');
+        };
+
+        /**
+         * Returns a getVersion promise.
+         *
+         * @returns {Promise<ShopName>}
+         */
+        this.getShopName = () => {
+            return api.get(configuration.shopNameUrl.replace(encodeURIComponent('{storeId}'), this.getStoreId()), null, SequraFE.customHeader);
+        };
+
+        this.getData = (key) => {
+            if (!Object.keys(dataStore).includes(key)) {
+                return null;
+            }
+
+            return dataStore[key];
+        }
+
+        this.setData = (key, value) => {
+            if (Object.keys(dataStore).includes(key)) {
+                dataStore[key] = value;
+            }
+        }
+    }
+
+    SequraFE.StateController = StateController;
+})();
