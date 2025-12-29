@@ -152,7 +152,7 @@ window.SequraFE.showDeploymentsModal = function (
                     finalSettings.connectionData.push(updatedConnection);
                 }
 
-                const result = await api.post(configuration.connectUrl, finalSettings);
+                const result = await api.post(configuration.connectUrl, finalSettings, SequraFE.customHeader);
                 if (!areCredentialsValid(result)) {
                     handleValidationError();
 
@@ -214,6 +214,7 @@ window.SequraFE.showDeploymentsModal = function (
             className: 'sq-modal',
             content: [content],
             footer: true,
+            canClose: false,
             buttons: [
                 {
                     type: 'secondary',

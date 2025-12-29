@@ -7,6 +7,7 @@ use Magento\Backend\Block\Template\Context;
 use Magento\Backend\Model\Auth\Session;
 use Magento\Framework\Exception\LocalizedException;
 use Sequra\Core\Helper\UrlHelper;
+use SeQura\Core\Infrastructure\Utility\RegexProvider;
 
 class Index extends Template
 {
@@ -18,6 +19,10 @@ class Index extends Template
      * @var Session
      */
     private $authSession;
+    /**
+     * @var RegexProvider
+     */
+    private $regexProvider;
 
     /**
      * Content constructor.
@@ -25,10 +30,16 @@ class Index extends Template
      * @param Context $context
      * @param UrlHelper $urlHelper
      * @param Session $authSession
+     * @param RegexProvider $regexProvider
      * @param mixed[] $data
      */
-    public function __construct(Context $context, UrlHelper $urlHelper, Session $authSession, array $data = [])
-    {
+    public function __construct(
+        Context $context,
+        UrlHelper $urlHelper,
+        Session $authSession,
+        RegexProvider $regexProvider,
+        array $data = []
+    ) {
         if (!is_iterable($data)) {
             throw new \InvalidArgumentException('Data must be iterable');
         }
@@ -36,6 +47,7 @@ class Index extends Template
 
         $this->urlHelper = $urlHelper;
         $this->authSession = $authSession;
+        $this->regexProvider = $regexProvider;
     }
 
     /**
@@ -108,5 +120,18 @@ class Index extends Template
     {
         $user = $this->authSession->getUser();
         return strtoupper($user ? substr($user->getInterfaceLocale(), 0, 2) : 'en');
+    }
+
+    /**
+     * Get the regex in JSON format
+     *
+     * @return string
+     */
+    public function getRegexJson(): string
+    {
+        $regex = $this->regexProvider->toArray();
+
+        $jsonEncoded = json_encode($regex);
+        return $jsonEncoded === false ? '' : $jsonEncoded;
     }
 }

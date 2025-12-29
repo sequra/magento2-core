@@ -14,6 +14,7 @@
     "merchant": "Commerçant :",
     "settings": "Paramètres",
     "paymentMethods": "Méthodes de paiement",
+    "advanced": "Avancé",
     "changesSaved": "Modifications enregistrées avec succès.",
     "noItemsAvailable": "Aucun élément disponible",
     "and": " et ",
@@ -24,6 +25,7 @@
     "errors": {
       "InvalidOperationException": "Une erreur s'est produite côté serveur. Veuillez vérifier les données et réessayer.",
       "unknown": "Une erreur inconnue s'est produite. Veuillez réessayer plus tard.",
+      "backgroundDataFetchFailure": "Une erreur s'est produite lors de l'actualisation des données en arrière-plan. Veuillez recharger la page pour voir les dernières données.",
       "empty": "Le paramètre ne peut pas être vide.",
       "saveEntityFailed": "Échec de l'enregistrement de l'entité car %s",
       "getEntityFailed": "Échec de la récupération de l'entité car %s",
@@ -82,7 +84,9 @@
         "merchantError": "Commerçant avec l'ID %s introuvable.",
         "failedToRegisterWebhook": "Échec de l'enregistrement du webhook.",
         "hmacError": "Erreur lors de la génération du HMAC."
-      }
+      },
+      "failedToRetrieveLog": "Échec de la récupération du contenu du journal.",
+      "failedToRemoveLog": "Échec de la suppression du contenu du journal."
     }
   },
   "sidebar": {
@@ -114,7 +118,8 @@
     "invalidFieldValue": "Le champ doit être défini sur \"%s\".",
     "invalidMaxValue": "La valeur maximale autorisée est %s.",
     "invalidImageType": "Veuillez fournir un fichier dans l'un des types d'image pris en charge (PNG, JPG, SVG).",
-    "invalidImageSize": "Le fichier sélectionné dépasse la limite de 10 Mo."
+    "invalidImageSize": "Le fichier sélectionné dépasse la limite de 10 Mo.",
+    "invalidTimeDuration": "Ce champ doit contenir uniquement des dates au format 2017-08-31 ou des durées comme P3M15D (3 mois et 15 jours). Vérifiez la norme ISO 8601."
   },
   "payments": {
     "title": "Méthodes de paiement",
@@ -128,6 +133,24 @@
     "maximumAmount": "Montant maximum",
     "availableFrom": "Disponible à partir de",
     "availableTo": "Disponible jusqu'à"
+  },
+  "debug": {
+    "title": "Activer les journaux",
+    "description": "Aide à diagnostiquer les problèmes avec l'intégration SeQura",
+    "noLogs": "Aucun journal disponible",
+    "log": {
+      "severity": "Gravité",
+      "message": "Message",
+      "datetime": "Date et heure",
+      "removeModal": {
+        "title": "Supprimer les journaux",
+        "message": "Es-tu sûr de vouloir effacer les journaux ? Tu ne pourras pas les récupérer."
+      },
+      "minLevel": "Niveau de gravité minimal",
+      "minLevelDescription": "Définir le niveau de gravité minimal des journaux à écrire dans le fichier de journalisation."
+    },
+    "reload": "Recharger",
+    "remove": "Supprimer"
   },
   "connection": {
     "title": {
@@ -210,7 +233,8 @@
     "PE": {
       "label": "Pérou",
       "description": "Veuillez saisir l'ID commerçant SeQura à utiliser pour les clients péruviens."
-    }
+    },
+    "enabledCountries": "Activé pour {countries}."
   },
   "widgets": {
     "title": {
@@ -295,7 +319,7 @@
   },
   "orderStatusSettings": {
     "title": "Paramètres du statut de commande",
-    "description": "Configurez votre compte SeQura et choisissez l'environnement pour commencer à traiter les paiements.",
+    "description": "Définissez comment les statuts seQura sont associés aux statuts de commande de {shopName}. Les valeurs par défaut devraient convenir dans la plupart des cas, modifiez-les donc avec précaution.",
     "paid": {
       "label": "Payé",
       "description": "Lorsqu'un paiement a le statut Payé."
@@ -335,6 +359,26 @@
     "excludedProducts": {
       "label": "Produits exclus",
       "description": "Les produits de la boutique dans ce champ ne pourront pas être achetés avec les méthodes de paiement SeQura. Veuillez saisir un SKU valide pour chaque produit que vous souhaitez exclure."
+    },
+    "enabledForServices": {
+      "label": "Activé pour les services",
+      "description": "Votre contrat doit permettre la vente de services. "
+    },
+    "allowFirstServicePaymentDelay": {
+      "label": "Autoriser le délai du premier paiement de service",
+      "description": ""
+    },
+    "allowServiceRegistrationItems": {
+      "label": "Autoriser les articles d'inscription",
+      "description": "Permet de configurer une partie du prix du produit à payer à l'avance en tant qu'inscription. "
+    },
+    "defaultServicesEndDate": {
+      "label": "Date de fin des services par défaut",
+      "description": "Dates au format 2017-08-31, durée au format P3M15D (3 mois et 15 jours). Valeur par défaut pour tous les produits."
     }
+  },
+  "supportLink": {
+    "label": "Besoin d'aide ?",
+    "link": "https://sqra.es/supportfr"
   }
 }

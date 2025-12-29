@@ -12,7 +12,7 @@ if (!window.SequraFE) {
 
     /**
      * @typedef Category
-     * @property {CategoryPaymentMethod[]} paymentMethods
+     * @property {CategoryPaymentMethod[]} categoryPaymentMethods
      */
 
     /**
@@ -52,16 +52,14 @@ if (!window.SequraFE) {
      * widgetSettings: WidgetSettings,
      * connectionSettings: ConnectionSettings,
      * countrySettings: CountrySettings[],
-     * paymentMethods: PaymentMethod[],
      * allAvailablePaymentMethods: Category[],
      * }} data
      * @param {{
      * saveWidgetSettingsUrl: string,
-     * getPaymentMethodsUrl: string,
      * getAllPaymentMethodsUrl: string,
      * page: string,
      * appState: string,
-     * configurableSelectorsForMiniWidgets: string
+     * configurableSelectorsForMiniWidgets: string,
      * }} configuration
      * @constructor
      */
@@ -75,19 +73,14 @@ if (!window.SequraFE) {
             utilities
         } = SequraFE;
 
-        const configurableSelectorsForMiniWidgets =
-            configuration.configurableSelectorsForMiniWidgets === "true";
+        const { configurableSelectorsForMiniWidgets } = SequraFE.flags;
 
         /** @type WidgetSettings */
         let activeSettings;
         /** @type WidgetSettings */
         let changedSettings;
-        /** @type string[] */
-        let paymentMethodIds;
         /** @type {Category[]} */
         let allAvailablePaymentMethods = data.allAvailablePaymentMethods;
-        /** @type {CategoryPaymentMethod[]} */
-        let payNowPaymentMethods = allAvailablePaymentMethods.pay_now ?? [];
         /** @type {CategoryPaymentMethod[]} */
         let payLaterPaymentMethods = allAvailablePaymentMethods.pay_later ?? [];
         /** @type {CategoryPaymentMethod[]} */
@@ -125,7 +118,6 @@ if (!window.SequraFE) {
                 }
             }
 
-            paymentMethodIds = data.paymentMethods?.map((paymentMethod) => paymentMethod.product);
             changedSettings = utilities.cloneObject(activeSettings)
             initForm();
 
@@ -399,12 +391,12 @@ if (!window.SequraFE) {
                        <span class="sqp-field-subtitle">${SequraFE.translationService.translate('widgets.displayOnProductPage.description')}</span>
                     </div>
 
-                     <div class="sq-table__row-field-wrapper sq-table__row-field-wrapper--grow sq-field-wrapper">
+                     <div class="sq-table__row-field-wrapper sq-table__row-field-wrapper--grow">
                         <label class="sq-table__row-field-label">${SequraFE.translationService.translate('widgets.locations.selector')}</label>
                         <span class="sqp-field-subtitle">${SequraFE.translationService.translate('widgets.locations.leaveEmptyToUseDefault')}</span>
                         <input class="sq-table__row-field" type="text" value="${data && 'undefined' !== typeof data.selForTarget ? data.selForTarget : ''}">
                     </div>
-                    <div class="sq-table__row-field-wrapper sq-table__row-field-wrapper--grow sq-field-wrapper">
+                    <div class="sq-table__row-field-wrapper sq-table__row-field-wrapper--grow">
                     <label class="sq-table__row-field-label">${SequraFE.translationService.translate('widgets.configurator.label')}</label>
                     <span class="sqp-field-subtitle">${SequraFE.translationService.translate('widgets.configurator.description.start')}<a class="sq-link-button" href="https://live.sequracdn.com/assets/static/simulator.html" target="_blank"><span>${SequraFE.translationService.translate('widgets.configurator.description.link')}</span></a><span>${SequraFE.translationService.translate('widgets.configurator.description.end')} ${SequraFE.translationService.translate('widgets.locations.leaveEmptyToUseDefault')}</span></span>
                     <textarea class="sqp-field-component sq-text-input sq-text-area" rows="5">${data && 'undefined' !== typeof data.widgetStyles ? data.widgetStyles : ''}</textarea>
@@ -425,7 +417,7 @@ if (!window.SequraFE) {
 
                         return `<option key="${idx}" data-product="${pm.product}"${selected}>${pm.title}</option>`;
                     }).join('') : ''
-                        }
+                    }
                         </select>
                     </div>
                    `
@@ -506,15 +498,6 @@ if (!window.SequraFE) {
         }
 
         /**
-         * Re-renders the form.
-         */
-        const refreshForm = () => {
-            document.querySelector('.sq-content-inner')?.remove();
-            configuration.appState !== SequraFE.appStates.ONBOARDING && document.querySelector('.sq-page-footer').remove();
-            initForm();
-        }
-
-        /**
          * Handles the saving of the form.
          */
         const handleSave = () => {
@@ -523,13 +506,19 @@ if (!window.SequraFE) {
             }
 
             utilities.showLoader();
-            api.post(configuration.saveWidgetSettingsUrl, changedSettings)
+            api.post(configuration.saveWidgetSettingsUrl, changedSettings, SequraFE.customHeader)
                 .then(() => {
                     if (configuration.appState === SequraFE.appStates.ONBOARDING) {
-                        const index = SequraFE.pages.onboarding.indexOf(SequraFE.appPages.ONBOARDING.WIDGETS)
-                        SequraFE.pages.onboarding.length > index + 1 ?
-                            window.location.hash = configuration.appState + '-' + SequraFE.pages.onboarding[index + 1] :
+                        const index = SequraFE.pages.onboarding.indexOf(SequraFE.appPages.ONBOARDING.WIDGETS);
+
+                        const nextPageExists = SequraFE.pages.onboarding.length > index + 1;
+                        if (nextPageExists) {
+                            window.location.hash = configuration.appState + '-' + SequraFE.pages.onboarding[index + 1];
+                        } else if (!SequraFE.isPromotional) {
                             window.location.hash = SequraFE.appStates.PAYMENT + '-' + SequraFE.appPages.PAYMENT.METHODS;
+                        } else {
+                            window.location.hash = SequraFE.appStates.SETTINGS + '-' + SequraFE.appPages.SETTINGS.WIDGET;
+                        }
                     }
 
                     activeSettings = utilities.cloneObject(changedSettings);

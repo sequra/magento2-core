@@ -55,22 +55,7 @@ class WidgetSettings extends BaseConfigurationController
     {
         /** @var WidgetSettingsResponse $data */
         $data = AdminAPI::get()->widgetConfiguration($this->storeId)->getWidgetSettings();
-
         $result = $data->toArray();
-
-        if (empty($result)) {
-            $result['productPriceSelector'] = '.price-container .price';
-            $result['defaultProductLocationSelector'] = '.actions .action.primary.tocart';
-            $result['altProductPriceSelector'] = '[data-price-type="finalPrice"] .price';
-            $result['altProductPriceTriggerSelector'] = '.bundle-actions';
-            $result['cartPriceSelector'] = '.grand.totals .price';
-            $result['cartLocationSelector'] = '.cart-summary';
-
-            return $this->result->setData($result);
-        }
-
-        $result['widgetStyles'] = $result['widgetConfiguration'];
-        unset($result['widgetConfiguration']);
 
         $this->addResponseCode($data);
 
