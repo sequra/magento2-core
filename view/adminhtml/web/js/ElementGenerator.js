@@ -438,6 +438,20 @@ if (!window.SequraFE) {
         return createFieldWrapper(buttonLink, label, description, '', error, '');
     };
 
+
+    /**
+     * Adds bar with multiple action buttons.
+     *
+     * @returns HTMLElement
+     */
+    const createActionsBar = (className, children) => {
+        const fieldWrapper = createElement('div', 'sq-field-wrapper ' + className)
+        const inputWrapper = createElement('div', 'sqm--actions-bar', '', null, children);
+        fieldWrapper.append(inputWrapper);
+
+        return fieldWrapper;
+    };
+
     /**
      * Creates multi item selector wrapper around the provided multi item selector element.
      *
@@ -691,6 +705,7 @@ if (!window.SequraFE) {
         createButtonField,
         createButtonLink,
         createButtonLinkField,
+        createActionsBar,
         createMultiItemSelectorField,
         createCountryField,
         createFormFields,

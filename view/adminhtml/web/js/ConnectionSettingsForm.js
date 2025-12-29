@@ -29,6 +29,7 @@ if (!window.SequraFE) {
      * connectUrl: string,
      * validateConnectionDataUrl: string,
      * disconnectUrl: string,
+     * reRegisterUrl: string,
      * page: string,
      * appState: string
      * }} configuration
@@ -316,15 +317,31 @@ if (!window.SequraFE) {
                 return;
             }
 
-            pageInnerContent?.append(
-                generator.createButtonField({
-                    className: 'sqm--block sqm--bellow-frame',
-                    buttonType: 'danger',
-                    buttonSize: 'medium',
-                    buttonLabel: 'general.disconnect',
-                    onClick: handleDisconnect
-                })
-            );
+            const reRegisterWebhooksButton = generator.createButton({
+                type: 'secondary',
+                size: 'medium',
+                className: '',
+                onClick: handleReRegister,
+                label: 'Re-register webhooks'
+            })
+
+            const disconnectionButton = generator.createButton({
+                type: 'danger',
+                size: 'medium',
+                className: '',
+                onClick: handleDisconnect,
+                label: 'general.disconnect'
+            })
+
+            const actionsBar = generator.createActionsBar(
+                'sqm--block sqm--bellow-frame',
+                [
+                    reRegisterWebhooksButton,
+                    disconnectionButton
+                ]
+            )
+
+            pageInnerContent?.append(actionsBar);
 
             pageContent?.append(
                 generator.createPageFooter({
@@ -555,7 +572,7 @@ if (!window.SequraFE) {
 
                 utilities.showLoader();
 
-                api.post(configuration.disconnectUrl, createPayload(), SequraFE.customHeader)
+                api.post(configuration.disconnectUrl, createDisconnectionPayload(), SequraFE.customHeader)
                     .then(() => SequraFE.state.display())
                     .finally(utilities.hideLoader);
             })
@@ -564,7 +581,37 @@ if (!window.SequraFE) {
         /**
          * Handles the disconnect button click.
          */
-        const createPayload = () => {
+        const handleReRegister = () => {
+            utilities.showLoader();
+
+            api.post(configuration.reRegisterUrl, createReRegisterPayload(), SequraFE.customHeader)
+                .then((response) => {
+                    if (response.isSuccessful) {
+                        SequraFE.responseService.successHandler(
+                            {successMessage: 'connection.webhookReRegistration.successMessage'}
+                        ).catch(() => {
+                        });
+                    } else {
+                        SequraFE.responseService.errorHandler(
+                            {errorMessage: 'connection.webhookReRegistration.errorMessage'}
+                        ).catch(() => {
+                        });
+                    }
+
+                })
+                .catch((error) => {
+                    SequraFE.responseService.errorHandler(
+                        {errorMessage: error}
+                    ).catch(() => {
+                    });
+                })
+                .finally(utilities.hideLoader);
+        }
+
+        /**
+         * Creates connection payload.
+         */
+        const createDisconnectionPayload = () => {
             const isFullDisconnect = activeDeployments.length <= 1;
             const deploymentId = activeDeploymentId;
 
@@ -574,6 +621,22 @@ if (!window.SequraFE) {
             };
         }
 
+        /**
+         * Creates payload for webhook re-registration.
+         */
+        const createReRegisterPayload = () => {
+            const environment = changedSettings.environment ?? 'sandbox';
+            const username = getSettingsForActiveDeployment(changedSettings).username ?? '';
+            const password = getSettingsForActiveDeployment(changedSettings).password ?? '';
+            const deployment = getSettingsForActiveDeployment(changedSettings).deployment ?? '';
+
+            return {
+                environment,
+                username,
+                password,
+                deployment
+            };
+        }
 
         /**
          * Disables the form footer controls.

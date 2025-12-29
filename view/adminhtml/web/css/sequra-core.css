@@ -1381,6 +1381,10 @@
 #sequra-page .sq-field-wrapper.sqm--block.sqm--bellow-frame {
   margin-top: 30px;
 }
+#sequra-page .sq-field-wrapper.sqm--block.sqm--bellow-frame .sqm--actions-bar {
+  display: flex;
+  gap: 6px;
+}
 #sequra-page .sq-field-wrapper .items {
   display: flex;
   align-items: center;

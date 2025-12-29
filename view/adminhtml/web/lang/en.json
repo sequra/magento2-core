@@ -172,6 +172,11 @@
     "deployments": {
       "manage": "Manage Deployment Targets"
     },
+    "webhookReRegistration": {
+      "title": "Re-register webhooks",
+      "successMessage": "Webhooks were re-registered successfully.",
+      "errorMessage": "Webhooks were not re-registered successfully."
+    },
     "username": {
       "label": "Username",
       "description": "You can find your username in the email sent by SeQura."
