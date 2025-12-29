@@ -57,7 +57,8 @@
                 getShopCategoriesUrl: "<?= $block->getControllerUrl('GeneralSettings', '{storeId}', 'getShopCategories'); ?>",
                 getGeneralSettingsUrl: "<?= $block->getControllerUrl('GeneralSettings', '{storeId}', 'getGeneralSettings'); ?>",
                 saveGeneralSettingsUrl: "<?= $block->getControllerUrl('GeneralSettings', '{storeId}', 'setGeneralSettings'); ?>",
-                disconnectUrl: "<?= $block->getControllerUrl('Disconnect', '{storeId}', 'disconnect'); ?>"
+                disconnectUrl: "<?= $block->getControllerUrl('Disconnect', '{storeId}', 'disconnect'); ?>",
+                reRegisterUrl: "<?= $block->getControllerUrl('Connection', '{storeId}', 'reRegisterWebhooks'); ?>"
             },
             payment: {
                 getPaymentMethodsUrl: "<?= $block->getControllerUrl('PaymentMethods', '{storeId}', 'getPaymentMethods', '{merchantId}'); ?>",
