@@ -144,6 +144,7 @@ class Bootstrap extends BootstrapComponent
      * @param LoggerService $loggerService
      * @param ConfigurationService $configurationService
      * @param StoreService $storeService
+     * @param StoreIntegrationService $storeIntegrationService
      * @param VersionService $versionService
      * @param SellingCountriesService $sellingCountriesService
      * @param CategoryService $categoryService

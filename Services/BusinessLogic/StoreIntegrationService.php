@@ -9,11 +9,6 @@ use SeQura\Core\BusinessLogic\Domain\URL\Exceptions\InvalidUrlException;
 use SeQura\Core\BusinessLogic\Domain\URL\Model\URL;
 use Sequra\Core\Helper\UrlHelper;
 
-/**
- * Class StoreIntegrationService
- *
- * @package Sequra\Core\Services\BusinessLogic
- */
 class StoreIntegrationService implements StoreIntegrationServiceInterface
 {
     /**
@@ -21,12 +16,17 @@ class StoreIntegrationService implements StoreIntegrationServiceInterface
      */
     private $urlHelper;
 
+    /**
+     * @param UrlHelper $urlHelper
+     */
     public function __construct(urlHelper $urlHelper)
     {
         $this->urlHelper = $urlHelper;
     }
 
     /**
+     * Returns webhook url for integration.
+     *
      * @return URL
      *
      * @throws NoSuchEntityException
@@ -34,18 +34,20 @@ class StoreIntegrationService implements StoreIntegrationServiceInterface
      */
     public function getWebhookUrl(): URL
     {
-       return new URL($this->urlHelper->getFrontendUrl('sequra/integrationwebhook/index'));
+        return new URL($this->urlHelper->getFrontendUrl('sequra/integrationwebhook/index'));
     }
 
     /**
+     * Returns an array of supported capabilities.
+     *
      * @return Capability[]
      */
     public function getSupportedCapabilities(): array
     {
-       return [
+        return [
            Capability::storeInfo(),
            Capability::general(),
            Capability::widget()
-       ];
+        ];
     }
 }

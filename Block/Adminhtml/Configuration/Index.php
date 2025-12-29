@@ -38,8 +38,8 @@ class Index extends Template
         UrlHelper $urlHelper,
         Session $authSession,
         RegexProvider $regexProvider,
-        array $data = [])
-    {
+        array $data = []
+    ) {
         if (!is_iterable($data)) {
             throw new \InvalidArgumentException('Data must be iterable');
         }
@@ -122,6 +122,11 @@ class Index extends Template
         return strtoupper($user ? substr($user->getInterfaceLocale(), 0, 2) : 'en');
     }
 
+    /**
+     * Get the regex in JSON format
+     *
+     * @return string
+     */
     public function getRegexJson(): string
     {
         $regex = $this->regexProvider->toArray();
