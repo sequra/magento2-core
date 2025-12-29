@@ -10,7 +10,6 @@
         <link src="Sequra_Core::js/TranslationService.js"/>
         <link src="Sequra_Core::js/TemplateService.js"/>
         <link src="Sequra_Core::js/UtilityService.js"/>
-        <link src="Sequra_Core::js/ValidationService.js"/>
         <link src="Sequra_Core::js/ResponseService.js"/>
         <link src="Sequra_Core::js/PageControllerFactory.js"/>
         <link src="Sequra_Core::js/FormFactory.js"/>
