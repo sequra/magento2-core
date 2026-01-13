@@ -276,7 +276,7 @@ SequraFE.appPages = {
                 switch (page) {
                     case SequraFE.appPages.ONBOARDING.COUNTRIES:
                         if (!dataStore.connectionSettings?.connectionData?.every(c => c.username)) {
-                            page = SequraFE.appPages.ONBOARDING.CONNECT
+                            page = SequraFE.appPages.ONBOARDING.CONNECT;
                         }
 
                         if (!dataStore.deploymentsSettings?.some(deployment => deployment.active === true)) {

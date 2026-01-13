@@ -303,7 +303,7 @@ if (!window.SequraFE) {
 
             const resetDetails = () => {
                 document.querySelectorAll('.sqm--log-context').forEach(elem => {
-                    elem.style.display = 'none'
+                    elem.style.display = 'none';
                     elem.innerHTML = '';
                 });
                 document.querySelectorAll('.sqm--log-details').forEach(elem => {

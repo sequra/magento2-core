@@ -685,7 +685,7 @@ if (!window.SequraFE) {
                 )
             ]
         );
-    }
+    };
 
     SequraFE.elementGenerator = {
         createElement,
