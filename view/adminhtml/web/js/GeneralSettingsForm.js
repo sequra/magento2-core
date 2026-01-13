@@ -397,7 +397,7 @@ if (!window.SequraFE) {
                     }
                 }
                 return countriesString ? translate('countries.enabledCountries').replace('{countries}', countriesString) : '';
-            }
+            };
             const descriptionWithCountries = (description, countries) => SequraFE.translationService.translate(description) + countriesString(countries);
 
             const enabledForServiceInput = document.querySelector(`.${classNameEnabledForService} input`);
