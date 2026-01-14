@@ -51,6 +51,7 @@ class ServiceRegisterObserver implements ObserverInterface
         } catch (LocalizedException $e) {
             // Area code not set (e.g., during setup:di:compile or setup:upgrade)
             // Skip bootstrap initialization - it will be initialized later when area is set
+            // phpcs:ignore Magento2.CodeAnalysis.EmptyBlock.DetectedCatch
         }
     }
 }
