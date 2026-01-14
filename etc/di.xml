@@ -166,4 +166,10 @@
             <argument name="checkoutSession" xsi:type="object">Magento\Checkout\Model\Session\Proxy</argument>
         </arguments>
     </type>
+    <!-- Use Proxy for Backend Session to prevent "Area code not set" errors during installation -->
+    <type name="Sequra\Core\Services\BusinessLogic\Utility\SeQuraTranslationProvider">
+        <arguments>
+            <argument name="session" xsi:type="object">Magento\Backend\Model\Auth\Session\Proxy</argument>
+        </arguments>
+    </type>
 </config>
