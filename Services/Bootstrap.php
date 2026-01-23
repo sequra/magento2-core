@@ -25,6 +25,7 @@ use SeQura\Core\BusinessLogic\Domain\Integration\PromotionalWidgets\WidgetConfig
 use SeQura\Core\BusinessLogic\Domain\Integration\SellingCountries\SellingCountriesServiceInterface;
 use SeQura\Core\BusinessLogic\Domain\Integration\ShopOrderStatuses\ShopOrderStatusesServiceInterface;
 use SeQura\Core\BusinessLogic\Domain\Integration\Store\StoreServiceInterface;
+use SeQura\Core\BusinessLogic\Domain\Integration\StoreIntegration\StoreIntegrationServiceInterface;
 use SeQura\Core\BusinessLogic\Domain\Integration\Version\VersionServiceInterface;
 use SeQura\Core\BusinessLogic\Domain\Order\Models\SeQuraOrder;
 use SeQura\Core\BusinessLogic\Domain\Order\RepositoryContracts\SeQuraOrderRepositoryInterface;
@@ -62,6 +63,7 @@ use Sequra\Core\Services\BusinessLogic\PromotionalWidget\WidgetConfigurator;
 use Sequra\Core\Services\BusinessLogic\SellingCountriesService;
 use Sequra\Core\Services\BusinessLogic\ShopOrderStatusesService;
 use Sequra\Core\Services\BusinessLogic\StatisticalDataService;
+use Sequra\Core\Services\BusinessLogic\StoreIntegrationService;
 use Sequra\Core\Services\BusinessLogic\StoreService;
 use Sequra\Core\Services\BusinessLogic\Utility\Encryptor;
 use Sequra\Core\Services\BusinessLogic\VersionService;
@@ -88,6 +90,10 @@ class Bootstrap extends BootstrapComponent
      * @var StoreService
      */
     private $storeService;
+    /**
+     * @var StoreIntegrationService
+     */
+    private $storeIntegrationService;
     /**
      * @var VersionService
      */
@@ -137,6 +143,7 @@ class Bootstrap extends BootstrapComponent
      * @param LoggerService $loggerService
      * @param ConfigurationService $configurationService
      * @param StoreService $storeService
+     * @param StoreIntegrationService $storeIntegrationService
      * @param VersionService $versionService
      * @param SellingCountriesService $sellingCountriesService
      * @param CategoryService $categoryService
@@ -154,6 +161,7 @@ class Bootstrap extends BootstrapComponent
         LoggerService $loggerService,
         ConfigurationService $configurationService,
         StoreService $storeService,
+        StoreIntegrationService $storeIntegrationService,
         VersionService $versionService,
         SellingCountriesService $sellingCountriesService,
         CategoryService $categoryService,
@@ -170,6 +178,7 @@ class Bootstrap extends BootstrapComponent
         $this->loggerService = $loggerService;
         $this->configurationService = $configurationService;
         $this->storeService = $storeService;
+        $this->storeIntegrationService = $storeIntegrationService;
         $this->versionService = $versionService;
         $this->sellingCountriesService = $sellingCountriesService;
         $this->categoryService = $categoryService;
@@ -254,6 +263,13 @@ class Bootstrap extends BootstrapComponent
             StoreServiceInterface::class,
             static function () {
                 return static::$instance->storeService;
+            }
+        );
+
+        ServiceRegister::registerService(
+            StoreIntegrationServiceInterface::class,
+            static function () {
+                return static::$instance->storeIntegrationService;
             }
         );
 

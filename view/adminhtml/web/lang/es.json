@@ -14,6 +14,7 @@
     "merchant": "Comerciante:",
     "settings": "Ajustes",
     "paymentMethods": "Métodos de pago",
+    "advanced": "Avanzado",
     "changesSaved": "Cambios guardados exitosamente.",
     "noItemsAvailable": "No hay elementos disponibles",
     "mode": {
@@ -23,6 +24,7 @@
     "errors": {
       "InvalidOperationException": "Se produjo un error en el servidor. Por favor, verifica los datos e inténtalo de nuevo.",
       "unknown": "Se produjo un error desconocido. Por favor, inténtalo de nuevo más tarde.",
+      "backgroundDataFetchFailure": "Se produjo un error al actualizar los datos en segundo plano. Por favor, recarga la página para ver los últimos datos.",
       "empty": "El parámetro no puede estar vacío.",
       "saveEntityFailed": "Error al guardar la entidad porque %s",
       "getEntityFailed": "Error al recuperar la entidad porque %s",
@@ -81,7 +83,9 @@
         "merchantError": "Comerciante con ID %s no encontrado.",
         "failedToRegisterWebhook": "Error al registrar el webhook.",
         "hmacError": "Error al generar HMAC."
-      }
+      },
+      "failedToRetrieveLog": "Fallo al recuperar el contenido del registro.",
+      "failedToRemoveLog": "Fallo al eliminar el contenido del registro."
     }
   },
   "sidebar": {
@@ -113,7 +117,8 @@
     "invalidFieldValue": "El campo debe estar configurado en \"%s\".",
     "invalidMaxValue": "El valor máximo permitido es %s.",
     "invalidImageType": "Por favor, proporciona un archivo en uno de los tipos de imagen admitidos (PNG, JPG, SVG).",
-    "invalidImageSize": "El archivo seleccionado supera el límite de 10 MB."
+    "invalidImageSize": "El archivo seleccionado supera el límite de 10 MB.",
+    "invalidTimeDuration": "Este campo debe contener fechas como 2017-08-31 o una duración como P3M15D (3 meses y 15 días). Revisa el formato ISO 8601."
   },
   "payments": {
     "title": "Métodos de pago",
@@ -127,6 +132,24 @@
     "maximumAmount": "Importe máximo",
     "availableFrom": "Disponible desde",
     "availableTo": "Disponible hasta"
+  },
+  "debug": {
+    "title": "Habilitar registros",
+    "description": "Ayuda a diagnosticar problemas con la integración de SeQura",
+    "noLogs": "No hay registros disponibles",
+    "log": {
+      "severity": "Gravedad",
+      "message": "Mensaje",
+      "datetime": "Fecha y hora",
+      "removeModal": {
+        "title": "Eliminar registros",
+        "message": "¿Estás seguro de que deseas borrar los registros? No podrás recuperarlos."
+      },
+      "minLevel": "Nivel de gravedad mínimo",
+      "minLevelDescription": "Configura el nivel de gravedad mínimo de los registros que se escribirán en el archivo de registro."
+    },
+    "reload": "Recargar",
+    "remove": "Eliminar"
   },
   "connection": {
     "title": {
@@ -209,7 +232,8 @@
     "PE": {
       "label": "Perú",
       "description": "Por favor, introduce la ID de comerciante de SeQura que se debe utilizar para los clientes peruanos."
-    }
+    },
+    "enabledCountries": "Habilitado para {countries}."
   },
   "widgets": {
     "title": {
@@ -294,7 +318,7 @@
   },
   "orderStatusSettings": {
     "title": "Configuración de estados de pedido",
-    "description": "Descripción de la configuración de estados de pedido",
+    "description": "Define cómo los estados de seQura se asignan a los estados de pedido de {shopName}. Los valores predeterminados deberían funcionar en la mayoría de los casos, así que cámbialos con precaución.",
     "paid": {
       "label": "Pagado",
       "description": "Cuando un pago tiene el estado de Pagado."
@@ -334,6 +358,26 @@
     "excludedProducts": {
       "label": "Productos excluidos",
       "description": "Los productos de la tienda en este campo no podrán ser adquiridos con los métodos de pago de SeQura. Por favor, introduce un SKU válido para cada producto que desees excluir."
+    },
+    "enabledForServices": {
+      "label": "Habilitado para servicios",
+      "description": "Tu contrato debe permitir la venta de servicios. "
+    },
+    "allowFirstServicePaymentDelay": {
+      "label": "Permitir retraso en el primer pago del servicio",
+      "description": ""
+    },
+    "allowServiceRegistrationItems": {
+      "label": "Permitir artículos de registro",
+      "description": "Permite configurar una parte del precio del producto para que se pague por adelantado como registro. "
+    },
+    "defaultServicesEndDate": {
+      "label": "Fecha de finalización de servicios predeterminada",
+      "description": "Fechas como 2017-08-31, duración como P3M15D (3 meses y 15 días). El valor predeterminado para todos los productos."
     }
+  },
+  "supportLink": {
+    "label": "¿Necesitas ayuda?",
+    "link": "https://sqra.es/supportes"
   }
 }

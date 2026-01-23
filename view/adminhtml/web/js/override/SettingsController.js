@@ -78,7 +78,7 @@ if (!window.SequraFE) {
                     promises = Promise.all([
                         SequraFE.state.getData('notConnectedDeployments') ?? api.get(
                             configuration.pageConfiguration.onboarding.getNotConnectedDeploymentsUrl.replace(
-                                '{storeId}', SequraFE.state.getStoreId()
+                                encodeURIComponent('{storeId}'), SequraFE.state.getStoreId()
                             ),
                             null,
                             SequraFE.customHeader
@@ -96,7 +96,7 @@ if (!window.SequraFE) {
                 case SequraFE.appPages.SETTINGS.WIDGET:
                     renderer = renderWidgetSettingsForm;
                     promises = Promise.all([
-                        SequraFE.state.getData('paymentMethods') ?? api.get(configuration.getPaymentMethodsUrl.replace('{merchantId}', countrySettings[0].merchantId), null, SequraFE.customHeader),
+                        SequraFE.state.getData('paymentMethods') ?? api.get(configuration.getPaymentMethodsUrl.replace(encodeURIComponent('{merchantId}'), countrySettings[0].merchantId)),
                         SequraFE.state.getData('allAvailablePaymentMethods') ?? api.get(configuration.getAllAvailablePaymentMethodsUrl, null, SequraFE.customHeader),
                     ])
                     break;

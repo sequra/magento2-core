@@ -14,6 +14,17 @@
 </div>
 
 <script>
+    window.SequraFE = window.SequraFE || {};
+    SequraFE.regex = <?= $block->getRegexJson(); ?>;
+
+    SequraFE.flags = {
+        configurableSelectorsForMiniWidgets: false
+    };
+</script>
+
+<script src="<?= $block->getViewFileUrl('Sequra_Core::js/ValidationService.js'); ?>"></script>
+
+<script>
     document.addEventListener('DOMContentLoaded', () => {
         SequraFE.translations = {
             default: <?= $block->getTranslations()['default']; ?>,
@@ -36,8 +47,7 @@
             getPaymentMethodsUrl: "<?= $block->getControllerUrl('PaymentMethods', '{storeId}', 'getPaymentMethods', '{merchantId}'); ?>",
             getDeploymentsUrl: "<?= $block->getControllerUrl('DeploymentsSettings', '{storeId}', 'getDeployments'); ?>",
             getNotConnectedDeploymentsUrl: "<?= $block->getControllerUrl('DeploymentsSettings', '{storeId}', 'getNotConnectedDeployments'); ?>",
-            getAllAvailablePaymentMethodsUrl: "<?= $block->getControllerUrl('PaymentMethods', '{storeId}', 'getAllAvailablePaymentMethods'); ?>",
-            configurableSelectorsForMiniWidgets: "false"
+            getAllAvailablePaymentMethodsUrl: "<?= $block->getControllerUrl('PaymentMethods', '{storeId}', 'getAllAvailablePaymentMethods'); ?>"
         }
 
         const pageConfiguration = {
@@ -47,7 +57,8 @@
                 getShopCategoriesUrl: "<?= $block->getControllerUrl('GeneralSettings', '{storeId}', 'getShopCategories'); ?>",
                 getGeneralSettingsUrl: "<?= $block->getControllerUrl('GeneralSettings', '{storeId}', 'getGeneralSettings'); ?>",
                 saveGeneralSettingsUrl: "<?= $block->getControllerUrl('GeneralSettings', '{storeId}', 'setGeneralSettings'); ?>",
-                disconnectUrl: "<?= $block->getControllerUrl('Disconnect', '{storeId}', 'disconnect'); ?>"
+                disconnectUrl: "<?= $block->getControllerUrl('Disconnect', '{storeId}', 'disconnect'); ?>",
+                reRegisterUrl: "<?= $block->getControllerUrl('Connection', '{storeId}', 'reRegisterWebhooks'); ?>"
             },
             payment: {
                 getPaymentMethodsUrl: "<?= $block->getControllerUrl('PaymentMethods', '{storeId}', 'getPaymentMethods', '{merchantId}'); ?>",

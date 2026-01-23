@@ -58,7 +58,7 @@ if (!window.SequraFE) {
             const saveButton = document.querySelector('.sq-page-footer .sqp-actions .sqp-save');
             const cancelButton = document.querySelector('.sq-page-footer .sqp-actions .sqp-cancel');
 
-            if(saveButton && cancelButton){
+            if (saveButton && cancelButton) {
                 saveButton.disabled = disable;
                 cancelButton.disabled = disable;
             }
@@ -93,6 +93,32 @@ if (!window.SequraFE) {
             }
 
             return parent;
+        };
+
+        /**
+         * Returns the menu item array for page navigation.
+         *
+         * @param {string} activePage
+         * @return {Array<{label: string, href: string, isActive: boolean}>}
+         */
+        this.getMenuItems = (activePage) => {
+            return SequraFE.isPromotional ? [] : [
+                {
+                    label: 'general.paymentMethods',
+                    href: window.location.href.split('#')[0] + '#payment',
+                    isActive: activePage === SequraFE.appStates.PAYMENT
+                },
+                {
+                    label: 'general.settings',
+                    href: window.location.href.split('#')[0] + '#settings',
+                    isActive: activePage === SequraFE.appStates.SETTINGS
+                },
+                {
+                    label: 'general.advanced',
+                    href: window.location.href.split('#')[0] + '#advanced',
+                    isActive: activePage === SequraFE.appStates.ADVANCED
+                }
+            ];
         };
     }
 
