@@ -45,7 +45,6 @@ use SeQura\Core\Infrastructure\ServiceRegister;
 use SeQura\Core\Infrastructure\TaskExecution\Process;
 use SeQura\Core\Infrastructure\TaskExecution\QueueItem;
 use SeQura\Core\Infrastructure\Utility\TimeProvider;
-use Sequra\Core\Model\Api\Builders\CreateOrderRequestBuilder;
 use Sequra\Core\Repository\BaseRepository;
 use Sequra\Core\Repository\QueueItemRepository;
 use Sequra\Core\Repository\SeQuraOrderRepository;
@@ -53,9 +52,9 @@ use Sequra\Core\Services\BusinessLogic\CategoryService;
 use Sequra\Core\Services\BusinessLogic\ConfigurationService;
 use Sequra\Core\Services\BusinessLogic\DisconnectService;
 use Sequra\Core\Services\BusinessLogic\Order\MerchantDataProvider;
-use Sequra\Core\Services\BusinessLogic\Order\OrderCreation;
 use Sequra\Core\Services\BusinessLogic\OrderReportService;
 use Sequra\Core\Services\BusinessLogic\OrderServiceFactory;
+use Sequra\Core\Services\BusinessLogic\Order\OrderCreationFactory;
 use Sequra\Core\Services\BusinessLogic\PaymentMethodsService;
 use Sequra\Core\Services\BusinessLogic\ProductService;
 use Sequra\Core\Services\BusinessLogic\PromotionalWidget\MiniWidgetMessagesProvider;
@@ -129,8 +128,8 @@ class Bootstrap extends BootstrapComponent
     /** @var MerchantDataProvider */
     private $merchantDataProvider;
 
-    /** @var OrderCreation */
-    private $orderCreation;
+    /** @var OrderCreationFactory */
+    private $orderCreationFactory;
 
     /**
      *  Constructor for Bootstrap
@@ -149,7 +148,7 @@ class Bootstrap extends BootstrapComponent
      * @param MiniWidgetMessagesProvider $miniWidgetMessagesProvider
      * @param ProductService $productService
      * @param MerchantDataProvider $merchantDataProvider
-     * @param OrderCreation $orderCreation
+     * @param OrderCreationFactory $orderCreationFactory
      */
     public function __construct(
         LoggerService $loggerService,
@@ -166,7 +165,7 @@ class Bootstrap extends BootstrapComponent
         MiniWidgetMessagesProvider $miniWidgetMessagesProvider,
         ProductService $productService,
         MerchantDataProvider $merchantDataProvider,
-        OrderCreation $orderCreation
+        OrderCreationFactory $orderCreationFactory
     ) {
         $this->loggerService = $loggerService;
         $this->configurationService = $configurationService;
@@ -182,7 +181,7 @@ class Bootstrap extends BootstrapComponent
         $this->miniWidgetMessagesProvider = $miniWidgetMessagesProvider;
         $this->productService = $productService;
         $this->merchantDataProvider = $merchantDataProvider;
-        $this->orderCreation = $orderCreation;
+        $this->orderCreationFactory = $orderCreationFactory;
 
         static::$instance = $this;
     }
@@ -303,7 +302,7 @@ class Bootstrap extends BootstrapComponent
         ServiceRegister::registerService(
             OrderCreationInterface::class,
             static function () {
-                return static::$instance->orderCreation;
+                return static::$instance->orderCreationFactory->create();
             }
         );
 

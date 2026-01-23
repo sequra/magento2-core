@@ -44,3 +44,7 @@ parameters:
         - '#unknown class Magento\\Catalog\\Model\\ResourceModel\\Category\\CollectionFactory#i'
         - '#invalid type Magento\\Catalog\\Model\\ResourceModel\\Category\\CollectionFactory#i'
         - '#Call to an undefined method SeQura\\Core\\BusinessLogic\\Bootstrap\\Aspect\\Aspects::#i'
+        - '#(Class|type) Sequra\\Core\\Services\\BusinessLogic\\Order\\OrderCreationFactory (not found|unknown|invalid)#'
+        - '#Call to method create\(\) on an unknown class Sequra\\Core\\Services\\BusinessLogic\\Order\\OrderCreationFactory#'
+        - '#Parameter \$orderCreationFactory of method Sequra\\Core\\Services\\Bootstrap::__construct\(\) has invalid type Sequra\\Core\\Services\\BusinessLogic\\Order\\OrderCreationFactory\.#'
+        - '#Property Sequra\\Core\\Services\\Bootstrap::\$orderCreationFactory has unknown class Sequra\\Core\\Services\\BusinessLogic\\Order\\OrderCreationFactory as its type.#'
