@@ -44,3 +44,5 @@ parameters:
         - '#unknown class Magento\\Catalog\\Model\\ResourceModel\\Category\\CollectionFactory#i'
         - '#invalid type Magento\\Catalog\\Model\\ResourceModel\\Category\\CollectionFactory#i'
         - '#Call to an undefined method SeQura\\Core\\BusinessLogic\\Bootstrap\\Aspect\\Aspects::#i'
+        - '#unknown class Sequra\\Core\\Services\\BusinessLogic\\OrderCreationFactory#i'
+        - '#invalid type Sequra\\Core\\Services\\BusinessLogic\\OrderCreationFactory#i'
