@@ -13,11 +13,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxslt1-dev \
     libzip-dev \
     libssl-dev \
+    libcurl4-openssl-dev \
     git \
     curl \
     unzip \
     tar \
-    libpcre3 \
     openssh-client \
     && echo -e "[client]\nskip-ssl=true\n" > /etc/mysql/my.cnf \
     && pecl install xdebug redis oauth \
@@ -76,7 +76,21 @@ RUN --mount=type=secret,id=M2_COMPOSER_REPO_KEY,env=M2_REPO_KEY \
     && composer create-project --repository-url=https://repo.magento.com/ magento/project-community-edition=$M2_VERSION . \
     && composer config minimum-stability dev \
     && composer config prefer-stable true \
-    && composer require n98/magerun2-dist mageplaza/magento-2-spanish-language-pack:dev-master mageplaza/magento-2-portuguese-language-pack:dev-master mageplaza/magento-2-french-language-pack:dev-master mageplaza/magento-2-italian-language-pack:dev-master \
+    && composer require n98/magerun2-dist \
+    mageplaza/magento-2-spanish-language-pack:dev-master \
+    mageplaza/magento-2-portuguese-language-pack:dev-master \
+    mageplaza/magento-2-french-language-pack:dev-master \
+    mageplaza/magento-2-italian-language-pack:dev-master \
+    community-engineering/language-es_es:^0.0.28 \
+    community-engineering/language-it_it:^0.0.26 \
+    creativestyle/magesuite-magepack:^1.1 \
+    cweagans/composer-patches:^1.7 \
+    dompdf/dompdf:^3.0.0 \
+    dotdigital/dotdigital-magento2-extension:^4.19 \
+    dotdigital/dotdigital-magento2-extension-chat:1.10.2 \
+    ethanyehuda/magento2-cronjobmanager:^2.0 \
+    hybridauth/hybridauth:~3.0 \
+    laminas/laminas-mvc:^3.8 \
     && chmod -R 755 ./ \
     && chown -R www-data:www-data ./
 
