@@ -8,7 +8,7 @@
         "pagos",
         "magento2"
     ],
-    "version": "3.1.1",
+    "version": "3.1.2",
     "license": "MIT",
     "authors": [
         {
@@ -20,7 +20,7 @@
     "prefer-stable": true,
     "require": {
         "php": ">=7.4 <8.5",
-        "sequra/integration-core": "dev-feature/LIS-90",
+        "sequra/integration-core": "dev-feature/LIS-91-Enable-configuration-via-webhook",
         "ext-json": "*"
     },
     "autoload": {
