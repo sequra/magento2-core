@@ -32,6 +32,8 @@ class Index implements HttpPostActionInterface
     }
 
     /**
+     * Execute webhook endpoint
+     *
      * @return Json
      */
     public function execute(): Json

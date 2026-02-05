@@ -48,6 +48,8 @@ class StoreInfoService implements StoreInfoServiceInterface
     }
 
     /**
+     * Retrieve store info
+     *
      * @return StoreInfo
      *
      * @throws NoSuchEntityException
@@ -63,9 +65,20 @@ class StoreInfoService implements StoreInfoServiceInterface
         $phpVersion = PHP_VERSION;
         $dbVersion = $this->resourceConnection->getConnection()->fetchOne('SELECT VERSION()');
         $os = PHP_OS_FAMILY;
-        $modules = array_keys($this->moduleList->getAll());
+        $modules = array_keys(
+            $this->moduleList->getAll()
+        );
 
-        return new StoreInfo($storeName, $storeUrl, $platform, $platformVersion, $pluginVersion, $phpVersion,
-            $dbVersion, $os, $modules);
+        return new StoreInfo(
+            $storeName,
+            $storeUrl,
+            $platform,
+            $platformVersion,
+            $pluginVersion,
+            $phpVersion,
+            $dbVersion,
+            $os,
+            $modules
+        );
     }
 }

@@ -38,16 +38,17 @@ class LoggerService extends Singleton implements ShopLoggerAdapter
      */
     private $logger;
     /**
-     * Client logger.
+     *  Debug handler for client log file.
      *
      * @var DebugHandler
      */
     private $clientLogger;
 
     /**
-     * Logger service constructor.
+     * Debug handler for client log file.
      *
-     * @param LoggerInterface $logger Magento logger interface.
+     * @param LoggerInterface $logger
+     * @param DebugHandler $clientLogger
      */
     public function __construct(LoggerInterface $logger, DebugHandler $clientLogger)
     {

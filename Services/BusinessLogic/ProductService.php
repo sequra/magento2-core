@@ -39,7 +39,6 @@ class ProductService implements ProductServiceInterface
      */
     private CollectionFactory $productCollectionFactory;
 
-
     /**
      * @param ProductRepository $productRepository
      * @param CategoryRepositoryInterface $categoryRepository
@@ -195,6 +194,8 @@ class ProductService implements ProductServiceInterface
     }
 
     /**
+     * Retrieve paginated products with optional name search.
+     *
      * @param int $page
      * @param int $limit
      * @param string $search
@@ -237,6 +238,8 @@ class ProductService implements ProductServiceInterface
     }
 
     /**
+     * Retrieve store products by their IDs.
+     *
      * @param array $ids
      * @return array|ShopProduct[]
      */

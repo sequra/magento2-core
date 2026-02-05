@@ -31,6 +31,8 @@ class LogService implements LogServiceInterface
     }
 
     /**
+     * Retrieve client-specific log entries.
+     *
      * @return Log
      */
     public function getLog(): Log
@@ -50,6 +52,8 @@ class LogService implements LogServiceInterface
     }
 
     /**
+     * Clear client log file content.
+     *
      * @return void
      */
     public function removeLog(): void
