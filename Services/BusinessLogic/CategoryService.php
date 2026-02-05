@@ -3,7 +3,7 @@
 namespace Sequra\Core\Services\BusinessLogic;
 
 use Magento\Catalog\Model\CategoryRepository;
-use Magento\Catalog\Model\ResourceModel\Category\CollectionFactory as CategoryCollectionFactory;
+use Magento\Catalog\Model\ResourceModel\Category\Collection\Factory as CategoryCollectionFactory;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Store\Model\StoreManagerInterface;
 use SeQura\Core\BusinessLogic\Domain\GeneralSettings\Exceptions\EmptyCategoryParameterException;
@@ -51,7 +51,7 @@ class CategoryService implements CategoryServiceInterface
      * @throws LocalizedException
      * @throws EmptyCategoryParameterException
      */
-    public function getCategories(): array
+    public function getCategories(?int $page = null, ?int $limit = null, ?string $search = null): array
     {
         $categories = [];
         /**
@@ -84,6 +84,56 @@ class CategoryService implements CategoryServiceInterface
             if ($id === null || $name === null) {
                 continue;
             }
+            $categories[] = new Category((string) $id, $name);
+        }
+
+        return $categories;
+    }
+
+    /**
+     * @param array $ids
+     *
+     * @return array|Category[]
+     *
+     * @throws EmptyCategoryParameterException
+     */
+    public function getCategoriesByIds(array $ids): array
+    {
+        $categories = [];
+
+        if (empty($ids)) {
+            return $categories;
+        }
+
+        /**
+         * @var \Magento\Store\Model\Store $store
+         */
+        $store = $this->storeManager->getStore(StoreContext::getInstance()->getStoreId());
+
+        $categoryCollection = $this->collectionFactory->create();
+        $categoryCollection->addAttributeToSelect('*');
+        $categoryCollection->addPathsFilter('1/' . $store->getRootCategoryId() . '/');
+        $categoryCollection->addIdFilter($ids);
+        $categoryCollection->addIsActiveFilter();
+
+        /**
+         * @var \Magento\Catalog\Model\Category $category
+         */
+        foreach ($categoryCollection as $category) {
+            /**
+             * @var int|null $id
+             */
+            $id = $category->getId();
+
+            /**
+             * @var string|null $name
+             */
+            $name = $category->getName();
+
+            if ($id === null || $name === null) {
+                continue;
+            }
+
             $categories[] = new Category((string) $id, $name);
         }
 

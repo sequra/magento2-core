@@ -38,7 +38,7 @@ class SellingCountriesService implements SellingCountriesServiceInterface
      *
      * @throws NoSuchEntityException
      */
-    public function getSellingCountries(): array
+    public function getSellingCountries(?int $page = null, ?int $limit = null, ?string $search = null): array
     {
         $store = $this->storeManager->getStore(StoreContext::getInstance()->getStoreId());
         // @phpstan-ignore-next-line

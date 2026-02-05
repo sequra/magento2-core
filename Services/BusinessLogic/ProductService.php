@@ -3,11 +3,14 @@
 namespace Sequra\Core\Services\BusinessLogic;
 
 use Magento\Catalog\Api\CategoryRepositoryInterface;
+use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory;
 use Magento\Catalog\Model\ProductRepository;
 use Magento\Catalog\Model\Product;
+use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\Exception\NoSuchEntityException;
 use SeQura\Core\BusinessLogic\Domain\Integration\Product\ProductServiceInterface;
 use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
+use SeQura\Core\BusinessLogic\Domain\Product\Model\ShopProduct;
 
 class ProductService implements ProductServiceInterface
 {
@@ -27,17 +30,32 @@ class ProductService implements ProductServiceInterface
      * @var array<int, Product>
      */
     private static $products = [];
+    /**
+     * @var SearchCriteriaBuilder
+     */
+    private SearchCriteriaBuilder $searchCriteriaBuilder;
+    /**
+     * @var CollectionFactory
+     */
+    private CollectionFactory $productCollectionFactory;
+
 
     /**
      * @param ProductRepository $productRepository
      * @param CategoryRepositoryInterface $categoryRepository
+     * @param SearchCriteriaBuilder $searchCriteriaBuilder
+     * @param CollectionFactory $productCollectionFactory
      */
     public function __construct(
         ProductRepository  $productRepository,
-        CategoryRepositoryInterface $categoryRepository
+        CategoryRepositoryInterface $categoryRepository,
+        SearchCriteriaBuilder $searchCriteriaBuilder,
+        CollectionFactory $productCollectionFactory
     ) {
         $this->productRepository = $productRepository;
         $this->categoryRepository = $categoryRepository;
+        $this->searchCriteriaBuilder = $searchCriteriaBuilder;
+        $this->productCollectionFactory = $productCollectionFactory;
     }
 
     /**
@@ -174,5 +192,84 @@ class ProductService implements ProductServiceInterface
         }
         unset($categories[0]);
         return $categories;
+    }
+
+    /**
+     * @param int $page
+     * @param int $limit
+     * @param string $search
+     *
+     * @return array|ShopProduct[]
+     */
+    public function getShopProducts(int $page, int $limit, string $search): array
+    {
+        $products = [];
+
+        $this->searchCriteriaBuilder
+            ->setPageSize($limit)
+            ->setCurrentPage($page);
+
+        if ($search !== '') {
+            $this->searchCriteriaBuilder->addFilter(
+                'name',
+                '%' . $search . '%',
+                'like'
+            );
+        }
+
+        $criteria = $this->searchCriteriaBuilder->create();
+
+        $result = $this->productRepository->getList($criteria);
+
+        foreach ($result->getItems() as $product) {
+            $id = $product->getId();
+            $name = $product->getName();
+            $sku = $product->getSku();
+
+            if ($id === null || $name === null) {
+                continue;
+            }
+
+            $products[] = new ShopProduct((string)$id, $sku, $name);
+        }
+
+        return $products;
+    }
+
+    /**
+     * @param array $ids
+     * @return array|ShopProduct[]
+     */
+    public function getShopProductByIds(array $ids): array
+    {
+        $products = [];
+
+        if (empty($ids)) {
+            return $products;
+        }
+
+        $storeId = StoreContext::getInstance()->getStoreId();
+
+        $collection = $this->productCollectionFactory->create();
+        $collection->addAttributeToSelect('*');
+        $collection->addFieldToFilter('sku', ['in' => $ids]);
+        $collection->addStoreFilter($storeId);
+
+        /**
+         * @var \Magento\Catalog\Model\Product $product
+         */
+        foreach ($collection as $product) {
+            $id = $product->getId();
+            $name = $product->getName();
+            $sku = $product->getSku();
+
+            if ($id === null || $name === null) {
+                continue;
+            }
+
+            $products[] = new ShopProduct((string)$id, $sku, $name);
+        }
+
+        return $products;
     }
 }

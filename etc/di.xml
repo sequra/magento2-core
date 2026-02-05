@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
-<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
     <!-- Payment Method Facade configuration -->
     <virtualType name="SequraPaymentGatewayFacade" type="Magento\Payment\Model\Method\Adapter">
         <arguments>
@@ -7,7 +8,7 @@
             <argument name="formBlockType" xsi:type="string">Magento\Payment\Block\Form</argument>
             <argument name="infoBlockType" xsi:type="string">Magento\Payment\Block\ConfigurableInfo</argument>
             <argument name="valueHandlerPool" xsi:type="object">SequraPaymentGatewayValueHandlerPool</argument>
-<!--            <argument name="validatorPool" xsi:type="object">SequraPaymentGatewayValidatorPool</argument>-->
+            <!--            <argument name="validatorPool" xsi:type="object">SequraPaymentGatewayValidatorPool</argument>-->
             <argument name="commandPool" xsi:type="object">SequraPaymentGatewayCommandPool</argument>
         </arguments>
     </virtualType>
@@ -60,23 +61,29 @@
     </virtualType>
 
 
-    <virtualType name="SequraCustomerPaymentService" type="Sequra\Core\Model\Api\Checkout\BaseSequraPaymentMethodsService">
+    <virtualType name="SequraCustomerPaymentService"
+                 type="Sequra\Core\Model\Api\Checkout\BaseSequraPaymentMethodsService">
         <arguments>
-            <argument name="cartProvider" xsi:type="object">Sequra\Core\Model\Api\CartProvider\CustomerCartProvider</argument>
+            <argument name="cartProvider" xsi:type="object">Sequra\Core\Model\Api\CartProvider\CustomerCartProvider
+            </argument>
         </arguments>
     </virtualType>
-    <virtualType name="SequraGurestPaymentService" type="Sequra\Core\Model\Api\Checkout\BaseSequraPaymentMethodsService">
+    <virtualType name="SequraGurestPaymentService"
+                 type="Sequra\Core\Model\Api\Checkout\BaseSequraPaymentMethodsService">
         <arguments>
-            <argument name="cartProvider" xsi:type="object">Sequra\Core\Model\Api\CartProvider\GuestCartProvider</argument>
+            <argument name="cartProvider" xsi:type="object">Sequra\Core\Model\Api\CartProvider\GuestCartProvider
+            </argument>
         </arguments>
     </virtualType>
 
-    <virtualType name="SequraFormValidatorCustomerPaymentService" type="Sequra\Core\Model\Api\FormValidationSequraPaymentMethodsService">
+    <virtualType name="SequraFormValidatorCustomerPaymentService"
+                 type="Sequra\Core\Model\Api\FormValidationSequraPaymentMethodsService">
         <arguments>
             <argument name="paymentMethodsService" xsi:type="object">SequraCustomerPaymentService</argument>
         </arguments>
     </virtualType>
-    <virtualType name="SequraFormValidatorGurestPaymentService" type="Sequra\Core\Model\Api\FormValidationSequraPaymentMethodsService">
+    <virtualType name="SequraFormValidatorGurestPaymentService"
+                 type="Sequra\Core\Model\Api\FormValidationSequraPaymentMethodsService">
         <arguments>
             <argument name="paymentMethodsService" xsi:type="object">SequraGurestPaymentService</argument>
         </arguments>
@@ -99,7 +106,8 @@
     </type>
     <type name="Sequra\Core\Model\Api\SequraPaymentMethodsService">
         <arguments>
-            <argument name="paymentMethodsService" xsi:type="object">SequraFormValidatorCustomerPaymentService</argument>
+            <argument name="paymentMethodsService" xsi:type="object">SequraFormValidatorCustomerPaymentService
+            </argument>
         </arguments>
     </type>
 
@@ -142,13 +150,14 @@
     <type name="Magento\Framework\Console\CommandList">
         <arguments>
             <argument name="commands" xsi:type="array">
-                 <item name="Configure" xsi:type="object">Sequra\Core\Console\Configure</item>
+                <item name="Configure" xsi:type="object">Sequra\Core\Console\Configure</item>
             </argument>
         </arguments>
-     </type>
+    </type>
     <!-- CSRF -->
     <type name="Magento\Framework\App\Request\CsrfValidator">
-        <plugin name="sequra_disable_form_key_validation" type="Sequra\Core\Plugin\Framework\App\Request\CsrfValidator" />
+        <plugin name="sequra_disable_form_key_validation"
+                type="Sequra\Core\Plugin\Framework\App\Request\CsrfValidator"/>
     </type>
     <!-- Fix circular dependency by using proxy for checkout session -->
     <type name="Sequra\Core\Plugin\MiniWidgets">
@@ -164,6 +173,14 @@
     <type name="Sequra\Core\Block\Product">
         <arguments>
             <argument name="checkoutSession" xsi:type="object">Magento\Checkout\Model\Session\Proxy</argument>
+        </arguments>
+    </type>
+    <type name="Sequra\Core\Model\Logger\DebugHandler">
+        <arguments>
+            <argument name="name" xsi:type="string">debug</argument>
+            <argument name="handlers" xsi:type="array">
+                <item name="debug" xsi:type="object">Sequra\Core\Model\Logger\Handler\Debug</item>
+            </argument>
         </arguments>
     </type>
 </config>

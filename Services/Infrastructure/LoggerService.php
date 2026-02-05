@@ -2,6 +2,7 @@
 
 namespace Sequra\Core\Services\Infrastructure;
 
+use Sequra\Core\Model\Logger\DebugHandler;
 use SeQura\Core\Infrastructure\Configuration\Configuration;
 use SeQura\Core\Infrastructure\Logger\Interfaces\ShopLoggerAdapter;
 use SeQura\Core\Infrastructure\Logger\LogData;
@@ -36,17 +37,24 @@ class LoggerService extends Singleton implements ShopLoggerAdapter
      * @var LoggerInterface
      */
     private $logger;
+    /**
+     * Client logger.
+     *
+     * @var DebugHandler
+     */
+    private $clientLogger;
 
     /**
      * Logger service constructor.
      *
      * @param LoggerInterface $logger Magento logger interface.
      */
-    public function __construct(LoggerInterface $logger)
+    public function __construct(LoggerInterface $logger, DebugHandler $clientLogger)
     {
         parent::__construct();
 
         $this->logger = $logger;
+        $this->clientLogger = $clientLogger;
 
         static::$instance = $this;
     }
@@ -67,7 +75,7 @@ class LoggerService extends Singleton implements ShopLoggerAdapter
             return;
         }
 
-        $message = 'SEQURA LOG: 
+        $message = 'SEQURA LOG:
             Date: ' . date('d/m/Y') . '
             Time: ' . date('H:i:s') . '
             Log level: ' . self::$logLevelName[$logLevel] . '
@@ -86,6 +94,6 @@ class LoggerService extends Singleton implements ShopLoggerAdapter
         }
         // TODO: The use of function call_user_func() is discouraged
         // phpcs:ignore Magento2.Functions.DiscouragedFunction.Discouraged
-        \call_user_func([$this->logger, self::$logLevelName[$logLevel]], $message); // @phpstan-ignore-line
+        \call_user_func([$this->clientLogger, self::$logLevelName[$logLevel]], $message); // @phpstan-ignore-line
     }
 }
