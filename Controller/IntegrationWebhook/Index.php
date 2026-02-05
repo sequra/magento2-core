@@ -11,13 +11,24 @@ use Magento\Framework\Controller\Result\Json;
 class Index implements HttpPostActionInterface
 {
     /**
+     * @var HttpRequest
+     */
+    private HttpRequest $request;
+    /**
+     * @var JsonFactory
+     */
+    private JsonFactory $jsonFactory;
+
+    /**
      * @param HttpRequest $request
      * @param JsonFactory $jsonFactory
      */
     public function __construct(
-        private HttpRequest $request,
-        private JsonFactory $jsonFactory
+        HttpRequest $request,
+        JsonFactory $jsonFactory
     ) {
+        $this->request = $request;
+        $this->jsonFactory = $jsonFactory;
     }
 
     /**
