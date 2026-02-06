@@ -44,7 +44,7 @@ class Index implements HttpPostActionInterface
 
         $param = $this->request->getParam('storeId', '');
 
-        if(!is_string($param) && !is_int($param)) {
+        if (!is_string($param) && !is_int($param)) {
             $param = '';
         }
 
