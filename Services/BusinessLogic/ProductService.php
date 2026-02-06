@@ -49,7 +49,7 @@ class ProductService implements ProductServiceInterface
         ProductRepository  $productRepository,
         CategoryRepositoryInterface $categoryRepository,
         SearchCriteriaBuilder $searchCriteriaBuilder,
-        $productCollectionFactory
+        CollectionFactory $productCollectionFactory // @phpstan-ignore-line
     ) {
         $this->productRepository = $productRepository;
         $this->categoryRepository = $categoryRepository;
@@ -254,7 +254,7 @@ class ProductService implements ProductServiceInterface
         $storeId = StoreContext::getInstance()->getStoreId();
 
         /** @var \Magento\Catalog\Model\ResourceModel\Product\Collection $collection */
-        $collection = $this->productCollectionFactory->create();
+        $collection = $this->productCollectionFactory->create(); // @phpstan-ignore-line
         $collection->addAttributeToSelect('*');
         $collection->addFieldToFilter('sku', ['in' => $ids]);
         $collection->addStoreFilter($storeId);
