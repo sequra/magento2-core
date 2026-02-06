@@ -42,7 +42,7 @@ class Index implements HttpPostActionInterface
 
         $payload = json_decode($this->request->getContent(), true) ?? [];
 
-        $storeId = (string)$this->request->getParam('storeId');
+        $storeId = (string)$this->request->getParam('storeId', '');
         $merchant = $this->request->getParam('merchantId');
         $signature = $this->request->getParam('signature');
 
