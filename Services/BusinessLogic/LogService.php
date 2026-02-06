@@ -3,6 +3,7 @@
 namespace Sequra\Core\Services\BusinessLogic;
 
 use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\Exception\FileSystemException;
 use Magento\Framework\Filesystem\Io\File;
 use SeQura\Core\BusinessLogic\Domain\Integration\Log\LogServiceInterface;
 use SeQura\Core\BusinessLogic\Domain\Log\Model\Log;
@@ -34,6 +35,7 @@ class LogService implements LogServiceInterface
      * Retrieve client-specific log entries.
      *
      * @return Log
+     * @throws FileSystemException
      */
     public function getLog(): Log
     {
@@ -46,6 +48,10 @@ class LogService implements LogServiceInterface
 
         $content = $this->fileIo->read($logPath);
 
+        if (!is_string($content) || $content === '') {
+            return new Log([]);
+        }
+
         $arrayContent = explode(PHP_EOL, $content);
 
         return new Log($arrayContent);
@@ -55,6 +61,7 @@ class LogService implements LogServiceInterface
      * Clear client log file content.
      *
      * @return void
+     * @throws FileSystemException
      */
     public function removeLog(): void
     {

@@ -93,7 +93,7 @@ class CategoryService implements CategoryServiceInterface
     /**
      * Retrieve active store categories by their IDs.
      *
-     * @param int[] $ids
+     * @param string[] $ids
      *
      * @return Category[]
      *

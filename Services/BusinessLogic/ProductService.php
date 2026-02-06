@@ -37,7 +37,7 @@ class ProductService implements ProductServiceInterface
     /**
      * @var CollectionFactory
      */
-    private $productCollectionFactory;
+    private $productCollectionFactory; // @phpstan-ignore-line
 
     /**
      * @param ProductRepository $productRepository
