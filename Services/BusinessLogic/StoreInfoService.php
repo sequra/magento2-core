@@ -56,8 +56,11 @@ class StoreInfoService implements StoreInfoServiceInterface
      */
     public function getStoreInfo(): StoreInfo
     {
-        $storeName = $this->storeManager->getStore()->getName();
-        $storeUrl = $this->storeManager->getStore()->getBaseUrl();
+        /** @var \Magento\Store\Model\Store $store */
+        $store = $this->storeManager->getStore();
+
+        $storeName = $store->getName();
+        $storeUrl = $store->getBaseUrl();
         $platform = 'Magento';
         $platformVersion = $this->productMetadata->getVersion();
         $module = $this->moduleList->getOne('Sequra_Core');

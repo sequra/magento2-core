@@ -96,5 +96,6 @@ class LoggerService extends Singleton implements ShopLoggerAdapter
         // TODO: The use of function call_user_func() is discouraged
         // phpcs:ignore Magento2.Functions.DiscouragedFunction.Discouraged
         \call_user_func([$this->clientLogger, self::$logLevelName[$logLevel]], $message); // @phpstan-ignore-line
+        \call_user_func([$this->logger, self::$logLevelName[$logLevel]], $message); // @phpstan-ignore-line
     }
 }

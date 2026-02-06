@@ -37,19 +37,19 @@ class ProductService implements ProductServiceInterface
     /**
      * @var CollectionFactory
      */
-    private CollectionFactory $productCollectionFactory;
+    private $productCollectionFactory;
 
     /**
      * @param ProductRepository $productRepository
      * @param CategoryRepositoryInterface $categoryRepository
      * @param SearchCriteriaBuilder $searchCriteriaBuilder
-     * @param CollectionFactory $productCollectionFactory
+     * @param \Magento\Catalog\Model\ResourceModel\Product\CollectionFactory $productCollectionFactory
      */
     public function __construct(
         ProductRepository  $productRepository,
         CategoryRepositoryInterface $categoryRepository,
         SearchCriteriaBuilder $searchCriteriaBuilder,
-        CollectionFactory $productCollectionFactory
+        $productCollectionFactory
     ) {
         $this->productRepository = $productRepository;
         $this->categoryRepository = $categoryRepository;
@@ -240,8 +240,8 @@ class ProductService implements ProductServiceInterface
     /**
      * Retrieve store products by their IDs.
      *
-     * @param array $ids
-     * @return array|ShopProduct[]
+     * @param string[] $ids
+     * @return ShopProduct[]
      */
     public function getShopProductByIds(array $ids): array
     {
@@ -253,6 +253,7 @@ class ProductService implements ProductServiceInterface
 
         $storeId = StoreContext::getInstance()->getStoreId();
 
+        /** @var \Magento\Catalog\Model\ResourceModel\Product\Collection $collection */
         $collection = $this->productCollectionFactory->create();
         $collection->addAttributeToSelect('*');
         $collection->addFieldToFilter('sku', ['in' => $ids]);
