@@ -2,7 +2,7 @@
 
 namespace Sequra\Core\Model\Logger;
 
-class DebugHandler
+class DebugHandler extends \Monolog\Logger  // @phpstan-ignore-line
 {
 
 }

@@ -3,6 +3,7 @@
 namespace Sequra\Core\Services;
 
 use SeQura\Core\BusinessLogic\BootstrapComponent;
+use SeQura\Core\BusinessLogic\DataAccess\AdvancedSettings\Entities\AdvancedSettings;
 use SeQura\Core\BusinessLogic\DataAccess\ConnectionData\Entities\ConnectionData;
 use SeQura\Core\BusinessLogic\DataAccess\CountryConfiguration\Entities\CountryConfiguration;
 use SeQura\Core\BusinessLogic\DataAccess\Credentials\Entities\Credentials;
@@ -35,6 +36,7 @@ use SeQura\Core\BusinessLogic\Domain\Order\Service\OrderService;
 use SeQura\Core\BusinessLogic\Domain\OrderStatusSettings\RepositoryContracts\OrderStatusSettingsRepositoryInterface;
 use SeQura\Core\BusinessLogic\Domain\SendReport\RepositoryContracts\SendReportRepositoryInterface;
 use SeQura\Core\BusinessLogic\Domain\StatisticalData\RepositoryContracts\StatisticalDataRepositoryInterface;
+use SeQura\Core\BusinessLogic\Logger\Logger;
 use SeQura\Core\BusinessLogic\Utility\EncryptorInterface;
 use SeQura\Core\BusinessLogic\Webhook\Services\ShopOrderService;
 use SeQura\Core\Infrastructure\Configuration\ConfigEntity;
@@ -225,6 +227,8 @@ class Bootstrap extends BootstrapComponent
     public function initInstance(): void
     {
         self::init();
+
+        Logger::getInstance();
     }
 
     // TODO: Static method cannot be intercepted and its use is discouraged.
@@ -432,6 +436,7 @@ class Bootstrap extends BootstrapComponent
         RepositoryRegistry::registerRepository(PaymentMethod::class, BaseRepository::class);
         RepositoryRegistry::registerRepository(Credentials::class, BaseRepository::class);
         RepositoryRegistry::registerRepository(Deployment::class, BaseRepository::class);
+        RepositoryRegistry::registerRepository(AdvancedSettings::class, BaseRepository::class);
 
         ServiceRegister::registerService(
             OrderStatusSettingsRepositoryInterface::class,
