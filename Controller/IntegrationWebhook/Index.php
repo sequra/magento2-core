@@ -49,7 +49,6 @@ class Index implements HttpPostActionInterface
         }
 
         $storeId = (string)$param;
-        $merchant = $this->request->getParam('merchantId');
         $signature = $this->request->getParam('signature');
 
         if (!$storeId) {
@@ -59,7 +58,7 @@ class Index implements HttpPostActionInterface
         }
 
         $response = ConfigurationWebhookAPI::configurationHandler($storeId)
-            ->handleRequest($merchant, $signature, $payload);
+            ->handleRequest($signature, $payload);
 
         $responseArray = $response->toArray();
 
