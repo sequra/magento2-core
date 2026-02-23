@@ -54,6 +54,7 @@ class CategoryService implements CategoryServiceInterface
     public function getCategories(?int $page = null, ?int $limit = null, ?string $search = null): array
     {
         $categories = [];
+
         /**
          * @var \Magento\Store\Model\Store $store
          */
@@ -62,6 +63,21 @@ class CategoryService implements CategoryServiceInterface
         $categoryCollection->addAttributeToSelect('*');
         $categoryCollection->addPathsFilter('1/' . $store->getRootCategoryId() . '/');
         $categoryCollection->addIsActiveFilter();
+
+        if ($search && $search !== '') {
+            $categoryCollection->addAttributeToFilter(
+                'name',
+                ['like' => '%' . $search . '%']
+            );
+        }
+
+        if ($limit) {
+            $categoryCollection->setPageSize($limit);
+        }
+
+        if ($page) {
+            $categoryCollection->setCurPage($page);
+        }
 
         $rootCategory = $this->categoryRepository->get($store->getRootCategoryId());
 
