@@ -3,13 +3,10 @@
 namespace Sequra\Core\Services\Infrastructure;
 
 use Sequra\Core\Model\Logger\DebugHandler;
-use SeQura\Core\Infrastructure\Configuration\Configuration;
 use SeQura\Core\Infrastructure\Logger\Interfaces\ShopLoggerAdapter;
 use SeQura\Core\Infrastructure\Logger\LogData;
 use SeQura\Core\Infrastructure\Logger\Logger;
-use SeQura\Core\Infrastructure\ServiceRegister;
 use SeQura\Core\Infrastructure\Singleton;
-use Sequra\Core\Services\BusinessLogic\ConfigurationService;
 use Psr\Log\LoggerInterface;
 
 class LoggerService extends Singleton implements ShopLoggerAdapter
@@ -67,14 +64,7 @@ class LoggerService extends Singleton implements ShopLoggerAdapter
      */
     public function logMessage(LogData $data): void
     {
-        /** @var ConfigurationService $configService */
-        $configService = ServiceRegister::getService(Configuration::CLASS_NAME);
-        $minLogLevel = $configService->getMinLogLevel();
         $logLevel = $data->getLogLevel();
-
-        if (($logLevel > $minLogLevel) && !$configService->isDebugModeEnabled()) {
-            return;
-        }
 
         $message = 'SEQURA LOG:
             Date: ' . date('d/m/Y') . '
@@ -96,7 +86,5 @@ class LoggerService extends Singleton implements ShopLoggerAdapter
         // TODO: The use of function call_user_func() is discouraged
         // phpcs:ignore Magento2.Functions.DiscouragedFunction.Discouraged
         \call_user_func([$this->clientLogger, self::$logLevelName[$logLevel]], $message); // @phpstan-ignore-line
-        // phpcs:ignore Magento2.Functions.DiscouragedFunction.Discouraged
-        \call_user_func([$this->logger, self::$logLevelName[$logLevel]], $message); // @phpstan-ignore-line
     }
 }
