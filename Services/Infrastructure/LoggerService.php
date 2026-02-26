@@ -7,7 +7,6 @@ use SeQura\Core\Infrastructure\Logger\Interfaces\ShopLoggerAdapter;
 use SeQura\Core\Infrastructure\Logger\LogData;
 use SeQura\Core\Infrastructure\Logger\Logger;
 use SeQura\Core\Infrastructure\Singleton;
-use Psr\Log\LoggerInterface;
 
 class LoggerService extends Singleton implements ShopLoggerAdapter
 {
@@ -29,12 +28,6 @@ class LoggerService extends Singleton implements ShopLoggerAdapter
         Logger::DEBUG => 'debug',
     ];
     /**
-     * Magento logger interface.
-     *
-     * @var LoggerInterface
-     */
-    private $logger;
-    /**
      *  Debug handler for client log file.
      *
      * @var DebugHandler
@@ -44,14 +37,12 @@ class LoggerService extends Singleton implements ShopLoggerAdapter
     /**
      * Debug handler for client log file.
      *
-     * @param LoggerInterface $logger
      * @param DebugHandler $clientLogger
      */
-    public function __construct(LoggerInterface $logger, DebugHandler $clientLogger)
+    public function __construct(DebugHandler $clientLogger)
     {
         parent::__construct();
 
-        $this->logger = $logger;
         $this->clientLogger = $clientLogger;
 
         static::$instance = $this;
