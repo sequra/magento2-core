@@ -6,16 +6,9 @@ use Sequra\Core\Model\Logger\DebugHandler;
 use SeQura\Core\Infrastructure\Logger\Interfaces\ShopLoggerAdapter;
 use SeQura\Core\Infrastructure\Logger\LogData;
 use SeQura\Core\Infrastructure\Logger\Logger;
-use SeQura\Core\Infrastructure\Singleton;
 
-class LoggerService extends Singleton implements ShopLoggerAdapter
+class LoggerService implements ShopLoggerAdapter
 {
-    /**
-     * Singleton instance of this class.
-     *
-     * @var static
-     */
-    protected static $instance;
     /**
      * Log level names for corresponding log level codes.
      *
@@ -32,7 +25,7 @@ class LoggerService extends Singleton implements ShopLoggerAdapter
      *
      * @var DebugHandler
      */
-    private $clientLogger;
+    private DebugHandler $clientLogger;
 
     /**
      * Debug handler for client log file.
@@ -41,11 +34,7 @@ class LoggerService extends Singleton implements ShopLoggerAdapter
      */
     public function __construct(DebugHandler $clientLogger)
     {
-        parent::__construct();
-
         $this->clientLogger = $clientLogger;
-
-        static::$instance = $this;
     }
 
     /**

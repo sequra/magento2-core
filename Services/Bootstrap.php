@@ -175,7 +175,6 @@ class Bootstrap extends BootstrapComponent
      * @param MiniWidgetMessagesProvider $miniWidgetMessagesProvider
      * @param ProductService $productService
      * @param MerchantDataProvider $merchantDataProvider
-     * @param OrderCreation $orderCreation ,
      * @param LogService $logService
      * @param StoreInfoService $storeInfoService
      * @param OrderCreationFactory $orderCreationFactory
@@ -196,9 +195,8 @@ class Bootstrap extends BootstrapComponent
         MiniWidgetMessagesProvider $miniWidgetMessagesProvider,
         ProductService $productService,
         MerchantDataProvider $merchantDataProvider,
-        OrderCreation $orderCreation,
         LogService $logService,
-        StoreInfoService $storeInfoService
+        StoreInfoService $storeInfoService,
         OrderCreationFactory $orderCreationFactory
     ) {
         $this->loggerService = $loggerService;
@@ -216,7 +214,6 @@ class Bootstrap extends BootstrapComponent
         $this->miniWidgetMessagesProvider = $miniWidgetMessagesProvider;
         $this->productService = $productService;
         $this->merchantDataProvider = $merchantDataProvider;
-        $this->orderCreation = $orderCreation;
         $this->logService = $logService;
         $this->storeInfoService = $storeInfoService;
         $this->orderCreationFactory = $orderCreationFactory;
