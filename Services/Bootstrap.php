@@ -59,9 +59,9 @@ use Sequra\Core\Services\BusinessLogic\ConfigurationService;
 use Sequra\Core\Services\BusinessLogic\DisconnectService;
 use Sequra\Core\Services\BusinessLogic\LogService;
 use Sequra\Core\Services\BusinessLogic\Order\MerchantDataProvider;
-use Sequra\Core\Services\BusinessLogic\Order\OrderCreation;
 use Sequra\Core\Services\BusinessLogic\OrderReportService;
 use Sequra\Core\Services\BusinessLogic\OrderServiceFactory;
+use Sequra\Core\Services\BusinessLogic\Order\OrderCreationFactory;
 use Sequra\Core\Services\BusinessLogic\PaymentMethodsService;
 use Sequra\Core\Services\BusinessLogic\ProductService;
 use Sequra\Core\Services\BusinessLogic\PromotionalWidget\MiniWidgetMessagesProvider;
@@ -145,10 +145,9 @@ class Bootstrap extends BootstrapComponent
      * @var MerchantDataProvider
      */
     private $merchantDataProvider;
-    /**
-     * @var OrderCreation
-     */
-    private $orderCreation;
+
+    /** @var OrderCreationFactory */
+    private $orderCreationFactory;
     /**
      * @var LogService
      */
@@ -179,6 +178,7 @@ class Bootstrap extends BootstrapComponent
      * @param OrderCreation $orderCreation ,
      * @param LogService $logService
      * @param StoreInfoService $storeInfoService
+     * @param OrderCreationFactory $orderCreationFactory
      */
     public function __construct(
         LoggerService $loggerService,
@@ -199,6 +199,7 @@ class Bootstrap extends BootstrapComponent
         OrderCreation $orderCreation,
         LogService $logService,
         StoreInfoService $storeInfoService
+        OrderCreationFactory $orderCreationFactory
     ) {
         $this->loggerService = $loggerService;
         $this->configurationService = $configurationService;
@@ -218,6 +219,7 @@ class Bootstrap extends BootstrapComponent
         $this->orderCreation = $orderCreation;
         $this->logService = $logService;
         $this->storeInfoService = $storeInfoService;
+        $this->orderCreationFactory = $orderCreationFactory;
 
         static::$instance = $this;
     }
@@ -361,7 +363,7 @@ class Bootstrap extends BootstrapComponent
         ServiceRegister::registerService(
             OrderCreationInterface::class,
             static function () {
-                return static::$instance->orderCreation;
+                return static::$instance->orderCreationFactory->create();
             }
         );
 
