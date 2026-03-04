@@ -14,12 +14,12 @@ class StoreIntegrationService implements StoreIntegrationServiceInterface
     /**
      * @var UrlHelper
      */
-    private $urlHelper;
+    private UrlHelper $urlHelper;
 
     /**
      * @param UrlHelper $urlHelper
      */
-    public function __construct(urlHelper $urlHelper)
+    public function __construct(UrlHelper $urlHelper)
     {
         $this->urlHelper = $urlHelper;
     }
@@ -45,9 +45,11 @@ class StoreIntegrationService implements StoreIntegrationServiceInterface
     public function getSupportedCapabilities(): array
     {
         return [
-           Capability::storeInfo(),
-           Capability::general(),
-           Capability::widget()
+            Capability::storeInfo(),
+            Capability::general(),
+            Capability::widget(),
+            Capability::hostedCheckout(),
+            Capability::listingSelectors()
         ];
     }
 }
