@@ -52,7 +52,17 @@ class LogService implements LogServiceInterface
             return new Log([]);
         }
 
-        $arrayContent = explode(PHP_EOL, $content);
+        $arrayContent = array_values(
+            array_filter(
+                array_map(
+                    static function (string $line): string {
+                        return preg_replace('/^\[.*?\]\s\w+\.\w+:\s/', '', $line);
+                    },
+                    explode(PHP_EOL, $content)
+                ),
+                static fn(string $line): bool => $line !== ''
+            )
+        );
 
         return new Log($arrayContent);
     }

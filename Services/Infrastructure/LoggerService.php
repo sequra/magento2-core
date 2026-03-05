@@ -44,27 +44,9 @@ class LoggerService implements ShopLoggerAdapter
      */
     public function logMessage(LogData $data): void
     {
-        $logLevel = $data->getLogLevel();
-
-        $message = 'SEQURA LOG:
-            Date: ' . date('d/m/Y') . '
-            Time: ' . date('H:i:s') . '
-            Log level: ' . self::$logLevelName[$logLevel] . '
-            Message: ' . $data->getMessage();
-        $context = $data->getContext();
-        if (!empty($context)) {
-            $message .= '
-            Context data: [';
-            foreach ($context as $item) {
-                // TODO: The use of function print_r() is discouraged
-                // phpcs:ignore Magento2.Functions.DiscouragedFunction.Discouraged
-                $message .= '"' . $item->getName() . '" => "' . print_r($item->getValue(), true) . '", ';
-            }
-
-            $message .= ']';
-        }
         // TODO: The use of function call_user_func() is discouraged
         // phpcs:ignore Magento2.Functions.DiscouragedFunction.Discouraged
-        \call_user_func([$this->clientLogger, self::$logLevelName[$logLevel]], $message); // @phpstan-ignore-line
+        \call_user_func([$this->clientLogger, self::$logLevelName[$data->getLogLevel()]], $data->formatLogMessage()); //
+        // @phpstan-ignore-line
     }
 }
