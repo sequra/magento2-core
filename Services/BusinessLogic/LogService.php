@@ -56,7 +56,7 @@ class LogService implements LogServiceInterface
             array_filter(
                 array_map(
                     static function (string $line): string {
-                        return preg_replace('/^\[.*?\]\s\w+\.\w+:\s/', '', $line);
+                        return (string)preg_replace('/^\[.*?\]\s\w+\.\w+:\s/', '', $line);
                     },
                     explode(PHP_EOL, $content)
                 ),

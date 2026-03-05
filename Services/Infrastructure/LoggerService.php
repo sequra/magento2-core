@@ -10,17 +10,6 @@ use SeQura\Core\Infrastructure\Logger\Logger;
 class LoggerService implements ShopLoggerAdapter
 {
     /**
-     * Log level names for corresponding log level codes.
-     *
-     * @var array<string>
-     */
-    private static $logLevelName = [
-        Logger::ERROR => 'error',
-        Logger::WARNING => 'warning',
-        Logger::INFO => 'info',
-        Logger::DEBUG => 'debug',
-    ];
-    /**
      *  Debug handler for client log file.
      *
      * @var DebugHandler
@@ -44,9 +33,21 @@ class LoggerService implements ShopLoggerAdapter
      */
     public function logMessage(LogData $data): void
     {
-        // TODO: The use of function call_user_func() is discouraged
-        // phpcs:ignore Magento2.Functions.DiscouragedFunction.Discouraged
-        \call_user_func([$this->clientLogger, self::$logLevelName[$data->getLogLevel()]], $data->formatLogMessage()); //
-        // @phpstan-ignore-line
+        $message = $data->formatLogMessage();
+
+        switch ($data->getLogLevel()) {
+            case Logger::DEBUG:
+                $this->clientLogger->debug($message);
+                break;
+            case Logger::WARNING:
+                $this->clientLogger->warning($message);
+                break;
+            case Logger::ERROR:
+                $this->clientLogger->error($message);
+                break;
+            default:
+                $this->clientLogger->info($message);
+                break;
+        }
     }
 }
