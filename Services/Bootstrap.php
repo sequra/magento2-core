@@ -37,12 +37,12 @@ use SeQura\Core\BusinessLogic\Domain\Order\Service\OrderService;
 use SeQura\Core\BusinessLogic\Domain\OrderStatusSettings\RepositoryContracts\OrderStatusSettingsRepositoryInterface;
 use SeQura\Core\BusinessLogic\Domain\SendReport\RepositoryContracts\SendReportRepositoryInterface;
 use SeQura\Core\BusinessLogic\Domain\StatisticalData\RepositoryContracts\StatisticalDataRepositoryInterface;
-use SeQura\Core\BusinessLogic\Logger\Logger;
 use SeQura\Core\BusinessLogic\Utility\EncryptorInterface;
 use SeQura\Core\BusinessLogic\Webhook\Services\ShopOrderService;
 use SeQura\Core\Infrastructure\Configuration\ConfigEntity;
 use SeQura\Core\Infrastructure\Configuration\Configuration;
-use SeQura\Core\Infrastructure\Logger\Interfaces\ShopLoggerAdapter;
+use SeQura\Core\Infrastructure\Logger\Interfaces\ShopLoggerAdapter as ShopLoggerAdapterInterface;
+use SeQura\Core\Infrastructure\Logger\Interfaces\DefaultLoggerAdapter as DefaultLoggerAdapterInterface;
 use SeQura\Core\Infrastructure\ORM\Exceptions\RepositoryClassException;
 use SeQura\Core\Infrastructure\ORM\RepositoryRegistry;
 use SeQura\Core\Infrastructure\Serializer\Concrete\JsonSerializer;
@@ -75,7 +75,8 @@ use Sequra\Core\Services\BusinessLogic\StoreService;
 use Sequra\Core\Services\BusinessLogic\Utility\Encryptor;
 use Sequra\Core\Services\BusinessLogic\VersionService;
 use Sequra\Core\Services\BusinessLogic\Webhook\Repositories\OrderStatusMappingRepositoryOverride;
-use Sequra\Core\Services\Infrastructure\LoggerService;
+use Sequra\Core\Services\Infrastructure\ShopLoggerAdapter;
+use Sequra\Core\Services\Infrastructure\DefaultLoggerAdapter;
 
 class Bootstrap extends BootstrapComponent
 {
@@ -84,47 +85,51 @@ class Bootstrap extends BootstrapComponent
      *
      * @var static
      */
-    protected static $instance;
+    protected static Bootstrap $instance;
     /**
-     * @var LoggerService
+     * @var DefaultLoggerAdapter
      */
-    private $loggerService;
+    private DefaultLoggerAdapter $defaultLoggerAdapter;
+    /**
+     * @var ShopLoggerAdapter
+     */
+    private ShopLoggerAdapter $shopLoggerAdapter;
     /**
      * @var ConfigurationService
      */
-    private $configurationService;
+    private ConfigurationService $configurationService;
     /**
      * @var StoreService
      */
-    private $storeService;
+    private StoreService $storeService;
     /**
      * @var StoreIntegrationService
      */
-    private $storeIntegrationService;
+    private StoreIntegrationService $storeIntegrationService;
     /**
      * @var VersionService
      */
-    private $versionService;
+    private VersionService $versionService;
     /**
      * @var SellingCountriesService
      */
-    private $sellingCountriesService;
+    private SellingCountriesService $sellingCountriesService;
     /**
      * @var CategoryService
      */
-    private $categoryService;
+    private CategoryService $categoryService;
     /**
      * @var DisconnectService
      */
-    private $disconnectService;
+    private DisconnectService $disconnectService;
     /**
      * @var OrderReportService
      */
-    private $orderReportService;
+    private OrderReportService $orderReportService;
     /**
      * @var Encryptor
      */
-    private $encryptor;
+    private Encryptor $encryptor;
     /**
      * @var OrderServiceFactory
      */
@@ -132,35 +137,36 @@ class Bootstrap extends BootstrapComponent
     /**
      * @var WidgetConfigurator
      */
-    private $widgetConfigurator;
+    private WidgetConfigurator $widgetConfigurator;
     /**
      * @var MiniWidgetMessagesProvider
      */
-    private $miniWidgetMessagesProvider;
+    private MiniWidgetMessagesProvider $miniWidgetMessagesProvider;
     /**
      * @var ProductService
      */
-    private $productService;
+    private ProductService $productService;
     /**
      * @var MerchantDataProvider
      */
-    private $merchantDataProvider;
+    private MerchantDataProvider $merchantDataProvider;
 
     /** @var OrderCreationFactory */
     private $orderCreationFactory;
     /**
      * @var LogService
      */
-    private $logService;
+    private LogService $logService;
     /**
      * @var StoreInfoService
      */
-    private $storeInfoService;
+    private StoreInfoService $storeInfoService;
 
     /**
      *  Constructor for Bootstrap
      *
-     * @param LoggerService $loggerService
+     * @param DefaultLoggerAdapter $defaultLoggerAdapter
+     * @param ShopLoggerAdapter $shopLoggerAdapter
      * @param ConfigurationService $configurationService
      * @param StoreService $storeService
      * @param StoreIntegrationService $storeIntegrationService
@@ -180,7 +186,8 @@ class Bootstrap extends BootstrapComponent
      * @param OrderCreationFactory $orderCreationFactory
      */
     public function __construct(
-        LoggerService $loggerService,
+        DefaultLoggerAdapter $defaultLoggerAdapter,
+        ShopLoggerAdapter $shopLoggerAdapter,
         ConfigurationService $configurationService,
         StoreService $storeService,
         StoreIntegrationService $storeIntegrationService,
@@ -199,7 +206,8 @@ class Bootstrap extends BootstrapComponent
         StoreInfoService $storeInfoService,
         OrderCreationFactory $orderCreationFactory
     ) {
-        $this->loggerService = $loggerService;
+        $this->defaultLoggerAdapter = $defaultLoggerAdapter;
+        $this->shopLoggerAdapter = $shopLoggerAdapter;
         $this->configurationService = $configurationService;
         $this->storeService = $storeService;
         $this->storeIntegrationService = $storeIntegrationService;
@@ -227,8 +235,6 @@ class Bootstrap extends BootstrapComponent
     public function initInstance(): void
     {
         self::init();
-
-        Logger::getInstance();
     }
 
     // TODO: Static method cannot be intercepted and its use is discouraged.
@@ -250,9 +256,16 @@ class Bootstrap extends BootstrapComponent
         );
 
         ServiceRegister::registerService(
-            ShopLoggerAdapter::CLASS_NAME,
+            ShopLoggerAdapterInterface::CLASS_NAME,
             static function () use ($instance) {
-                return $instance->loggerService;
+                return $instance->shopLoggerAdapter;
+            }
+        );
+
+        ServiceRegister::registerService(
+            DefaultLoggerAdapterInterface::CLASS_NAME,
+            static function () use ($instance) {
+                return $instance->defaultLoggerAdapter;
             }
         );
 
@@ -281,9 +294,9 @@ class Bootstrap extends BootstrapComponent
         );
 
         ServiceRegister::registerService(
-            LoggerService::class,
+            DefaultLoggerAdapter::class,
             static function () {
-                return static::$instance->loggerService;
+                return static::$instance->defaultLoggerAdapter;
             }
         );
 

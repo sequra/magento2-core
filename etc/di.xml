@@ -183,11 +183,14 @@
             </argument>
         </arguments>
     </type>
-    <type name="Sequra\Core\Services\Infrastructure\LoggerService" shared="true">
+    <type name="Sequra\Core\Services\Infrastructure\DefaultLoggerAdapter" shared="true">
         <arguments>
             <argument name="clientLogger" xsi:type="object">Sequra\Core\Model\Logger\DebugHandler</argument>
         </arguments>
     </type>
+    <type name="Sequra\Core\Services\Infrastructure\ShopLoggerAdapter" shared="true">
+    </type>
+
     <!-- Use Proxy for Backend Session to prevent "Area code not set" errors during installation -->
     <type name="Sequra\Core\Services\BusinessLogic\Utility\SeQuraTranslationProvider">
         <arguments>

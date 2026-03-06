@@ -2,12 +2,12 @@
 
 namespace Sequra\Core\Services\Infrastructure;
 
+use SeQura\Core\Infrastructure\Logger\Interfaces\DefaultLoggerAdapter as DefaultLoggerAdapterInterface;
 use Sequra\Core\Model\Logger\DebugHandler;
-use SeQura\Core\Infrastructure\Logger\Interfaces\ShopLoggerAdapter;
 use SeQura\Core\Infrastructure\Logger\LogData;
 use SeQura\Core\Infrastructure\Logger\Logger;
 
-class LoggerService implements ShopLoggerAdapter
+class DefaultLoggerAdapter implements DefaultLoggerAdapterInterface
 {
     /**
      *  Debug handler for client log file.
