@@ -40,7 +40,7 @@ if (!window.SequraFE) {
          * Handles a success response from the submit action.
          *
          * @param {{successMessage?: string}} response
-         * @returns {Promise<void>}
+         * @returns {void}
          */
         this.successHandler = (response) => {
             const {utilities, templateService, elementGenerator} = SequraFE;
@@ -55,8 +55,6 @@ if (!window.SequraFE) {
             if (response.successMessage) {
                 container.prepend(utilities.createFlashMessage(response.successMessage, 'success'));
             }
-
-            return Promise.reject(response);
         };
 
         /**

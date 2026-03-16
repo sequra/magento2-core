@@ -589,8 +589,7 @@ if (!window.SequraFE) {
                     if (response.isSuccessful) {
                         SequraFE.responseService.successHandler(
                             {successMessage: 'connection.webhookReRegistration.successMessage'}
-                        ).catch(() => {
-                        });
+                        )
                     } else {
                         SequraFE.responseService.errorHandler(
                             {errorMessage: 'connection.webhookReRegistration.errorMessage'}
@@ -600,8 +599,9 @@ if (!window.SequraFE) {
 
                 })
                 .catch((error) => {
+                    const errorMessage = String(error && error.message ? error.message : error);
                     SequraFE.responseService.errorHandler(
-                        {errorMessage: error}
+                        {errorMessage: errorMessage}
                     ).catch(() => {
                     });
                 })
