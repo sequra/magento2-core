@@ -255,7 +255,7 @@ class ProductService implements ProductServiceInterface
 
         /** @var \Magento\Catalog\Model\ResourceModel\Product\Collection $collection */
         $collection = $this->productCollectionFactory->create(); // @phpstan-ignore-line
-        $collection->addAttributeToSelect('*');
+        $collection->addAttributeToSelect(['name', 'sku']);
         $collection->addFieldToFilter('sku', ['in' => $ids]);
         $collection->addStoreFilter($storeId);
 
