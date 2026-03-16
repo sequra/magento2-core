@@ -189,6 +189,9 @@
         </arguments>
     </type>
     <type name="Sequra\Core\Services\Infrastructure\ShopLoggerAdapter" shared="true">
+        <arguments>
+            <argument name="defaultLoggerAdapter" xsi:type="object">Sequra\Core\Services\Infrastructure\DefaultLoggerAdapter</argument>
+        </arguments>
     </type>
 
     <!-- Use Proxy for Backend Session to prevent "Area code not set" errors during installation -->
