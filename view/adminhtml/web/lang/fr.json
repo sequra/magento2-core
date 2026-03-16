@@ -193,6 +193,11 @@
     "disconnect": {
       "title": "Déconnecter",
       "message": "Êtes-vous sûr de vouloir vous déconnecter ?"
+    },
+    "webhookReRegistration": {
+      "title": "Re-enregistrer les webhooks",
+      "successMessage": "Les webhooks ont été réenregistrés avec succès.",
+      "errorMessage": "Les webhooks n’ont pas pu être réenregistrés avec succès."
     }
   },
   "deployments": {
