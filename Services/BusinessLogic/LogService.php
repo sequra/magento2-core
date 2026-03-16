@@ -10,6 +10,8 @@ use SeQura\Core\BusinessLogic\Domain\Log\Model\Log;
 
 class LogService implements LogServiceInterface
 {
+    private const MAX_READ_BYTES = 5 * 1024 * 1024;
+
     /**
      * @var DirectoryList
      */
@@ -32,7 +34,7 @@ class LogService implements LogServiceInterface
     }
 
     /**
-     * Retrieve client-specific log entries.
+     * Retrieve client-specific log entries (tail-limited to 5 MB).
      *
      * @return Log
      * @throws FileSystemException
@@ -46,9 +48,9 @@ class LogService implements LogServiceInterface
             return new Log([]);
         }
 
-        $content = $this->fileIo->read($logPath);
+        $content = $this->readTail($logPath, self::MAX_READ_BYTES);
 
-        if (!is_string($content) || $content === '') {
+        if ($content === '') {
             return new Log([]);
         }
 
@@ -65,6 +67,53 @@ class LogService implements LogServiceInterface
         );
 
         return new Log($arrayContent);
+    }
+
+    /**
+     * Read at most $maxBytes from the end of a file.
+     *
+     * If the file is smaller than $maxBytes the full content is returned.
+     * When truncated, the first (potentially partial) line is discarded.
+     *
+     * @param string $path
+     * @param int $maxBytes
+     *
+     * @return string
+     */
+    private function readTail(string $path, int $maxBytes): string
+    {
+        $fileSize = filesize($path);
+        if ($fileSize === false || $fileSize === 0) {
+            return '';
+        }
+
+        $handle = fopen($path, 'r');
+        if ($handle === false) {
+            return '';
+        }
+
+        try {
+            if ($fileSize <= $maxBytes) {
+                $content = fread($handle, $fileSize);
+                return is_string($content) ? $content : '';
+            }
+
+            fseek($handle, -$maxBytes, SEEK_END);
+            $content = fread($handle, $maxBytes);
+            if (!is_string($content)) {
+                return '';
+            }
+
+            // Discard the first partial line
+            $newlinePos = strpos($content, PHP_EOL);
+            if ($newlinePos !== false) {
+                $content = substr($content, $newlinePos + strlen(PHP_EOL));
+            }
+
+            return $content;
+        } finally {
+            fclose($handle);
+        }
     }
 
     /**
