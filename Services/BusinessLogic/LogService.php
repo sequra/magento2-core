@@ -127,7 +127,7 @@ class LogService implements LogServiceInterface
         $logPath = $this->directoryList->getPath(DirectoryList::VAR_DIR)
             . '/log/sequra_debug.log';
 
-        $handle = @fopen($logPath, 'c');
+        $handle = fopen($logPath, 'c');
         if ($handle === false) {
             return;
         }
