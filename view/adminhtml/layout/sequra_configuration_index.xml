@@ -9,7 +9,7 @@
         <link src="Sequra_Core::js/AjaxService.js"/>
         <link src="Sequra_Core::js/TranslationService.js"/>
         <link src="Sequra_Core::js/TemplateService.js"/>
-        <link src="Sequra_Core::js/UtilityService.js"/>
+        <link src="Sequra_Core::js/override/UtilityService.js"/>
         <link src="Sequra_Core::js/ResponseService.js"/>
         <link src="Sequra_Core::js/PageControllerFactory.js"/>
         <link src="Sequra_Core::js/FormFactory.js"/>
@@ -26,7 +26,7 @@
         <link src="Sequra_Core::js/RepeaterFieldsComponent.js"/>
         <link src="Sequra_Core::js/GeneralSettingsForm.js"/>
         <link src="Sequra_Core::js/OrderStatusMappingSettingsForm.js"/>
-        <link src="Sequra_Core::js/StateController.js"/>
+        <link src="Sequra_Core::js/override/StateController.js"/>
         <link src="Sequra_Core::js/OnboardingController.js"/>
         <link src="Sequra_Core::js/PaymentController.js"/>
         <link src="Sequra_Core::js/SettingsController.js"/>
