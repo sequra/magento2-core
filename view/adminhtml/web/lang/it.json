@@ -337,6 +337,10 @@
       "label": "Annullato",
       "description": "Quando un pagamento ha stato Annullato."
     },
+    "shipped": {
+      "label": "Spedito",
+      "description": "Quando un pagamento ha stato Spedito."
+    },
     "informCancellations": {
       "label": "Informa annullamenti a SeQura",
       "description": "Quando annulli un ordine pagato in {{shopName}}, proverai ad annullare l'ordine in SeQura."

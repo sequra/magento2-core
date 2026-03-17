@@ -337,6 +337,10 @@
       "label": "Cancelled",
       "description": "When a payment has status Cancelled."
     },
+    "shipped": {
+      "label": "Shipped",
+      "description": "When a payment has status Shipped."
+    },
     "informCancellations": {
       "label": "Inform cancellations to SeQura",
       "description": "When cancelling an order paid in {{shopName}}, you will try to cancel order in SeQura."

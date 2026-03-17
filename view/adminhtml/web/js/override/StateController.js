@@ -7,6 +7,7 @@ SequraFE.flags = {
     isShowCheckoutAsHostedPageFieldVisible: true,
     configurableSelectorsForMiniWidgets: false,
     isServiceSellingAllowed: false,
+    isAltPriceSelectorVisible: false,
     ...(SequraFE.flags || {})
 };
 
@@ -74,6 +75,7 @@ SequraFE.appPages = {
      * @property {GeneralSettings | null} generalSettings
      * @property {WidgetSettings | null} widgetSettings
      * @property {PaymentMethod[] | null} paymentMethods
+     * @property {object | null} allAvailablePaymentMethods
      * @property {SellingCountry[] | null} sellingCountries
      * @property {DeploymentSettings[] | null} deploymentsSettings
      * @property {DeploymentSettings[] | null} notConnectedDeployments
@@ -123,6 +125,7 @@ SequraFE.appPages = {
                 generalSettings: null,
                 widgetSettings: null,
                 paymentMethods: null,
+                allAvailablePaymentMethods: null,
                 sellingCountries: null,
                 shopCategories: null
             };
@@ -141,7 +144,7 @@ SequraFE.appPages = {
 
             window.addEventListener('hashchange', updateStateOnHashChange, false);
 
-            api.get(!this.getStoreId() ? configuration.currentStoreUrl : configuration.storesUrl.replace(encodeURIComponent('{storeId}'), this.getStoreId()), () => null, SequraFE.customHeader)
+            api.get(!this.getStoreId() ? configuration.currentStoreUrl : configuration.storesUrl.sqReplaceUrlPlaceholder('{storeId}', this.getStoreId()), () => null, SequraFE.customHeader)
                 .then(
                     /** @param {Store|Store[]} response */
                     (response) => {
@@ -180,13 +183,13 @@ SequraFE.appPages = {
             utilities.showLoader();
 
             return Promise.all([
-                api.get(configuration.versionUrl.replace(encodeURIComponent('{storeId}'), this.getStoreId()), null, SequraFE.customHeader),
-                api.get(configuration.storesUrl.replace(encodeURIComponent('{storeId}'), this.getStoreId()), null, SequraFE.customHeader),
-                api.get(configuration.pageConfiguration.onboarding.getConnectionDataUrl.replace(encodeURIComponent('{storeId}'), this.getStoreId()), null, SequraFE.customHeader),
-                api.get(configuration.pageConfiguration.onboarding.getCountrySettingsUrl.replace(encodeURIComponent('{storeId}'), this.getStoreId()), null, SequraFE.customHeader),
-                api.get(configuration.pageConfiguration.onboarding.getWidgetSettingsUrl.replace(encodeURIComponent('{storeId}'), this.getStoreId()), null, SequraFE.customHeader),
-                api.get(configuration.pageConfiguration.onboarding.getDeploymentsUrl.replace(encodeURIComponent('{storeId}'), this.getStoreId()), null, SequraFE.customHeader),
-                api.get(configuration.pageConfiguration.onboarding.getNotConnectedDeploymentsUrl.replace(encodeURIComponent('{storeId}'), this.getStoreId()), null, SequraFE.customHeader),
+                api.get(configuration.versionUrl.sqReplaceUrlPlaceholder('{storeId}', this.getStoreId()), null, SequraFE.customHeader),
+                api.get(configuration.storesUrl.sqReplaceUrlPlaceholder('{storeId}', this.getStoreId()), null, SequraFE.customHeader),
+                api.get(configuration.pageConfiguration.onboarding.getConnectionDataUrl.sqReplaceUrlPlaceholder('{storeId}', this.getStoreId()), null, SequraFE.customHeader),
+                api.get(configuration.pageConfiguration.onboarding.getCountrySettingsUrl.sqReplaceUrlPlaceholder('{storeId}', this.getStoreId()), null, SequraFE.customHeader),
+                api.get(configuration.pageConfiguration.onboarding.getWidgetSettingsUrl.sqReplaceUrlPlaceholder('{storeId}', this.getStoreId()), null, SequraFE.customHeader),
+                api.get(configuration.pageConfiguration.onboarding.getDeploymentsUrl.sqReplaceUrlPlaceholder('{storeId}', this.getStoreId()), null, SequraFE.customHeader),
+                api.get(configuration.pageConfiguration.onboarding.getNotConnectedDeploymentsUrl.sqReplaceUrlPlaceholder('{storeId}', this.getStoreId()), null, SequraFE.customHeader),
             ]).then(([versionRes, storesRes, connectionSettingsRes, countrySettingsRes, widgetSettingsRes, deploymentsSettingsRes, notConnectedDeployments]) => {
                 dataStore.version = versionRes;
                 dataStore.stores = storesRes;
@@ -196,7 +199,7 @@ SequraFE.appPages = {
                 dataStore.deploymentsSettings = deploymentsSettingsRes;
                 dataStore.notConnectedDeployments = notConnectedDeployments;
 
-                return api.get(configuration.stateUrl.replace(encodeURIComponent('{storeId}'), this.getStoreId()), null, SequraFE.customHeader);
+                return api.get(configuration.stateUrl.sqReplaceUrlPlaceholder('{storeId}', this.getStoreId()), null, SequraFE.customHeader);
             }).then((stateRes) => {
                 if (SequraFE.state.getCredentialsChanged()) {
                     SequraFE.state.removeCredentialsChanged();
@@ -263,7 +266,7 @@ SequraFE.appPages = {
                 switch (page) {
                     case SequraFE.appPages.ONBOARDING.COUNTRIES:
                         if (!dataStore.connectionSettings?.connectionData?.every(c => c.username)) {
-                            page = SequraFE.appPages.ONBOARDING.CONNECT;
+                            page = SequraFE.appPages.ONBOARDING.CONNECT
                         }
 
                         if (!dataStore.deploymentsSettings?.some(deployment => deployment.active === true)) {
@@ -353,7 +356,7 @@ SequraFE.appPages = {
         const getControllerConfiguration = (controllerName, page) => {
             let config = utilities.cloneObject(configuration.pageConfiguration[controllerName] || {});
             Object.keys(config).forEach((key) => {
-                config[key] = config[key].replace(encodeURIComponent('{storeId}'), encodeURIComponent(this.getStoreId()));
+                config[key] = config[key].sqReplaceUrlPlaceholder('{storeId}', this.getStoreId());
             });
             page && (config.page = page);
 
@@ -394,6 +397,7 @@ SequraFE.appPages = {
          */
         this.setCredentialsChanged = () => {
             SequraFE.state.setData('paymentMethods', null);
+            SequraFE.state.setData('allAvailablePaymentMethods', null);
             localStorage.setItem('sq-password-changed', '1');
         }
 
@@ -439,7 +443,7 @@ SequraFE.appPages = {
          * @returns {Promise<ShopName>}
          */
         this.getShopName = () => {
-            return api.get(configuration.shopNameUrl.replace(encodeURIComponent('{storeId}'), this.getStoreId()), null, SequraFE.customHeader);
+            return api.get(configuration.shopNameUrl.sqReplaceUrlPlaceholder('{storeId}', this.getStoreId()), null, SequraFE.customHeader);
         };
 
         this.getData = (key) => {

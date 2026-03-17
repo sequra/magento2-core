@@ -338,6 +338,10 @@
       "label": "Cancelado",
       "description": "Quando um pagamento tem estado Cancelado."
     },
+    "shipped": {
+      "label": "Enviado",
+      "description": "Quando um pagamento tem estado Enviado."
+    },
     "informCancellations": {
       "label": "Informar cancelamentos ao SeQura",
       "description": "Ao cancelar um pedido pago em {{shopName}}, tentará cancelar o pedido no SeQura."

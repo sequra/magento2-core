@@ -35,7 +35,8 @@ if (!window.SequraFE) {
         const SEQURA_STATUSES = {
             PAID: 'approved',
             IN_REVIEW: 'needs_review',
-            CANCELLED: 'cancelled'
+            CANCELLED: 'cancelled',
+            SHIPPED: 'shipped'
         }
 
         const { elementGenerator: generator, utilities } = SequraFE;
@@ -112,6 +113,16 @@ if (!window.SequraFE) {
                         options: getStatusOptions(),
                         variation: 'label-left',
                         onChange: (value) => handleChange(SEQURA_STATUSES.CANCELLED, value)
+                    }),
+                    generator.createDropdownField({
+                        label: 'orderStatusSettings.shipped.label',
+                        description: 'orderStatusSettings.shipped.description',
+                        value: changedSettings.find(
+                            (mapping) => mapping.sequraStatus === SEQURA_STATUSES.SHIPPED
+                        )?.shopStatus || '',
+                        options: getStatusOptions(),
+                        variation: 'label-left',
+                        onChange: (value) => handleChange(SEQURA_STATUSES.SHIPPED, value)
                     }),
                 ]),
                 generator.createPageFooter({

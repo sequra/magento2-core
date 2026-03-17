@@ -73,7 +73,7 @@ if (!window.SequraFE) {
             utilities
         } = SequraFE;
 
-        const { configurableSelectorsForMiniWidgets } = SequraFE.flags;
+        const { configurableSelectorsForMiniWidgets, isAltPriceSelectorVisible } = SequraFE.flags;
 
         /** @type WidgetSettings */
         let activeSettings;
@@ -180,22 +180,22 @@ if (!window.SequraFE) {
                     description: 'widgets.productPriceSelector.description',
                     onChange: (value) => handleChange('productPriceSelector', value)
                 }),
-                generator.createTextField({
+                isAltPriceSelectorVisible ? generator.createTextField({
                     value: changedSettings.altProductPriceSelector,
                     name: 'altProductPriceSelector',
                     className: 'sq-text-input sq-product-related-field',
                     label: 'widgets.altProductPriceSelector.label',
                     description: 'widgets.altProductPriceSelector.description',
                     onChange: (value) => handleChange('altProductPriceSelector', value)
-                }),
-                generator.createTextField({
+                }) : [],
+                isAltPriceSelectorVisible ? generator.createTextField({
                     value: changedSettings.altProductPriceTriggerSelector,
                     name: 'altProductPriceTriggerSelector',
                     className: 'sq-text-input sq-product-related-field',
                     label: 'widgets.altProductPriceTriggerSelector.label',
                     description: 'widgets.altProductPriceTriggerSelector.description',
                     onChange: (value) => handleChange('altProductPriceTriggerSelector', value)
-                }),
+                }) : [],
                 generator.createTextField({
                     value: changedSettings.defaultProductLocationSelector,
                     name: 'defaultProductLocationSelector',
@@ -324,7 +324,9 @@ if (!window.SequraFE) {
             const fieldsRelationships = [
                 {
                     parentField: 'displayWidgetOnProductPage',
-                    fields: ['productPriceSelector', 'defaultProductLocationSelector', 'altProductPriceSelector', 'altProductPriceTriggerSelector'],
+                    fields: isAltPriceSelectorVisible
+                        ? ['productPriceSelector', 'defaultProductLocationSelector', 'altProductPriceSelector', 'altProductPriceTriggerSelector']
+                        : ['productPriceSelector', 'defaultProductLocationSelector'],
                     requiredFields: ['productPriceSelector', 'defaultProductLocationSelector']
                 },
                 {

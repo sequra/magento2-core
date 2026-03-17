@@ -2,6 +2,18 @@ if (!window.SequraFE) {
     window.SequraFE = {};
 }
 
+// Register string prototype method to replace URL placeholders
+if (!String.prototype.sqReplaceUrlPlaceholder) {
+    Object.assign(String.prototype, {
+        sqReplaceUrlPlaceholder(placeholder, value) {
+            const placeholderStr = String(placeholder);
+            const valueStr = encodeURIComponent(String(value));
+            const encodedPlaceholder = encodeURIComponent(placeholderStr);
+            return this.replaceAll(placeholderStr, valueStr).replaceAll(encodedPlaceholder, valueStr);
+        }
+    });
+}
+
 (function () {
     function UtilityService() {
         /**
