@@ -4,6 +4,7 @@ namespace Sequra\Core\Services\BusinessLogic;
 
 use Magento\Framework\App\Filesystem\DirectoryList;
 use Magento\Framework\Exception\FileSystemException;
+use Magento\Framework\Filesystem\Driver\File as FileDriver;
 use Magento\Framework\Filesystem\Io\File;
 use SeQura\Core\BusinessLogic\Domain\Integration\Log\LogServiceInterface;
 use SeQura\Core\BusinessLogic\Domain\Log\Model\Log;
@@ -20,17 +21,24 @@ class LogService implements LogServiceInterface
      * @var File
      */
     private File $fileIo;
+    /**
+     * @var FileDriver
+     */
+    private FileDriver $fileDriver;
 
     /**
      * @param DirectoryList $directoryList
      * @param File $fileIo
+     * @param FileDriver $fileDriver
      */
     public function __construct(
         DirectoryList $directoryList,
-        File $fileIo
+        File $fileIo,
+        FileDriver $fileDriver
     ) {
         $this->directoryList = $directoryList;
         $this->fileIo = $fileIo;
+        $this->fileDriver = $fileDriver;
     }
 
     /**
@@ -82,24 +90,22 @@ class LogService implements LogServiceInterface
      */
     private function readTail(string $path, int $maxBytes): string
     {
-        $fileSize = filesize($path);
-        if ($fileSize === false || $fileSize === 0) {
+        $stat = $this->fileDriver->stat($path);
+        $fileSize = (int)($stat['size'] ?? 0);
+        if ($fileSize === 0) {
             return '';
         }
 
-        $handle = fopen($path, 'r');
-        if ($handle === false) {
-            return '';
-        }
+        $handle = $this->fileDriver->fileOpen($path, 'r');
 
         try {
             if ($fileSize <= $maxBytes) {
-                $content = fread($handle, $fileSize);
+                $content = $this->fileDriver->fileRead($handle, $fileSize);
                 return is_string($content) ? $content : '';
             }
 
-            fseek($handle, -$maxBytes, SEEK_END);
-            $content = fread($handle, $maxBytes);
+            $this->fileDriver->fileSeek($handle, -$maxBytes, SEEK_END);
+            $content = $this->fileDriver->fileRead($handle, $maxBytes);
             if (!is_string($content)) {
                 return '';
             }
@@ -112,7 +118,7 @@ class LogService implements LogServiceInterface
 
             return $content;
         } finally {
-            fclose($handle);
+            $this->fileDriver->fileClose($handle);
         }
     }
 
@@ -127,18 +133,19 @@ class LogService implements LogServiceInterface
         $logPath = $this->directoryList->getPath(DirectoryList::VAR_DIR)
             . '/log/sequra_debug.log';
 
-        $handle = fopen($logPath, 'c');
-        if ($handle === false) {
+        try {
+            $handle = $this->fileDriver->fileOpen($logPath, 'c');
+        } catch (FileSystemException $e) {
             return;
         }
 
         try {
-            if (flock($handle, LOCK_EX)) {
+            if ($this->fileDriver->fileLock($handle, LOCK_EX)) {
                 ftruncate($handle, 0);
-                flock($handle, LOCK_UN);
+                $this->fileDriver->fileLock($handle, LOCK_UN);
             }
         } finally {
-            fclose($handle);
+            $this->fileDriver->fileClose($handle);
         }
     }
 }
