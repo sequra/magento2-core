@@ -124,11 +124,6 @@ if (!String.prototype.sqReplaceUrlPlaceholder) {
                     label: 'general.settings',
                     href: window.location.href.split('#')[0] + '#settings',
                     isActive: activePage === SequraFE.appStates.SETTINGS
-                },
-                {
-                    label: 'general.advanced',
-                    href: window.location.href.split('#')[0] + '#advanced',
-                    isActive: activePage === SequraFE.appStates.ADVANCED
                 }
             ];
         };

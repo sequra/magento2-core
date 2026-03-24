@@ -7,6 +7,7 @@ use Magento\Framework\Locale\ResolverInterface;
 use Magento\Store\Model\Store;
 use NumberFormatter;
 use SeQura\Core\BusinessLogic\Domain\Integration\PromotionalWidgets\WidgetConfiguratorInterface;
+use SeQura\Core\BusinessLogic\Domain\PromotionalWidgets\Models\WidgetSettings;
 
 class WidgetConfigurator implements WidgetConfiguratorInterface
 {
@@ -81,6 +82,33 @@ class WidgetConfigurator implements WidgetConfiguratorInterface
     public function getThousandsSeparator(): string
     {
         return (string) $this->getFormatter()->getSymbol(NumberFormatter::GROUPING_SEPARATOR_SYMBOL);
+    }
+
+    /**
+     * Returns an instance of WidgetSettings having the default values.
+     * See SeQura\Core\BusinessLogic\Domain\PromotionalWidgets\Models\WidgetSettings::createDefault().
+     */
+    public function getDefaultWidgetSettings(): WidgetSettings
+    {
+        $productPriceSelector = '.price-container .price';
+        $productLocationSelector = '.actions .action.primary.tocart';
+        $cartPriceSelector = '.grand.totals .price';
+        $cartLocationSelector = '.cart-summary';
+        $listingPriceSelector = '';
+        $listingLocationSelector = '';
+        $altProductPriceSelector = '[data-price-type="finalPrice"] .price';
+        $altProductPriceTriggerSelector = '.bundle-actions';
+
+        return WidgetSettings::createDefault(
+            $productPriceSelector,
+            $productLocationSelector,
+            $cartPriceSelector,
+            $cartLocationSelector,
+            $listingPriceSelector,
+            $listingLocationSelector,
+            $altProductPriceSelector,
+            $altProductPriceTriggerSelector
+        );
     }
 
     /**

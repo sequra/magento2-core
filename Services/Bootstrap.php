@@ -3,6 +3,7 @@
 namespace Sequra\Core\Services;
 
 use SeQura\Core\BusinessLogic\BootstrapComponent;
+use SeQura\Core\BusinessLogic\DataAccess\AdvancedSettings\Entities\AdvancedSettings;
 use SeQura\Core\BusinessLogic\DataAccess\ConnectionData\Entities\ConnectionData;
 use SeQura\Core\BusinessLogic\DataAccess\CountryConfiguration\Entities\CountryConfiguration;
 use SeQura\Core\BusinessLogic\DataAccess\Credentials\Entities\Credentials;
@@ -13,9 +14,11 @@ use SeQura\Core\BusinessLogic\DataAccess\PaymentMethod\Entities\PaymentMethod;
 use SeQura\Core\BusinessLogic\DataAccess\PromotionalWidgets\Entities\WidgetSettings;
 use SeQura\Core\BusinessLogic\DataAccess\SendReport\Entities\SendReport;
 use SeQura\Core\BusinessLogic\DataAccess\StatisticalData\Entities\StatisticalData;
+use SeQura\Core\BusinessLogic\DataAccess\StoreIntegration\Entities\StoreIntegration;
 use SeQura\Core\BusinessLogic\DataAccess\TransactionLog\Entities\TransactionLog;
 use SeQura\Core\BusinessLogic\Domain\Integration\Category\CategoryServiceInterface;
 use SeQura\Core\BusinessLogic\Domain\Integration\Disconnect\DisconnectServiceInterface;
+use SeQura\Core\BusinessLogic\Domain\Integration\Log\LogServiceInterface;
 use SeQura\Core\BusinessLogic\Domain\Integration\Order\MerchantDataProviderInterface;
 use SeQura\Core\BusinessLogic\Domain\Integration\Order\OrderCreationInterface;
 use SeQura\Core\BusinessLogic\Domain\Integration\OrderReport\OrderReportServiceInterface;
@@ -25,6 +28,8 @@ use SeQura\Core\BusinessLogic\Domain\Integration\PromotionalWidgets\WidgetConfig
 use SeQura\Core\BusinessLogic\Domain\Integration\SellingCountries\SellingCountriesServiceInterface;
 use SeQura\Core\BusinessLogic\Domain\Integration\ShopOrderStatuses\ShopOrderStatusesServiceInterface;
 use SeQura\Core\BusinessLogic\Domain\Integration\Store\StoreServiceInterface;
+use SeQura\Core\BusinessLogic\Domain\Integration\StoreInfo\StoreInfoServiceInterface;
+use SeQura\Core\BusinessLogic\Domain\Integration\StoreIntegration\StoreIntegrationServiceInterface;
 use SeQura\Core\BusinessLogic\Domain\Integration\Version\VersionServiceInterface;
 use SeQura\Core\BusinessLogic\Domain\Order\Models\SeQuraOrder;
 use SeQura\Core\BusinessLogic\Domain\Order\RepositoryContracts\SeQuraOrderRepositoryInterface;
@@ -36,7 +41,8 @@ use SeQura\Core\BusinessLogic\Utility\EncryptorInterface;
 use SeQura\Core\BusinessLogic\Webhook\Services\ShopOrderService;
 use SeQura\Core\Infrastructure\Configuration\ConfigEntity;
 use SeQura\Core\Infrastructure\Configuration\Configuration;
-use SeQura\Core\Infrastructure\Logger\Interfaces\ShopLoggerAdapter;
+use SeQura\Core\Infrastructure\Logger\Interfaces\ShopLoggerAdapter as ShopLoggerAdapterInterface;
+use SeQura\Core\Infrastructure\Logger\Interfaces\DefaultLoggerAdapter as DefaultLoggerAdapterInterface;
 use SeQura\Core\Infrastructure\ORM\Exceptions\RepositoryClassException;
 use SeQura\Core\Infrastructure\ORM\RepositoryRegistry;
 use SeQura\Core\Infrastructure\Serializer\Concrete\JsonSerializer;
@@ -51,6 +57,7 @@ use Sequra\Core\Repository\SeQuraOrderRepository;
 use Sequra\Core\Services\BusinessLogic\CategoryService;
 use Sequra\Core\Services\BusinessLogic\ConfigurationService;
 use Sequra\Core\Services\BusinessLogic\DisconnectService;
+use Sequra\Core\Services\BusinessLogic\LogService;
 use Sequra\Core\Services\BusinessLogic\Order\MerchantDataProvider;
 use Sequra\Core\Services\BusinessLogic\OrderReportService;
 use Sequra\Core\Services\BusinessLogic\OrderServiceFactory;
@@ -62,11 +69,14 @@ use Sequra\Core\Services\BusinessLogic\PromotionalWidget\WidgetConfigurator;
 use Sequra\Core\Services\BusinessLogic\SellingCountriesService;
 use Sequra\Core\Services\BusinessLogic\ShopOrderStatusesService;
 use Sequra\Core\Services\BusinessLogic\StatisticalDataService;
+use Sequra\Core\Services\BusinessLogic\StoreInfoService;
+use Sequra\Core\Services\BusinessLogic\StoreIntegrationService;
 use Sequra\Core\Services\BusinessLogic\StoreService;
 use Sequra\Core\Services\BusinessLogic\Utility\Encryptor;
 use Sequra\Core\Services\BusinessLogic\VersionService;
 use Sequra\Core\Services\BusinessLogic\Webhook\Repositories\OrderStatusMappingRepositoryOverride;
-use Sequra\Core\Services\Infrastructure\LoggerService;
+use Sequra\Core\Services\Infrastructure\ShopLoggerAdapter;
+use Sequra\Core\Services\Infrastructure\DefaultLoggerAdapter;
 
 class Bootstrap extends BootstrapComponent
 {
@@ -75,68 +85,91 @@ class Bootstrap extends BootstrapComponent
      *
      * @var static
      */
-    protected static $instance;
+    protected static Bootstrap $instance;
     /**
-     * @var LoggerService
+     * @var DefaultLoggerAdapter
      */
-    private $loggerService;
+    private DefaultLoggerAdapter $defaultLoggerAdapter;
+    /**
+     * @var ShopLoggerAdapter
+     */
+    private ShopLoggerAdapter $shopLoggerAdapter;
     /**
      * @var ConfigurationService
      */
-    private $configurationService;
+    private ConfigurationService $configurationService;
     /**
      * @var StoreService
      */
-    private $storeService;
+    private StoreService $storeService;
+    /**
+     * @var StoreIntegrationService
+     */
+    private StoreIntegrationService $storeIntegrationService;
     /**
      * @var VersionService
      */
-    private $versionService;
+    private VersionService $versionService;
     /**
      * @var SellingCountriesService
      */
-    private $sellingCountriesService;
+    private SellingCountriesService $sellingCountriesService;
     /**
      * @var CategoryService
      */
-    private $categoryService;
+    private CategoryService $categoryService;
     /**
      * @var DisconnectService
      */
-    private $disconnectService;
+    private DisconnectService $disconnectService;
     /**
      * @var OrderReportService
      */
-    private $orderReportService;
+    private OrderReportService $orderReportService;
     /**
      * @var Encryptor
      */
-    private $encryptor;
+    private Encryptor $encryptor;
     /**
      * @var OrderServiceFactory
      */
     private $orderServiceFactory;
-    /** @var WidgetConfigurator */
-    private $widgetConfigurator;
-
-    /** @var MiniWidgetMessagesProvider */
-    private $miniWidgetMessagesProvider;
-
-    /** @var ProductService */
-    private $productService;
-
-    /** @var MerchantDataProvider */
-    private $merchantDataProvider;
+    /**
+     * @var WidgetConfigurator
+     */
+    private WidgetConfigurator $widgetConfigurator;
+    /**
+     * @var MiniWidgetMessagesProvider
+     */
+    private MiniWidgetMessagesProvider $miniWidgetMessagesProvider;
+    /**
+     * @var ProductService
+     */
+    private ProductService $productService;
+    /**
+     * @var MerchantDataProvider
+     */
+    private MerchantDataProvider $merchantDataProvider;
 
     /** @var OrderCreationFactory */
     private $orderCreationFactory;
+    /**
+     * @var LogService
+     */
+    private LogService $logService;
+    /**
+     * @var StoreInfoService
+     */
+    private StoreInfoService $storeInfoService;
 
     /**
      *  Constructor for Bootstrap
      *
-     * @param LoggerService $loggerService
+     * @param DefaultLoggerAdapter $defaultLoggerAdapter
+     * @param ShopLoggerAdapter $shopLoggerAdapter
      * @param ConfigurationService $configurationService
      * @param StoreService $storeService
+     * @param StoreIntegrationService $storeIntegrationService
      * @param VersionService $versionService
      * @param SellingCountriesService $sellingCountriesService
      * @param CategoryService $categoryService
@@ -148,12 +181,16 @@ class Bootstrap extends BootstrapComponent
      * @param MiniWidgetMessagesProvider $miniWidgetMessagesProvider
      * @param ProductService $productService
      * @param MerchantDataProvider $merchantDataProvider
+     * @param LogService $logService
+     * @param StoreInfoService $storeInfoService
      * @param OrderCreationFactory $orderCreationFactory
      */
     public function __construct(
-        LoggerService $loggerService,
+        DefaultLoggerAdapter $defaultLoggerAdapter,
+        ShopLoggerAdapter $shopLoggerAdapter,
         ConfigurationService $configurationService,
         StoreService $storeService,
+        StoreIntegrationService $storeIntegrationService,
         VersionService $versionService,
         SellingCountriesService $sellingCountriesService,
         CategoryService $categoryService,
@@ -165,11 +202,15 @@ class Bootstrap extends BootstrapComponent
         MiniWidgetMessagesProvider $miniWidgetMessagesProvider,
         ProductService $productService,
         MerchantDataProvider $merchantDataProvider,
+        LogService $logService,
+        StoreInfoService $storeInfoService,
         OrderCreationFactory $orderCreationFactory
     ) {
-        $this->loggerService = $loggerService;
+        $this->defaultLoggerAdapter = $defaultLoggerAdapter;
+        $this->shopLoggerAdapter = $shopLoggerAdapter;
         $this->configurationService = $configurationService;
         $this->storeService = $storeService;
+        $this->storeIntegrationService = $storeIntegrationService;
         $this->versionService = $versionService;
         $this->sellingCountriesService = $sellingCountriesService;
         $this->categoryService = $categoryService;
@@ -181,6 +222,8 @@ class Bootstrap extends BootstrapComponent
         $this->miniWidgetMessagesProvider = $miniWidgetMessagesProvider;
         $this->productService = $productService;
         $this->merchantDataProvider = $merchantDataProvider;
+        $this->logService = $logService;
+        $this->storeInfoService = $storeInfoService;
         $this->orderCreationFactory = $orderCreationFactory;
 
         static::$instance = $this;
@@ -213,9 +256,16 @@ class Bootstrap extends BootstrapComponent
         );
 
         ServiceRegister::registerService(
-            ShopLoggerAdapter::CLASS_NAME,
+            ShopLoggerAdapterInterface::CLASS_NAME,
             static function () use ($instance) {
-                return $instance->loggerService;
+                return $instance->shopLoggerAdapter;
+            }
+        );
+
+        ServiceRegister::registerService(
+            DefaultLoggerAdapterInterface::CLASS_NAME,
+            static function () use ($instance) {
+                return $instance->defaultLoggerAdapter;
             }
         );
 
@@ -244,9 +294,9 @@ class Bootstrap extends BootstrapComponent
         );
 
         ServiceRegister::registerService(
-            LoggerService::class,
+            DefaultLoggerAdapter::class,
             static function () {
-                return static::$instance->loggerService;
+                return static::$instance->defaultLoggerAdapter;
             }
         );
 
@@ -254,6 +304,27 @@ class Bootstrap extends BootstrapComponent
             StoreServiceInterface::class,
             static function () {
                 return static::$instance->storeService;
+            }
+        );
+
+        ServiceRegister::registerService(
+            StoreIntegrationServiceInterface::class,
+            static function () {
+                return static::$instance->storeIntegrationService;
+            }
+        );
+
+        ServiceRegister::registerService(
+            LogServiceInterface::class,
+            static function () {
+                return static::$instance->logService;
+            }
+        );
+
+        ServiceRegister::registerService(
+            StoreInfoServiceInterface::class,
+            static function () {
+                return static::$instance->storeInfoService;
             }
         );
 
@@ -378,6 +449,8 @@ class Bootstrap extends BootstrapComponent
         RepositoryRegistry::registerRepository(PaymentMethod::class, BaseRepository::class);
         RepositoryRegistry::registerRepository(Credentials::class, BaseRepository::class);
         RepositoryRegistry::registerRepository(Deployment::class, BaseRepository::class);
+        RepositoryRegistry::registerRepository(AdvancedSettings::class, BaseRepository::class);
+        RepositoryRegistry::registerRepository(StoreIntegration::class, BaseRepository::class);
 
         ServiceRegister::registerService(
             OrderStatusSettingsRepositoryInterface::class,

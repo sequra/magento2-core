@@ -1,6 +1,10 @@
 if (!window.SequraFE) {
     window.SequraFE = {};
 }
+if (!window.SequraFE.customHeader) {
+    // Init the custom header if it doesn't exist so it will be available for the controllers
+    window.SequraFE.customHeader = {};
+}
 
 /**
  * @typedef AjaxServiceType
@@ -83,8 +87,9 @@ if (!window.SequraFE) {
          * @param {string} url The URL to call.
          * @param {Record<string, any>?} data
          * @param {(error: Record<string, any>) => Promise<void>?} errorCallback
+         * @param {Record<string, string>?} customHeader
          */
-        const del = (url, data, errorCallback) => call('DELETE', url, data, errorCallback);
+        const del = (url, data, errorCallback, customHeader = {}) => call('DELETE', url, data, errorCallback, customHeader);
 
         /**
          * Performs ajax call.

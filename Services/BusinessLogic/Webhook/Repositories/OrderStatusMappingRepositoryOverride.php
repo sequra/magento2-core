@@ -20,6 +20,7 @@ class OrderStatusMappingRepositoryOverride implements OrderStatusSettingsReposit
             new OrderStatusMapping(OrderStates::STATE_APPROVED, Order::STATE_PENDING_PAYMENT),
             new OrderStatusMapping(OrderStates::STATE_NEEDS_REVIEW, Order::STATE_PAYMENT_REVIEW),
             new OrderStatusMapping(OrderStates::STATE_CANCELLED, Order::STATE_CANCELED),
+            new OrderStatusMapping(OrderStates::STATE_SHIPPED, Order::STATE_COMPLETE)
         ];
     }
 

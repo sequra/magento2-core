@@ -37,6 +37,27 @@ if (!window.SequraFE) {
         };
 
         /**
+         * Handles a success response from the submit action.
+         *
+         * @param {{successMessage?: string}} response
+         * @returns {void}
+         */
+        this.successHandler = (response) => {
+            const {utilities, templateService, elementGenerator} = SequraFE;
+            let container = document.querySelector('.sqp-flash-message-wrapper');
+            if (!container) {
+                container = elementGenerator.createElement('div', 'sqp-flash-message-wrapper');
+                templateService.getMainPage().prepend(container);
+            }
+
+            templateService.clearComponent(container);
+
+            if (response.successMessage) {
+                container.prepend(utilities.createFlashMessage(response.successMessage, 'success'));
+            }
+        };
+
+        /**
          * Handles unauthorized response.
          *
          * @param {{errorMessage?: string, errorCode?: string, statusCode?: number}} response

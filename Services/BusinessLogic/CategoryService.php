@@ -51,9 +51,10 @@ class CategoryService implements CategoryServiceInterface
      * @throws LocalizedException
      * @throws EmptyCategoryParameterException
      */
-    public function getCategories(): array
+    public function getCategories(?int $page = null, ?int $limit = null, ?string $search = null): array
     {
         $categories = [];
+
         /**
          * @var \Magento\Store\Model\Store $store
          */
@@ -62,6 +63,21 @@ class CategoryService implements CategoryServiceInterface
         $categoryCollection->addAttributeToSelect('*');
         $categoryCollection->addPathsFilter('1/' . $store->getRootCategoryId() . '/');
         $categoryCollection->addIsActiveFilter();
+
+        if ($search && $search !== '') {
+            $categoryCollection->addAttributeToFilter(
+                'name',
+                ['like' => '%' . $search . '%']
+            );
+        }
+
+        if ($limit) {
+            $categoryCollection->setPageSize($limit);
+        }
+
+        if ($page) {
+            $categoryCollection->setCurPage($page);
+        }
 
         $rootCategory = $this->categoryRepository->get($store->getRootCategoryId());
 
@@ -84,6 +100,58 @@ class CategoryService implements CategoryServiceInterface
             if ($id === null || $name === null) {
                 continue;
             }
+            $categories[] = new Category((string) $id, $name);
+        }
+
+        return $categories;
+    }
+
+    /**
+     * Retrieve active store categories by their IDs.
+     *
+     * @param string[] $ids
+     *
+     * @return Category[]
+     *
+     * @throws EmptyCategoryParameterException
+     */
+    public function getCategoriesByIds(array $ids): array
+    {
+        $categories = [];
+
+        if (empty($ids)) {
+            return $categories;
+        }
+
+        /**
+         * @var \Magento\Store\Model\Store $store
+         */
+        $store = $this->storeManager->getStore(StoreContext::getInstance()->getStoreId());
+
+        $categoryCollection = $this->collectionFactory->create();
+        $categoryCollection->addAttributeToSelect('*');
+        $categoryCollection->addPathsFilter('1/' . $store->getRootCategoryId() . '/');
+        $categoryCollection->addIdFilter($ids);
+        $categoryCollection->addIsActiveFilter();
+
+        /**
+         * @var \Magento\Catalog\Model\Category $category
+         */
+        foreach ($categoryCollection as $category) {
+            /**
+             * @var int|null $id
+             */
+            $id = $category->getId();
+
+            /**
+             * @var string|null $name
+             */
+            $name = $category->getName();
+
+            if ($id === null || $name === null) {
+                continue;
+            }
+
             $categories[] = new Category((string) $id, $name);
         }
 

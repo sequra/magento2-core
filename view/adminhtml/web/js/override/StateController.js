@@ -14,8 +14,7 @@ SequraFE.flags = {
 SequraFE.appStates = {
     ONBOARDING: 'onboarding',
     SETTINGS: 'settings',
-    PAYMENT: 'payment',
-    ADVANCED: 'advanced'
+    PAYMENT: 'payment'
 };
 
 SequraFE.appPages = {
@@ -33,9 +32,6 @@ SequraFE.appPages = {
     },
     PAYMENT: {
         METHODS: 'methods'
-    },
-    ADVANCED: {
-        DEBUG: 'debug'
     }
 };
 
@@ -83,7 +79,6 @@ SequraFE.appPages = {
      * @property {SellingCountry[] | null} sellingCountries
      * @property {DeploymentSettings[] | null} deploymentsSettings
      * @property {DeploymentSettings[] | null} notConnectedDeployments
-     * @property {LogsSettings | null} logsSettings
      * @property {Category[] | null} shopCategories
      */
 
@@ -95,7 +90,6 @@ SequraFE.appPages = {
      */
 
     /**
-     * @typedef {Object} LogsSettings
      * @property {boolean} enabled
      * @property {int} level
      */
@@ -133,8 +127,7 @@ SequraFE.appPages = {
                 paymentMethods: null,
                 allAvailablePaymentMethods: null,
                 sellingCountries: null,
-                shopCategories: null,
-                logsSettings: null
+                shopCategories: null
             };
         }
 
@@ -197,8 +190,7 @@ SequraFE.appPages = {
                 api.get(configuration.pageConfiguration.onboarding.getWidgetSettingsUrl.sqReplaceUrlPlaceholder('{storeId}', this.getStoreId()), null, SequraFE.customHeader),
                 api.get(configuration.pageConfiguration.onboarding.getDeploymentsUrl.sqReplaceUrlPlaceholder('{storeId}', this.getStoreId()), null, SequraFE.customHeader),
                 api.get(configuration.pageConfiguration.onboarding.getNotConnectedDeploymentsUrl.sqReplaceUrlPlaceholder('{storeId}', this.getStoreId()), null, SequraFE.customHeader),
-                api.get(configuration.pageConfiguration.advanced.getLogsSettingsUrl.sqReplaceUrlPlaceholder('{storeId}', this.getStoreId()), null, SequraFE.customHeader),
-            ]).then(([versionRes, storesRes, connectionSettingsRes, countrySettingsRes, widgetSettingsRes, deploymentsSettingsRes, notConnectedDeployments, logsSettingsRes]) => {
+            ]).then(([versionRes, storesRes, connectionSettingsRes, countrySettingsRes, widgetSettingsRes, deploymentsSettingsRes, notConnectedDeployments]) => {
                 dataStore.version = versionRes;
                 dataStore.stores = storesRes;
                 dataStore.connectionSettings = connectionSettingsRes;
@@ -206,7 +198,6 @@ SequraFE.appPages = {
                 dataStore.widgetSettings = widgetSettingsRes;
                 dataStore.deploymentsSettings = deploymentsSettingsRes;
                 dataStore.notConnectedDeployments = notConnectedDeployments;
-                dataStore.logsSettings = logsSettingsRes;
 
                 return api.get(configuration.stateUrl.sqReplaceUrlPlaceholder('{storeId}', this.getStoreId()), null, SequraFE.customHeader);
             }).then((stateRes) => {
@@ -218,11 +209,6 @@ SequraFE.appPages = {
                 if (stateRes.state === SequraFE.appStates.ONBOARDING) {
                     this.goToState(SequraFE.appStates.ONBOARDING + '-' + page, null, true);
 
-                    return;
-                }
-
-                if (SequraFE.pages?.advanced?.includes(page)) {
-                    this.goToState(SequraFE.appStates.ADVANCED + '-' + page, null, true)
                     return;
                 }
 
@@ -280,7 +266,7 @@ SequraFE.appPages = {
                 switch (page) {
                     case SequraFE.appPages.ONBOARDING.COUNTRIES:
                         if (!dataStore.connectionSettings?.connectionData?.every(c => c.username)) {
-                            page = SequraFE.appPages.ONBOARDING.CONNECT;
+                            page = SequraFE.appPages.ONBOARDING.CONNECT
                         }
 
                         if (!dataStore.deploymentsSettings?.some(deployment => deployment.active === true)) {

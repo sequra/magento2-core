@@ -5,8 +5,8 @@ if (!window.SequraFE) {
 (function () {
     /**
      * @typedef ShopOrderStatus
-     * @property {string} statusId
-     * @property {string} statusName
+     * @property {string} id
+     * @property {string} name
      */
 
     /**
@@ -16,16 +16,10 @@ if (!window.SequraFE) {
      */
 
     /**
-     * @typedef OrderStatusSettings
-     * @property {OrderStatusMapping[]} orderStatusMappings
-     * @property {boolean} informCancellationsToSequra
-     */
-
-    /**
      * Handles order status mapping settings form logic.
      *
      * @param {{
-     * orderStatusSettings: OrderStatusSettings,
+     * orderStatusSettings: OrderStatusMapping[],
      * shopOrderStatuses: ShopOrderStatus[],
      * shopName: string
      * }} data
@@ -41,10 +35,11 @@ if (!window.SequraFE) {
         const SEQURA_STATUSES = {
             PAID: 'approved',
             IN_REVIEW: 'needs_review',
-            CANCELLED: 'cancelled'
+            CANCELLED: 'cancelled',
+            SHIPPED: 'shipped'
         }
 
-        const { elementGenerator: generator, utilities} = SequraFE;
+        const { elementGenerator: generator, utilities } = SequraFE;
         /** @type AjaxServiceType */
         const api = SequraFE.ajaxService;
         /** @type OrderStatusSettings */
@@ -64,14 +59,8 @@ if (!window.SequraFE) {
         this.render = () => {
             utilities.showLoader();
 
-            if(!activeSettings) {
-                activeSettings = utilities.cloneObject(defaultFormData);
-                activeSettings.informCancellationsToSequra =
-                    data?.orderStatusSettings?.informCancellationsToSequra ??
-                    defaultFormData.informCancellationsToSequra;
-                activeSettings.orderStatusMappings =
-                    data?.orderStatusSettings?.orderStatusMappings ??
-                    defaultFormData.orderStatusMappings;
+            if (!activeSettings) {
+                activeSettings = data?.orderStatusSettings ? data.orderStatusSettings.map(utilities.cloneObject) : utilities.cloneObject(defaultFormData);
             }
 
             changedSettings = utilities.cloneObject(activeSettings);
@@ -91,12 +80,14 @@ if (!window.SequraFE) {
                     generator.createElement('div', 'sqp-flash-message-wrapper'),
                     generator.createPageHeading({
                         title: 'orderStatusSettings.title',
-                        text: 'orderStatusSettings.description'
+                        text: SequraFE.translationService.translate(
+                            'orderStatusSettings.description'
+                        ).replace('{shopName}', data.shopName),
                     }),
                     generator.createDropdownField({
                         label: 'orderStatusSettings.paid.label',
                         description: 'orderStatusSettings.paid.description',
-                        value: changedSettings?.orderStatusMappings?.find(
+                        value: changedSettings.find(
                             (mapping) => mapping.sequraStatus === SEQURA_STATUSES.PAID
                         )?.shopStatus || '',
                         options: getStatusOptions(),
@@ -106,7 +97,7 @@ if (!window.SequraFE) {
                     generator.createDropdownField({
                         label: 'orderStatusSettings.inReview.label',
                         description: 'orderStatusSettings.inReview.description',
-                        value: changedSettings?.orderStatusMappings?.find(
+                        value: changedSettings.find(
                             (mapping) => mapping.sequraStatus === SEQURA_STATUSES.IN_REVIEW
                         )?.shopStatus,
                         options: getStatusOptions(),
@@ -116,21 +107,23 @@ if (!window.SequraFE) {
                     generator.createDropdownField({
                         label: 'orderStatusSettings.cancelled.label',
                         description: 'orderStatusSettings.cancelled.description',
-                        value: changedSettings.orderStatusMappings?.find(
+                        value: changedSettings.find(
                             (mapping) => mapping.sequraStatus === SEQURA_STATUSES.CANCELLED
                         )?.shopStatus,
                         options: getStatusOptions(),
                         variation: 'label-left',
                         onChange: (value) => handleChange(SEQURA_STATUSES.CANCELLED, value)
                     }),
-                    generator.createToggleField({
-                        value: changedSettings.informCancellationsToSequra,
-                        label: 'orderStatusSettings.informCancellations.label',
-                        description: SequraFE.translationService.translate(
-                            'orderStatusSettings.informCancellations.description'
-                        ).replace('{{shopName}}', data.shopName),
-                        onChange: (value) => handleChange('informCancellationsToSequra', value)
-                    })
+                    generator.createDropdownField({
+                        label: 'orderStatusSettings.shipped.label',
+                        description: 'orderStatusSettings.shipped.description',
+                        value: changedSettings.find(
+                            (mapping) => mapping.sequraStatus === SEQURA_STATUSES.SHIPPED
+                        )?.shopStatus || '',
+                        options: getStatusOptions(),
+                        variation: 'label-left',
+                        onChange: (value) => handleChange(SEQURA_STATUSES.SHIPPED, value)
+                    }),
                 ]),
                 generator.createPageFooter({
                     onCancel: () => {
@@ -152,11 +145,11 @@ if (!window.SequraFE) {
          * @returns {[{label: string, value: string}]}
          */
         const getStatusOptions = () => {
-            const options = [{ label: "None", value: ""}];
+            const options = [{ label: "None", value: "" }];
             data.shopOrderStatuses.map((shopOrderStatus) => {
                 options.push({
-                    label: shopOrderStatus.statusName.charAt(0).toUpperCase() + shopOrderStatus.statusName.slice(1),
-                    value: shopOrderStatus.statusId
+                    label: shopOrderStatus.name.charAt(0).toUpperCase() + shopOrderStatus.name.slice(1),
+                    value: shopOrderStatus.id
                 })
             });
 
@@ -170,14 +163,10 @@ if (!window.SequraFE) {
          * @param value
          */
         const handleChange = (name, value) => {
-            if(name === 'informCancellationsToSequra') {
-                changedSettings[name] = value;
-            } else {
-                const mapping =  changedSettings.orderStatusMappings.find((mapping) => mapping.sequraStatus === name)
-                mapping ?
-                    mapping.shopStatus = value :
-                    changedSettings.orderStatusMappings.push({shopStatus: value, sequraStatus: name});
-            }
+            const mapping = changedSettings.find((mapping) => mapping.sequraStatus === name)
+            mapping ?
+                mapping.shopStatus = value :
+                changedSettings.push({ shopStatus: value, sequraStatus: name });
 
             utilities.disableFooter(false);
         }
@@ -187,9 +176,10 @@ if (!window.SequraFE) {
          */
         const handleSave = () => {
             utilities.showLoader();
-            api.post(configuration.saveOrderStatusMappingSettingsUrl, changedSettings)
+            api.post(configuration.saveOrderStatusMappingSettingsUrl, changedSettings, SequraFE.customHeader)
                 .then(() => {
                     activeSettings = utilities.cloneObject(changedSettings);
+                    SequraFE.state.setData('orderStatusSettings', activeSettings);
                     utilities.disableFooter(true);
                 })
                 .finally(utilities.hideLoader);
