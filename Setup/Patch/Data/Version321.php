@@ -8,7 +8,7 @@ use SeQura\Core\BusinessLogic\Domain\Migration\Tasks\StoreIntegrationMigrateTask
 use SeQura\Core\Infrastructure\Logger\Logger;
 use Throwable;
 
-class Version400 implements DataPatchInterface
+class Version321 implements DataPatchInterface
 {
     /**
      * @var ModuleDataSetupInterface
@@ -52,7 +52,7 @@ class Version400 implements DataPatchInterface
 
             Logger::logInfo('Migration ' . self::class . ' has been successfully finished.');
         } catch (Throwable $e) {
-            Logger::logError('Update script V4.0.0 execution failed because: ' . $e->getMessage());
+            Logger::logError('Update script V3.2.1 execution failed because: ' . $e->getMessage());
         }
 
         $this->moduleDataSetup->endSetup();
