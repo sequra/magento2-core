@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+
+    <body>
+        <referenceContainer name="category.view.container">
+            <block class="Sequra\Core\Block\Banner"
+                   name="sequra.banner.listing"
+                   template="Sequra_Core::banner.phtml"
+                   before="category.products">
+                <arguments>
+                    <argument name="display_location" xsi:type="string">displayOnProductListingPage</argument>
+                </arguments>
+            </block>
+        </referenceContainer>
+    </body>
+</page>

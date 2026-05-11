@@ -1,0 +1,22 @@
+<?php
+/** @var Banner $block */
+/** @var Escaper $escaper */
+
+use Magento\Framework\Escaper;
+use Sequra\Core\Block\Banner;
+
+$banner = $block->getBannerData();
+
+if (!empty($banner['imageUrl'])):
+    ?>
+    <div class="sequra-banner">
+        <?php if (!empty($banner['linkUrl'])): ?>
+            <a href="<?= $escaper->escapeUrl($banner['linkUrl']) ?>" target="_blank" rel="noopener noreferrer">
+                <img src="<?= $escaper->escapeUrl($banner['imageUrl']) ?>" alt=""/>
+            </a>
+        <?php else: ?>
+            <img src="<?= $escaper->escapeUrl($banner['imageUrl']) ?>" alt=""/>
+        <?php endif; ?>
+    </div>
+    <?php
+endif;

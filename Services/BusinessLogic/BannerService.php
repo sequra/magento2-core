@@ -11,10 +11,10 @@ use SeQura\Core\BusinessLogic\Domain\Integration\Banner\BannerServiceInterface;
  */
 class BannerService implements BannerServiceInterface
 {
-    private const DISPLAY_ON_HOME_PAGE = 'displayOnHomePage';
-    private const DISPLAY_ON_PRODUCT_PAGE = 'displayOnProductPage';
-    private const DISPLAY_ON_CART_PAGE = 'displayOnCartPage';
-    private const DISPLAY_ON_PRODUCT_LISTING_PAGE = 'displayOnProductListingPage';
+    public const DISPLAY_ON_HOME_PAGE = 'displayOnHomePage';
+    public const DISPLAY_ON_PRODUCT_PAGE = 'displayOnProductPage';
+    public const DISPLAY_ON_CART_PAGE = 'displayOnCartPage';
+    public const DISPLAY_ON_PRODUCT_LISTING_PAGE = 'displayOnProductListingPage';
 
     public function getBannerDisplayLocations(): array
     {

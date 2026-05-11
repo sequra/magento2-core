@@ -9,6 +9,11 @@ use NumberFormatter;
 use SeQura\Core\BusinessLogic\Domain\Integration\PromotionalWidgets\WidgetConfiguratorInterface;
 use SeQura\Core\BusinessLogic\Domain\PromotionalWidgets\Models\WidgetSettings;
 
+/**
+ * Class WidgetConfigurator
+ *
+ * @package Sequra\Core\Services\BusinessLogic\PromotionalWidget
+ */
 class WidgetConfigurator implements WidgetConfiguratorInterface
 {
     /**
