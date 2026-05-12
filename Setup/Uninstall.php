@@ -57,6 +57,7 @@ class Uninstall implements UninstallInterface
 
     /**
      * Removes the banner media directory.
+     *
      * Failures are logged but won't abort uninstall.
      */
     private function deleteBannerMedia(): void

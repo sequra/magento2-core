@@ -16,7 +16,7 @@ use Sequra\Core\Services\BusinessLogic\CountryResolverService;
 /**
  * Class Banner
  *
- * @package Sequra\Core\Block
+ *  Implements required logic to show banner on storefront pages
  */
 class Banner extends Template
 {

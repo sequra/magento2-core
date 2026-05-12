@@ -12,11 +12,6 @@ use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Locale\ResolverInterface;
 use Magento\Store\Model\ScopeInterface;
 
-/**
- * Class CountryResolverService
- *
- * @package Sequra\Core\Services\BusinessLogic
- */
 class CountryResolverService
 {
     /**

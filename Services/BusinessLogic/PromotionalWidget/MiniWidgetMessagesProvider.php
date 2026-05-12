@@ -5,11 +5,6 @@ namespace Sequra\Core\Services\BusinessLogic\PromotionalWidget;
 use Magento\Framework\Locale\ResolverInterface;
 use SeQura\Core\BusinessLogic\Domain\Integration\PromotionalWidgets\MiniWidgetMessagesProviderInterface;
 
-/**
- * Class MiniWidgetMessagesProvider
- *
- * @package Sequra\Core\Services\BusinessLogic\PromotionalWidget
- */
 class MiniWidgetMessagesProvider implements MiniWidgetMessagesProviderInterface
 {
     /**

@@ -13,11 +13,6 @@ use Magento\Store\Model\StoreManagerInterface;
 use SeQura\Core\BusinessLogic\Domain\Integration\Banner\BannerServiceInterface;
 use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
 
-/**
- * Class BannerService
- *
- * @package Sequra\Core\Services\BusinessLogic
- */
 class BannerService implements BannerServiceInterface
 {
     public const DISPLAY_ON_HOME_PAGE = 'displayOnHomePage';
@@ -123,6 +118,7 @@ class BannerService implements BannerServiceInterface
         $payload = $this->extractBase64Payload($imageBase64);
         $this->assertEncodedSizeWithinLimit($payload);
 
+        // phpcs:ignore Magento2.Functions.DiscouragedFunction.Discouraged -- needed to decode incoming banner payload
         $decoded = base64_decode($payload, true);
         if ($decoded === false || $decoded === '') {
             throw new InvalidArgumentException('Banner image payload is not valid Base64.');
@@ -152,6 +148,7 @@ class BannerService implements BannerServiceInterface
 
     /**
      * Rejects oversized payloads before decoding to keep memory bounded.
+     *
      * Base64 is ~4/3 of the raw size; the +64 covers padding.
      *
      * @param string $payload
@@ -189,6 +186,7 @@ class BannerService implements BannerServiceInterface
      */
     private function assertIsValidImage(string $bytes): void
     {
+        // phpcs:ignore Generic.PHP.NoSilencedErrors.Discouraged -- handled via false return below
         $info = @getimagesizefromstring($bytes);
         if ($info === false) {
             throw new InvalidArgumentException('Banner image is not a valid image file.');
@@ -196,6 +194,8 @@ class BannerService implements BannerServiceInterface
     }
 
     /**
+     * Maps the bytes' detected MIME type to its file extension.
+     *
      * @param string $bytes
      *
      * @return string
@@ -218,6 +218,8 @@ class BannerService implements BannerServiceInterface
     }
 
     /**
+     * Validates the country is a 2-letter ISO code.
+     *
      * @param string $country
      *
      * @throws InvalidArgumentException
@@ -230,6 +232,8 @@ class BannerService implements BannerServiceInterface
     }
 
     /**
+     * Validates the display location against the supported list.
+     *
      * @param string $displayLocation
      *
      * @throws InvalidArgumentException
@@ -293,8 +297,9 @@ class BannerService implements BannerServiceInterface
     }
 
     /**
-     * Removes every stored variant except the given extension. Used before
-     * writing a new file so the format can change without leaving stale copies.
+     * Removes every stored variant except the given extension.
+     *
+     * Used before writing a new file so the format can change without leaving stale copies.
      *
      * @param WriteInterface $mediaDir
      * @param string $country
@@ -319,6 +324,8 @@ class BannerService implements BannerServiceInterface
     }
 
     /**
+     * Deletes the given path when it exists.
+     *
      * @param WriteInterface $mediaDir
      * @param string $path
      *
@@ -332,6 +339,8 @@ class BannerService implements BannerServiceInterface
     }
 
     /**
+     * Returns a writable handle to the Magento media directory.
+     *
      * @return WriteInterface
      *
      * @throws FileSystemException
@@ -342,8 +351,9 @@ class BannerService implements BannerServiceInterface
     }
 
     /**
-     * Resolves the public media base URL for the current store context. Falls
-     * back to the default store if the StoreContext has no storeId set.
+     * Resolves the public media base URL for the current store context.
+     *
+     * Falls back to the default store if the StoreContext has no storeId set.
      *
      * @return string
      *
