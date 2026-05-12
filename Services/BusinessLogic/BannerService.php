@@ -29,6 +29,7 @@ class BannerService implements BannerServiceInterface
 
     private const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
     private const DATA_URI_MARKER = 'base64,';
+    private const ERROR_TOO_LARGE = 'Banner image exceeds the 2 MB size limit.';
 
     /**
      * Allowed MIME type → file extension.
@@ -109,9 +110,7 @@ class BannerService implements BannerServiceInterface
     }
 
     /**
-     * Decodes a Base64 (optionally data-URI prefixed) image payload. Rejects
-     * payloads that exceed the configured size limit before decoding to keep
-     * memory bounded on hostile input.
+     * Decodes a Base64 image payload, guarding both encoded and decoded sizes.
      *
      * @param string $imageBase64
      *
@@ -121,37 +120,68 @@ class BannerService implements BannerServiceInterface
      */
     private function decodeBase64(string $imageBase64): string
     {
-        $payload = $imageBase64;
-
-        $pos = strpos($payload, self::DATA_URI_MARKER);
-        if ($pos !== false) {
-            $payload = substr($payload, $pos + strlen(self::DATA_URI_MARKER));
-        }
-
-        $payload = preg_replace('/\s+/', '', $payload) ?? '';
-
-        // Reject oversized payloads before decoding. Base64 inflates raw bytes
-        // by ~4/3; the +64 absorbs padding and any tolerated overhead.
-        $maxEncodedLength = (int)ceil(self::MAX_IMAGE_BYTES * 4 / 3) + 64;
-        if (strlen($payload) > $maxEncodedLength) {
-            throw new InvalidArgumentException('Banner image exceeds the 2 MB size limit.');
-        }
+        $payload = $this->extractBase64Payload($imageBase64);
+        $this->assertEncodedSizeWithinLimit($payload);
 
         $decoded = base64_decode($payload, true);
         if ($decoded === false || $decoded === '') {
             throw new InvalidArgumentException('Banner image payload is not valid Base64.');
         }
 
-        if (strlen($decoded) > self::MAX_IMAGE_BYTES) {
-            throw new InvalidArgumentException('Banner image exceeds the 2 MB size limit.');
-        }
+        $this->assertDecodedSizeWithinLimit($decoded);
 
         return $decoded;
     }
 
     /**
-     * Defense in depth: confirms the decoded bytes are a structurally valid
-     * image, not just something with a matching magic header.
+     * Returns just the Base64 part, without any data URI prefix or whitespace.
+     *
+     * @param string $imageBase64
+     *
+     * @return string
+     */
+    private function extractBase64Payload(string $imageBase64): string
+    {
+        $pos = strpos($imageBase64, self::DATA_URI_MARKER);
+        $payload = $pos !== false
+            ? substr($imageBase64, $pos + strlen(self::DATA_URI_MARKER))
+            : $imageBase64;
+
+        return preg_replace('/\s+/', '', $payload);
+    }
+
+    /**
+     * Rejects oversized payloads before decoding to keep memory bounded.
+     * Base64 is ~4/3 of the raw size; the +64 covers padding.
+     *
+     * @param string $payload
+     *
+     * @throws InvalidArgumentException
+     */
+    private function assertEncodedSizeWithinLimit(string $payload): void
+    {
+        $maxEncodedLength = (int)ceil(self::MAX_IMAGE_BYTES * 4 / 3) + 64;
+        if (strlen($payload) > $maxEncodedLength) {
+            throw new InvalidArgumentException(self::ERROR_TOO_LARGE);
+        }
+    }
+
+    /**
+     * Checks size on the decoded bytes.
+     *
+     * @param string $decoded
+     *
+     * @throws InvalidArgumentException
+     */
+    private function assertDecodedSizeWithinLimit(string $decoded): void
+    {
+        if (strlen($decoded) > self::MAX_IMAGE_BYTES) {
+            throw new InvalidArgumentException(self::ERROR_TOO_LARGE);
+        }
+    }
+
+    /**
+     * Confirms the decoded bytes are a structurally valid image.
      *
      * @param string $bytes
      *
@@ -215,9 +245,7 @@ class BannerService implements BannerServiceInterface
     }
 
     /**
-     * Builds the relative media path for a banner image. Assumes inputs have
-     * already been validated by {@see assertCountry()} and
-     * {@see assertDisplayLocation()}.
+     * Builds the relative media path for a banner image per store id.
      *
      * @param string $country
      * @param string $displayLocation
@@ -227,7 +255,22 @@ class BannerService implements BannerServiceInterface
      */
     private function relativePathFor(string $country, string $displayLocation, string $extension): string
     {
-        return self::BANNER_MEDIA_DIR . '/' . strtoupper($country) . '_' . $displayLocation . '.' . $extension;
+        return self::BANNER_MEDIA_DIR
+            . '/' . $this->storeSegment()
+            . '/' . strtoupper($country) . '_' . $displayLocation . '.' . $extension;
+    }
+
+    /**
+     * Filesystem path segment for the active store.
+     *
+     * @return string
+     */
+    private function storeSegment(): string
+    {
+        $storeId = StoreContext::getInstance()->getStoreId();
+        $sanitized = preg_replace('/[^A-Za-z0-9_-]/', '', $storeId) ?? '';
+
+        return $sanitized !== '' ? $sanitized : 'default';
     }
 
     /**
