@@ -2,7 +2,16 @@
 
 namespace Sequra\Core\Services\BusinessLogic;
 
+use InvalidArgumentException;
+use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\Exception\FileSystemException;
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\Filesystem;
+use Magento\Framework\Filesystem\Directory\WriteInterface;
+use Magento\Framework\UrlInterface;
+use Magento\Store\Model\StoreManagerInterface;
 use SeQura\Core\BusinessLogic\Domain\Integration\Banner\BannerServiceInterface;
+use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
 
 /**
  * Class BannerService
@@ -16,6 +25,43 @@ class BannerService implements BannerServiceInterface
     public const DISPLAY_ON_CART_PAGE = 'displayOnCartPage';
     public const DISPLAY_ON_PRODUCT_LISTING_PAGE = 'displayOnProductListingPage';
 
+    public const BANNER_MEDIA_DIR = 'sequra/banners';
+
+    private const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
+    private const DATA_URI_MARKER = 'base64,';
+
+    /**
+     * Allowed MIME type → file extension.
+     */
+    private const ALLOWED_MIME_EXTENSIONS = [
+        'image/png' => 'png',
+        'image/jpeg' => 'jpg',
+        'image/webp' => 'webp',
+    ];
+
+    /**
+     * @var Filesystem
+     */
+    private Filesystem $filesystem;
+
+    /**
+     * @var StoreManagerInterface
+     */
+    private StoreManagerInterface $storeManager;
+
+    /**
+     * @param Filesystem $filesystem
+     * @param StoreManagerInterface $storeManager
+     */
+    public function __construct(Filesystem $filesystem, StoreManagerInterface $storeManager)
+    {
+        $this->filesystem = $filesystem;
+        $this->storeManager = $storeManager;
+    }
+
+    /**
+     * @inheritDoc
+     */
     public function getBannerDisplayLocations(): array
     {
         return [
@@ -24,5 +70,249 @@ class BannerService implements BannerServiceInterface
             self::DISPLAY_ON_CART_PAGE,
             self::DISPLAY_ON_PRODUCT_LISTING_PAGE,
         ];
+    }
+
+    /**
+     * @inheritDoc
+     *
+     * @throws FileSystemException|NoSuchEntityException|InvalidArgumentException
+     */
+    public function saveBannerImage(string $country, string $displayLocation, string $imageBase64): string
+    {
+        $this->assertCountry($country);
+        $this->assertDisplayLocation($displayLocation);
+
+        $bytes = $this->decodeBase64($imageBase64);
+        $this->assertIsValidImage($bytes);
+        $extension = $this->resolveExtension($bytes);
+
+        $relativePath = $this->relativePathFor($country, $displayLocation, $extension);
+
+        $mediaDir = $this->getMediaWrite();
+        $this->removeOtherVariants($mediaDir, $country, $displayLocation, $extension);
+        $mediaDir->writeFile($relativePath, $bytes);
+
+        return $this->getMediaBaseUrl() . $relativePath;
+    }
+
+    /**
+     * @inheritDoc
+     *
+     * @throws FileSystemException|InvalidArgumentException
+     */
+    public function deleteBannerImage(string $country, string $displayLocation): void
+    {
+        $this->assertCountry($country);
+        $this->assertDisplayLocation($displayLocation);
+
+        $this->removeAllVariants($this->getMediaWrite(), $country, $displayLocation);
+    }
+
+    /**
+     * Decodes a Base64 (optionally data-URI prefixed) image payload. Rejects
+     * payloads that exceed the configured size limit before decoding to keep
+     * memory bounded on hostile input.
+     *
+     * @param string $imageBase64
+     *
+     * @return string
+     *
+     * @throws InvalidArgumentException
+     */
+    private function decodeBase64(string $imageBase64): string
+    {
+        $payload = $imageBase64;
+
+        $pos = strpos($payload, self::DATA_URI_MARKER);
+        if ($pos !== false) {
+            $payload = substr($payload, $pos + strlen(self::DATA_URI_MARKER));
+        }
+
+        $payload = preg_replace('/\s+/', '', $payload) ?? '';
+
+        // Reject oversized payloads before decoding. Base64 inflates raw bytes
+        // by ~4/3; the +64 absorbs padding and any tolerated overhead.
+        $maxEncodedLength = (int)ceil(self::MAX_IMAGE_BYTES * 4 / 3) + 64;
+        if (strlen($payload) > $maxEncodedLength) {
+            throw new InvalidArgumentException('Banner image exceeds the 2 MB size limit.');
+        }
+
+        $decoded = base64_decode($payload, true);
+        if ($decoded === false || $decoded === '') {
+            throw new InvalidArgumentException('Banner image payload is not valid Base64.');
+        }
+
+        if (strlen($decoded) > self::MAX_IMAGE_BYTES) {
+            throw new InvalidArgumentException('Banner image exceeds the 2 MB size limit.');
+        }
+
+        return $decoded;
+    }
+
+    /**
+     * Defense in depth: confirms the decoded bytes are a structurally valid
+     * image, not just something with a matching magic header.
+     *
+     * @param string $bytes
+     *
+     * @throws InvalidArgumentException
+     */
+    private function assertIsValidImage(string $bytes): void
+    {
+        $info = @getimagesizefromstring($bytes);
+        if ($info === false) {
+            throw new InvalidArgumentException('Banner image is not a valid image file.');
+        }
+    }
+
+    /**
+     * @param string $bytes
+     *
+     * @return string
+     *
+     * @throws InvalidArgumentException
+     */
+    private function resolveExtension(string $bytes): string
+    {
+        $finfo = new \finfo(FILEINFO_MIME_TYPE);
+        $mime = $finfo->buffer($bytes);
+
+        if (!isset(self::ALLOWED_MIME_EXTENSIONS[$mime])) {
+            throw new InvalidArgumentException(
+                'Banner image has an unsupported MIME type. Allowed: '
+                . implode(', ', array_keys(self::ALLOWED_MIME_EXTENSIONS))
+            );
+        }
+
+        return self::ALLOWED_MIME_EXTENSIONS[$mime];
+    }
+
+    /**
+     * @param string $country
+     *
+     * @throws InvalidArgumentException
+     */
+    private function assertCountry(string $country): void
+    {
+        if (!preg_match('/^[A-Za-z]{2}$/', $country)) {
+            throw new InvalidArgumentException('Country must be a 2-letter ISO code.');
+        }
+    }
+
+    /**
+     * @param string $displayLocation
+     *
+     * @throws InvalidArgumentException
+     */
+    private function assertDisplayLocation(string $displayLocation): void
+    {
+        if (!in_array($displayLocation, $this->getBannerDisplayLocations(), true)) {
+            throw new InvalidArgumentException(
+                'Banner display location is invalid. Allowed: '
+                . implode(', ', $this->getBannerDisplayLocations())
+            );
+        }
+    }
+
+    /**
+     * Builds the relative media path for a banner image. Assumes inputs have
+     * already been validated by {@see assertCountry()} and
+     * {@see assertDisplayLocation()}.
+     *
+     * @param string $country
+     * @param string $displayLocation
+     * @param string $extension
+     *
+     * @return string
+     */
+    private function relativePathFor(string $country, string $displayLocation, string $extension): string
+    {
+        return self::BANNER_MEDIA_DIR . '/' . strtoupper($country) . '_' . $displayLocation . '.' . $extension;
+    }
+
+    /**
+     * Removes every stored variant for a (country, displayLocation) pair.
+     *
+     * @param WriteInterface $mediaDir
+     * @param string $country
+     * @param string $displayLocation
+     *
+     * @throws FileSystemException
+     */
+    private function removeAllVariants(
+        WriteInterface $mediaDir,
+        string $country,
+        string $displayLocation
+    ): void {
+        foreach (self::ALLOWED_MIME_EXTENSIONS as $ext) {
+            $this->deleteIfExists($mediaDir, $this->relativePathFor($country, $displayLocation, $ext));
+        }
+    }
+
+    /**
+     * Removes every stored variant except the given extension. Used before
+     * writing a new file so the format can change without leaving stale copies.
+     *
+     * @param WriteInterface $mediaDir
+     * @param string $country
+     * @param string $displayLocation
+     * @param string $keepExtension
+     *
+     * @throws FileSystemException
+     */
+    private function removeOtherVariants(
+        WriteInterface $mediaDir,
+        string $country,
+        string $displayLocation,
+        string $keepExtension
+    ): void {
+        foreach (self::ALLOWED_MIME_EXTENSIONS as $ext) {
+            if ($ext === $keepExtension) {
+                continue;
+            }
+
+            $this->deleteIfExists($mediaDir, $this->relativePathFor($country, $displayLocation, $ext));
+        }
+    }
+
+    /**
+     * @param WriteInterface $mediaDir
+     * @param string $path
+     *
+     * @throws FileSystemException
+     */
+    private function deleteIfExists(WriteInterface $mediaDir, string $path): void
+    {
+        if ($mediaDir->isExist($path)) {
+            $mediaDir->delete($path);
+        }
+    }
+
+    /**
+     * @return WriteInterface
+     *
+     * @throws FileSystemException
+     */
+    private function getMediaWrite(): WriteInterface
+    {
+        return $this->filesystem->getDirectoryWrite(DirectoryList::MEDIA);
+    }
+
+    /**
+     * Resolves the public media base URL for the current store context. Falls
+     * back to the default store if the StoreContext has no storeId set.
+     *
+     * @return string
+     *
+     * @throws NoSuchEntityException
+     */
+    private function getMediaBaseUrl(): string
+    {
+        $storeId = StoreContext::getInstance()->getStoreId();
+        $store = $storeId !== ''
+            ? $this->storeManager->getStore($storeId)
+            : $this->storeManager->getStore();
+
+        return $store->getBaseUrl(UrlInterface::URL_TYPE_MEDIA);
     }
 }
