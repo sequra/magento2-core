@@ -48,6 +48,7 @@ class StoreIntegrationService implements StoreIntegrationServiceInterface
             Capability::storeInfo(),
             Capability::general(),
             Capability::widget(),
+            Capability::banner(),
             Capability::hostedCheckout(),
             Capability::listingSelectors()
         ];
