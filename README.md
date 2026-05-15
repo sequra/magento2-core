@@ -170,13 +170,15 @@ First, install NPM on your local machine (NVM is recommended) (See system requir
 Then, Install required Node packages by running the following command from the root directory:
 
 ```bash
-npx playwright install
+npm install
 ```
 Last, install browsers using this command:
 
 ```bash
-npx playwright install
+npx playwright install chromium chromium-headless-shell --with-deps --force
 ```
+
+The `chromium` browser is used for standard Playwright runs, while `chromium-headless-shell` matches the headless Chromium build used in the official Playwright Docker image. The `--with-deps` flag installs any system dependencies Playwright needs. The `--force` flag forces Playwright to re-download the specified browsers instead of relying on any cached versions; you can omit it for a first-time install, but it is useful if a previous download is corrupted or out of date.
 
 ### Usage
 
@@ -187,7 +189,7 @@ Also, you can pass additional arguments to the utility to configure test executi
 | Argument | Description |
 | -------- | ------------------------------------------------------------------ |
 | `--debug` | Runs tests in debug mode |
-| `--project=configuration-onboarding` | Execute an specific tests group. Options are defined in the `playwright.config.js` in the `projects` property. See the `name` property of each element of the array   |
+| `--project=chromium` | Execute the tests in the `chromium` project as defined in `playwright.config.js`. The single `chromium` project runs every spec in `tests-e2e/specs/`. |
 | `./tests-e2e/example.spec.js` | Execute specific test file. Supports multiple file paths space separated. Also supports file name without extension and path like this: `example` |
 
 More info at: https://playwright.dev/docs/intro
