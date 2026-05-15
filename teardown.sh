@@ -9,4 +9,4 @@ set +o allexport
 # fi
 
 docker compose down --volumes --remove-orphans
-docker rm -f $NGROK_CONTAINER_NAME || true
+docker rm -f $NGROK_CONTAINER_NAME 2>/dev/null || true
