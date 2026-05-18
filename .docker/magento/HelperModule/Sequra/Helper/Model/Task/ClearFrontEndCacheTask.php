@@ -71,6 +71,7 @@ class ClearFrontEndCacheTask extends Task
             $this->cacheTypeList->cleanType($type);
         }
         foreach ($this->cacheFrontendPool as $cacheFrontend) {
+            // @phpstan-ignore-next-line Magento 2.4.9 declares the backend as Psr\Cache\CacheItemPoolInterface, but every concrete backend (File, Redis, ...) still exposes clean() at runtime.
             $cacheFrontend->getBackend()->clean();
         }
         return $this->httpSuccessResponse();
