@@ -34,8 +34,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     xsl \
     zip \
     ftp \
+    && if php -r 'exit(version_compare(PHP_VERSION, "8.5", "<") ? 0 : 1);'; then docker-php-ext-enable opcache; fi \
     && docker-php-ext-enable \
-    opcache \
     redis \
     xdebug \
     && echo "xdebug.mode=debug" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini \
@@ -78,7 +78,7 @@ RUN --mount=type=secret,id=M2_COMPOSER_REPO_KEY,env=M2_REPO_KEY \
     && composer config prefer-stable true \
     && composer config --no-plugins allow-plugins.cweagans/composer-patches true \
     && extra_packages="" \
-    && if [ "$M2_VERSION" != "2.4.9" ]; then extra_packages="ethanyehuda/magento2-cronjobmanager:^2.0 dotdigital/dotdigital-magento2-extension:^4.19 dotdigital/dotdigital-magento2-extension-chat:1.10.2"; fi \
+    && if [ "$M2_VERSION" != "2.4.9" ]; then extra_packages="ethanyehuda/magento2-cronjobmanager:^2.0 dotdigital/dotdigital-magento2-extension:^4.19 dotdigital/dotdigital-magento2-extension-chat:1.10.2 laminas/laminas-mvc:^3.8"; fi \
     && composer require n98/magerun2-dist \
     mageplaza/magento-2-spanish-language-pack:dev-master \
     mageplaza/magento-2-portuguese-language-pack:dev-master \
@@ -90,7 +90,6 @@ RUN --mount=type=secret,id=M2_COMPOSER_REPO_KEY,env=M2_REPO_KEY \
     cweagans/composer-patches:^1.7 \
     dompdf/dompdf:^3.0.0 \
     hybridauth/hybridauth:~3.0 \
-    laminas/laminas-mvc:^3.8 \
     $extra_packages \
     && chmod -R 755 ./ \
     && chown -R www-data:www-data ./
