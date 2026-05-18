@@ -88,6 +88,8 @@ Additionally, the setup script supports the following arguments:
 | `--install` | Install and copy the required assets to the module before starting the containers |
 | `--ngrok` | Starts an ngrok container to expose the site to internet using HTTPS. An ngrok Auth Token must be provided either as an argument or as a variable `NGROK_AUTHTOKEN` in the `.env` file for it to work |
 | `--ngrok-token=YOUR_NGROK_TOKEN` | Define the ngrok Auth Token |
+| `--cloudflared` | Starts a Cloudflared container to expose the site to internet using HTTPS. A Cloudflared Tunnel Token must be provided either as an argument or as a variable `CLOUDFLARED_TUNNEL_TOKEN` in the `.env` file, and the public hostname must be set in `CLOUDFLARED_TUNNEL_URL` |
+| `--cloudflared-token=YOUR_CLOUDFLARED_TUNNEL_TOKEN` | Define the Cloudflared Tunnel Token. Get yours at https://dash.cloudflare.com/ |
 | `--open-browser` | Open the browser and navigate to the Magento root URL once the installation is complete |
 
 ### Customization
