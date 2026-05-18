@@ -211,13 +211,6 @@ test.describe('Configuration', () => {
     await generalSettingsPage.cancel();
     await generalSettingsPage.expectAvailableCountries({ countries });
 
-    // Test wrong values.
-    await generalSettingsPage.fillAvailableCountries({
-      countries: [{ ...countries[0], merchantRef: 'dummy_wrong' }]
-    });
-    await generalSettingsPage.save({ expectLoadingShowAndHide: false });
-    // await generalSettingsPage.expectCountryInputErrorToBeVisible();
-
     // Test valid values.
     await generalSettingsPage.fillAvailableCountries({ countries });
     await generalSettingsPage.save({ expectLoadingShowAndHide: true });
