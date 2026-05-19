@@ -154,11 +154,11 @@ class CountryResolverService
      */
     private function getShopDefaultCountry(): string
     {
-        $value = (string)$this->scopeConfig->getValue(
+        $value = $this->scopeConfig->getValue(
             Data::XML_PATH_DEFAULT_COUNTRY,
             ScopeInterface::SCOPE_STORE
         );
 
-        return strtoupper($value);
+        return strtoupper(is_string($value) ? $value : '');
     }
 }

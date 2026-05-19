@@ -44,7 +44,7 @@ class Banner extends Template
      * @param Context $context
      * @param CountryResolverService $countryResolver
      * @param StoreManagerInterface $storeManager
-     * @param array $data
+     * @param array<string, mixed> $data
      */
     public function __construct(
         Context $context,
@@ -60,12 +60,13 @@ class Banner extends Template
     /**
      * Returns banner data
      *
-     * @return array<string, string>
+     * @return array<string, mixed>
      */
     public function getBannerData(): array
     {
         try {
-            $displayLocation = (string)$this->getData('display_location');
+            $rawLocation = $this->getData('display_location');
+            $displayLocation = is_string($rawLocation) ? $rawLocation : '';
             if (!in_array($displayLocation, self::ALLOWED_DISPLAY_LOCATIONS, true)) {
                 Logger::logError(
                     'Sequra banner block configured with unknown display_location: "' . $displayLocation

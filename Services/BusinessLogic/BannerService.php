@@ -27,6 +27,8 @@ class BannerService implements BannerServiceInterface
 
     /**
      * Allowed MIME type → file extension.
+     *
+     * @var array<string, string>
      */
     private const ALLOWED_MIME_EXTENSIONS = [
         'image/png' => 'png',
@@ -226,7 +228,7 @@ class BannerService implements BannerServiceInterface
             ? substr($imageBase64, $pos + strlen(self::DATA_URI_MARKER))
             : $imageBase64;
 
-        return preg_replace('/\s+/', '', $payload);
+        return preg_replace('/\s+/', '', $payload) ?? '';
     }
 
     /**
@@ -445,6 +447,7 @@ class BannerService implements BannerServiceInterface
     private function getMediaBaseUrl(): string
     {
         $storeId = StoreContext::getInstance()->getStoreId();
+        /** @var \Magento\Store\Model\Store $store */
         $store = $storeId !== ''
             ? $this->storeManager->getStore($storeId)
             : $this->storeManager->getStore();

@@ -15,7 +15,6 @@ use SeQura\Core\BusinessLogic\DataAccess\PaymentMethod\Entities\PaymentMethod;
 use SeQura\Core\BusinessLogic\DataAccess\PromotionalWidgets\Entities\WidgetSettings;
 use SeQura\Core\BusinessLogic\DataAccess\SendReport\Entities\SendReport;
 use SeQura\Core\BusinessLogic\DataAccess\StatisticalData\Entities\StatisticalData;
-use SeQura\Core\BusinessLogic\DataAccess\StoreIntegration\Entities\StoreIntegration;
 use SeQura\Core\BusinessLogic\DataAccess\TransactionLog\Entities\TransactionLog;
 use SeQura\Core\BusinessLogic\Domain\Integration\Banner\BannerServiceInterface;
 use SeQura\Core\BusinessLogic\Domain\Integration\Category\CategoryServiceInterface;
@@ -468,7 +467,6 @@ class Bootstrap extends BootstrapComponent
         RepositoryRegistry::registerRepository(Credentials::class, BaseRepository::class);
         RepositoryRegistry::registerRepository(Deployment::class, BaseRepository::class);
         RepositoryRegistry::registerRepository(AdvancedSettings::class, BaseRepository::class);
-        RepositoryRegistry::registerRepository(StoreIntegration::class, BaseRepository::class);
 
         ServiceRegister::registerService(
             OrderStatusSettingsRepositoryInterface::class,
