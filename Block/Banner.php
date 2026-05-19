@@ -44,7 +44,9 @@ class Banner extends Template
      * @param Context $context
      * @param CountryResolverService $countryResolver
      * @param StoreManagerInterface $storeManager
-     * @param array<string, mixed> $data
+     * @param array $data
+     *
+     * @phpstan-param array<string, mixed> $data
      */
     public function __construct(
         Context $context,
