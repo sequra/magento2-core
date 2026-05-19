@@ -12,6 +12,7 @@ use Magento\Framework\UrlInterface;
 use Magento\Store\Model\StoreManagerInterface;
 use SeQura\Core\BusinessLogic\Domain\Integration\Banner\BannerServiceInterface;
 use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
+use SeQura\Core\Infrastructure\Logger\Logger;
 
 class BannerService implements BannerServiceInterface
 {
@@ -19,9 +20,7 @@ class BannerService implements BannerServiceInterface
     public const DISPLAY_ON_PRODUCT_PAGE = 'displayOnProductPage';
     public const DISPLAY_ON_CART_PAGE = 'displayOnCartPage';
     public const DISPLAY_ON_PRODUCT_LISTING_PAGE = 'displayOnProductListingPage';
-
     public const BANNER_MEDIA_DIR = 'sequra/banners';
-
     private const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
     private const DATA_URI_MARKER = 'base64,';
     private const ERROR_TOO_LARGE = 'Banner image exceeds the 2 MB size limit.';
@@ -102,6 +101,90 @@ class BannerService implements BannerServiceInterface
         $this->assertDisplayLocation($displayLocation);
 
         $this->removeAllVariants($this->getMediaWrite(), $country, $displayLocation);
+    }
+
+    /**
+     * @inheritDoc
+     *
+     * @throws FileSystemException
+     * @throws NoSuchEntityException
+     * @throws InvalidArgumentException
+     */
+    public function changeBannerImageDisplayLocation(
+        string $country,
+        string $oldDisplayLocation,
+        string $newDisplayLocation
+    ): string {
+        $this->assertCountry($country);
+        $this->assertDisplayLocation($oldDisplayLocation);
+        $this->assertDisplayLocation($newDisplayLocation);
+
+        $mediaDir = $this->getMediaWrite();
+        $baseUrl = $this->getMediaBaseUrl();
+
+        $existingExtension = $this->findExistingExtension($mediaDir, $country, $oldDisplayLocation);
+
+        if ($oldDisplayLocation === $newDisplayLocation) {
+            $extension = $existingExtension ?? self::ALLOWED_MIME_EXTENSIONS['image/png'];
+
+            return $baseUrl . $this->relativePathFor($country, $newDisplayLocation, $extension);
+        }
+
+        if ($existingExtension === null) {
+            Logger::logWarning(
+                sprintf(
+                    'Banner image not found while relocating country=%s from %s to %s; '
+                    . 'returning the would-be URL so the admin can re-upload.',
+                    strtoupper($country),
+                    $oldDisplayLocation,
+                    $newDisplayLocation
+                ),
+                'Integration'
+            );
+
+            return $baseUrl
+                . $this->relativePathFor($country, $newDisplayLocation, self::ALLOWED_MIME_EXTENSIONS['image/png']);
+        }
+
+        $source = $this->relativePathFor($country, $oldDisplayLocation, $existingExtension);
+        $destination = $this->relativePathFor($country, $newDisplayLocation, $existingExtension);
+
+        $this->removeAllVariants($mediaDir, $country, $newDisplayLocation);
+
+        try {
+            $mediaDir->renameFile($source, $destination);
+        } catch (FileSystemException $e) {
+            throw new InvalidArgumentException(
+                'Failed to relocate banner image: ' . $e->getMessage(),
+                0,
+                $e
+            );
+        }
+
+        return $baseUrl . $destination;
+    }
+
+    /**
+     * Returns the extension of the currently stored banner variant, or null when none exist.
+     *
+     * @param WriteInterface $mediaDir
+     * @param string $country
+     * @param string $displayLocation
+     *
+     * @return string|null
+     */
+    private function findExistingExtension(
+        WriteInterface $mediaDir,
+        string $country,
+        string $displayLocation
+    ): ?string {
+        foreach (self::ALLOWED_MIME_EXTENSIONS as $ext) {
+            if ($mediaDir->isExist($this->relativePathFor($country, $displayLocation, $ext))) {
+                return $ext;
+            }
+        }
+
+        return null;
     }
 
     /**
