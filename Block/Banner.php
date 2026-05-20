@@ -2,7 +2,6 @@
 
 namespace Sequra\Core\Block;
 
-use Exception;
 use Magento\Framework\View\Element\Template;
 use Magento\Framework\View\Element\Template\Context;
 use Magento\Store\Model\StoreManagerInterface;
@@ -12,6 +11,7 @@ use SeQura\Core\BusinessLogic\CheckoutAPI\CheckoutAPI;
 use SeQura\Core\Infrastructure\Logger\Logger;
 use Sequra\Core\Services\BusinessLogic\BannerService;
 use Sequra\Core\Services\BusinessLogic\CountryResolverService;
+use Throwable;
 
 /**
  * Class Banner
@@ -89,7 +89,7 @@ class Banner extends Template
                 ->getBannerForLocation(new GetBannerForLocationRequest($country, $displayLocation));
 
             return $response->isSuccessful() ? $response->toArray() : [];
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             Logger::logError(
                 'Fetching seQura banner failed: ' . $e->getMessage()
                 . ' Trace: ' . $e->getTraceAsString()

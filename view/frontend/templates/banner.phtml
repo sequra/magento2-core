@@ -12,10 +12,12 @@ if (!empty($banner['imageUrl'])):
     <div class="sequra-banner">
         <?php if (!empty($banner['linkUrl'])): ?>
             <a href="<?= $escaper->escapeUrl($banner['linkUrl']) ?>" target="_blank" rel="noopener noreferrer">
-                <img src="<?= $escaper->escapeUrl($banner['imageUrl']) ?>" alt=""/>
+                <img src="<?= $escaper->escapeUrl($banner['imageUrl']) ?>"
+                     alt="<?= $escaper->escapeHtmlAttr(__('SeQura financing')) ?>"/>
             </a>
         <?php else: ?>
-            <img src="<?= $escaper->escapeUrl($banner['imageUrl']) ?>" alt=""/>
+            <img src="<?= $escaper->escapeUrl($banner['imageUrl']) ?>"
+                 alt="<?= $escaper->escapeHtmlAttr(__('SeQura financing')) ?>"/>
         <?php endif; ?>
     </div>
     <?php

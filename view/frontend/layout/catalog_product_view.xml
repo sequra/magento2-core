@@ -11,7 +11,8 @@
             />
             <block class="Sequra\Core\Block\Banner"
                    name="sequra.banner.product"
-                   template="Sequra_Core::banner.phtml">
+                   template="Sequra_Core::banner.phtml"
+                   cacheable="false">
                 <arguments>
                     <argument name="display_location" xsi:type="string">displayOnProductPage</argument>
                 </arguments>
