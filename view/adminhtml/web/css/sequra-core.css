@@ -1,5 +1,9 @@
 @charset "UTF-8";
-@import url("https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap");
+/* Keep ';' URL-encoded as %3B: some CSS aggregators (e.g. Magento's
+   CssResolver::aggregateImportDirectives non-greedy `@import\s.+?;` regex)
+   terminate the @import at the first literal ';' inside the URL,
+   truncating it mid-string and breaking the merged stylesheet. */
+@import url("https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900%3B1,14..32,100..900&display=swap");
 #sequra-page {
   margin: 0;
   padding: 0;
