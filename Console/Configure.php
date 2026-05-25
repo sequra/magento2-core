@@ -155,7 +155,7 @@ class Configure extends Command
      *
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $storeIds = $this->getStoreIds($input);
         foreach ($storeIds as $storeId) {

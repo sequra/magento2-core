@@ -88,6 +88,8 @@ Additionally, the setup script supports the following arguments:
 | `--install` | Install and copy the required assets to the module before starting the containers |
 | `--ngrok` | Starts an ngrok container to expose the site to internet using HTTPS. An ngrok Auth Token must be provided either as an argument or as a variable `NGROK_AUTHTOKEN` in the `.env` file for it to work |
 | `--ngrok-token=YOUR_NGROK_TOKEN` | Define the ngrok Auth Token |
+| `--cloudflared` | Starts a Cloudflared container to expose the site to internet using HTTPS. A Cloudflared Tunnel Token must be provided either as an argument or as a variable `CLOUDFLARED_TUNNEL_TOKEN` in the `.env` file, and the public hostname must be set in `CLOUDFLARED_TUNNEL_URL` |
+| `--cloudflared-token=YOUR_CLOUDFLARED_TUNNEL_TOKEN` | Define the Cloudflared Tunnel Token. Get yours at https://dash.cloudflare.com/ |
 | `--open-browser` | Open the browser and navigate to the Magento root URL once the installation is complete |
 
 ### Customization
@@ -170,13 +172,15 @@ First, install NPM on your local machine (NVM is recommended) (See system requir
 Then, Install required Node packages by running the following command from the root directory:
 
 ```bash
-npx playwright install
+npm install
 ```
 Last, install browsers using this command:
 
 ```bash
-npx playwright install
+npx playwright install chromium chromium-headless-shell --with-deps --force
 ```
+
+The `chromium` browser is used for standard Playwright runs, while `chromium-headless-shell` matches the headless Chromium build used in the official Playwright Docker image. The `--with-deps` flag installs any system dependencies Playwright needs. The `--force` flag forces Playwright to re-download the specified browsers instead of relying on any cached versions; you can omit it for a first-time install, but it is useful if a previous download is corrupted or out of date.
 
 ### Usage
 
@@ -187,7 +191,7 @@ Also, you can pass additional arguments to the utility to configure test executi
 | Argument | Description |
 | -------- | ------------------------------------------------------------------ |
 | `--debug` | Runs tests in debug mode |
-| `--project=configuration-onboarding` | Execute an specific tests group. Options are defined in the `playwright.config.js` in the `projects` property. See the `name` property of each element of the array   |
+| `--project=chromium` | Execute the tests in the `chromium` project as defined in `playwright.config.js`. The single `chromium` project runs every spec in `tests-e2e/specs/`. |
 | `./tests-e2e/example.spec.js` | Execute specific test file. Supports multiple file paths space separated. Also supports file name without extension and path like this: `example` |
 
 More info at: https://playwright.dev/docs/intro

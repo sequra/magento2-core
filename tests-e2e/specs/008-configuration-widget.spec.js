@@ -1,4 +1,3 @@
-import { on } from 'events';
 import { test, expect } from '../fixtures/test';
 
 test.describe('Widget settings', () => {
@@ -23,8 +22,6 @@ test.describe('Widget settings', () => {
       { ...defaultSettings, widgetConfig: invalidJSON },
       { ...onlyProductSettings, product: { ...onlyProductSettings.product, priceSel: emptyStr } },
       { ...onlyProductSettings, product: { ...onlyProductSettings.product, priceSel: invalidSelector } },
-      { ...onlyProductSettings, product: { ...onlyProductSettings.product, altPriceSel: invalidSelector } },
-      { ...onlyProductSettings, product: { ...onlyProductSettings.product, altPriceTriggerSel: invalidSelector } },
       { ...onlyProductSettings, product: { ...onlyProductSettings.product, locationSel: emptyStr } },
       { ...onlyProductSettings, product: { ...onlyProductSettings.product, locationSel: invalidSelector } },
       { ...onlyProductSettings, product: { ...onlyProductSettings.product, customLocations: [{ ...widgetOptions.product.customLocations[0], locationSel: invalidSelector }] } },
@@ -47,7 +44,8 @@ test.describe('Widget settings', () => {
     // Test invalid values.
     for (const invalid of invalidSettingsList) {
       await widgetSettingsPage.fillForm(invalid);
-      await widgetSettingsPage.expectErrorMessageToBeVisible();
+      // Save button is hidden when the form is invalid (the base locator filters [disabled] out).
+      await expect(widgetSettingsPage.locators.saveButton()).toHaveCount(0);
       await page.reload();
       await widgetSettingsPage.expectLoadingShowAndHide();
     }

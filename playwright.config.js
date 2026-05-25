@@ -31,39 +31,15 @@ export default defineConfig({
     baseURL: process.env.PUBLIC_URL,
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
+    /* Add ngrok-skip-browser-warning header to all HTTP requests */
+    extraHTTPHeaders: process.env.PUBLIC_URL && process.env.PUBLIC_URL.includes('ngrok') ? { 'ngrok-skip-browser-warning': '1' } : undefined,
   },
 
   /* Configure projects for major browsers */
   projects: [
     {
-      name: 'checkout-product',
-      use: { ...devices['Desktop Chrome'] },
-      testMatch: '001-checkout-product.spec.js',
-    },
-    {
-      name: 'configuration-onboarding',
-      use: { ...devices['Desktop Chrome'] },
-      testMatch: '003-configuration-onboarding.spec.js',
-    },
-    {
-      name: 'configuration-payment-methods',
-      use: { ...devices['Desktop Chrome'] },
-      testMatch: '004-configuration-payment-methods.spec.js',
-    },
-    {
-      name: 'configuration-general',
-      use: { ...devices['Desktop Chrome'] },
-      testMatch: '006-configuration-general.spec.js',
-    },
-    {
-      name: 'configuration-connection',
-      use: { ...devices['Desktop Chrome'] },
-      testMatch: '007-configuration-connection.spec.js',
-    },
-    {
-      name: 'configuration-widget',
-      use: { ...devices['Desktop Chrome'] },
-      testMatch: '008-configuration-widget.spec.js',
+      name: 'chromium',
+      use: { ...devices['Desktop Chromium'] },
     },
   ],
 });
