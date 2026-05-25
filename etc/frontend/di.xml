@@ -25,4 +25,9 @@
                 sortOrder="10"
                 type="Sequra\Core\Plugin\Magento\ConfigurableProduct\Block\Product\View\Type\Configurable"/>
     </type>
+    <type name="Magento\Framework\App\ActionInterface">
+        <plugin name="sequra_core_country_http_context"
+                type="Sequra\Core\Plugin\CountryHttpContextPlugin"
+                sortOrder="20"/>
+    </type>
 </config>
