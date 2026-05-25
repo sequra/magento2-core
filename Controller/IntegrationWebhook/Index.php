@@ -98,7 +98,7 @@ class Index implements HttpPostActionInterface
      * FPC entry that renders the block. Cleaning by this tag purges only the affected
      * pages and leaves unrelated cached content intact.
      *
-     * @param $payload
+     * @param mixed $payload
      * @param string $storeId
      *
      * @return void
