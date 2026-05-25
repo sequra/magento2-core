@@ -7,8 +7,7 @@
             <block class="Sequra\Core\Block\Banner"
                    name="sequra.banner.listing"
                    template="Sequra_Core::banner.phtml"
-                   before="category.products"
-                   cacheable="false">
+                   before="category.products">
                 <arguments>
                     <argument name="display_location" xsi:type="string">displayOnProductListingPage</argument>
                 </arguments>

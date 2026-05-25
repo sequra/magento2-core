@@ -7,8 +7,7 @@
             <block class="Sequra\Core\Block\Banner"
                    name="sequra.banner.home"
                    template="Sequra_Core::banner.phtml"
-                   after="cms_page"
-                   cacheable="false">
+                   after="cms_page">
                 <arguments>
                     <argument name="display_location" xsi:type="string">displayOnHomePage</argument>
                 </arguments>

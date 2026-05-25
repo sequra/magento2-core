@@ -2,6 +2,8 @@
 
 namespace Sequra\Core\Block;
 
+use Magento\Framework\DataObject\IdentityInterface;
+use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\View\Element\Template;
 use Magento\Framework\View\Element\Template\Context;
 use Magento\Store\Model\StoreManagerInterface;
@@ -18,8 +20,10 @@ use Throwable;
  *
  *  Implements required logic to show banner on storefront pages
  */
-class Banner extends Template
+class Banner extends Template implements IdentityInterface
 {
+    public const CACHE_TAG = 'sequra_banner';
+
     /**
      * @var string[]
      */
@@ -97,5 +101,22 @@ class Banner extends Template
 
             return [];
         }
+    }
+
+    /**
+     * Tags the FPC response so the webhook can invalidate it per store.
+     *
+     * Picked up by Magento\PageCache\Model\Layout\LayoutPlugin::afterGetOutput(),
+     * which writes the tags into the X-Magento-Tags header.
+     *
+     * @return array<int, string>
+     *
+     * @throws NoSuchEntityException
+     */
+    public function getIdentities(): array
+    {
+        $storeId = (string)$this->storeManager->getStore()->getId();
+
+        return [self::CACHE_TAG, self::CACHE_TAG . '_' . $storeId];
     }
 }

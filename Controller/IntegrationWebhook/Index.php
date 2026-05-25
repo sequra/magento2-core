@@ -3,10 +3,14 @@
 namespace Sequra\Core\Controller\IntegrationWebhook;
 
 use SeQura\Core\BusinessLogic\ConfigurationWebhookAPI\ConfigurationWebhookAPI;
+use SeQura\Core\BusinessLogic\ConfigurationWebhookAPI\Handlers\Enums\Topics;
 use Magento\Framework\App\Action\HttpPostActionInterface;
 use Magento\Framework\App\Request\Http as HttpRequest;
 use Magento\Framework\Controller\Result\JsonFactory;
 use Magento\Framework\Controller\Result\Json;
+use Magento\PageCache\Model\Cache\Type as PageCache;
+use Sequra\Core\Block\Banner;
+use Zend_Cache;
 
 class Index implements HttpPostActionInterface
 {
@@ -18,17 +22,24 @@ class Index implements HttpPostActionInterface
      * @var JsonFactory
      */
     private JsonFactory $jsonFactory;
+    /**
+     * @var PageCache
+     */
+    private PageCache $pageCache;
 
     /**
      * @param HttpRequest $request
      * @param JsonFactory $jsonFactory
+     * @param PageCache $pageCache
      */
     public function __construct(
         HttpRequest $request,
-        JsonFactory $jsonFactory
+        JsonFactory $jsonFactory,
+        PageCache $pageCache
     ) {
         $this->request = $request;
         $this->jsonFactory = $jsonFactory;
+        $this->pageCache = $pageCache;
     }
 
     /**
@@ -63,6 +74,8 @@ class Index implements HttpPostActionInterface
         $responseArray = $response->toArray();
 
         if ($response->isSuccessful()) {
+            $this->invalidateBannerFpcIfNeeded($payload, $storeId);
+
             return $result
                 ->setHttpResponseCode(200)
                 ->setData($responseArray);
@@ -75,5 +88,35 @@ class Index implements HttpPostActionInterface
             ->setData([
                 'error' => $responseArray['errorMessage'] ?? 'Unknown error'
             ]);
+    }
+
+    /**
+     * Invalidates Full Page Cache entries tagged with current store's banner identity
+     *
+     * The Block\Banner block exposes the cache tag `sequra_banner_<storeId>` through
+     * its IdentityInterface implementation, and Magento attaches that tag to every
+     * FPC entry that renders the block. Cleaning by this tag purges only the affected
+     * pages and leaves unrelated cached content intact.
+     *
+     * @param $payload
+     * @param string $storeId
+     *
+     * @return void
+     */
+    private function invalidateBannerFpcIfNeeded($payload, string $storeId): void
+    {
+        if (!is_array($payload)) {
+            return;
+        }
+
+        $topic = $payload['topic'] ?? '';
+        if ($topic !== Topics::SAVE_BANNER_SETTINGS) {
+            return;
+        }
+
+        $this->pageCache->clean(
+            Zend_Cache::CLEANING_MODE_MATCHING_ANY_TAG,
+            [Banner::CACHE_TAG . '_' . $storeId]
+        );
     }
 }
