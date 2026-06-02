@@ -1,0 +1,20 @@
+<?php
+/** @var \Sequra\Core\Block\ExpressCheckout\CartPage $block */
+/** @var \Magento\Framework\Escaper $escaper */
+
+if ($block->isAvailable()):
+    ?>
+    <div class="sequra-express-checkout" data-role="sequra-express-checkout">
+        <button type="button" class="action primary sequra-express-checkout-button">
+            <?= $escaper->escapeHtml(__('SeQura Express Checkout')); ?>
+        </button>
+    </div>
+    <script type="text/x-magento-init">
+        {
+            "[data-role=sequra-express-checkout]": {
+                "Sequra_Core/js/express/cart-express": {}
+            }
+        }
+    </script>
+    <?php
+endif;

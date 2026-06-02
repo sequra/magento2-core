@@ -70,4 +70,14 @@
         </data>
     </route>
 
+    <route url="/V1/sequra_core/express-checkout/carts/mine/solicit" method="POST">
+        <service class="Sequra\Core\Api\ExpressCheckout\SolicitInterface" method="solicit"/>
+        <resources>
+            <resource ref="anonymous"/>
+        </resources>
+        <data>
+            <parameter name="cartId" force="true">%cart_id%</parameter>
+        </data>
+    </route>
+
 </routes>

@@ -120,6 +120,23 @@
     <preference for="Sequra\Core\Api\SequraPaymentMethodsInterface"
                 type="Sequra\Core\Model\Api\SequraPaymentMethodsService"/>
 
+    <virtualType name="SequraExpressCustomerSolicitService"
+                 type="Sequra\Core\Model\Api\ExpressCheckout\BaseSolicitService">
+        <arguments>
+            <argument name="cartProvider" xsi:type="object">Sequra\Core\Model\Api\CartProvider\CustomerCartProvider
+            </argument>
+        </arguments>
+    </virtualType>
+
+    <type name="Sequra\Core\Model\Api\ExpressCheckout\SolicitService">
+        <arguments>
+            <argument name="solicitService" xsi:type="object">SequraExpressCustomerSolicitService</argument>
+        </arguments>
+    </type>
+
+    <preference for="Sequra\Core\Api\ExpressCheckout\SolicitInterface"
+                type="Sequra\Core\Model\Api\ExpressCheckout\SolicitService"/>
+
 
     <!-- <type name="Magento\PageBuilder\Model\WidgetInitializerConfig">
         <arguments>
