@@ -1,0 +1,13 @@
+<?php
+/** @var \Sequra\Core\Block\ExpressCheckout\MiniCart $block */
+/** @var \Magento\Framework\Escaper $escaper */
+
+if ($block->isAvailable()):
+    ?>
+    <div class="sequra-express-checkout sequra-express-checkout--minicart">
+        <button type="button" class="action primary sequra-express-checkout-button">
+            <?= $escaper->escapeHtml(__('SeQura Express Checkout')); ?>
+        </button>
+    </div>
+    <?php
+endif;

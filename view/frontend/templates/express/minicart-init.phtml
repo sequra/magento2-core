@@ -1,0 +1,15 @@
+<?php
+/** @var \Magento\Framework\View\Element\Template $block */
+/** @var \Magento\Framework\Escaper $escaper */
+
+// Initialises the mini-cart Express Checkout click binder on every page (the "*" target
+// runs the component once on DOM ready, after the full JS bootstrap). The binder installs
+// a delegated handler, so the mini-cart button works wherever the flyout is opened.
+?>
+<script type="text/x-magento-init">
+    {
+        "*": {
+            "Sequra_Core/js/view/express/minicart-express": {}
+        }
+    }
+</script>
