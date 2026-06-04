@@ -17,4 +17,12 @@ if ($block->isAvailable()):
         }
     </script>
     <?php
+elseif ($block->showUnavailableMessage()):
+    ?>
+    <div class="sequra-express-checkout">
+        <span class="sequra-express-checkout-unavailable">
+            <?= $escaper->escapeHtml($block->getUnavailableMessage()); ?>
+        </span>
+    </div>
+    <?php
 endif;

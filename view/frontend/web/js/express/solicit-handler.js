@@ -1,26 +1,34 @@
 /**
- * SeQura Express Checkout — shared solicit flow.
+ * SeQura Express Checkout — shared click flow.
  *
- * POSTs to the logged-in customer solicit endpoint and opens the returned identification
- * form via window.SequraFormInstance. Shared by the cart-page and mini-cart buttons so
- * both behave identically.
+ * On click: a guest is sent through Magento's login pop-up first (auth-popup), then the
+ * solicit runs; a logged in customer solicits directly. The solicit POSTs to the customer
+ * solicit endpoint and opens the returned identification form via window.SequraFormInstance.
+ * If the (now logged in) customer is not eligible the endpoint returns HTTP 422 and the
+ * button is replaced with an inline "not available" message.
  *
  * Note: this deliberately avoids Magento_Checkout/js/model/{url-builder,quote}, which read
- * window.checkoutConfig at load time and therefore throw on non-checkout pages (home,
- * product, …). The mini-cart button lives on every page, so the REST URL is built via
- * mage/url instead, and the cart id is left to the `mine` route (forced server-side).
+ * window.checkoutConfig at load time and throw on non-checkout pages (home, product, …).
+ * The REST URL is built via mage/url; the cart id is left to the `mine` route (forced
+ * server-side).
  */
 define(
     [
         'jquery',
         'mage/url',
+        'mage/translate',
+        'Magento_Customer/js/model/customer',
+        'Sequra_Core/js/express/auth-popup',
         'Magento_Checkout/js/model/full-screen-loader',
         'Magento_Checkout/js/model/error-processor',
         'mage/storage',
         'mage/cookies'
     ],
-    function ($, url, fullScreenLoader, errorProcessor, storage) {
+    function ($, url, $t, customer, authPopup, fullScreenLoader, errorProcessor, storage) {
         'use strict';
+
+        // HTTP status the solicit endpoint returns when the customer is not eligible.
+        var HTTP_NOT_ELIGIBLE = 422;
 
         function waitForSequraFormInstance(callback) {
             if (typeof window.SequraFormInstance === 'undefined') {
@@ -62,13 +70,25 @@ define(
         }
 
         /**
+         * Replaces the button with an inline "not available" message.
+         *
+         * @param {jQuery} $button
+         */
+        function showUnavailable($button) {
+            $button.closest('.sequra-express-checkout').html(
+                $('<span/>', {
+                    'class': 'sequra-express-checkout-unavailable',
+                    'text': $t('SeQura is not available for your account.')
+                })
+            );
+        }
+
+        /**
          * Solicits an Express Checkout order for the current cart and renders the form.
          *
-         * @param {HTMLElement|jQuery} button The clicked Express Checkout button.
+         * @param {jQuery} $button
          */
-        return function (button) {
-            var $button = $(button);
-
+        function postSolicit($button) {
             $button.prop('disabled', true);
             fullScreenLoader.startLoader();
 
@@ -81,10 +101,41 @@ define(
                 showIdentificationForm(response);
             }).fail(function (response) {
                 fullScreenLoader.stopLoader();
+
+                if (response && response.status === HTTP_NOT_ELIGIBLE) {
+                    showUnavailable($button);
+
+                    return;
+                }
+
                 errorProcessor.process(response);
             }).always(function () {
                 $button.prop('disabled', false);
             });
+        }
+
+        /**
+         * Express Checkout click entry point.
+         *
+         * @param {HTMLElement|jQuery} button The clicked Express Checkout button.
+         */
+        return function (button) {
+            var $button = $(button);
+
+            if (!customer.isLoggedIn()) {
+                authPopup.open().then(
+                    function () {
+                        postSolicit($button);
+                    },
+                    function () {
+                        // Pop-up closed without logging in — nothing to do.
+                    }
+                );
+
+                return;
+            }
+
+            postSolicit($button);
         };
     }
 );

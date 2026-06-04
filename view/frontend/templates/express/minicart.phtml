@@ -10,4 +10,12 @@ if ($block->isAvailable()):
         </button>
     </div>
     <?php
+elseif ($block->showUnavailableMessage()):
+    ?>
+    <div class="sequra-express-checkout sequra-express-checkout--minicart">
+        <span class="sequra-express-checkout-unavailable">
+            <?= $escaper->escapeHtml($block->getUnavailableMessage()); ?>
+        </span>
+    </div>
+    <?php
 endif;

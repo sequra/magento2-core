@@ -3,12 +3,12 @@
 namespace Sequra\Core\Model\Api\ExpressCheckout;
 
 use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Webapi\Exception as WebapiException;
 use SeQura\Core\BusinessLogic\CheckoutAPI\CheckoutAPI;
 use SeQura\Core\BusinessLogic\CheckoutAPI\ExpressCheckout\Requests\ExpressCheckoutSolicitRequest;
 use Sequra\Core\Model\Api\Builders\CreateOrderRequestBuilderFactory;
 use Sequra\Core\Model\Api\CartProvider\CartProvider;
 use Sequra\Core\Model\ExpressCheckout\QuoteShippingResolver;
-use Sequra\Core\Services\BusinessLogic\Utility\SeQuraTranslationProvider;
 
 /**
  * Class BaseSolicitService
@@ -19,6 +19,13 @@ use Sequra\Core\Services\BusinessLogic\Utility\SeQuraTranslationProvider;
 class BaseSolicitService
 {
     /**
+     * HTTP status returned when the logged in customer is not eligible for Express Checkout
+     * (no supported default shipping address / unsupported country), so the storefront can
+     * show a specific "not available" message instead of a generic server error.
+     */
+    private const HTTP_NOT_ELIGIBLE = 422;
+
+    /**
      * @var CartProvider
      */
     private CartProvider $cartProvider;
@@ -26,10 +33,6 @@ class BaseSolicitService
      * @var CreateOrderRequestBuilderFactory
      */
     private CreateOrderRequestBuilderFactory $createOrderRequestBuilderFactory;
-    /**
-     * @var SeQuraTranslationProvider
-     */
-    private SeQuraTranslationProvider $translationProvider;
     /**
      * @var QuoteShippingResolver
      */
@@ -40,18 +43,15 @@ class BaseSolicitService
      *
      * @param CartProvider $cartProvider
      * @param CreateOrderRequestBuilderFactory $createOrderRequestBuilderFactory
-     * @param SeQuraTranslationProvider $translationProvider
      * @param QuoteShippingResolver $shippingResolver
      */
     public function __construct(
         CartProvider $cartProvider,
         CreateOrderRequestBuilderFactory $createOrderRequestBuilderFactory,
-        SeQuraTranslationProvider $translationProvider,
         QuoteShippingResolver $shippingResolver
     ) {
         $this->cartProvider = $cartProvider;
         $this->createOrderRequestBuilderFactory = $createOrderRequestBuilderFactory;
-        $this->translationProvider = $translationProvider;
         $this->shippingResolver = $shippingResolver;
     }
 
@@ -62,6 +62,7 @@ class BaseSolicitService
      *
      * @return string Identification form HTML
      *
+     * @throws WebapiException If the customer is not eligible for Express Checkout (HTTP 422)
      * @throws LocalizedException If the order cannot be solicited
      */
     public function solicit(string $cartId): string
@@ -70,7 +71,7 @@ class BaseSolicitService
         $storeId = (string)$quote->getStore()->getId();
 
         if (!$this->shippingResolver->resolve($quote)) {
-            throw new LocalizedException($this->translationProvider->translate('sequra.error.serverError'));
+            throw $this->notEligible();
         }
 
         // @phpstan-ignore-next-line
@@ -82,9 +83,30 @@ class BaseSolicitService
             ])));
 
         if (!$response->isSuccessful()) {
-            throw new LocalizedException($this->translationProvider->translate('sequra.error.serverError'));
+            // An unsuccessful solicit at this point means SeQura cannot produce an
+            // identification form for this customer/cart — most commonly because the
+            // customer's default address is in a country with no SeQura merchant
+            // credentials. The shopper has no way to recover, so surface it as the same
+            // "not eligible" 422 the storefront turns into the inline unavailable message,
+            // rather than a generic server error that never reaches a visible container.
+            throw $this->notEligible();
         }
 
         return $response->getIdentificationForm()->getForm();
+    }
+
+    /**
+     * Builds the HTTP 422 exception the storefront turns into the inline
+     * "SeQura is not available for your account" message.
+     *
+     * @return WebapiException
+     */
+    private function notEligible(): WebapiException
+    {
+        return new WebapiException(
+            __('SeQura Express Checkout is not available for this account.'),
+            0,
+            self::HTTP_NOT_ELIGIBLE
+        );
     }
 }
