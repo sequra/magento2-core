@@ -23,3 +23,4 @@
 "sequra.error.invalidShipRefundQuantity", "Invalid quantity to ship/refund. You cannot ship or refund items that have already been either shipped or refunded."
 "SeQura is not available for your account.", "SeQura is not available for your account."
 "SeQura Express Checkout is not available for this account.", "SeQura Express Checkout is not available for this account."
+"Invalid Express Checkout request.", "Invalid Express Checkout request."

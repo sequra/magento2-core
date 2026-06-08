@@ -9,6 +9,10 @@
                    name="sequra.product.widget"
                    template="Sequra_Core::widget/product.phtml"
             />
+            <block class="Sequra\Core\Block\ExpressCheckout\ProductPage"
+                   name="sequra.express.product"
+                   template="Sequra_Core::express/product.phtml"
+            />
         </referenceContainer>
     </body>
 </page>

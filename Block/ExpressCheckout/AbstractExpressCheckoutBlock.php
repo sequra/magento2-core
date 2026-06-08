@@ -11,37 +11,22 @@ use Magento\Framework\Locale\ResolverInterface;
 use Magento\Framework\View\Element\Template;
 use Magento\Framework\View\Element\Template\Context;
 use Magento\Quote\Model\Quote;
-use SeQura\Core\BusinessLogic\CheckoutAPI\CheckoutAPI;
-use SeQura\Core\BusinessLogic\CheckoutAPI\ExpressCheckout\Requests\ExpressCheckoutAvailabilityRequest;
-use SeQura\Core\BusinessLogic\CheckoutAPI\ExpressCheckout\Requests\GuestExpressCheckoutAvailabilityRequest;
-use SeQura\Core\BusinessLogic\CheckoutAPI\ExpressCheckout\Responses\ExpressCheckoutAvailabilityResponse;
-use SeQura\Core\BusinessLogic\CheckoutAPI\ExpressCheckout\Responses\GuestExpressCheckoutAvailabilityResponse;
 use SeQura\Core\Infrastructure\Logger\Logger;
 use Sequra\Core\Block\WidgetTrait;
+use Sequra\Core\Model\ExpressCheckout\AvailabilityEvaluator;
 use Sequra\Core\Model\ExpressCheckout\QuoteShippingResolver;
 
 /**
  * Class AbstractExpressCheckoutBlock
  *
- * Shared base for the SeQura Express Checkout storefront buttons. Decides — per page and per
- * storefront context — whether to render the button, an inline "not available" message, or
- * nothing at all, by asking the integration-core availability guard:
- *  - logged in customer: the per-country check, using the customer's default shipping country.
- *    Not available (or no resolvable country) replaces the button with the inline message.
- *  - guest: the country-agnostic guest check. Not available simply renders nothing; the
- *    customer's actual country is validated after login at solicit time (HTTP 422 backstop).
- * Concrete blocks only declare which page they render on.
+ * Shared base for the cart-centric SeQura Express Checkout storefront buttons (cart page and
+ * mini-cart). Builds the availability context from the checkout-session quote and delegates the
+ * core call and render-state decision to {@see AvailabilityEvaluator}. Concrete blocks only
+ * declare which page they render on.
  */
 abstract class AbstractExpressCheckoutBlock extends Template
 {
     use WidgetTrait;
-
-    /**
-     * Render states returned by {@see resolveState()}.
-     */
-    private const STATE_BUTTON = 'button';
-    private const STATE_MESSAGE = 'message';
-    private const STATE_HIDDEN = 'hidden';
 
     /**
      * @var CustomerSession
@@ -51,6 +36,10 @@ abstract class AbstractExpressCheckoutBlock extends Template
      * @var QuoteShippingResolver
      */
     private QuoteShippingResolver $shippingResolver;
+    /**
+     * @var AvailabilityEvaluator
+     */
+    private AvailabilityEvaluator $availabilityEvaluator;
     /**
      * Memoized render state for the current request.
      *
@@ -66,6 +55,7 @@ abstract class AbstractExpressCheckoutBlock extends Template
      * @param Request $request
      * @param CustomerSession $customerSession
      * @param QuoteShippingResolver $shippingResolver
+     * @param AvailabilityEvaluator $availabilityEvaluator
      */
     public function __construct(
         ScopeResolverInterface $scopeResolver,
@@ -74,7 +64,8 @@ abstract class AbstractExpressCheckoutBlock extends Template
         Session $checkoutSession,
         Request $request,
         CustomerSession $customerSession,
-        QuoteShippingResolver $shippingResolver
+        QuoteShippingResolver $shippingResolver,
+        AvailabilityEvaluator $availabilityEvaluator
     ) {
         parent::__construct($context);
 
@@ -84,6 +75,7 @@ abstract class AbstractExpressCheckoutBlock extends Template
         $this->request = $request;
         $this->customerSession = $customerSession;
         $this->shippingResolver = $shippingResolver;
+        $this->availabilityEvaluator = $availabilityEvaluator;
     }
 
     /**
@@ -93,7 +85,7 @@ abstract class AbstractExpressCheckoutBlock extends Template
      */
     public function isAvailable(): bool
     {
-        return $this->resolveState() === self::STATE_BUTTON;
+        return $this->resolveState() === AvailabilityEvaluator::STATE_BUTTON;
     }
 
     /**
@@ -104,7 +96,7 @@ abstract class AbstractExpressCheckoutBlock extends Template
      */
     public function showUnavailableMessage(): bool
     {
-        return $this->resolveState() === self::STATE_MESSAGE;
+        return $this->resolveState() === AvailabilityEvaluator::STATE_MESSAGE;
     }
 
     /**
@@ -120,7 +112,7 @@ abstract class AbstractExpressCheckoutBlock extends Template
     /**
      * Resolves — once per request — whether to render the button, the inline message or nothing.
      *
-     * @return string One of self::STATE_*.
+     * @return string One of AvailabilityEvaluator::STATE_*.
      */
     private function resolveState(): string
     {
@@ -128,7 +120,7 @@ abstract class AbstractExpressCheckoutBlock extends Template
             return $this->state;
         }
 
-        $this->state = self::STATE_HIDDEN;
+        $this->state = AvailabilityEvaluator::STATE_HIDDEN;
 
         try {
             $quote = $this->checkoutSession->getQuote();
@@ -142,48 +134,21 @@ abstract class AbstractExpressCheckoutBlock extends Template
                 return $this->state;
             }
 
-            $storeId = (string)$this->_storeManager->getStore()->getId();
-            $page = $this->getExpressCheckoutPage();
-            $currency = $this->getCurrentCurrency();
-            $ipAddress = $this->getCustomerIpAddress();
-            $productIds = $this->getCartProductIds($quote);
-            $categoryIds = $this->getCartCategoryIds($quote);
+            $isLoggedIn = $this->customerSession->isLoggedIn();
+            $country = $isLoggedIn
+                ? (string)$this->shippingResolver->getResolvableShippingCountry($quote)
+                : '';
 
-            if ($this->customerSession->isLoggedIn()) {
-                $country = (string)$this->shippingResolver->getResolvableShippingCountry($quote);
-
-                /** @var ExpressCheckoutAvailabilityResponse $response */
-                $response = CheckoutAPI::get()->expressCheckout($storeId)->isAvailable(
-                    new ExpressCheckoutAvailabilityRequest(
-                        $page,
-                        $currency,
-                        $ipAddress,
-                        $country,
-                        $productIds,
-                        $categoryIds
-                    )
-                );
-
-                $available = $response->isSuccessful() && !empty($response->toArray()['available']);
-                $this->state = $available ? self::STATE_BUTTON : self::STATE_MESSAGE;
-
-                return $this->state;
-            }
-
-            /** @var GuestExpressCheckoutAvailabilityResponse $response */
-            $response = CheckoutAPI::get()->expressCheckout($storeId)->isAvailableForGuest(
-                new GuestExpressCheckoutAvailabilityRequest(
-                    $page,
-                    $currency,
-                    $ipAddress,
-                    $productIds,
-                    $categoryIds
-                )
+            $this->state = $this->availabilityEvaluator->evaluate(
+                (string)$this->_storeManager->getStore()->getId(),
+                $this->getExpressCheckoutPage(),
+                $isLoggedIn,
+                $country,
+                $this->getCurrentCurrency(),
+                $this->getCustomerIpAddress(),
+                $this->getCartProductIds($quote),
+                $this->getCartCategoryIds($quote)
             );
-
-            if ($response->isSuccessful() && !empty($response->toArray()['available'])) {
-                $this->state = self::STATE_BUTTON;
-            }
 
             return $this->state;
         } catch (Exception $e) {

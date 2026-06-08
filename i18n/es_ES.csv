@@ -23,3 +23,4 @@
 "sequra.error.invalidShipRefundQuantity", "Cantidad de envío/reembolso no válida. No puedes enviar o reembolsar artículos que ya hayan sido enviados o reembolsados."
 "SeQura is not available for your account.", "SeQura no está disponible para tu cuenta."
 "SeQura Express Checkout is not available for this account.", "SeQura Express Checkout no está disponible para esta cuenta."
+"Invalid Express Checkout request.", "Solicitud de Express Checkout no válida."

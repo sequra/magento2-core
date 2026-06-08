@@ -80,4 +80,11 @@
         </data>
     </route>
 
+    <route url="/V1/sequra_core/express-checkout/product-solicit" method="POST">
+        <service class="Sequra\Core\Api\ExpressCheckout\ProductSolicitInterface" method="solicit"/>
+        <resources>
+            <resource ref="anonymous"/>
+        </resources>
+    </route>
+
 </routes>

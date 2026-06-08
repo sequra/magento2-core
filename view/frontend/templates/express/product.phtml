@@ -1,0 +1,33 @@
+<?php
+/** @var \Sequra\Core\Block\ExpressCheckout\ProductPage $block */
+/** @var \Magento\Framework\Escaper $escaper */
+
+if ($block->isAvailable()):
+    ?>
+    <div class="sequra-express-checkout sequra-express-checkout--product"
+         data-role="sequra-express-checkout-product">
+        <button type="button" class="action primary sequra-express-checkout-button" disabled="disabled">
+            <?= $escaper->escapeHtml(__('SeQura Express Checkout')); ?>
+        </button>
+    </div>
+    <script type="text/x-magento-init">
+        {
+            "[data-role=sequra-express-checkout-product]": {
+                "Sequra_Core/js/express/product-express": {
+                    "productSolicitUrl": "<?= $escaper->escapeJs($block->getProductSolicitUrl()); ?>",
+                    "productId": "<?= $escaper->escapeJs($block->getProductId()); ?>",
+                    "productType": "<?= $escaper->escapeJs($block->getProductType()); ?>"
+                }
+            }
+        }
+    </script>
+    <?php
+elseif ($block->showUnavailableMessage()):
+    ?>
+    <div class="sequra-express-checkout sequra-express-checkout--product">
+        <span class="sequra-express-checkout-unavailable">
+            <?= $escaper->escapeHtml($block->getUnavailableMessage()); ?>
+        </span>
+    </div>
+    <?php
+endif;

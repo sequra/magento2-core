@@ -137,6 +137,15 @@
     <preference for="Sequra\Core\Api\ExpressCheckout\SolicitInterface"
                 type="Sequra\Core\Model\Api\ExpressCheckout\SolicitService"/>
 
+    <type name="Sequra\Core\Model\Api\ExpressCheckout\ProductSolicitService">
+        <arguments>
+            <argument name="solicitService" xsi:type="object">SequraExpressCustomerSolicitService</argument>
+        </arguments>
+    </type>
+
+    <preference for="Sequra\Core\Api\ExpressCheckout\ProductSolicitInterface"
+                type="Sequra\Core\Model\Api\ExpressCheckout\ProductSolicitService"/>
+
 
     <!-- <type name="Magento\PageBuilder\Model\WidgetInitializerConfig">
         <arguments>

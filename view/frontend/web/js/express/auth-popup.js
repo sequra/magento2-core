@@ -11,9 +11,9 @@ define(
     [
         'jquery',
         'Magento_Customer/js/model/authentication-popup',
-        'Magento_Customer/js/model/customer'
+        'Magento_Customer/js/customer-data'
     ],
-    function ($, authenticationPopup, customer) {
+    function ($, authenticationPopup, customerData) {
         'use strict';
 
         var pending = null,
@@ -67,8 +67,8 @@ define(
 
                 window.__sequraExpressGuestLogin = true;
                 $(document).on('sequra:express:login-success', onSuccess);
-                subscription = customer.isLoggedIn.subscribe(function (loggedIn) {
-                    if (loggedIn) {
+                subscription = customerData.get('customer').subscribe(function (updatedCustomer) {
+                    if (updatedCustomer && updatedCustomer.firstname) {
                         settle(true);
                     }
                 });
