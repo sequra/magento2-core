@@ -4,6 +4,7 @@ namespace Sequra\Core\Services;
 
 use SeQura\Core\BusinessLogic\BootstrapComponent;
 use SeQura\Core\BusinessLogic\DataAccess\AdvancedSettings\Entities\AdvancedSettings;
+use SeQura\Core\BusinessLogic\DataAccess\BannerSettings\Entities\BannerSettings;
 use SeQura\Core\BusinessLogic\DataAccess\ConnectionData\Entities\ConnectionData;
 use SeQura\Core\BusinessLogic\DataAccess\CountryConfiguration\Entities\CountryConfiguration;
 use SeQura\Core\BusinessLogic\DataAccess\Credentials\Entities\Credentials;
@@ -15,6 +16,7 @@ use SeQura\Core\BusinessLogic\DataAccess\PromotionalWidgets\Entities\WidgetSetti
 use SeQura\Core\BusinessLogic\DataAccess\SendReport\Entities\SendReport;
 use SeQura\Core\BusinessLogic\DataAccess\StatisticalData\Entities\StatisticalData;
 use SeQura\Core\BusinessLogic\DataAccess\TransactionLog\Entities\TransactionLog;
+use SeQura\Core\BusinessLogic\Domain\Integration\Banner\BannerServiceInterface;
 use SeQura\Core\BusinessLogic\Domain\Integration\Category\CategoryServiceInterface;
 use SeQura\Core\BusinessLogic\Domain\Integration\Disconnect\DisconnectServiceInterface;
 use SeQura\Core\BusinessLogic\Domain\Integration\Log\LogServiceInterface;
@@ -53,6 +55,7 @@ use SeQura\Core\Infrastructure\Utility\TimeProvider;
 use Sequra\Core\Repository\BaseRepository;
 use Sequra\Core\Repository\QueueItemRepository;
 use Sequra\Core\Repository\SeQuraOrderRepository;
+use Sequra\Core\Services\BusinessLogic\BannerService;
 use Sequra\Core\Services\BusinessLogic\CategoryService;
 use Sequra\Core\Services\BusinessLogic\ConfigurationService;
 use Sequra\Core\Services\BusinessLogic\DisconnectService;
@@ -146,6 +149,10 @@ class Bootstrap extends BootstrapComponent
      */
     private ProductService $productService;
     /**
+     * @var BannerService
+     */
+    private BannerService $bannerService;
+    /**
      * @var MerchantDataProvider
      */
     private MerchantDataProvider $merchantDataProvider;
@@ -179,6 +186,7 @@ class Bootstrap extends BootstrapComponent
      * @param WidgetConfigurator $widgetConfigurator
      * @param MiniWidgetMessagesProvider $miniWidgetMessagesProvider
      * @param ProductService $productService
+     * @param BannerService $bannerService
      * @param MerchantDataProvider $merchantDataProvider
      * @param LogService $logService
      * @param StoreInfoService $storeInfoService
@@ -200,6 +208,7 @@ class Bootstrap extends BootstrapComponent
         WidgetConfigurator $widgetConfigurator,
         MiniWidgetMessagesProvider $miniWidgetMessagesProvider,
         ProductService $productService,
+        BannerService $bannerService,
         MerchantDataProvider $merchantDataProvider,
         LogService $logService,
         StoreInfoService $storeInfoService,
@@ -220,6 +229,7 @@ class Bootstrap extends BootstrapComponent
         $this->widgetConfigurator = $widgetConfigurator;
         $this->miniWidgetMessagesProvider = $miniWidgetMessagesProvider;
         $this->productService = $productService;
+        $this->bannerService = $bannerService;
         $this->merchantDataProvider = $merchantDataProvider;
         $this->logService = $logService;
         $this->storeInfoService = $storeInfoService;
@@ -421,6 +431,13 @@ class Bootstrap extends BootstrapComponent
                 return static::$instance->productService;
             }
         );
+
+        ServiceRegister::registerService(
+            BannerServiceInterface::class,
+            static function () {
+                return static::$instance->bannerService;
+            }
+        );
     }
 
     /**
@@ -442,6 +459,7 @@ class Bootstrap extends BootstrapComponent
         RepositoryRegistry::registerRepository(GeneralSettings::class, BaseRepository::class);
         RepositoryRegistry::registerRepository(SeQuraOrder::class, SeQuraOrderRepository::class);
         RepositoryRegistry::registerRepository(WidgetSettings::class, BaseRepository::class);
+        RepositoryRegistry::registerRepository(BannerSettings::class, BaseRepository::class);
         RepositoryRegistry::registerRepository(SendReport::class, BaseRepository::class);
         RepositoryRegistry::registerRepository(StatisticalData::class, BaseRepository::class);
         RepositoryRegistry::registerRepository(TransactionLog::class, BaseRepository::class);
