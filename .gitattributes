@@ -21,3 +21,7 @@ tests-e2e export-ignore
 
 # Exclude scripts
 *.sh export-ignore
+
+/CLAUDE.md export-ignore
+/.claude/ export-ignore
+/.githooks/ export-ignore
