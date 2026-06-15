@@ -16,6 +16,9 @@ open_browser=0
 install=0
 BASEDIR="$(dirname $(realpath $0))"
 
+# Enable the repo's shared git hooks (pre-commit / pre-push quality gates).
+git -C "$BASEDIR" config core.hooksPath .githooks
+
 # Parse arguments:
 # --ngrok-token=YOUR_NGROK_TOKEN: Override the ngrok token in .env
 # --ngrok: Use ngrok to expose the site
