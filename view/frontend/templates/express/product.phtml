@@ -4,11 +4,13 @@
 
 if ($block->isAvailable()):
     ?>
-    <div class="sequra-express-checkout sequra-express-checkout--product"
+    <div class="sequra-express-checkout sequra-express-checkout--product sequra-express-checkout--disabled"
          data-role="sequra-express-checkout-product">
-        <button type="button" class="action primary sequra-express-checkout-button" disabled="disabled">
-            <?= $escaper->escapeHtml(__('SeQura Express Checkout')); ?>
-        </button>
+        <div class="sequra-express-checkout-button"
+             data-amount="0"
+             data-url="<?= $escaper->escapeHtmlAttr(
+                 $block->getProductSolicitUrl() . '?product=' . $block->getProductId() . '&qty=1'
+             ); ?>"></div>
     </div>
     <script type="text/x-magento-init">
         {
@@ -21,13 +23,5 @@ if ($block->isAvailable()):
             }
         }
     </script>
-    <?php
-elseif ($block->showUnavailableMessage()):
-    ?>
-    <div class="sequra-express-checkout sequra-express-checkout--product">
-        <span class="sequra-express-checkout-unavailable">
-            <?= $escaper->escapeHtml($block->getUnavailableMessage()); ?>
-        </span>
-    </div>
     <?php
 endif;

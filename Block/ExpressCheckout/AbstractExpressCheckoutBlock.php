@@ -110,6 +110,16 @@ abstract class AbstractExpressCheckoutBlock extends Template
     }
 
     /**
+     * The storefront solicit URL the CDN-library button fetches (GET, raw HTML response).
+     *
+     * @return string
+     */
+    public function getSolicitUrl(): string
+    {
+        return $this->getUrl('sequra/expresscheckout/cartsolicit');
+    }
+
+    /**
      * Resolves — once per request — whether to render the button, the inline message or nothing.
      *
      * @return string One of AvailabilityEvaluator::STATE_*.

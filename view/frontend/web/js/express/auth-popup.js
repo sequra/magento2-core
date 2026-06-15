@@ -4,8 +4,9 @@
  * Opens Magento's native login pop-up and resolves once the customer has logged in (the
  * login-action mixin fires `sequra:express:login-success` after a no-reload login). A
  * module-level pending guard means repeated clicks reuse the same promise, so a single
- * login triggers a single downstream solicit. Rejects after a safety timeout if the
- * customer abandons the pop-up.
+ * login triggers a single downstream solicit. Rejects when the customer closes the
+ * pop-up without logging in (or after a safety timeout), so the next click can open
+ * the pop-up again.
  */
 define(
     [
@@ -29,7 +30,8 @@ define(
             open: function () {
                 var deferred,
                     timeoutId,
-                    subscription;
+                    subscription,
+                    $loginBlock;
 
                 if (pending) {
                     return pending.promise();
@@ -48,6 +50,9 @@ define(
                     if (subscription) {
                         subscription.dispose();
                     }
+                    if (authenticationPopup.modalWindow) {
+                        $(authenticationPopup.modalWindow).off('modalclosed', onModalClosed);
+                    }
                     delete window.__sequraExpressGuestLogin;
 
                     if (success) {
@@ -65,6 +70,10 @@ define(
                     settle(true);
                 }
 
+                function onModalClosed() {
+                    settle(false);
+                }
+
                 window.__sequraExpressGuestLogin = true;
                 $(document).on('sequra:express:login-success', onSuccess);
                 subscription = customerData.get('customer').subscribe(function (updatedCustomer) {
@@ -75,6 +84,32 @@ define(
                 timeoutId = setTimeout(function () {
                     settle(false);
                 }, TIMEOUT_MS);
+
+                // Magento only initializes the authentication modal when guest checkout is
+                // disabled (view/authentication-popup.js setModalElement), so with guest
+                // checkout allowed modalWindow is null and showModal() is a silent no-op.
+                // Create the modal ourselves. The modal widget clears the inline
+                // display:none only on the element it wraps, so it must be given the
+                // knockout-rendered .block-authentication node itself — wrapping the outer
+                // #authenticationPopup div opens an empty modal.
+                if (!authenticationPopup.modalWindow) {
+                    $loginBlock = $('#authenticationPopup .block-authentication');
+                    if ($loginBlock.length) {
+                        authenticationPopup.createPopUp($loginBlock.get(0));
+                    }
+                }
+
+                if (!authenticationPopup.modalWindow) {
+                    // No modal to show (knockout has not rendered the login block yet) —
+                    // fail fast so the next click retries instead of waiting on the timeout.
+                    settle(false);
+
+                    return deferred.promise();
+                }
+
+                // Closing the pop-up without logging in rejects, clearing the pending guard
+                // so the next button click can open the pop-up again.
+                $(authenticationPopup.modalWindow).on('modalclosed', onModalClosed);
 
                 authenticationPopup.showModal();
 

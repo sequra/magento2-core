@@ -29,8 +29,9 @@ define(
              * Appends the solicited identification form and shows it once SequraFormInstance is ready.
              *
              * @param {String} identificationForm The identification form HTML returned by the solicit endpoint.
+             * @param {Function} [onShown] Called once the form is visible (e.g. to remove a caller-owned spinner).
              */
-            showIdentificationForm: function (identificationForm) {
+            showIdentificationForm: function (identificationForm, onShown) {
                 $('body').append(identificationForm);
 
                 waitForSequraFormInstance(function () {
@@ -44,6 +45,10 @@ define(
 
                     window.SequraFormInstance.show();
                     fullScreenLoader.stopLoader();
+
+                    if (onShown) {
+                        onShown();
+                    }
                 });
             },
 

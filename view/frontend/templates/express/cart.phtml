@@ -5,9 +5,8 @@
 if ($block->isAvailable()):
     ?>
     <div class="sequra-express-checkout" data-role="sequra-express-checkout">
-        <button type="button" class="action primary sequra-express-checkout-button">
-            <?= $escaper->escapeHtml(__('SeQura Express Checkout')); ?>
-        </button>
+        <div class="sequra-express-checkout-button"
+             data-url="<?= $escaper->escapeHtmlAttr($block->getSolicitUrl()); ?>"></div>
     </div>
     <script type="text/x-magento-init">
         {

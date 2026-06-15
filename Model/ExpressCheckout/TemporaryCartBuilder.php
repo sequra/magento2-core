@@ -25,8 +25,9 @@ use Magento\Store\Model\StoreManagerInterface;
 class TemporaryCartBuilder
 {
     /**
-     * HTTP status returned when the request is not eligible for Express Checkout (guest caller
-     * or the resulting quote is virtual), surfaced by the storefront as the inline message.
+     * HTTP status returned when the request is not eligible for Express Checkout (invalid
+     * options or a virtual quote), surfaced by the storefront as the inline message. Guest
+     * callers get HTTP 401 instead, which the storefront answers with the login pop-up.
      */
     private const HTTP_NOT_ELIGIBLE = 422;
 
@@ -82,7 +83,7 @@ class TemporaryCartBuilder
      *
      * @return int Temporary quote ID.
      *
-     * @throws WebapiException If the caller is a guest or the resulting quote is virtual (HTTP 422).
+     * @throws WebapiException If the caller is a guest (HTTP 401) or the quote is virtual (HTTP 422).
      * @throws NoSuchEntityException If the product does not exist.
      * @throws LocalizedException If the product cannot be added to the quote.
      */
@@ -90,7 +91,14 @@ class TemporaryCartBuilder
     {
         $customerId = (int)$this->customerSession->getCustomerId();
         if ($customerId <= 0) {
-            throw $this->notEligible();
+            // The login state baked into cached pages and the customer-data section are both
+            // unreliable, so the server is the authority: 401 tells the storefront to open
+            // the login pop-up and retry, while 422 renders the inline "not available" message.
+            throw new WebapiException(
+                __('Log in to use SeQura Express Checkout.'),
+                0,
+                WebapiException::HTTP_UNAUTHORIZED
+            );
         }
 
         $store = $this->storeManager->getStore();

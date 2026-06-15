@@ -74,21 +74,23 @@ class BaseSolicitService
             throw $this->notEligible();
         }
 
+        // The `true` flag enables core's country check: an unsupported delivery country yields
+        // an unsuccessful response (no exception, nothing logged) instead of the solicit
+        // hard-failing on the missing merchant.
         // @phpstan-ignore-next-line
         $response = CheckoutAPI::get()
             ->expressCheckout($storeId)
             ->solicit(new ExpressCheckoutSolicitRequest($this->createOrderRequestBuilderFactory->create([
                 'cartId' => $quote->getId(),
                 'storeId' => $storeId,
-            ])));
+            ]), true));
 
         if (!$response->isSuccessful()) {
-            // An unsuccessful solicit at this point means SeQura cannot produce an
-            // identification form for this customer/cart — most commonly because the
-            // customer's default address is in a country with no SeQura merchant
-            // credentials. The shopper has no way to recover, so surface it as the same
-            // "not eligible" 422 the storefront turns into the inline unavailable message,
-            // rather than a generic server error that never reaches a visible container.
+            // An unsuccessful solicit means SeQura cannot produce an identification form for
+            // this customer/cart — most commonly the unavailable response core returns (without
+            // logging) when the customer's default address country has no configured merchant.
+            // The shopper has no way to recover, so surface it as the "not eligible" 422 the
+            // storefront turns into the inline unavailable message.
             throw $this->notEligible();
         }
 

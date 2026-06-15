@@ -3,6 +3,7 @@
 namespace Sequra\Core\Model\Api\ExpressCheckout;
 
 use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Webapi\Exception as WebapiException;
 use Sequra\Core\Api\ExpressCheckout\ProductSolicitInterface;
 use Sequra\Core\Model\ExpressCheckout\TemporaryCartBuilder;
@@ -57,7 +58,7 @@ class ProductSolicitService implements ProductSolicitInterface
      *
      * @return string
      *
-     * @throws WebapiException If the request is invalid (HTTP 400) or not eligible (HTTP 422).
+     * @throws WebapiException If the request is invalid (HTTP 400), the caller is a guest (HTTP 401) or not eligible (HTTP 422).
      * @throws LocalizedException If the order cannot be solicited.
      */
     public function solicit(string $payload): string
@@ -82,7 +83,12 @@ class ProductSolicitService implements ProductSolicitInterface
             }
         }
 
-        $cartId = $this->temporaryCartBuilder->build($productId, $buyRequest);
+        try {
+            $cartId = $this->temporaryCartBuilder->build($productId, $buyRequest);
+        } catch (NoSuchEntityException $e) {
+            // Unknown product id in the request — a bad/forged request, not a server fault.
+            throw new WebapiException(__('Invalid Express Checkout request.'), 0, WebapiException::HTTP_BAD_REQUEST);
+        }
 
         return $this->solicitService->solicit((string)$cartId);
     }

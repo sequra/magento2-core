@@ -4,10 +4,14 @@
 
 if ($block->isAvailable()):
     ?>
-    <div class="sequra-express-checkout sequra-express-checkout--minicart">
-        <button type="button" class="action primary sequra-express-checkout-button">
-            <?= $escaper->escapeHtml(__('SeQura Express Checkout')); ?>
-        </button>
+    <?php // data-mage-init (not x-magento-init): the markup is re-injected by the Knockout
+          // mini-cart on every `cart` section refresh, and only attribute-form init re-runs
+          // through the contentUpdated hook. The initializer asks the library to mount the
+          // freshly injected button. ?>
+    <div class="sequra-express-checkout sequra-express-checkout--minicart"
+         data-mage-init='{"Sequra_Core/js/express/cart-express": {}}'>
+        <div class="sequra-express-checkout-button"
+             data-url="<?= $escaper->escapeHtmlAttr($block->getSolicitUrl()); ?>"></div>
     </div>
     <?php
 elseif ($block->showUnavailableMessage()):

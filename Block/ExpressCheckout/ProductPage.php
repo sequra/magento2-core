@@ -5,10 +5,8 @@ namespace Sequra\Core\Block\ExpressCheckout;
 use Exception;
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Model\Product;
-use Magento\Customer\Model\Session as CustomerSession;
 use Magento\Framework\App\Request\Http;
 use Magento\Framework\App\ScopeResolverInterface;
-use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\HTTP\PhpEnvironment\Request;
 use Magento\Framework\Locale\ResolverInterface;
 use Magento\Framework\View\Element\Template;
@@ -23,10 +21,14 @@ use Sequra\Core\Model\ExpressCheckout\AvailabilityEvaluator;
  *
  * Renders the SeQura Express Checkout button on the product detail page. Unlike the cart-centric
  * blocks it builds the availability context from the requested product (loaded by the route `id`
- * param) and the logged in customer's default shipping country, then delegates the render decision
- * to {@see AvailabilityEvaluator}. Virtual and downloadable products never render the button; the
- * per-selection virtual guard for bundle/grouped products is enforced server-side at temp-cart
- * build time.
+ * param) and delegates the render decision to {@see AvailabilityEvaluator}. Virtual and
+ * downloadable products never render the button; the per-selection virtual guard for
+ * bundle/grouped products is enforced server-side at temp-cart build time.
+ *
+ * The render decision is deliberately customer-agnostic: the product page is full-page cached,
+ * so Magento depersonalizes the session before blocks render (CustomerSession::isLoggedIn() is
+ * always false here) and the produced HTML is served to every shopper. Per-customer eligibility
+ * is enforced at click time by the solicit endpoint (401 guest / 422 not eligible).
  */
 class ProductPage extends Template
 {
@@ -38,10 +40,6 @@ class ProductPage extends Template
     private const PRODUCT_TYPE_VIRTUAL = 'virtual';
     private const PRODUCT_TYPE_DOWNLOADABLE = 'downloadable';
 
-    /**
-     * @var CustomerSession
-     */
-    private CustomerSession $customerSession;
     /**
      * @var Http
      */
@@ -78,7 +76,6 @@ class ProductPage extends Template
      * @param ResolverInterface $localeResolver
      * @param Context $context
      * @param Request $request
-     * @param CustomerSession $customerSession
      * @param Http $http
      * @param ProductRepositoryInterface $productRepository
      * @param AvailabilityEvaluator $availabilityEvaluator
@@ -88,7 +85,6 @@ class ProductPage extends Template
         ResolverInterface $localeResolver,
         Context $context,
         Request $request,
-        CustomerSession $customerSession,
         Http $http,
         ProductRepositoryInterface $productRepository,
         AvailabilityEvaluator $availabilityEvaluator
@@ -98,7 +94,6 @@ class ProductPage extends Template
         $this->scopeResolver = $scopeResolver;
         $this->localeResolver = $localeResolver;
         $this->request = $request;
-        $this->customerSession = $customerSession;
         $this->http = $http;
         $this->productRepository = $productRepository;
         $this->availabilityEvaluator = $availabilityEvaluator;
@@ -112,27 +107,6 @@ class ProductPage extends Template
     public function isAvailable(): bool
     {
         return $this->resolveState() === AvailabilityEvaluator::STATE_BUTTON;
-    }
-
-    /**
-     * Whether the inline "not available" message should render in place of the button
-     * (logged in customer whose default shipping country is not supported).
-     *
-     * @return bool
-     */
-    public function showUnavailableMessage(): bool
-    {
-        return $this->resolveState() === AvailabilityEvaluator::STATE_MESSAGE;
-    }
-
-    /**
-     * The inline message shown when Express Checkout is unavailable for the logged in customer.
-     *
-     * @return string
-     */
-    public function getUnavailableMessage(): string
-    {
-        return (string)__('SeQura is not available for your account.');
     }
 
     /**
@@ -160,18 +134,13 @@ class ProductPage extends Template
     }
 
     /**
-     * The storefront REST URL the JS controller POSTs the add-to-cart form to.
+     * The storefront solicit URL the CDN-library button fetches (GET, raw HTML response).
      *
      * @return string
-     *
-     * @throws NoSuchEntityException
      */
     public function getProductSolicitUrl(): string
     {
-        $store = $this->_storeManager->getStore();
-
-        return $store->getBaseUrl() . 'rest/' . $store->getCode()
-            . '/V1/sequra_core/express-checkout/product-solicit';
+        return $this->getUrl('sequra/expresscheckout/productsolicit');
     }
 
     /**
@@ -198,14 +167,13 @@ class ProductPage extends Template
                 return $this->state;
             }
 
-            $isLoggedIn = $this->customerSession->isLoggedIn();
-            $country = $isLoggedIn ? $this->getCustomerDefaultShippingCountry() : '';
-
+            // Always the guest (customer-agnostic) evaluation: the page is full-page cached, so
+            // the session is depersonalized during render and the HTML is shared by all shoppers.
             $this->state = $this->availabilityEvaluator->evaluate(
                 (string)$this->_storeManager->getStore()->getId(),
                 ExpressCheckoutPage::product()->getPage(),
-                $isLoggedIn,
-                $country,
+                false,
+                '',
                 $this->getCurrentCurrency(),
                 $this->getCustomerIpAddress(),
                 [(string)$product->getId()],
@@ -251,20 +219,6 @@ class ProductPage extends Template
         }
 
         return $this->currentProduct;
-    }
-
-    /**
-     * Returns the country of the logged in customer's default shipping address.
-     *
-     * Empty string when no default shipping address is set.
-     *
-     * @return string
-     */
-    private function getCustomerDefaultShippingCountry(): string
-    {
-        $address = $this->customerSession->getCustomer()->getDefaultShippingAddress();
-
-        return $address ? (string)$address->getCountryId() : '';
     }
 
     /**

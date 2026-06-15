@@ -14,10 +14,5 @@
             <block class="Sequra\Core\Block\WidgetInitializer" name="sequra.widget.initializer"
                    template="Sequra_Core::widget_initializer.phtml" />
         </referenceBlock>
-        <referenceContainer name="before.body.end">
-            <block class="Magento\Framework\View\Element\Template"
-                   name="sequra.express.minicart.init"
-                   template="Sequra_Core::express/minicart-init.phtml"/>
-        </referenceContainer>
     </body>
 </page>

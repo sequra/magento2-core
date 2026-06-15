@@ -1,37 +1,39 @@
 /**
  * SeQura Express Checkout — product detail page controller.
  *
- * Initialized via x-magento-init with { productSolicitUrl, productId, productType }. Passively
- * enables the express button once the required options for the product type are selected, and on
- * click serializes the add-to-cart form and POSTs it to the product-solicit endpoint, which builds
- * a detached temporary quote and returns the identification form. Guests are routed through the
- * shared login pop-up first (no reload). The shopper's real cart is never touched.
+ * The button itself is rendered by the shared CDN library (sequra-checkout.min.js): it mounts an
+ * iframe into the `.sequra-express-checkout-button` element and owns the click — on click it
+ * fetches the element's `data-url` (GET, raw HTML) and opens the identification form. This
+ * controller therefore never binds a click on the button; it keeps the mount element in sync:
  *
- * The passive enable/disable is a lightweight UX hint; the authoritative gate is the add-to-cart
- * form's own validation('isValid') run on click, which enforces every required option (including
- * custom options and bundle/grouped selections).
+ *  - readiness gating: the wrapper is CSS-disabled (pointer-events) until the required options
+ *    for the product type are selected, so the click can't reach the library iframe early;
+ *  - `data-url` is rewritten with the serialized add-to-cart form on every change (the library
+ *    reads it at click time, no refresh call needed);
+ *  - `data-amount` follows the priceBox final price (informational; the solicit amount is
+ *    computed server-side).
+ *
+ * Login gating is server-driven: the click always goes through to the library, and the solicit
+ * endpoint answers 401 for guests — surfaced via the shared library-button error handler, which
+ * opens the login pop-up and retries the solicit after a successful login. Client-side login
+ * state (window.isCustomerLoggedIn, the customer-data section) is deliberately not consulted:
+ * both are stale or absent on full-page-cached pages, which made the pop-up appear for logged
+ * in shoppers. 422 (not eligible) renders the inline message instead.
  */
 define(
     [
         'jquery',
-        'Sequra_Core/js/express/customer-state',
-        'Sequra_Core/js/express/auth-popup',
-        'Sequra_Core/js/express/identification-form',
-        'Magento_Checkout/js/model/full-screen-loader',
-        'Magento_Checkout/js/model/error-processor',
-        'mage/storage',
-        'mage/validation'
+        'Sequra_Core/js/express/library-button'
     ],
-    function ($, customerState, authPopup, identificationForm, fullScreenLoader, errorProcessor, storage) {
+    function ($, libraryButton) {
         'use strict';
 
-        // HTTP status the solicit endpoint returns when the request is not eligible.
-        var HTTP_NOT_ELIGIBLE = 422;
-
         return function (config, element) {
-            var $button = $(element).find('.sequra-express-checkout-button'),
+            var $wrapper = $(element),
+                $mount = $wrapper.find('.sequra-express-checkout-button'),
                 $form = $('#product_addtocart_form'),
-                productType = config.productType;
+                productType = config.productType,
+                lastAmount = null;
 
             /**
              * Whether the currently selected options satisfy the minimum needed to solicit.
@@ -70,62 +72,60 @@ define(
                     return anyQty;
                 }
 
-                // simple, bundle and any other type: the click-time form validation is the gate.
+                if (productType === 'bundle') {
+                    var bundleReady = true;
+                    $form.find('[name^="bundle_option["]').filter('[data-validate*="required"],.required-bundle-option,[required]').each(function () {
+                        if (!$(this).val()) {
+                            bundleReady = false;
+                        }
+                    });
+
+                    return bundleReady;
+                }
+
+                // simple and any other type: server-side validation is the gate.
                 return true;
             }
 
             /**
-             * Re-evaluates button readiness after an option/qty change.
+             * Rewrites data-url with the current add-to-cart form state.
+             *
+             * The library reads data-url at click time, so no refresh call is needed.
+             */
+            function syncUrl() {
+                $mount.attr('data-url', config.productSolicitUrl + '?' + $form.serialize());
+            }
+
+            /**
+             * Syncs data-amount from the priceBox final price and re-prices the mounted button.
+             */
+            function syncAmount() {
+                var attr = $('.product-info-main [data-price-type="finalPrice"]').first().attr('data-price-amount'),
+                    price = parseFloat(attr),
+                    cents = isNaN(price) ? 0 : Math.round(price * 100);
+
+                if (cents === lastAmount) {
+                    return;
+                }
+
+                lastAmount = cents;
+                $mount.attr('data-amount', cents);
+                libraryButton.refreshButtons();
+            }
+
+            /**
+             * Re-evaluates readiness and re-syncs the mount element after an option/qty change.
              */
             function refresh() {
-                $button.prop('disabled', !isReady());
+                $wrapper.toggleClass('sequra-express-checkout--disabled', !isReady());
+                syncUrl();
+                syncAmount();
             }
 
-            /**
-             * Serializes the add-to-cart form and solicits the Express Checkout order.
-             */
-            function postSolicit() {
-                $button.prop('disabled', true);
-                fullScreenLoader.startLoader();
-
-                storage.post(
-                    config.productSolicitUrl,
-                    JSON.stringify({ payload: $form.serialize() })
-                ).done(function (response) {
-                    identificationForm.showIdentificationForm(response);
-                }).fail(function (response) {
-                    fullScreenLoader.stopLoader();
-
-                    if (response && response.status === HTTP_NOT_ELIGIBLE) {
-                        identificationForm.showUnavailable($button);
-
-                        return;
-                    }
-
-                    errorProcessor.process(response);
-                }).always(function () {
-                    refresh();
-                });
-            }
-
-            /**
-             * Click entry point: validates the form, logs a guest in first, then solicits.
-             */
-            function onClick() {
-                if ($form.validation && !$form.validation('isValid')) {
-                    return;
-                }
-
-                if (!customerState.isLoggedIn()) {
-                    authPopup.open().then(postSolicit, function () {
-                        // Pop-up closed without logging in — nothing to do.
-                    });
-
-                    return;
-                }
-
-                postSolicit();
-            }
+            // The click happens inside the library's iframe and cannot be intercepted, so the
+            // solicit response is the gate: the shared error handler opens the login pop-up on
+            // 401 and retries, or shows the inline message on 422.
+            libraryButton.attachErrorHandler();
 
             $form.on('change', refresh);
             $form.on('input', '[name="qty"]', refresh);
@@ -133,7 +133,10 @@ define(
             $form.on('click', '.swatch-option', function () {
                 setTimeout(refresh, 50);
             });
-            $button.on('click', onClick);
+            // Magento's priceBox recalculates the final price on option/variant changes.
+            $('.product-info-main [data-role=priceBox]').on('priceUpdated', function () {
+                setTimeout(refresh, 0);
+            });
 
             refresh();
         };
