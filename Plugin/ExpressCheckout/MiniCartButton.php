@@ -47,7 +47,9 @@ class MiniCartButton
             $html = $block->setTemplate('Sequra_Core::express/minicart.phtml')->toHtml();
 
             if ($html !== '') {
-                $existing = isset($result['extra_actions']) ? (string)$result['extra_actions'] : '';
+                $existing = isset($result['extra_actions']) && is_string($result['extra_actions'])
+                    ? $result['extra_actions']
+                    : '';
                 $result['extra_actions'] = $existing . $html;
             }
         } catch (Throwable $e) {

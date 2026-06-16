@@ -486,7 +486,9 @@ class CreateOrderRequestBuilder implements CoreCreateOrderRequestBuilder
             $order['country_code'] = $billingAddress ? $billingAddress->getCountryId() : '';
             $order['status'] = $this->mapOrderStatus(is_string($order['raw_status']) ? $order['raw_status'] : '');
             $payment = $orderRow->getPayment();
-            $order['payment_method_raw'] = $payment ? ($payment->getAdditionalInformation('method_title') ?? '') : '';
+            $additionalInfo = $payment ? $payment->getAdditionalInformation() : [];
+            $order['payment_method_raw'] = (is_array($additionalInfo) && isset($additionalInfo['method_title'])
+                && is_string($additionalInfo['method_title'])) ? $additionalInfo['method_title'] : '';
             $order['payment_method'] = $payment ? $this->mapPaymentName($payment->getMethod()) : '';
 
             $orders[] = $order;

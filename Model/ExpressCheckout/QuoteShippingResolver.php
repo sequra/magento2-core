@@ -126,7 +126,7 @@ class QuoteShippingResolver
             );
 
             $quote->getPayment()->setMethod(ConfigProvider::CODE);
-            $quote->setTotalsCollectedFlag(false);
+            $quote->setData('totals_collected_flag', false);
             $quote->collectTotals();
             $this->quoteRepository->save($quote);
 
@@ -207,10 +207,10 @@ class QuoteShippingResolver
     {
         $shippingAddress = $quote->getShippingAddress();
         $shippingAddress->importCustomerAddressData($address);
-        $shippingAddress->setShippingMethod(null);
+        $shippingAddress->setShippingMethod('');
         $shippingAddress->setCollectShippingRates(true);
 
-        $quote->setTotalsCollectedFlag(false);
+        $quote->setData('totals_collected_flag', false);
         $quote->collectTotals();
 
         return $this->pickCheapestRate($shippingAddress->getAllShippingRates());

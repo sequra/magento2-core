@@ -118,7 +118,7 @@ class TemporaryCartBuilder
             throw $this->notEligible();
         }
 
-        $quote->setTotalsCollectedFlag(false);
+        $quote->setData('totals_collected_flag', false);
         $quote->collectTotals();
 
         // Virtual/downloadable simples and bundle/grouped selections that yield a virtual item
@@ -129,7 +129,9 @@ class TemporaryCartBuilder
 
         $this->quoteRepository->save($quote);
 
-        return (int)$quote->getId();
+        $quoteId = $quote->getId();
+
+        return is_scalar($quoteId) ? (int)$quoteId : 0;
     }
 
     /**
