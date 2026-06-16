@@ -30,6 +30,7 @@ parameters:
         - '#invalid type Magento\\Framework\\DB\\TransactionFactory#i'
         - '#invalid type Magento\\Sales\\Model\\OrderFactory#i'
         - '#invalid type Magento\\Framework\\Controller\\Result\\RawFactory#i'
+        - '#unknown class Magento\\Framework\\Controller\\Result\\RawFactory#i'
         - '#invalid type Magento\\Payment\\Gateway\\Validator\\ResultInterfaceFactory#i'
         - '#should be compatible with return type#i'
         - '#Call to an undefined method Magento\\Framework\\Api\\ExtensibleDataInterface::#i'

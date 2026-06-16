@@ -170,8 +170,10 @@ abstract class AbstractExpressCheckoutBlock extends Template
     }
 
     /**
-     * Whether the cart contains at least one virtual product. SeQura is not offered for virtual
-     * items (parity with the regular checkout availability check), so the button must not render.
+     * Whether the cart contains at least one virtual product.
+     *
+     * SeQura is not offered for virtual items (parity with the regular checkout availability
+     * check), so the button must not render.
      *
      * @param Quote $quote
      *

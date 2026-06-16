@@ -94,7 +94,8 @@ class CartSolicit implements HttpGetActionInterface
                 return $result->setHttpResponseCode(429)->setContents('');
             }
 
-            $quoteId = (string)$this->checkoutSession->getQuote()->getId();
+            $rawQuoteId = $this->checkoutSession->getQuote()->getId();
+            $quoteId = is_scalar($rawQuoteId) ? (string)$rawQuoteId : '';
             if ($quoteId === '') {
                 return $result->setHttpResponseCode(WebapiException::HTTP_BAD_REQUEST)->setContents('');
             }

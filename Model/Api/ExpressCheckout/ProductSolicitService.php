@@ -54,32 +54,29 @@ class ProductSolicitService implements ProductSolicitInterface
     /**
      * Solicits the Express Checkout order for the viewed product and returns the form HTML.
      *
-     * @param string $payload URL-encoded add-to-cart form data (product, qty, options).
+     * @param mixed[] $payload Add-to-cart form data (product, qty, options).
      *
      * @return string
      *
-     * @throws WebapiException If the request is invalid (HTTP 400), the caller is a guest (HTTP 401) or not eligible (HTTP 422).
+     * @throws WebapiException On invalid request (400), guest caller (401) or not eligible (422).
      * @throws LocalizedException If the order cannot be solicited.
      */
-    public function solicit(string $payload): string
+    public function solicit(array $payload): string
     {
-        $data = [];
-        parse_str($payload, $data);
-
-        $productId = (isset($data['product']) && is_scalar($data['product'])) ? (string)$data['product'] : '';
+        $productId = (isset($payload['product']) && is_scalar($payload['product'])) ? (string)$payload['product'] : '';
         if ($productId === '') {
             throw new WebapiException(__('Invalid Express Checkout request.'), 0, WebapiException::HTTP_BAD_REQUEST);
         }
 
-        $qty = (isset($data['qty']) && is_scalar($data['qty'])) ? (float)$data['qty'] : 1.0;
+        $qty = (isset($payload['qty']) && is_scalar($payload['qty'])) ? (float)$payload['qty'] : 1.0;
         if ($qty <= 0) {
             $qty = 1.0;
         }
 
         $buyRequest = ['qty' => $qty];
         foreach (self::BUY_REQUEST_KEYS as $key) {
-            if (isset($data[$key])) {
-                $buyRequest[$key] = $data[$key];
+            if (isset($payload[$key])) {
+                $buyRequest[$key] = $payload[$key];
             }
         }
 

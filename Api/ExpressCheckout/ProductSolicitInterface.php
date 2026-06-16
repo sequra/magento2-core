@@ -15,9 +15,9 @@ interface ProductSolicitInterface
     /**
      * Solicits the Express Checkout order for the viewed product and returns the form HTML.
      *
-     * @param string $payload URL-encoded add-to-cart form data (product, qty, options).
+     * @param mixed[] $payload Add-to-cart form data (product, qty, options).
      *
      * @return string
      */
-    public function solicit(string $payload): string;
+    public function solicit(array $payload): string;
 }

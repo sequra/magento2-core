@@ -129,8 +129,9 @@ class ProductPage extends Template
     public function getProductType(): string
     {
         $product = $this->getCurrentProduct();
+        $typeId = $product ? $product->getTypeId() : null;
 
-        return $product ? (string)$product->getTypeId() : '';
+        return is_string($typeId) ? $typeId : '';
     }
 
     /**
@@ -162,7 +163,8 @@ class ProductPage extends Template
                 return $this->state;
             }
 
-            $typeId = (string)$product->getTypeId();
+            $rawTypeId = $product->getTypeId();
+            $typeId = is_string($rawTypeId) ? $rawTypeId : '';
             if (in_array($typeId, [self::PRODUCT_TYPE_VIRTUAL, self::PRODUCT_TYPE_DOWNLOADABLE], true)) {
                 return $this->state;
             }

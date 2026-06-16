@@ -77,7 +77,7 @@ class SolicitRateLimiter
             }
 
             $state['count'] = (int)$state['count'] + 1;
-            $this->cache->save($this->serializer->serialize($state), $cacheKey, [], self::WINDOW_SECONDS);
+            $this->cache->save((string)$this->serializer->serialize($state), $cacheKey, [], self::WINDOW_SECONDS);
 
             return $state['count'] > self::LIMIT;
         } catch (\Throwable $e) {

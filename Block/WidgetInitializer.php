@@ -13,7 +13,9 @@ use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\DeploymentConfig;
 use Magento\Framework\App\Request\Http;
 use Magento\Framework\App\State;
+use Magento\Framework\Exception\FileSystemException;
 use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\Exception\RuntimeException;
 use Magento\Framework\View\Element\Template;
 use Magento\Framework\View\Element\Template\Context;
 use Magento\Checkout\Model\Session;
@@ -137,9 +139,9 @@ class WidgetInitializer extends Template
     }
 
     /**
-     * Returns the seQura checkout-library bootstrap config (script URL, merchant identity,
-     * locale formatting and supported products) used to load sequra-checkout.min.js.
+     * Returns the seQura checkout-library bootstrap config used to load sequra-checkout.min.js.
      *
+     * Includes the script URL, merchant identity, locale formatting and supported products.
      * Feature-neutral: it resolves whenever seQura has credentials for the shopper's country,
      * independent of whether promotional widgets are enabled. This is what the storefront uses
      * to inject the library, so every seQura frontend feature (widgets, educational popup,
@@ -189,6 +191,9 @@ class WidgetInitializer extends Template
      * always loads the real CDN script regardless of the config value.
      *
      * @return string
+     *
+     * @throws FileSystemException
+     * @throws RuntimeException
      */
     private function getDevScriptUriOverride(): string
     {
@@ -196,7 +201,9 @@ class WidgetInitializer extends Template
             return '';
         }
 
-        return (string)$this->deploymentConfig->get(self::DEV_SCRIPT_URI_CONFIG_PATH);
+        $override = $this->deploymentConfig->get(self::DEV_SCRIPT_URI_CONFIG_PATH);
+
+        return is_string($override) ? $override : '';
     }
 
     /**

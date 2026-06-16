@@ -79,7 +79,7 @@ class TemporaryCartBuilder
      * Builds and persists the temporary quote, returning its ID.
      *
      * @param string $productId Entity ID of the product to purchase.
-     * @param array<string, mixed> $buyRequest Add-to-cart buy request (qty + option arrays).
+     * @param mixed[] $buyRequest Add-to-cart buy request (qty + option arrays).
      *
      * @return int Temporary quote ID.
      *

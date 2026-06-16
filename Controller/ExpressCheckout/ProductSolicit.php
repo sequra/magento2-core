@@ -90,11 +90,9 @@ class ProductSolicit implements HttpGetActionInterface
                 return $result->setHttpResponseCode(429)->setContents('');
             }
 
-            $payload = http_build_query($this->request->getQuery()->toArray());
-
             return $result
                 ->setHeader('Content-Type', 'text/html; charset=UTF-8', true)
-                ->setContents($this->solicitService->solicit($payload));
+                ->setContents($this->solicitService->solicit($this->request->getParams()));
         } catch (WebapiException $e) {
             // 400 invalid request / 401 guest / 422 virtual or not eligible — surfaced to
             // the library's onError callback; the body is irrelevant to it.
