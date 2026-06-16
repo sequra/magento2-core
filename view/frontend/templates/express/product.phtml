@@ -3,14 +3,13 @@
 /** @var \Magento\Framework\Escaper $escaper */
 
 if ($block->isAvailable()):
+    $solicitUrl = $block->getProductSolicitUrl() . '?product=' . $block->getProductId() . '&qty=1';
     ?>
     <div class="sequra-express-checkout sequra-express-checkout--product sequra-express-checkout--disabled"
          data-role="sequra-express-checkout-product">
         <div class="sequra-express-checkout-button"
              data-amount="0"
-             data-url="<?= $escaper->escapeHtmlAttr(
-                 $block->getProductSolicitUrl() . '?product=' . $block->getProductId() . '&qty=1'
-             ); ?>"></div>
+             data-url="<?= $escaper->escapeHtmlAttr($solicitUrl); ?>"></div>
     </div>
     <script type="text/x-magento-init">
         {
