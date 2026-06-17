@@ -27,8 +27,8 @@
 # phpcs runs in a throwaway image (no container needed); phpstan needs the
 # Docker "magento" service with a vendor/ populated by `bin/update-sequra`. If
 # it isn't running the hook FAILS so unverified code can't be pushed — start it
-# with ./setup.sh or bypass with --no-verify. Git hooks have no TTY, so
-# `docker compose exec -T` is used.
+# with ./setup.sh or bypass with --no-verify. phpstan reuses the bin/phpstan
+# wrapper, which drops the TTY automatically when stdout isn't a terminal.
 
 set -euo pipefail
 
@@ -100,6 +100,6 @@ if ! docker compose exec -T magento true >/dev/null 2>&1; then
     echo "  or bypass with: git push --no-verify"
     exit 1
 fi
-docker compose exec -T magento /bin/bash -c "vendor/bin/phpstan analyse -c /Sequra/Core/phpstan.neon --memory-limit=1G --no-progress"
+bin/phpstan
 
 echo "✓ Pre-push checks passed."
