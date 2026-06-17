@@ -25,6 +25,7 @@ export default class DataProvider extends BaseDataProvider {
             ...widgetOptions,
             product: {
                 ...widgetOptions.product,
+                useAltPriceSelectors: false, // Magento integration does not support altProductPrice.
                 priceSel: '.product-info-price [data-price-type="finalPrice"] .price',
                 locationSel: '.product.info',
                 customLocations: [

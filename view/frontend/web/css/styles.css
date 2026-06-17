@@ -14,6 +14,16 @@
     color: gray;
 }
 
+.sequra-banner {
+    text-align: center;
+    margin: 1em 0;
+}
+
+.sequra-banner img {
+    max-width: 100%;
+    height: auto;
+}
+
 .sequra-express-checkout--product {
     position: relative;
 }

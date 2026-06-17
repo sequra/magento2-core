@@ -58,8 +58,9 @@ if [ "$PHP_VERSION" != "7.4" ] \
 && [ "$PHP_VERSION" != "8.1" ] \
 && [ "$PHP_VERSION" != "8.2" ] \
 && [ "$PHP_VERSION" != "8.3" ] \
-&& [ "$PHP_VERSION" != "8.4" ]; then
-    echo "❌ PHP version $PHP_VERSION is not supported. Supported versions are 7.4, 8.1, 8.2, 8.3, 8.4"
+&& [ "$PHP_VERSION" != "8.4" ] \
+&& [ "$PHP_VERSION" != "8.5" ]; then
+    echo "❌ PHP version $PHP_VERSION is not supported. Supported versions are 7.4, 8.1-8.5"
     exit 1
 fi
 
@@ -73,8 +74,9 @@ if [ "$M2_VERSION" != "2.4.3-p3" ] \
 && [ "$M2_VERSION" != "2.4.7-p5" ] \
 && [ "$M2_VERSION" != "2.4.7-p6" ] \
 && [ "$M2_VERSION" != "2.4.8" ] \
-&& [ "$M2_VERSION" != "2.4.8-p1" ]; then
-    echo "❌ Magento version $M2_VERSION is not supported. Supported versions are 2.4.3-p3, 2.4.4-p11, 2.4.5-p10, 2.4.6-p8, 2.4.7-p3, 2.4.7-p4, 2.4.7-p5, 2.4.7-p6, 2.4.8, 2.4.8-p1"
+&& [ "$M2_VERSION" != "2.4.8-p5" ] \
+&& [ "$M2_VERSION" != "2.4.9" ]; then
+    echo "❌ Magento version $M2_VERSION is not supported. Supported versions are 2.4.3-p3, 2.4.4-p11, 2.4.5-p10, 2.4.6-p8, 2.4.7-p3, 2.4.7-p4, 2.4.7-p5, 2.4.7-p6, 2.4.8, 2.4.8-p5, 2.4.9"
     exit 1
 fi
 
@@ -114,8 +116,13 @@ if { [ "$M2_VERSION" == "2.4.7-p5" ] || [ "$M2_VERSION" == "2.4.7-p6" ]; } && [ 
     exit 1
 fi
 
-if { [ "$M2_VERSION" == "2.4.8" ] || [ "$M2_VERSION" == "2.4.8-p1" ]; } && { [ "$PHP_VERSION" != "8.3" ] && [ "$PHP_VERSION" != "8.4" ]; }; then
+if { [ "$M2_VERSION" == "2.4.8" ] || [ "$M2_VERSION" == "2.4.8-p5" ]; } && { [ "$PHP_VERSION" != "8.3" ] && [ "$PHP_VERSION" != "8.4" ]; }; then
     echo "❌ Magento version $M2_VERSION is not compatible with PHP version $PHP_VERSION. Please use PHP version 8.3 or 8.4"
+    exit 1
+fi
+
+if [ "$M2_VERSION" == "2.4.9" ] && { [ "$PHP_VERSION" != "8.4" ] && [ "$PHP_VERSION" != "8.5" ]; }; then
+    echo "❌ Magento version $M2_VERSION is not compatible with PHP version $PHP_VERSION. Please use PHP version 8.4 or 8.5"
     exit 1
 fi
 

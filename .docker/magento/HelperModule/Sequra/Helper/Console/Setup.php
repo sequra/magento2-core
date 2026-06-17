@@ -55,7 +55,7 @@ class Setup extends Command
      * @return int 0 if everything went fine, or an exit code
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         try {
             /**
