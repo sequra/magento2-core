@@ -2,6 +2,12 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Authoritative standard — read before writing code
+
+`.claude/docs/codingStandard.md` is the **binding coding standard** for this module and the single source of truth; the summaries elsewhere in this file defer to it. **Read it before writing or changing any code.** It covers the module architecture, the integration-core bridge, the **PHP 7.4 syntax floor**, the Magento2 PHPCS standard, and PHPStan level 9.
+
+**The quality gate (non-negotiable):** a change is done only when it passes, in this order, the PHP 7.4–8.5 syntax sweep, then `./bin/phpcs -q`, then `./bin/phpstan` (after `./bin/update-sequra`) — i.e. **`phpcs` → `phpstan` must both pass**, all via the Docker `bin/` wrappers. Don't silence PHPStan; the only sanctioned ignores are Magento's auto-generated factories. For tests, see `Test/README.md`.
+
 ## What this is
 
 `Sequra_Core` — the Magento 2 module (`composer` type `magento2-module`, PSR-4 root `Sequra\Core\`) that integrates SeQura payment methods into a Magento store. The module itself is a thin adapter: nearly all business logic lives in the `sequra/integration-core` Composer package (PSR-4 `SeQura\Core\` — note the capital `Q`). This repo implements the Magento-specific *integration interfaces* that core defines, and wires them in via dependency injection.
