@@ -1,0 +1,93 @@
+#!/bin/bash
+#
+# Sequra_Core pre-commit quality gate (operates on staged .php files).
+#
+# Shipped in the repo and enabled by ./setup.sh via:
+#     git config core.hooksPath .githooks
+# Bypass once with:
+#     git commit --no-verify
+#
+# Checks, in order, on the staged .php files:
+#   1. PHP 7.4 syntax (the language floor — composer.json requires php >=7.4).
+#   2. phpcbf then phpcs (Magento2 standard, .phpcs.xml.dist); phpcbf's fixes
+#      are re-staged so they land in the commit.
+#
+# Re-staging caveat: only files phpcbf actually rewrites are `git add`-ed back.
+# If such a file was *partially* staged (`git add -p`, with other hunks left
+# unstaged on purpose), re-staging pulls the whole file — and thus those
+# unstaged hunks — into the commit. The hook warns when this happens; review
+# the diff or bypass with `git commit --no-verify` if it's not what you want.
+#
+# Both steps run in THROWAWAY Docker images — php:7.4-cli-alpine for the syntax
+# lint, php:cli-alpine for phpcs/phpcbf (the same image bin/phpcs uses) — so
+# this hook does NOT need the Magento container running. The heavier gates that
+# do (the 7.4-8.4 syntax sweep, full phpcs, full phpstan) run in the pre-push
+# hook (.githooks/pre-push), matching CI.
+#
+# phpstan is intentionally NOT run here: it needs the "magento" container with a
+# vendor/ populated by `bin/update-sequra`, and its config analyses container
+# paths — impractical to scope per staged file. pre-push runs it in full.
+
+set -euo pipefail
+
+cd "$(git rev-parse --show-toplevel)"
+
+# Staged PHP files (added/copied/modified), NUL-delimited to tolerate spaces.
+STAGED_PHP=()
+while IFS= read -r -d '' f; do
+    STAGED_PHP+=("$f")
+done < <(git diff --cached --name-only --diff-filter=ACM -z -- '*.php')
+
+if [ ${#STAGED_PHP[@]} -eq 0 ]; then
+    echo "No staged PHP files — skipping PHP checks."
+    exit 0
+fi
+
+UIDGID="$(id -u):$(id -g)"
+
+echo "▶ PHP 7.4 syntax check on ${#STAGED_PHP[@]} staged file(s)..."
+docker run --rm -v "$PWD":/app -w /app -u "$UIDGID" php:7.4-cli-alpine \
+    sh -c 'rc=0; for f in "$@"; do php -l -n "$f" >/dev/null || rc=1; done; exit $rc' _ "${STAGED_PHP[@]}"
+
+# Ensure the phpcs toolchain is installed (the same installer bin/phpcs uses).
+bin/phpcs-bin/install
+
+echo "▶ PHP Code Beautifier (phpcbf)..."
+# Files that are partially staged (have unstaged working-tree changes too).
+# Recorded BEFORE phpcbf runs so we can warn that re-staging will also commit
+# those unstaged hunks.
+PARTIAL_STAGED=()
+while IFS= read -r -d '' f; do
+    PARTIAL_STAGED+=("$f")
+done < <(git diff --name-only -z -- "${STAGED_PHP[@]}")
+is_partial() { local p; for p in ${PARTIAL_STAGED[@]+"${PARTIAL_STAGED[@]}"}; do [ "$p" = "$1" ] && return 0; done; return 1; }
+
+# Snapshot blob hashes so we re-stage ONLY files phpcbf actually rewrites
+# (parallel array indexed by position — bash 3.2 safe).
+BEFORE_HASHES=()
+for f in "${STAGED_PHP[@]}"; do
+    BEFORE_HASHES+=("$(git hash-object -- "$f" 2>/dev/null || true)")
+done
+
+# phpcbf exits non-zero when it fixes things; phpcs below is the authority.
+docker run --rm -v "$PWD":/app -w /app -u "$UIDGID" php:cli-alpine \
+    php bin/phpcs-bin/vendor/bin/phpcbf --standard=.phpcs.xml.dist "${STAGED_PHP[@]}" || true
+
+# Re-stage only files phpcbf changed. Warn if such a file was partially staged,
+# since re-staging pulls its unstaged hunks into the commit too.
+i=0
+for f in "${STAGED_PHP[@]}"; do
+    if [ "$(git hash-object -- "$f" 2>/dev/null || true)" != "${BEFORE_HASHES[$i]}" ]; then
+        if is_partial "$f"; then
+            echo "  ⚠ $f was partially staged; re-staging phpcbf's fix also stages its other unstaged changes."
+        fi
+        git add -- "$f"
+    fi
+    i=$((i + 1))
+done
+
+echo "▶ PHP_CodeSniffer (phpcs)..."
+docker run --rm -v "$PWD":/app -w /app -u "$UIDGID" php:cli-alpine \
+    php bin/phpcs-bin/vendor/bin/phpcs --standard=.phpcs.xml.dist "${STAGED_PHP[@]}"
+
+echo "✓ Pre-commit checks passed."

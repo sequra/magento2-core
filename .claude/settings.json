@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(bin/phpcs:*)",
+      "Bash(bin/phpcbf:*)",
+      "Bash(bin/phpstan:*)",
+      "Bash(bin/magento:*)",
+      "Bash(bin/composer:*)",
+      "Bash(bin/n98-magerun2:*)",
+      "Bash(bin/npm:*)",
+      "Bash(bin/install-hyva:*)",
+      "Bash(bin/playwright:*)",
+      "Bash(bin/update-sequra:*)",
+      "Bash(bin/update-integration-core-ui:*)",
+      "Bash(bin/xdebug:*)",
+      "Bash(php -l:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(git branch:*)",
+      "Bash(git --version)",
+      "Bash(git check-attr:*)",
+      "Skill(sq-git:commit)",
+      "Skill(sq-git:open-pr)",
+      "Skill(sq-git:sync-branch)"
+    ],
+    "deny": [
+      "Read(**/.env*)",
+      "Read(.env*)",
+      "Read(**/*.pem)",
+      "Read(**/*.key)"
+    ],
+    "ask": [
+      "Bash(./setup.sh:*)",
+      "Bash(./teardown.sh:*)",
+      "Bash(git push:*)"
+    ]
+  }
+}
