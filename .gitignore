@@ -28,8 +28,14 @@ bin/php/*
 *.gz
 # LLM tooling files (managed by sequcli)
 llm-tooling
-CLAUDE.md
-.claude/
 AGENTS.md
 .opencode/
 opencode.json
+
+# Claude files
+CLAUDE.local.md
+.claude/settings.local.json
+.claude/cache/
+.claude/tmp/
+.claude/logs/
+.claude/artifacts/

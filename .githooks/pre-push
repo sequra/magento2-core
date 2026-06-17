@@ -1,0 +1,105 @@
+#!/bin/bash
+#
+# Sequra_Core pre-push quality gate — mirrors the CI lint / static-analysis gate.
+#
+# Shipped in the repo and enabled by ./setup.sh via:
+#     git config core.hooksPath .githooks
+# Bypass once with:
+#     git push --no-verify
+#
+# Runs the comprehensive checks that are too heavy (or can't be scoped to
+# staged files) for the pre-commit hook — the same ones CI runs:
+#   1. PHP syntax sweep across every supported version (7.4-8.4) over the pushed
+#      .php files, using throwaway php:<ver>-cli-alpine images (the FIRST push
+#      pulls them). Pre-commit only lints 7.4; this is the full sweep.
+#   2. Full phpcs (Magento2 standard) over the repo — via bin/phpcs.
+#   3. Full phpstan (level 9 over the module) — needs the "magento" container.
+#
+# PHPUnit is intentionally NOT run here: the suite needs a Magento install and
+# double-loads if the module is both installed in Magento and present locally
+# (see Test/README.md) — unsuitable for an automatic hook. It isn't part of the
+# CI lint gate either.
+#
+# The hook inspects the commits being pushed and SKIPS when none touch PHP code
+# or the config that drives the checks (composer.json/lock, phpstan.neon,
+# .phpcs.xml.dist) — a docs-only push runs nothing.
+#
+# phpcs runs in a throwaway image (no container needed); phpstan needs the
+# Docker "magento" service with a vendor/ populated by `bin/update-sequra`. If
+# it isn't running the hook FAILS so unverified code can't be pushed — start it
+# with ./setup.sh or bypass with --no-verify. phpstan reuses the bin/phpstan
+# wrapper, which drops the TTY automatically when stdout isn't a terminal.
+
+set -euo pipefail
+
+cd "$(git rev-parse --show-toplevel)"
+
+# Files whose changes can affect phpcs/phpstan results.
+RELEVANT='\.php$|^composer\.(json|lock)$|^phpstan\.neon$|^\.phpcs\.xml\.dist$'
+
+EMPTY_TREE=$(git hash-object -t tree /dev/null)
+is_zero() { case "$1" in *[!0]*) return 1 ;; *) return 0 ;; esac; }
+
+# Inspect each ref being pushed (git pre-push feeds these on stdin as
+# "<local ref> <local sha> <remote ref> <remote sha>"). Accumulate the changed
+# .php files (added/copied/modified) for the syntax sweep as we go.
+relevant=0
+CHANGED_PHP=()
+while read -r _local_ref local_sha _remote_ref remote_sha; do
+    is_zero "$local_sha" && continue            # branch deletion — nothing to check
+
+    if is_zero "$remote_sha"; then
+        # New branch on the remote: diff the commits not yet on any remote.
+        oldest=$(git rev-list "$local_sha" --not --remotes | tail -1)
+        [ -z "$oldest" ] && continue            # nothing new to push
+        if base=$(git rev-parse --quiet --verify "${oldest}^" 2>/dev/null); then :; else
+            base="$EMPTY_TREE"                  # oldest is a root commit
+        fi
+    else
+        base="$remote_sha"
+    fi
+
+    if git diff --name-only "$base" "$local_sha" | grep -qE "$RELEVANT"; then
+        relevant=1
+    fi
+
+    while IFS= read -r -d '' f; do
+        CHANGED_PHP+=("$f")
+    done < <(git diff --name-only --diff-filter=ACM -z "$base" "$local_sha" -- '*.php')
+done
+
+if [ "$relevant" -eq 0 ]; then
+    echo "No PHP-relevant changes in the pushed commits — skipping phpcs/phpstan."
+    exit 0
+fi
+
+# Multi-version syntax sweep over the pushed .php files (7.4-8.4), using
+# throwaway php:<ver>-cli-alpine images. Only files still present in the working
+# tree are linted (php -l needs the content on disk; deletions are skipped).
+PHP_VERSIONS="7.4 8.0 8.1 8.2 8.3 8.4"
+SYNTAX_PHP=()
+for f in ${CHANGED_PHP[@]+"${CHANGED_PHP[@]}"}; do
+    [ -f "$f" ] && SYNTAX_PHP+=("$f")
+done
+if [ ${#SYNTAX_PHP[@]} -gt 0 ]; then
+    echo "▶ PHP syntax sweep (${PHP_VERSIONS// /, }) on ${#SYNTAX_PHP[@]} changed file(s)..."
+    for ver in $PHP_VERSIONS; do
+        echo "  php $ver..."
+        docker run --rm -v "$PWD":/app -w /app "php:${ver}-cli-alpine" \
+            sh -c 'rc=0; for f in "$@"; do php -l -n "$f" >/dev/null || rc=1; done; exit $rc' _ "${SYNTAX_PHP[@]}"
+    done
+fi
+
+echo "▶ PHP_CodeSniffer (full, Magento2 standard)..."
+bin/phpcs -q
+
+echo "▶ PHPStan (full analysis over the module)..."
+if ! docker compose exec -T magento true >/dev/null 2>&1; then
+    echo "✗ Docker 'magento' service is not running — cannot run phpstan."
+    echo "  Start it with ./setup.sh, ensure vendor/ is populated (bin/update-sequra),"
+    echo "  or bypass with: git push --no-verify"
+    exit 1
+fi
+bin/phpstan
+
+echo "✓ Pre-push checks passed."

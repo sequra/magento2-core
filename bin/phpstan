@@ -1,2 +1,6 @@
 #!/bin/bash
-docker compose exec magento /bin/bash -c "vendor/bin/phpstan analyse -c /Sequra/Core/phpstan.neon --memory-limit=1G --no-progress $@"
+# Drop the TTY when stdout isn't a terminal (e.g. git hooks) so this same
+# wrapper can be reused from .githooks/pre-push without a "not a tty" error.
+TTY=""
+[ -t 1 ] || TTY="-T"
+docker compose exec $TTY magento /bin/bash -c "vendor/bin/phpstan analyse -c /Sequra/Core/phpstan.neon --memory-limit=1G --no-progress $@"
