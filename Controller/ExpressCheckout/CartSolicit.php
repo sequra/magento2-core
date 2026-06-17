@@ -8,6 +8,7 @@ use Magento\Customer\Model\Session as CustomerSession;
 use Magento\Framework\App\Action\HttpGetActionInterface;
 use Magento\Framework\Controller\Result\Raw;
 use Magento\Framework\Controller\Result\RawFactory;
+use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Webapi\Exception as WebapiException;
 use SeQura\Core\Infrastructure\Logger\Logger;
 use Sequra\Core\Api\ExpressCheckout\SolicitInterface;
@@ -107,6 +108,10 @@ class CartSolicit implements HttpGetActionInterface
             // 422 not eligible — surfaced to the library's onError callback; the body is
             // irrelevant to it.
             return $result->setHttpResponseCode($e->getHttpCode())->setContents('');
+        } catch (NoSuchEntityException $e) {
+            // The session quote is gone/inactive (e.g. the order was placed in another tab),
+            // so there is nothing to solicit — a 400, not an opaque 500.
+            return $result->setHttpResponseCode(WebapiException::HTTP_BAD_REQUEST)->setContents('');
         } catch (Exception $e) {
             Logger::logError('Express Checkout cart solicit failed: ' . $e->getMessage());
 

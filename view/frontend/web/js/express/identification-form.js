@@ -14,14 +14,30 @@ define(
     function ($, $t, fullScreenLoader) {
         'use strict';
 
-        function waitForSequraFormInstance(callback) {
-            if (typeof window.SequraFormInstance === 'undefined') {
-                setTimeout(waitForSequraFormInstance, 100, callback);
+        // The solicited snippet loads SeQura's checkout JS asynchronously, so window.SequraFormInstance
+        // appears only once that script runs. Poll for it, but give up after MAX_ATTEMPTS so a failed/
+        // blocked library load can't leave a permanent 100ms timer and a stuck blocking spinner.
+        var POLL_INTERVAL_MS = 100,
+            MAX_ATTEMPTS = 100; // ~10s
+
+        function waitForSequraFormInstance(callback, onTimeout, attempt) {
+            attempt = attempt || 0;
+
+            if (typeof window.SequraFormInstance !== 'undefined') {
+                callback();
 
                 return;
             }
 
-            callback();
+            if (attempt >= MAX_ATTEMPTS) {
+                if (onTimeout) {
+                    onTimeout();
+                }
+
+                return;
+            }
+
+            setTimeout(waitForSequraFormInstance, POLL_INTERVAL_MS, callback, onTimeout, attempt + 1);
         }
 
         return {
@@ -30,8 +46,10 @@ define(
              *
              * @param {String} identificationForm The identification form HTML returned by the solicit endpoint.
              * @param {Function} [onShown] Called once the form is visible (e.g. to remove a caller-owned spinner).
+             * @param {Function} [onFailed] Called if the form instance never appears (so the caller can
+             *                               clear its spinner instead of leaving the shopper stuck).
              */
-            showIdentificationForm: function (identificationForm, onShown) {
+            showIdentificationForm: function (identificationForm, onShown, onFailed) {
                 $('body').append(identificationForm);
 
                 waitForSequraFormInstance(function () {
@@ -48,6 +66,14 @@ define(
 
                     if (onShown) {
                         onShown();
+                    }
+                }, function () {
+                    // Library script failed to expose SequraFormInstance — stop loaders, clear the
+                    // caller's spinner, and surface the inline unavailable message instead of hanging.
+                    fullScreenLoader.stopLoader();
+
+                    if (onFailed) {
+                        onFailed();
                     }
                 });
             },

@@ -84,6 +84,11 @@ define(
 
                 identificationForm.showIdentificationForm(html, function () {
                     $overlay.remove();
+                }, function () {
+                    // Form instance never appeared (library load failed) — clear the spinner and
+                    // surface the inline unavailable message instead of leaving the shopper stuck.
+                    $overlay.remove();
+                    identificationForm.showUnavailable($mount);
                 });
             }).fail(function (response) {
                 $overlay.remove();

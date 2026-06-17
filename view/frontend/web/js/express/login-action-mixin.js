@@ -20,6 +20,19 @@ define(
         'use strict';
 
         return function (originalAction) {
+            // The login pop-up view clears its loading spinner (isLoading(false)) only from a
+            // registered login callback — not from the returned promise. The original action
+            // fires those callbacks in every branch; our no-reload path must do the same, or the
+            // spinner stays up forever and the form is blocked (e.g. after invalid credentials the
+            // shopper can't retry). Capture the callbacks and fire them in every branch.
+            var loginCallbacks = [];
+
+            function fireLoginCallbacks(loginData) {
+                loginCallbacks.forEach(function (callback) {
+                    callback(loginData);
+                });
+            }
+
             var action = function (loginData, redirectUrl, isGlobal, messageContainer) {
                 var customerLoginUrl = 'customer/ajax/login',
                     container = messageContainer || globalMessageList;
@@ -40,10 +53,13 @@ define(
                 ).done(function (response) {
                     if (response.errors) {
                         container.addErrorMessage(response);
+                        // Clear the spinner so the shopper can correct and resubmit.
+                        fireLoginCallbacks(loginData);
 
                         return;
                     }
 
+                    fireLoginCallbacks(loginData);
                     customerData.invalidate(['customer']);
                     customerData.reload(['customer'], true);
                     $(document).trigger('sequra:express:login-success');
@@ -51,11 +67,16 @@ define(
                     container.addErrorMessage({
                         'message': $t('Could not authenticate. Please try again later')
                     });
+                    fireLoginCallbacks(loginData);
                 });
             };
 
-            // Preserve the public API of the original action.
-            action.registerLoginCallback = originalAction.registerLoginCallback;
+            // Capture callbacks locally (to fire on the no-reload path) and forward them to the
+            // original action so the standard login flow keeps working unchanged.
+            action.registerLoginCallback = function (callback) {
+                loginCallbacks.push(callback);
+                originalAction.registerLoginCallback(callback);
+            };
 
             return action;
         };

@@ -53,13 +53,16 @@ class QuoteShippingResolver
     }
 
     /**
-     * Read-only availability probe: returns the country of the customer's default
-     * shipping address when a shipping rate is available for the cart, or null when
-     * the button should not render (no customer, no default shipping address, or no
-     * applicable rate). Does not set a shipping/payment method, collect totals, or
-     * save — the live cart is left untouched.
+     * Read-only availability probe: returns the ISO2 country of the customer's default
+     * shipping address, or null when the button should not render (guest, or no default
+     * shipping address). It reads the customer's address directly and never touches the
+     * passed quote — the storefront block calls this on the shared checkout-session quote
+     * during render, so importing an address / collecting rates / recomputing totals here
+     * would corrupt the cart the shopper sees. Whether a shipping rate actually exists is
+     * validated later, at solicit time, by resolve() (which surfaces a "not eligible" 422
+     * when no rate is available).
      *
-     * @param Quote $quote Cart quote to probe.
+     * @param Quote $quote Cart quote whose customer is probed (not mutated).
      *
      * @return string|null ISO2 shipping country, or null when express is unavailable.
      */
@@ -76,11 +79,7 @@ class QuoteShippingResolver
                 return null;
             }
 
-            if ($this->collectCheapestRate($quote, $defaultShippingAddress) === null) {
-                return null;
-            }
-
-            return (string)$quote->getShippingAddress()->getCountryId() ?: null;
+            return (string)$defaultShippingAddress->getCountryId() ?: null;
         } catch (Exception $e) {
             Logger::logError('Express Checkout shipping availability check failed: ' . $e->getMessage() .
                 ' Trace: ' . $e->getTraceAsString());
