@@ -9,7 +9,8 @@ if ($block->isAvailable()):
           // through the contentUpdated hook. The initializer asks the library to mount the
           // freshly injected button. ?>
     <div class="sequra-express-checkout sequra-express-checkout--minicart"
-         data-mage-init='{"Sequra_Core/js/express/cart-express": {}}'>
+         data-mage-init='{"Sequra_Core/js/express/cart-express": {}}'
+         data-availability-url="<?= $escaper->escapeHtmlAttr($block->getAvailabilityUrl()); ?>">
         <div class="sequra-express-checkout-button"
              data-url="<?= $escaper->escapeHtmlAttr($block->getSolicitUrl()); ?>"></div>
     </div>
