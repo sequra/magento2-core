@@ -87,6 +87,13 @@ class ProductSolicitService implements ProductSolicitInterface
             throw new WebapiException(__('Invalid Express Checkout request.'), 0, WebapiException::HTTP_BAD_REQUEST);
         }
 
-        return $this->solicitService->solicit((string)$cartId);
+        try {
+            return $this->solicitService->solicit((string)$cartId);
+        } finally {
+            // Deactivate the temporary quote as soon as the solicit is done with it (success or
+            // failure) so it never shadows the shopper's real cart on the cart page / mini-cart
+            // after they cancel. It is reactivated only at order placement.
+            $this->temporaryCartBuilder->deactivate($cartId);
+        }
     }
 }

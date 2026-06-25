@@ -23,11 +23,15 @@ use Magento\Store\Model\StoreManagerInterface;
  * purchase needs no restore.
  *
  * A single temporary quote is reused per customer (its id is remembered on the customer session)
- * for as long as it stays open. Re-soliciting — e.g. cancelling a solicit and changing the
- * quantity — therefore keeps a stable cart reference, so integration-core deletes and re-creates
- * the SeQura order for that cart instead of leaving the cancelled solicit (with the stale
- * quantity) behind. A fresh quote is built only once the previous one has been ordered (and thus
- * deactivated) or no longer exists.
+ * for as long as it stays an open draft. Re-soliciting — e.g. cancelling a solicit and changing
+ * the quantity — therefore keeps a stable cart reference, so integration-core deletes and
+ * re-creates the SeQura order for that cart instead of leaving the cancelled solicit (with the
+ * stale quantity) behind. A fresh quote is built only once the previous one has been placed as an
+ * order or no longer exists.
+ *
+ * The draft is kept inactive between solicits ({@see deactivate}) so it never shadows the
+ * shopper's real cart in active-cart resolution (cart page / mini-cart) after they cancel; it is
+ * activated only for the duration of a solicit and again at order placement.
  */
 class TemporaryCartBuilder
 {
@@ -147,9 +151,9 @@ class TemporaryCartBuilder
     }
 
     /**
-     * Returns this customer's reusable Express Checkout temporary quote, emptied of its items, or
-     * null when there is none to reuse (no remembered id, the quote is gone, it belongs to another
-     * customer, or it has already been ordered and deactivated).
+     * Returns this customer's reusable Express Checkout temporary quote, reactivated and emptied of
+     * its items, or null when there is none to reuse (no remembered id, the quote is gone, it
+     * belongs to another customer, or it has already been placed as an order).
      *
      * @param int $customerId
      * @param int $storeId
@@ -170,14 +174,46 @@ class TemporaryCartBuilder
             return null;
         }
 
-        if (!$quote->getIsActive() || (int)$quote->getCustomerId() !== $customerId) {
+        // A reserved order id is only set when the quote goes through placeOrder, so an empty value
+        // means the quote is still an open express draft that can be reused. (Soliciting never
+        // reserves an order id.) The is_active flag is not a reuse signal here: drafts are left
+        // inactive between solicits so they do not shadow the real cart.
+        if ((int)$quote->getCustomerId() !== $customerId || (string)$quote->getReservedOrderId() !== '') {
             return null;
         }
 
         $quote->setStoreId($storeId);
+        $quote->setIsActive(true);
         $quote->removeAllItems();
 
         return $quote;
+    }
+
+    /**
+     * Deactivates the temporary quote once a solicit is done with it, so it stays out of
+     * active-cart resolution (cart page / mini-cart) and never shadows the shopper's real cart.
+     * It is reactivated on the next solicit ({@see resolveReusableQuote}) and at order placement.
+     *
+     * @param int $cartId
+     *
+     * @return void
+     */
+    public function deactivate(int $cartId): void
+    {
+        if ($cartId <= 0) {
+            return;
+        }
+
+        try {
+            $quote = $this->quoteRepository->get($cartId);
+        } catch (NoSuchEntityException $e) {
+            return;
+        }
+
+        if ($quote->getIsActive()) {
+            $quote->setIsActive(false);
+            $this->quoteRepository->save($quote);
+        }
     }
 
     /**
