@@ -123,9 +123,10 @@ class QuoteShippingResolver
     }
 
     /**
-     * Applies the customer's default shipping/billing addresses, the cheapest
-     * available shipping rate and the SeQura payment method to the quote, then
-     * recomputes totals from a clean state and persists the quote.
+     * Applies the customer's default shipping/billing addresses, a shipping rate and the SeQura
+     * payment method to the quote, then recomputes totals from a clean state and persists the
+     * quote. The rate already selected by the shopper (e.g. on the cart/checkout) is kept when it
+     * is still available; otherwise the cheapest rate is used.
      *
      * @param Quote $quote Cart quote to mutate and save.
      *
@@ -145,13 +146,22 @@ class QuoteShippingResolver
                 return false;
             }
 
-            $cheapest = $this->collectCheapestRate($quote, $defaultShippingAddress);
-            if ($cheapest === null) {
+            $shippingAddress = $quote->getShippingAddress();
+            // Capture the shopper's choice before re-collecting rates (which clears the method), so
+            // express keeps a higher-cost method they explicitly selected instead of silently
+            // downgrading to the cheapest — which would make the solicited amount diverge from the
+            // placed order and fail payment.
+            $preselectedMethod = (string)$shippingAddress->getShippingMethod();
+
+            $rate = $this->selectRate(
+                $this->collectRates($quote, $defaultShippingAddress),
+                $preselectedMethod
+            );
+            if ($rate === null) {
                 return false;
             }
 
-            $shippingAddress = $quote->getShippingAddress();
-            $shippingAddress->setShippingMethod($cheapest->getCode());
+            $shippingAddress->setShippingMethod($rate->getCode());
             $shippingAddress->setCollectShippingRates(true);
 
             $quote->getBillingAddress()->importCustomerAddressData(
@@ -227,6 +237,28 @@ class QuoteShippingResolver
     }
 
     /**
+     * Imports the given address onto the quote's shipping address and (re)collects shipping rates
+     * from a clean state, returning every available rate. Does not persist the quote.
+     *
+     * @param Quote $quote
+     * @param AddressInterface $address
+     *
+     * @return Rate[]
+     */
+    private function collectRates(Quote $quote, AddressInterface $address): array
+    {
+        $shippingAddress = $quote->getShippingAddress();
+        $shippingAddress->importCustomerAddressData($address);
+        $shippingAddress->setShippingMethod('');
+        $shippingAddress->setCollectShippingRates(true);
+
+        $quote->setData('totals_collected_flag', false);
+        $quote->collectTotals();
+
+        return $shippingAddress->getAllShippingRates();
+    }
+
+    /**
      * Imports the given address onto the quote's shipping address and (re)collects
      * shipping rates from a clean state, returning the cheapest available rate or null.
      * Does not persist the quote.
@@ -238,15 +270,29 @@ class QuoteShippingResolver
      */
     private function collectCheapestRate(Quote $quote, AddressInterface $address): ?Rate
     {
-        $shippingAddress = $quote->getShippingAddress();
-        $shippingAddress->importCustomerAddressData($address);
-        $shippingAddress->setShippingMethod('');
-        $shippingAddress->setCollectShippingRates(true);
+        return $this->pickCheapestRate($this->collectRates($quote, $address));
+    }
 
-        $quote->setData('totals_collected_flag', false);
-        $quote->collectTotals();
+    /**
+     * Returns the rate matching the already-selected method when it is still available, otherwise
+     * the cheapest available rate (or null when there is none).
+     *
+     * @param Rate[] $rates
+     * @param string $selectedCode Shipping method code already on the quote, if any.
+     *
+     * @return Rate|null
+     */
+    private function selectRate(array $rates, string $selectedCode): ?Rate
+    {
+        if ($selectedCode !== '') {
+            foreach ($rates as $rate) {
+                if (!$rate->getErrorMessage() && (string)$rate->getCode() === $selectedCode) {
+                    return $rate;
+                }
+            }
+        }
 
-        return $this->pickCheapestRate($shippingAddress->getAllShippingRates());
+        return $this->pickCheapestRate($rates);
     }
 
     /**
