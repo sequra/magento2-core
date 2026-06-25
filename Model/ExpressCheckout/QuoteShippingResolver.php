@@ -106,9 +106,10 @@ class QuoteShippingResolver
             // the resource model into a fresh instance keeps it independent of the repository cache
             // (and of AbstractModel::load(), which is deprecated). The button must not be offered
             // when nothing can be shipped to the customer's destination.
+            $quoteId = $quote->getId();
             /** @var Quote $probe */
             $probe = $this->quoteFactory->create();
-            $this->quoteResource->load($probe, (int)$quote->getId());
+            $this->quoteResource->load($probe, is_scalar($quoteId) ? (int)$quoteId : 0);
             if (!$probe->getId() || $this->collectCheapestRate($probe, $defaultShippingAddress) === null) {
                 return null;
             }
