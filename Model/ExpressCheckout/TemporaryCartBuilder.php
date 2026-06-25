@@ -20,7 +20,14 @@ use Magento\Store\Model\StoreManagerInterface;
  * Builds a detached temporary quote for the SeQura Express Checkout product flow: a standalone
  * quote owned by the logged in customer containing only the viewed product with its selected
  * options and quantity. The shopper's real cart is never touched, so cancelling the express
- * purchase needs no restore. Orphaned temporary quotes are cleaned up later (deferred).
+ * purchase needs no restore.
+ *
+ * A single temporary quote is reused per customer (its id is remembered on the customer session)
+ * for as long as it stays open. Re-soliciting — e.g. cancelling a solicit and changing the
+ * quantity — therefore keeps a stable cart reference, so integration-core deletes and re-creates
+ * the SeQura order for that cart instead of leaving the cancelled solicit (with the stale
+ * quantity) behind. A fresh quote is built only once the previous one has been ordered (and thus
+ * deactivated) or no longer exists.
  */
 class TemporaryCartBuilder
 {
@@ -105,10 +112,13 @@ class TemporaryCartBuilder
         /** @var Product $product */
         $product = $this->productRepository->getById((int)$productId, false, (int)$store->getId());
 
-        $quote = $this->quoteFactory->create();
-        $quote->setStoreId($store->getId());
-        $quote->assignCustomer($this->customerSession->getCustomerData());
-        $quote->setIsActive(true);
+        $quote = $this->resolveReusableQuote($customerId, (int)$store->getId());
+        if (!$quote) {
+            $quote = $this->quoteFactory->create();
+            $quote->setStoreId($store->getId());
+            $quote->assignCustomer($this->customerSession->getCustomerData());
+            $quote->setIsActive(true);
+        }
 
         $result = $quote->addProduct($product, new DataObject($buyRequest));
         if (is_string($result)) {
@@ -130,8 +140,72 @@ class TemporaryCartBuilder
         $this->quoteRepository->save($quote);
 
         $quoteId = $quote->getId();
+        $id = is_scalar($quoteId) ? (int)$quoteId : 0;
+        $this->rememberQuoteId($id);
 
-        return is_scalar($quoteId) ? (int)$quoteId : 0;
+        return $id;
+    }
+
+    /**
+     * Returns this customer's reusable Express Checkout temporary quote, emptied of its items, or
+     * null when there is none to reuse (no remembered id, the quote is gone, it belongs to another
+     * customer, or it has already been ordered and deactivated).
+     *
+     * @param int $customerId
+     * @param int $storeId
+     *
+     * @return Quote|null
+     */
+    private function resolveReusableQuote(int $customerId, int $storeId): ?Quote
+    {
+        $storedId = $this->rememberedQuoteId();
+        if ($storedId <= 0) {
+            return null;
+        }
+
+        try {
+            /** @var Quote $quote */
+            $quote = $this->quoteRepository->get($storedId);
+        } catch (NoSuchEntityException $e) {
+            return null;
+        }
+
+        if (!$quote->getIsActive() || (int)$quote->getCustomerId() !== $customerId) {
+            return null;
+        }
+
+        $quote->setStoreId($storeId);
+        $quote->removeAllItems();
+
+        return $quote;
+    }
+
+    /**
+     * Reads the remembered reusable temporary quote id from the customer session.
+     *
+     * @return int
+     */
+    private function rememberedQuoteId(): int
+    {
+        // Magic session accessor: maps to the `sequra_express_quote_id` storage key.
+        // @phpstan-ignore-next-line magic session getter (no PHPStan Magento extension configured)
+        $stored = $this->customerSession->getSequraExpressQuoteId();
+
+        return is_scalar($stored) ? (int)$stored : 0;
+    }
+
+    /**
+     * Remembers the reusable temporary quote id on the customer session.
+     *
+     * @param int $quoteId
+     *
+     * @return void
+     */
+    private function rememberQuoteId(int $quoteId): void
+    {
+        // Magic session accessor: maps to the `sequra_express_quote_id` storage key.
+        // @phpstan-ignore-next-line magic session setter (no PHPStan Magento extension configured)
+        $this->customerSession->setSequraExpressQuoteId($quoteId);
     }
 
     /**
