@@ -11,6 +11,8 @@ use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Quote\Api\CartRepositoryInterface;
 use Magento\Quote\Model\Quote;
 use Magento\Quote\Model\Quote\Address\Rate;
+use Magento\Quote\Model\QuoteFactory;
+use Magento\Quote\Model\ResourceModel\Quote as QuoteResource;
 use SeQura\Core\Infrastructure\Logger\Logger;
 use Sequra\Core\Model\Ui\ConfigProvider;
 
@@ -22,8 +24,9 @@ use Sequra\Core\Model\Ui\ConfigProvider;
  *
  * Two entry points with different contracts:
  *  - getResolvableShippingCountry() is a read-only availability probe for storefront
- *    blocks: it collects rates in memory to decide whether the button should render,
- *    but never persists the quote (a render must not mutate the shopper's live cart).
+ *    blocks: it confirms the customer's default-shipping country has at least one usable
+ *    shipping rate, but never persists or mutates the shopper's live cart (it probes a
+ *    throwaway copy of the quote loaded fresh from storage).
  *  - resolve() performs the actual mutate-and-save once, at solicit time, recomputing
  *    totals from a clean state so the shipping line cannot compound across calls.
  */
@@ -37,30 +40,45 @@ class QuoteShippingResolver
      * @var CartRepositoryInterface
      */
     private CartRepositoryInterface $quoteRepository;
+    /**
+     * @var QuoteFactory
+     */
+    private QuoteFactory $quoteFactory;
+    /**
+     * @var QuoteResource
+     */
+    private QuoteResource $quoteResource;
 
     /**
      * QuoteShippingResolver constructor.
      *
      * @param CustomerRepositoryInterface $customerRepository
      * @param CartRepositoryInterface $quoteRepository
+     * @param QuoteFactory $quoteFactory
+     * @param QuoteResource $quoteResource
      */
     public function __construct(
         CustomerRepositoryInterface $customerRepository,
-        CartRepositoryInterface $quoteRepository
+        CartRepositoryInterface $quoteRepository,
+        QuoteFactory $quoteFactory,
+        QuoteResource $quoteResource
     ) {
         $this->customerRepository = $customerRepository;
         $this->quoteRepository = $quoteRepository;
+        $this->quoteFactory = $quoteFactory;
+        $this->quoteResource = $quoteResource;
     }
 
     /**
      * Read-only availability probe: returns the ISO2 country of the customer's default
-     * shipping address, or null when the button should not render (guest, or no default
-     * shipping address). It reads the customer's address directly and never touches the
-     * passed quote — the storefront block calls this on the shared checkout-session quote
-     * during render, so importing an address / collecting rates / recomputing totals here
-     * would corrupt the cart the shopper sees. Whether a shipping rate actually exists is
-     * validated later, at solicit time, by resolve() (which surfaces a "not eligible" 422
-     * when no rate is available).
+     * shipping address when express can actually be fulfilled there, or null when the button
+     * should not render (guest, no default shipping address, or no shipping rate available
+     * for that destination).
+     *
+     * The shipping-rate check runs against a throwaway copy of the cart loaded fresh from
+     * storage, never the passed quote: the storefront block calls this on the shared
+     * checkout-session quote during render, so importing an address / collecting rates /
+     * recomputing totals on it would corrupt the cart the shopper sees.
      *
      * @param Quote $quote Cart quote whose customer is probed (not mutated).
      *
@@ -79,7 +97,23 @@ class QuoteShippingResolver
                 return null;
             }
 
-            return (string)$defaultShippingAddress->getCountryId() ?: null;
+            $country = (string)$defaultShippingAddress->getCountryId();
+            if ($country === '') {
+                return null;
+            }
+
+            // Probe a throwaway copy so collecting rates cannot mutate the live cart. Loading via
+            // the resource model into a fresh instance keeps it independent of the repository cache
+            // (and of AbstractModel::load(), which is deprecated). The button must not be offered
+            // when nothing can be shipped to the customer's destination.
+            /** @var Quote $probe */
+            $probe = $this->quoteFactory->create();
+            $this->quoteResource->load($probe, (int)$quote->getId());
+            if (!$probe->getId() || $this->collectCheapestRate($probe, $defaultShippingAddress) === null) {
+                return null;
+            }
+
+            return $country;
         } catch (Exception $e) {
             Logger::logError('Express Checkout shipping availability check failed: ' . $e->getMessage() .
                 ' Trace: ' . $e->getTraceAsString());
