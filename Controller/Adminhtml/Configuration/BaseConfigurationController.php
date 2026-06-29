@@ -89,6 +89,13 @@ class BaseConfigurationController extends Action
         $identifier = $request->getParam('identifier');
         $this->identifier = $identifier;
 
+        // These AJAX actions only read request params and call the SeQura API; they never touch session data.
+        // Release the session write lock now so the onboarding page's parallel requests don't exhaust the
+        // Redis session handler's max_concurrency and fail with "exceeded concurrent connections" (PAR-821).
+        // Admin authentication and ACL have already run during dispatch(), before execute().
+        // phpcs:ignore Magento2.Functions.DiscouragedFunction.Discouraged
+        session_write_close();
+
         return $this->$action();
     }
 
