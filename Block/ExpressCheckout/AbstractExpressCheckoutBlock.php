@@ -120,6 +120,18 @@ abstract class AbstractExpressCheckoutBlock extends Template
     }
 
     /**
+     * The storefront endpoint that re-checks availability live (bypassing the cached `cart`
+     * customer-data section) so a button left stale after the merchant disables Express Checkout
+     * is torn down on the next mini-cart open.
+     *
+     * @return string
+     */
+    public function getAvailabilityUrl(): string
+    {
+        return $this->getUrl('sequra/expresscheckout/cartavailability');
+    }
+
+    /**
      * Resolves — once per request — whether to render the button, the inline message or nothing.
      *
      * @return string One of AvailabilityEvaluator::STATE_*.
