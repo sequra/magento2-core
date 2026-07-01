@@ -8,6 +8,7 @@ import CheckoutPage from "./pages/CheckoutPage";
 import CartPage from "./pages/CartPage";
 import CategoryPage from "./pages/CategoryPage";
 import AccountPage from "./pages/AccountPage";
+import ExpressCheckoutPage from "./pages/ExpressCheckoutPage";
 
 const test = baseTest.extend({
     dataProvider: async ({ page, baseURL, request }, use) => await use(new DataProvider(page, baseURL, expect, request)),
@@ -20,6 +21,7 @@ const test = baseTest.extend({
     onboardingSettingsPage: async ({ page, baseURL, request, backOffice, helper}, use) =>  await use(new OnboardingSettingsPage(page, baseURL, expect, request, backOffice, helper)),
     checkoutPage: async ({ page, baseURL, request}, use) =>  await use(new CheckoutPage(page, baseURL, expect, request)),
     accountPage: async ({ page, baseURL, request}, use) =>  await use(new AccountPage(page, baseURL, expect, request)),
+    expressCheckoutPage: async ({ page, baseURL}, use) =>  await use(new ExpressCheckoutPage(page, baseURL, expect)),
     generalSettingsPage: async ({ page, baseURL, request, backOffice, helper}, use) =>  await use(new GeneralSettingsPage(page, baseURL, expect, request, backOffice, helper)),
     connectionSettingsPage: async ({ page, baseURL, request, backOffice, helper}, use) =>  await use(new ConnectionSettingsPage(page, baseURL, expect, request, backOffice, helper)),
     widgetSettingsPage: async ({ page, baseURL, request, backOffice, helper}, use) =>  await use(new WidgetSettingsPage(page, baseURL, expect, request, backOffice, helper)),

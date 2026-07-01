@@ -15,7 +15,7 @@ export default class AccountPage extends Page {
             ...super.initLocators(),
             email: () => this.page.locator('[name="login[username]"]'),
             password: () => this.page.locator('[name="login[password]"]'),
-            submit: () => this.page.locator('#send2'),
+            submit: () => this.page.locator('button.action.login.primary'),
         };
     }
 
