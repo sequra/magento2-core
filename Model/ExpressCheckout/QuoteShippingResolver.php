@@ -11,8 +11,6 @@ use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Quote\Api\CartRepositoryInterface;
 use Magento\Quote\Model\Quote;
 use Magento\Quote\Model\Quote\Address\Rate;
-use Magento\Quote\Model\QuoteFactory;
-use Magento\Quote\Model\ResourceModel\Quote as QuoteResource;
 use SeQura\Core\Infrastructure\Logger\Logger;
 use Sequra\Core\Model\Ui\ConfigProvider;
 
@@ -24,9 +22,9 @@ use Sequra\Core\Model\Ui\ConfigProvider;
  *
  * Two entry points with different contracts:
  *  - getResolvableShippingCountry() is a read-only availability probe for storefront
- *    blocks: it confirms the customer's default-shipping country has at least one usable
- *    shipping rate, but never persists or mutates the shopper's live cart (it probes a
- *    throwaway copy of the quote loaded fresh from storage).
+ *    blocks: it returns the customer's default-shipping country without collecting rates
+ *    or touching the cart (it runs on the uncached cart section, so forcing rate collection
+ *    would hit every carrier on each request).
  *  - resolve() performs the actual mutate-and-save once, at solicit time, recomputing
  *    totals from a clean state so the shipping line cannot compound across calls.
  */
@@ -40,45 +38,31 @@ class QuoteShippingResolver
      * @var CartRepositoryInterface
      */
     private CartRepositoryInterface $quoteRepository;
-    /**
-     * @var QuoteFactory
-     */
-    private QuoteFactory $quoteFactory;
-    /**
-     * @var QuoteResource
-     */
-    private QuoteResource $quoteResource;
 
     /**
      * QuoteShippingResolver constructor.
      *
      * @param CustomerRepositoryInterface $customerRepository
      * @param CartRepositoryInterface $quoteRepository
-     * @param QuoteFactory $quoteFactory
-     * @param QuoteResource $quoteResource
      */
     public function __construct(
         CustomerRepositoryInterface $customerRepository,
-        CartRepositoryInterface $quoteRepository,
-        QuoteFactory $quoteFactory,
-        QuoteResource $quoteResource
+        CartRepositoryInterface $quoteRepository
     ) {
         $this->customerRepository = $customerRepository;
         $this->quoteRepository = $quoteRepository;
-        $this->quoteFactory = $quoteFactory;
-        $this->quoteResource = $quoteResource;
     }
 
     /**
-     * Read-only availability probe: returns the ISO2 country of the customer's default
-     * shipping address when express can actually be fulfilled there, or null when the button
-     * should not render (guest, no default shipping address, or no shipping rate available
-     * for that destination).
+     * Read-only availability probe: returns the ISO2 country of the customer's default shipping
+     * address, or null when the button should not render (guest, or no default shipping address).
      *
-     * The shipping-rate check runs against a throwaway copy of the cart loaded fresh from
-     * storage, never the passed quote: the storefront block calls this on the shared
-     * checkout-session quote during render, so importing an address / collecting rates /
-     * recomputing totals on it would corrupt the cart the shopper sees.
+     * Deliberately does NOT collect shipping rates or touch the quote. This runs from the cart
+     * customer-data section, which Magento serves uncached on nearly every navigation and cart
+     * change, so forcing collectTotals()/getAllShippingRates() here would invoke every configured
+     * shipping carrier — including live-rate carriers (UPS/FedEx/DHL) — on each section load.
+     * Whether a usable rate exists for the destination is decided by resolve() at solicit time,
+     * which is authoritative and fails closed (HTTP 422 → inline "not available" message).
      *
      * @param Quote $quote Cart quote whose customer is probed (not mutated).
      *
@@ -98,23 +82,8 @@ class QuoteShippingResolver
             }
 
             $country = (string)$defaultShippingAddress->getCountryId();
-            if ($country === '') {
-                return null;
-            }
 
-            // Probe a throwaway copy so collecting rates cannot mutate the live cart. Loading via
-            // the resource model into a fresh instance keeps it independent of the repository cache
-            // (and of AbstractModel::load(), which is deprecated). The button must not be offered
-            // when nothing can be shipped to the customer's destination.
-            $quoteId = $quote->getId();
-            /** @var Quote $probe */
-            $probe = $this->quoteFactory->create();
-            $this->quoteResource->load($probe, is_scalar($quoteId) ? (int)$quoteId : 0);
-            if (!$probe->getId() || $this->collectCheapestRate($probe, $defaultShippingAddress) === null) {
-                return null;
-            }
-
-            return $country;
+            return $country !== '' ? $country : null;
         } catch (Exception $e) {
             Logger::logError('Express Checkout shipping availability check failed: ' . $e->getMessage() .
                 ' Trace: ' . $e->getTraceAsString());
@@ -257,21 +226,6 @@ class QuoteShippingResolver
         $quote->collectTotals();
 
         return $shippingAddress->getAllShippingRates();
-    }
-
-    /**
-     * Imports the given address onto the quote's shipping address and (re)collects
-     * shipping rates from a clean state, returning the cheapest available rate or null.
-     * Does not persist the quote.
-     *
-     * @param Quote $quote
-     * @param AddressInterface $address
-     *
-     * @return Rate|null
-     */
-    private function collectCheapestRate(Quote $quote, AddressInterface $address): ?Rate
-    {
-        return $this->pickCheapestRate($this->collectRates($quote, $address));
     }
 
     /**

@@ -43,6 +43,18 @@ class TemporaryCartBuilder
     private const HTTP_NOT_ELIGIBLE = 422;
 
     /**
+     * Customer-session key holding the reusable draft id for the product-page flow.
+     */
+    private const DRAFT_KEY_PRODUCT = 'sequra_express_quote_id_product';
+
+    /**
+     * Customer-session key holding the reusable draft id for the cart / mini-cart flow. Kept
+     * separate from the product key so a solicit from one surface never wipes and refills the
+     * draft an outstanding SeQura form from the other surface still references.
+     */
+    private const DRAFT_KEY_CART = 'sequra_express_quote_id_cart';
+
+    /**
      * @var CustomerSession
      */
     private CustomerSession $customerSession;
@@ -100,29 +112,13 @@ class TemporaryCartBuilder
      */
     public function build(string $productId, array $buyRequest): int
     {
-        $customerId = (int)$this->customerSession->getCustomerId();
-        if ($customerId <= 0) {
-            // The login state baked into cached pages and the customer-data section are both
-            // unreliable, so the server is the authority: 401 tells the storefront to open
-            // the login pop-up and retry, while 422 renders the inline "not available" message.
-            throw new WebapiException(
-                __('Log in to use SeQura Express Checkout.'),
-                0,
-                WebapiException::HTTP_UNAUTHORIZED
-            );
-        }
+        $customerId = $this->assertLoggedIn();
 
         $store = $this->storeManager->getStore();
         /** @var Product $product */
         $product = $this->productRepository->getById((int)$productId, false, (int)$store->getId());
 
-        $quote = $this->resolveReusableQuote($customerId, (int)$store->getId());
-        if (!$quote) {
-            $quote = $this->quoteFactory->create();
-            $quote->setStoreId($store->getId());
-            $quote->assignCustomer($this->customerSession->getCustomerData());
-            $quote->setIsActive(true);
-        }
+        $quote = $this->createOrReuseQuote($customerId, (int)$store->getId(), self::DRAFT_KEY_PRODUCT);
 
         $result = $quote->addProduct($product, new DataObject($buyRequest));
         if (is_string($result)) {
@@ -132,6 +128,102 @@ class TemporaryCartBuilder
             throw $this->notEligible();
         }
 
+        return $this->finalizeQuote($quote, self::DRAFT_KEY_PRODUCT);
+    }
+
+    /**
+     * Builds and persists a detached temporary quote cloning the given source cart, returning its
+     * ID. Used by the cart / mini-cart Express Checkout flow so the shopper's real cart is never
+     * mutated by the solicit (address import, forced payment method, added shipping line);
+     * cancelling the express purchase therefore leaves the real cart untouched.
+     *
+     * The clone reproduces the cart the shopper saw: line items (with their options), the applied
+     * coupon, and the selected shipping method — so the solicited/placed total matches the cart
+     * rather than silently dropping a discount or downgrading shipping to the cheapest rate.
+     *
+     * @param Quote $source Cart quote whose contents are cloned into the temporary quote.
+     *
+     * @return int Temporary quote ID.
+     *
+     * @throws WebapiException If the caller is a guest (HTTP 401), the cart is empty or the quote
+     *                         is virtual (HTTP 422).
+     * @throws NoSuchEntityException If a source item's product no longer exists.
+     * @throws LocalizedException If an item cannot be added to the quote.
+     */
+    public function buildFromQuote(Quote $source): int
+    {
+        $customerId = $this->assertLoggedIn();
+
+        $items = $source->getAllVisibleItems();
+        if (empty($items)) {
+            // Empty/expired cart (e.g. the last item was removed in another tab): there is nothing
+            // to purchase, so reject rather than solicit a zero-total order.
+            throw $this->notEligible();
+        }
+
+        $storeId = (int)$source->getStoreId();
+        $quote = $this->createOrReuseQuote($customerId, $storeId, self::DRAFT_KEY_CART);
+
+        foreach ($items as $item) {
+            /** @var Product $product */
+            $product = $this->productRepository->getById((int)$item->getProductId(), false, $storeId);
+            // Re-add through the stored buy request so configurable/bundle/grouped selections and
+            // custom options are preserved exactly as in the source cart.
+            $result = $quote->addProduct($product, $item->getBuyRequest());
+            if (is_string($result)) {
+                throw $this->notEligible();
+            }
+        }
+
+        // Carry the coupon so cart-rule discounts reapply on collectTotals (collectTotals is run in
+        // finalizeQuote); without it the clone would be solicited/placed at the full price.
+        $quote->setCouponCode((string)$source->getCouponCode());
+        // Carry the shopper's selected shipping method so resolve() keeps it (it captures the
+        // preselected method before re-collecting rates) instead of downgrading to the cheapest.
+        $quote->getShippingAddress()->setShippingMethod(
+            (string)$source->getShippingAddress()->getShippingMethod()
+        );
+
+        return $this->finalizeQuote($quote, self::DRAFT_KEY_CART);
+    }
+
+    /**
+     * Asserts a logged in customer and returns the id.
+     *
+     * The login state baked into cached pages and the customer-data section are both unreliable,
+     * so the server is the authority: 401 tells the storefront to open the login pop-up and retry.
+     *
+     * @return int
+     *
+     * @throws WebapiException When the caller is a guest (HTTP 401).
+     */
+    private function assertLoggedIn(): int
+    {
+        $customerId = (int)$this->customerSession->getCustomerId();
+        if ($customerId <= 0) {
+            throw new WebapiException(
+                __('Log in to use SeQura Express Checkout.'),
+                0,
+                WebapiException::HTTP_UNAUTHORIZED
+            );
+        }
+
+        return $customerId;
+    }
+
+    /**
+     * Recomputes totals, enforces the shippable-order guard, persists the draft and remembers its
+     * id under the given per-flow session key. Shared finalize tail for both build entry points.
+     *
+     * @param Quote $quote
+     * @param string $draftKey One of self::DRAFT_KEY_*.
+     *
+     * @return int Temporary quote ID.
+     *
+     * @throws WebapiException When the resulting quote is virtual (HTTP 422).
+     */
+    private function finalizeQuote(Quote $quote, string $draftKey): int
+    {
         $quote->setData('totals_collected_flag', false);
         $quote->collectTotals();
 
@@ -145,9 +237,32 @@ class TemporaryCartBuilder
 
         $quoteId = $quote->getId();
         $id = is_scalar($quoteId) ? (int)$quoteId : 0;
-        $this->rememberQuoteId($id);
+        $this->rememberQuoteId($id, $draftKey);
 
         return $id;
+    }
+
+    /**
+     * Returns this customer's reusable Express Checkout temporary quote (reactivated, emptied of
+     * items), or a fresh detached quote assigned to the customer when there is none to reuse.
+     *
+     * @param int $customerId
+     * @param int $storeId
+     * @param string $draftKey One of self::DRAFT_KEY_*.
+     *
+     * @return Quote
+     */
+    private function createOrReuseQuote(int $customerId, int $storeId, string $draftKey): Quote
+    {
+        $quote = $this->resolveReusableQuote($customerId, $storeId, $draftKey);
+        if (!$quote) {
+            $quote = $this->quoteFactory->create();
+            $quote->setStoreId($storeId);
+            $quote->assignCustomer($this->customerSession->getCustomerData());
+            $quote->setIsActive(true);
+        }
+
+        return $quote;
     }
 
     /**
@@ -157,12 +272,13 @@ class TemporaryCartBuilder
      *
      * @param int $customerId
      * @param int $storeId
+     * @param string $draftKey One of self::DRAFT_KEY_*.
      *
      * @return Quote|null
      */
-    private function resolveReusableQuote(int $customerId, int $storeId): ?Quote
+    private function resolveReusableQuote(int $customerId, int $storeId, string $draftKey): ?Quote
     {
-        $storedId = $this->rememberedQuoteId();
+        $storedId = $this->rememberedQuoteId($draftKey);
         if ($storedId <= 0) {
             return null;
         }
@@ -178,11 +294,18 @@ class TemporaryCartBuilder
         // means the quote is still an open express draft that can be reused. (Soliciting never
         // reserves an order id.) The is_active flag is not a reuse signal here: drafts are left
         // inactive between solicits so they do not shadow the real cart.
-        if ((int)$quote->getCustomerId() !== $customerId || (string)$quote->getReservedOrderId() !== '') {
+        //
+        // A different store is not reusable: the draft's currency codes (quote/base/store) are
+        // fixed at creation and setStoreId() would not reset them, so a draft from another store
+        // would carry the wrong currency here (multi-store, multi-currency, same session). Rebuild
+        // fresh for the current store instead.
+        if ((int)$quote->getCustomerId() !== $customerId
+            || (string)$quote->getReservedOrderId() !== ''
+            || (int)$quote->getStoreId() !== $storeId
+        ) {
             return null;
         }
 
-        $quote->setStoreId($storeId);
         $quote->setIsActive(true);
         $quote->removeAllItems();
 
@@ -217,31 +340,30 @@ class TemporaryCartBuilder
     }
 
     /**
-     * Reads the remembered reusable temporary quote id from the customer session.
+     * Reads the remembered reusable temporary quote id for the given flow from the customer session.
+     *
+     * @param string $draftKey One of self::DRAFT_KEY_*.
      *
      * @return int
      */
-    private function rememberedQuoteId(): int
+    private function rememberedQuoteId(string $draftKey): int
     {
-        // Magic session accessor: maps to the `sequra_express_quote_id` storage key.
-        // @phpstan-ignore-next-line magic session getter (no PHPStan Magento extension configured)
-        $stored = $this->customerSession->getSequraExpressQuoteId();
+        $stored = $this->customerSession->getData($draftKey);
 
         return is_scalar($stored) ? (int)$stored : 0;
     }
 
     /**
-     * Remembers the reusable temporary quote id on the customer session.
+     * Remembers the reusable temporary quote id for the given flow on the customer session.
      *
      * @param int $quoteId
+     * @param string $draftKey One of self::DRAFT_KEY_*.
      *
      * @return void
      */
-    private function rememberQuoteId(int $quoteId): void
+    private function rememberQuoteId(int $quoteId, string $draftKey): void
     {
-        // Magic session accessor: maps to the `sequra_express_quote_id` storage key.
-        // @phpstan-ignore-next-line magic session setter (no PHPStan Magento extension configured)
-        $this->customerSession->setSequraExpressQuoteId($quoteId);
+        $this->customerSession->setData($draftKey, $quoteId);
     }
 
     /**

@@ -83,10 +83,14 @@ class ProductSolicit implements HttpGetActionInterface
             ->setHeader('Pragma', 'no-cache', true);
 
         try {
-            // Throttle per customer: each solicit builds a temporary quote and creates a SeQura
-            // order, so bound flooding. Guests are left to the solicit service's 401 gate.
             $customerId = (int)$this->customerSession->getCustomerId();
-            if ($customerId > 0 && $this->rateLimiter->isExceeded((string)$customerId)) {
+            if ($customerId <= 0) {
+                return $result->setHttpResponseCode(WebapiException::HTTP_UNAUTHORIZED)->setContents('');
+            }
+
+            // Throttle per customer: each solicit builds a temporary quote and creates a SeQura
+            // order, so bound flooding.
+            if ($this->rateLimiter->isExceeded((string)$customerId)) {
                 return $result->setHttpResponseCode(429)->setContents('');
             }
 

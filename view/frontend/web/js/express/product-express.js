@@ -45,9 +45,12 @@ define(
                     return false;
                 }
 
-                var qty = parseFloat($form.find('[name="qty"]').first().val());
-                if (!isNaN(qty) && qty < 1) {
-                    return false;
+                var $qty = $form.find('[name="qty"]').first();
+                if ($qty.length) {
+                    var qty = parseFloat($qty.val());
+                    if (isNaN(qty) || qty < 1) {
+                        return false;
+                    }
                 }
 
                 if (productType === 'configurable') {

@@ -12,6 +12,13 @@ use Magento\Framework\Serialize\SerializerInterface;
  * creates a SeQura order (and, on the product page, a temporary quote), so an authenticated caller
  * is throttled to a sane number of attempts per window to bound accidental or abusive flooding.
  * Backed by the shared cache so the counter is consistent across web nodes.
+ *
+ * The cap is best-effort, not hard: load → +1 → save is a non-atomic read-modify-write, so
+ * concurrent solicits from the same caller can interleave and let the count slip slightly past
+ * self::LIMIT. That is intentional — the goal is to bound flooding, not enforce a strict quota —
+ * and {@see isExceeded} fails open so a cache/serialization hiccup never blocks a real checkout.
+ * A hard guarantee would need an atomic increment (cache-backend-specific) or a lock, which is not
+ * warranted for this throttle.
  */
 class SolicitRateLimiter
 {
