@@ -212,8 +212,9 @@ class TemporaryCartBuilder
     }
 
     /**
-     * Recomputes totals, enforces the shippable-order guard, persists the draft and remembers its
-     * id under the given per-flow session key. Shared finalize tail for both build entry points.
+     * Finalizes a draft: recomputes totals, enforces the shippable guard, saves and remembers its id.
+     *
+     * Shared finalize tail for both build entry points.
      *
      * @param Quote $quote
      * @param string $draftKey One of self::DRAFT_KEY_*.
@@ -243,8 +244,7 @@ class TemporaryCartBuilder
     }
 
     /**
-     * Returns this customer's reusable Express Checkout temporary quote (reactivated, emptied of
-     * items), or a fresh detached quote assigned to the customer when there is none to reuse.
+     * Returns the customer's reusable draft (reactivated, emptied) or a fresh detached quote.
      *
      * @param int $customerId
      * @param int $storeId

@@ -87,8 +87,7 @@ class OrderCreation implements OrderCreationInterface
     }
 
     /**
-     * Returns the increment id of the order already placed from this quote, or null when the quote
-     * has not been placed yet.
+     * Returns the increment id of the order already placed from this quote, or null when unplaced.
      *
      * @param int $cartId
      *
