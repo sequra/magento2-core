@@ -95,7 +95,9 @@ class SolicitService implements SolicitInterface
             // Record which live cart to empty when this specific clone completes. Keyed by the
             // clone id so the comeback for a different order (PDP express / regular checkout) does
             // not consume it and empty the wrong cart.
+            // @phpstan-ignore-next-line magic method forwarded to Storage via SessionManager::__call
             $this->checkoutSession->setData(self::SESSION_KEY_CLONE, $cloneId);
+            // @phpstan-ignore-next-line magic method forwarded to Storage via SessionManager::__call
             $this->checkoutSession->setData(self::SESSION_KEY_SOURCE, (int)$cartId);
 
             return $form;

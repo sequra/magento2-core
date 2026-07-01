@@ -132,7 +132,9 @@ class Index extends Onepage
         $expressCloneId = $session->getData(SolicitService::SESSION_KEY_CLONE);
         if (is_scalar($expressCloneId) && (int) $expressCloneId === (int) $cartId) {
             $sourceCartId = $session->getData(SolicitService::SESSION_KEY_SOURCE);
+            // @phpstan-ignore-next-line magic method forwarded to Storage via SessionManager::__call
             $session->unsetData(SolicitService::SESSION_KEY_CLONE);
+            // @phpstan-ignore-next-line magic method forwarded to Storage via SessionManager::__call
             $session->unsetData(SolicitService::SESSION_KEY_SOURCE);
             if (is_scalar($sourceCartId) && (int) $sourceCartId > 0) {
                 $this->emptySourceCart((int) $sourceCartId);

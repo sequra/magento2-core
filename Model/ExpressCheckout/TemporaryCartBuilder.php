@@ -166,6 +166,7 @@ class TemporaryCartBuilder
 
         foreach ($items as $item) {
             /** @var Product $product */
+            // @phpstan-ignore-next-line getProductId() is a magic DataObject getter
             $product = $this->productRepository->getById((int)$item->getProductId(), false, $storeId);
             // Re-add through the stored buy request so configurable/bundle/grouped selections and
             // custom options are preserved exactly as in the source cart.
@@ -363,6 +364,7 @@ class TemporaryCartBuilder
      */
     private function rememberQuoteId(int $quoteId, string $draftKey): void
     {
+        // @phpstan-ignore-next-line magic method forwarded to Storage via SessionManager::__call
         $this->customerSession->setData($draftKey, $quoteId);
     }
 
