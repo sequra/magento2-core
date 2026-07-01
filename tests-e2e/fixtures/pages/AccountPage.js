@@ -48,6 +48,7 @@ export default class AccountPage extends Page {
         await this.locators.email().fill(email);
         await this.locators.password().fill(password);
         await this.locators.submit().click();
-        await this.page.waitForURL(/customer\/account\//, { timeout: 20000 });
+        // Match the account dashboard, not the login page (which also contains "customer/account/").
+        await this.page.waitForURL(/\/customer\/account\/(?!login)/, { timeout: 20000 });
     }
 }
