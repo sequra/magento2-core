@@ -7,7 +7,6 @@ use Magento\Framework\App\ResourceConnection;
 use Sequra\Helper\Model\Task\ClearConfigurationTask;
 use Sequra\Helper\Model\Task\ClearFrontEndCacheTask;
 use Sequra\Helper\Model\Task\ConfigureDummyTask;
-use Sequra\Helper\Model\Task\ConfigureExpressCheckoutTask;
 use Sequra\Helper\Model\Task\Task;
 use Sequra\Helper\Model\Task\VerifyOrderHasMerchantIdTask;
 
@@ -52,7 +51,6 @@ class Webhooks implements WebhooksInterface
     {
         $map = [
             'dummy_config'          => ConfigureDummyTask::class,
-            'configure_express'     => ConfigureExpressCheckoutTask::class,
             'clear_config'          => ClearConfigurationTask::class,
             'clear_front_end_cache' => ClearFrontEndCacheTask::class,
             'verify_order_has_merchant_id' => VerifyOrderHasMerchantIdTask::class,
