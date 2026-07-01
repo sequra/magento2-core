@@ -22,15 +22,17 @@ class ConfigureDummyTask extends Task
      * Check if dummy merchant configuration is in use
      *
      * @param bool $widgets
+     * @param bool $express
      */
-    private function isDummyConfigInUse(bool $widgets): bool
+    private function isDummyConfigInUse(bool $widgets, bool $express = false): bool
     {
-        $expected_rows = $widgets ? 2 : 1;
+        $expected_rows = 1 + ($widgets ? 1 : 0) + ($express ? 1 : 0);
         $table_name = DatabaseHandler::SEQURA_ENTITY_TABLE;
-        $query      = "SELECT * FROM $table_name 
-        WHERE (`type` = 'ConnectionData' 
-        AND `data` LIKE '%\"username\":\"dummy_automated_tests\"%') 
-        OR (`type` = 'WidgetSettings' AND `data` LIKE '%\"displayOnProductPage\":true%')";
+        $query      = "SELECT * FROM $table_name
+        WHERE (`type` = 'ConnectionData'
+        AND `data` LIKE '%\"username\":\"dummy_automated_tests\"%')
+        OR (`type` = 'WidgetSettings' AND `data` LIKE '%\"displayOnProductPage\":true%')
+        OR (`type` = 'ExpressCheckoutSettings' AND `data` LIKE '%\"page\":\"product\",\"enabled\":true%')";
         $result     = $this->conn->getConnection()->fetchAll($query);
         return is_array($result) && count($result) === $expected_rows;
     }
@@ -279,7 +281,7 @@ class ConfigureDummyTask extends Task
     {
         $widgets = isset($args['widgets']) ? (bool) $args['widgets'] : true;
         $express = isset($args['express']) ? (bool) $args['express'] : false;
-        if (! $this->isDummyConfigInUse($widgets)) {
+        if (! $this->isDummyConfigInUse($widgets, $express)) {
             $this->removeStoreDataFromEntityTable();
             $this->setDummyConfig($widgets, $express);
         }
