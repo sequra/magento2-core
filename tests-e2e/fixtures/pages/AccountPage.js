@@ -1,13 +1,12 @@
-import { Page } from "playwright-fixture-for-plugins";
+import { AccountPage as Base } from "playwright-fixture-for-plugins";
 
 /**
- * Storefront customer account page.
+ * Magento storefront customer account page.
  */
-export default class AccountPage extends Page {
+export default class AccountPage extends Base {
 
     /**
     * Init the locators with the locators available
-    *
     * @returns {Object}
     */
     initLocators() {
@@ -21,34 +20,17 @@ export default class AccountPage extends Page {
 
     /**
     * Provide the login URL
-    * @returns {string} The login URL
+    * @returns {string}
     */
     loginUrl() {
         return `${this.baseURL}/customer/account/login/`;
     }
 
     /**
-     * Navigate to the login page
+     * Wait for the account dashboard — not the login page, which also contains "customer/account/".
      * @returns {Promise<void>}
      */
-    async goto() {
-        await this.page.goto(this.loginUrl());
-    }
-
-    /**
-     * Log a registered customer in and wait for the account dashboard.
-     * @param {Object} options
-     * @param {string} options.email Customer email
-     * @param {string} options.password Customer password
-     * @returns {Promise<void>}
-     */
-    async login(options) {
-        const { email, password } = options;
-        await this.goto();
-        await this.locators.email().fill(email);
-        await this.locators.password().fill(password);
-        await this.locators.submit().click();
-        // Match the account dashboard, not the login page (which also contains "customer/account/").
+    async expectLoggedIn() {
         await this.page.waitForURL(/\/customer\/account\/(?!login)/, { timeout: 20000 });
     }
 }
