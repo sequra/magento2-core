@@ -27,7 +27,7 @@ export default class CheckoutPage extends BaseCheckoutPage {
             continueButton: () => this.page.locator('.action.continue'),
             submitCheckout: () => this.page.locator('.payment-method._active .action.checkout'),
             orderRowStatus: orderNumber => this.page.locator(`.data-row:has(td:has-text("${orderNumber}")) td:nth-child(9)`),
-            orderNumber: () => this.page.locator('.checkout-success p>span')
+            orderNumber: () => this.page.locator('.checkout-success p > span, .checkout-success p > a')
         };
     }
 
@@ -186,7 +186,7 @@ export default class CheckoutPage extends BaseCheckoutPage {
 
     /**
     * Define the expected behavior after placing an order
-    * @param {Object} options 
+    * @param {Object} options
     */
     async waitForOrderSuccess(options) {
         await this.page.waitForURL(/checkout\/onepage\/success\//, { timeout: 30000, waitUntil: 'commit' });
@@ -198,7 +198,8 @@ export default class CheckoutPage extends BaseCheckoutPage {
      * @returns {Promise<string>}
      */
     async getOrderNumber() {
-        return await this.locators.orderNumber().textContent();
+        const text = await this.locators.orderNumber().first().textContent();
+        return text ? text.trim() : text;
     }
 
     /**

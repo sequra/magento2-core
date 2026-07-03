@@ -2,6 +2,10 @@ import { test } from '../fixtures/test';
 
 test.describe('Product checkout', () => {
 
+  test.beforeEach(async ({ helper }) => {
+    await helper.executeWebhook({ webhook: helper.webhooks.clear_config }); // Clear config so the test is order-independent.
+  });
+
   test('All available seQura products appear in the checkout', async ({ helper, dataProvider, productPage, checkoutPage }) => {
     // Setup
     const { dummy_config } = helper.webhooks;

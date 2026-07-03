@@ -16,6 +16,18 @@ export default class DataProvider extends BaseDataProvider {
     }
 
     /**
+    * Registered customer credentials. Defaults to the Luma sample account (customer id 1),
+    * overridable via env for other environments.
+    * @returns {{email: string, password: string}}
+    */
+    customer() {
+        return {
+            email: process.env.M2_CUSTOMER_EMAIL || 'roni_cost@example.com',
+            password: process.env.M2_CUSTOMER_PASSWORD || 'roni_cost3@example.com',
+        };
+    }
+
+    /**
     * Configuration for the widget form with all options enabled
     * @returns {WidgetOptions} Configuration for the widget
     */

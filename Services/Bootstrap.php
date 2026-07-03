@@ -4,6 +4,7 @@ namespace Sequra\Core\Services;
 
 use SeQura\Core\BusinessLogic\BootstrapComponent;
 use SeQura\Core\BusinessLogic\DataAccess\AdvancedSettings\Entities\AdvancedSettings;
+use SeQura\Core\BusinessLogic\DataAccess\Affiliate\Entities\AffiliateSettings;
 use SeQura\Core\BusinessLogic\DataAccess\BannerSettings\Entities\BannerSettings;
 use SeQura\Core\BusinessLogic\DataAccess\ConnectionData\Entities\ConnectionData;
 use SeQura\Core\BusinessLogic\DataAccess\CountryConfiguration\Entities\CountryConfiguration;
@@ -477,6 +478,7 @@ class Bootstrap extends BootstrapComponent
         RepositoryRegistry::registerRepository(Credentials::class, BaseRepository::class);
         RepositoryRegistry::registerRepository(Deployment::class, BaseRepository::class);
         RepositoryRegistry::registerRepository(AdvancedSettings::class, BaseRepository::class);
+        RepositoryRegistry::registerRepository(AffiliateSettings::class, BaseRepository::class);
         RepositoryRegistry::registerRepository(ExpressCheckoutSettings::class, BaseRepository::class);
 
         ServiceRegister::registerService(
