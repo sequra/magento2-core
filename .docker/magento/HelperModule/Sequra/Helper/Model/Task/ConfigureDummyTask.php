@@ -22,15 +22,17 @@ class ConfigureDummyTask extends Task
      * Check if dummy merchant configuration is in use
      *
      * @param bool $widgets
+     * @param bool $express
      */
-    private function isDummyConfigInUse(bool $widgets): bool
+    private function isDummyConfigInUse(bool $widgets, bool $express = false): bool
     {
-        $expected_rows = $widgets ? 2 : 1;
+        $expected_rows = 1 + ($widgets ? 1 : 0) + ($express ? 1 : 0);
         $table_name = DatabaseHandler::SEQURA_ENTITY_TABLE;
-        $query      = "SELECT * FROM $table_name 
-        WHERE (`type` = 'ConnectionData' 
-        AND `data` LIKE '%\"username\":\"dummy_automated_tests\"%') 
-        OR (`type` = 'WidgetSettings' AND `data` LIKE '%\"displayOnProductPage\":true%')";
+        $query      = "SELECT * FROM $table_name
+        WHERE (`type` = 'ConnectionData'
+        AND `data` LIKE '%\"username\":\"dummy_automated_tests\"%')
+        OR (`type` = 'WidgetSettings' AND `data` LIKE '%\"displayOnProductPage\":true%')
+        OR (`type` = 'ExpressCheckoutSettings' AND `data` LIKE '%\"page\":\"product\",\"enabled\":true%')";
         $result     = $this->conn->getConnection()->fetchAll($query);
         return is_array($result) && count($result) === $expected_rows;
     }
@@ -39,8 +41,9 @@ class ConfigureDummyTask extends Task
      * Set configuration for dummy merchant
      *
      * @param bool $widgets
+     * @param bool $express Whether to enable Express Checkout on every surface
      */
-    private function setDummyConfig(bool $widgets): void
+    private function setDummyConfig(bool $widgets, bool $express = false): void
     {
         /**
          * @var EncryptorInterface $encryptor
@@ -250,6 +253,19 @@ class ConfigureDummyTask extends Task
                 'data'    => '{"class_name":"SeQura\\\\Core\\\\BusinessLogic\\\\DataAccess\\\\PromotionalWidgets\\\\Entities\\\\WidgetSettings","id":' . $id . ',"storeId":"1","widgetSettings":{"enabled":true,"displayOnProductPage":' . $display . ',"showInstallmentsInProductListing":' . $display . ',"showInstallmentsInCartPage":' . $display . ',"miniWidgetSelector":"","widgetConfiguration":"{\"alignment\":\"center\",\"amount-font-bold\":\"true\",\"amount-font-color\":\"#1C1C1C\",\"amount-font-size\":\"15\",\"background-color\":\"white\",\"border-color\":\"#B1AEBA\",\"border-radius\":\"\",\"class\":\"\",\"font-color\":\"#1C1C1C\",\"link-font-color\":\"#1C1C1C\",\"link-underline\":\"true\",\"no-costs-claim\":\"\",\"size\":\"M\",\"starting-text\":\"only\",\"type\":\"banner\"}","widgetSettingsForProduct":{"priceSelector":".product-info-price [data-price-type=\"finalPrice\"] .price","locationSelector":".product.info","altPriceSelector":"","altPriceTriggerSelector":"","customWidgetSettings":[{"customLocationSelector":"#product-addtocart-button","product":"i1","displayWidget":true,"customWidgetStyle":"{\"alignment\":\"left\",\"amount-font-bold\":\"true\",\"amount-font-color\":\"#1C1C1C\",\"amount-font-size\":\"15\",\"background-color\":\"white\",\"border-color\":\"#B1AEBA\",\"border-radius\":\"\",\"class\":\"\",\"font-color\":\"#1C1C1C\",\"link-font-color\":\"#1C1C1C\",\"link-underline\":\"true\",\"no-costs-claim\":\"\",\"size\":\"M\",\"starting-text\":\"only\",\"type\":\"banner\",\"branding\":\"black\"}"}]},"widgetSettingsForCart":{"priceSelector":".cart-totals .grand.totals .price","locationSelector":".cart-totals","widgetProduct":"pp3"},"widgetSettingsForListing":{"priceSelector":"","locationSelector":"","widgetProduct":"pp3"}}}',
             ],
         );
+
+        if ($express) {
+            // ExpressCheckoutSettings: enable the button on the product, cart and mini-cart surfaces.
+            $conn->insert(
+                $table_name,
+                [
+                    'id'      => ++$id,
+                    'type'    => 'ExpressCheckoutSettings',
+                    'index_1' => '1',
+                    'data'    => '{"class_name":"SeQura\\\\Core\\\\BusinessLogic\\\\DataAccess\\\\ExpressCheckout\\\\Entities\\\\ExpressCheckoutSettings","id":' . $id . ',"storeId":"1","expressCheckoutSettings":{"expressCheckoutConfigs":[{"page":"product","enabled":true},{"page":"cart","enabled":true},{"page":"mini-cart","enabled":true}]}}',
+                ]
+            );
+        }
     }
 
     /**
@@ -264,9 +280,10 @@ class ConfigureDummyTask extends Task
     public function execute(array $args = [])
     {
         $widgets = isset($args['widgets']) ? (bool) $args['widgets'] : true;
-        if (! $this->isDummyConfigInUse($widgets)) {
+        $express = isset($args['express']) ? (bool) $args['express'] : false;
+        if (! $this->isDummyConfigInUse($widgets, $express)) {
             $this->removeStoreDataFromEntityTable();
-            $this->setDummyConfig($widgets);
+            $this->setDummyConfig($widgets, $express);
         }
         return $this->httpSuccessResponse();
     }

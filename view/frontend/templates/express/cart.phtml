@@ -1,0 +1,27 @@
+<?php
+/** @var \Sequra\Core\Block\ExpressCheckout\CartPage $block */
+/** @var \Magento\Framework\Escaper $escaper */
+
+if ($block->isAvailable()):
+    ?>
+    <div class="sequra-express-checkout" data-role="sequra-express-checkout">
+        <div class="sequra-express-checkout-button"
+             data-url="<?= $escaper->escapeHtmlAttr($block->getSolicitUrl()); ?>"></div>
+    </div>
+    <script type="text/x-magento-init">
+        {
+            "[data-role=sequra-express-checkout]": {
+                "Sequra_Core/js/express/cart-express": {}
+            }
+        }
+    </script>
+    <?php
+elseif ($block->showUnavailableMessage()):
+    ?>
+    <div class="sequra-express-checkout">
+        <span class="sequra-express-checkout-unavailable">
+            <?= $escaper->escapeHtml($block->getUnavailableMessage()); ?>
+        </span>
+    </div>
+    <?php
+endif;

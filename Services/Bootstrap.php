@@ -4,11 +4,13 @@ namespace Sequra\Core\Services;
 
 use SeQura\Core\BusinessLogic\BootstrapComponent;
 use SeQura\Core\BusinessLogic\DataAccess\AdvancedSettings\Entities\AdvancedSettings;
+use SeQura\Core\BusinessLogic\DataAccess\Affiliate\Entities\AffiliateSettings;
 use SeQura\Core\BusinessLogic\DataAccess\BannerSettings\Entities\BannerSettings;
 use SeQura\Core\BusinessLogic\DataAccess\ConnectionData\Entities\ConnectionData;
 use SeQura\Core\BusinessLogic\DataAccess\CountryConfiguration\Entities\CountryConfiguration;
 use SeQura\Core\BusinessLogic\DataAccess\Credentials\Entities\Credentials;
 use SeQura\Core\BusinessLogic\DataAccess\Deployments\Entities\Deployment;
+use SeQura\Core\BusinessLogic\DataAccess\ExpressCheckout\Entities\ExpressCheckoutSettings;
 use SeQura\Core\BusinessLogic\DataAccess\GeneralSettings\Entities\GeneralSettings;
 use SeQura\Core\BusinessLogic\DataAccess\OrderSettings\Entities\OrderStatusSettings;
 use SeQura\Core\BusinessLogic\DataAccess\PaymentMethod\Entities\PaymentMethod;
@@ -19,6 +21,7 @@ use SeQura\Core\BusinessLogic\DataAccess\TransactionLog\Entities\TransactionLog;
 use SeQura\Core\BusinessLogic\Domain\Integration\Banner\BannerServiceInterface;
 use SeQura\Core\BusinessLogic\Domain\Integration\Category\CategoryServiceInterface;
 use SeQura\Core\BusinessLogic\Domain\Integration\Disconnect\DisconnectServiceInterface;
+use SeQura\Core\BusinessLogic\Domain\Integration\ExpressCheckout\ExpressCheckoutIntegrationInterface;
 use SeQura\Core\BusinessLogic\Domain\Integration\Log\LogServiceInterface;
 use SeQura\Core\BusinessLogic\Domain\Integration\Order\MerchantDataProviderInterface;
 use SeQura\Core\BusinessLogic\Domain\Integration\Order\OrderCreationInterface;
@@ -59,6 +62,7 @@ use Sequra\Core\Services\BusinessLogic\BannerService;
 use Sequra\Core\Services\BusinessLogic\CategoryService;
 use Sequra\Core\Services\BusinessLogic\ConfigurationService;
 use Sequra\Core\Services\BusinessLogic\DisconnectService;
+use Sequra\Core\Services\BusinessLogic\ExpressCheckoutIntegrationService;
 use Sequra\Core\Services\BusinessLogic\LogService;
 use Sequra\Core\Services\BusinessLogic\Order\MerchantDataProvider;
 use Sequra\Core\Services\BusinessLogic\OrderReportService;
@@ -324,6 +328,13 @@ class Bootstrap extends BootstrapComponent
         );
 
         ServiceRegister::registerService(
+            ExpressCheckoutIntegrationInterface::class,
+            static function () {
+                return new ExpressCheckoutIntegrationService();
+            }
+        );
+
+        ServiceRegister::registerService(
             LogServiceInterface::class,
             static function () {
                 return static::$instance->logService;
@@ -467,6 +478,8 @@ class Bootstrap extends BootstrapComponent
         RepositoryRegistry::registerRepository(Credentials::class, BaseRepository::class);
         RepositoryRegistry::registerRepository(Deployment::class, BaseRepository::class);
         RepositoryRegistry::registerRepository(AdvancedSettings::class, BaseRepository::class);
+        RepositoryRegistry::registerRepository(AffiliateSettings::class, BaseRepository::class);
+        RepositoryRegistry::registerRepository(ExpressCheckoutSettings::class, BaseRepository::class);
 
         ServiceRegister::registerService(
             OrderStatusSettingsRepositoryInterface::class,

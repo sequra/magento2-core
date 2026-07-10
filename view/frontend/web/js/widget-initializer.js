@@ -4,6 +4,15 @@
  */
 
 /**
+ * SeQura library loader (feature-neutral).
+ *
+ * Receives the bootstrap config (scriptUri/merchant/assetKey/locale/currency/separators/products)
+ * produced by Block\WidgetInitializer::getInitializationData(), injects the shared CDN library
+ * (sequra-checkout.min.js) once per page, and pre-creates window.SequraWidgetFacade (incl. the
+ * expressCheckout callback object the library captures by reference). Every seQura frontend
+ * feature — promotional widgets, educational popup and Express Checkout — depends on this loader
+ * having run; it is not specific to the promotional widgets feature.
+ *
  * @api
  */
 define([
@@ -19,6 +28,10 @@ define([
             ...window.SequraWidgetFacade,
             ...config
         };
+        // The CDN library captures config.expressCheckout by reference at init and reads the
+        // handlers at invoke time, so the object must exist before the script loads for
+        // callbacks attached later (e.g. by product-express.js) to be seen.
+        window.SequraWidgetFacade.expressCheckout = window.SequraWidgetFacade.expressCheckout || {};
         (function (i, s, o, g, r, a, m) {
             i['SequraConfiguration'] = g;
             i['SequraOnLoad'] = [];

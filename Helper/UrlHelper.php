@@ -2,6 +2,7 @@
 
 namespace Sequra\Core\Helper;
 
+use Exception;
 use Magento\Backend\Model\UrlInterface as MagentoBackendUrl;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Store\Model\StoreManagerInterface;
@@ -19,29 +20,29 @@ use SeQura\Core\Infrastructure\ServiceRegister;
 
 class UrlHelper
 {
-    public const SEQURA_PORTAL_SANDBOX_URL = 'https://simbox.sequrapi.com/orders/';
-    public const SEQURA_PORTAL_URL = 'https://simba.sequra.com/orders/';
+    public const SEQURA_PORTAL_SANDBOX_URL = 'https://portal-sandbox.sequra.com/orders/';
+    public const SEQURA_PORTAL_URL = 'https://portal.sequra.com/orders/';
 
     /**
      * @var StoreManagerInterface
      */
-    private $storeManager;
+    private StoreManagerInterface $storeManager;
     /**
      * @var MagentoUrl
      */
-    private $urlHelper;
+    private MagentoUrl $urlHelper;
     /**
      * @var MagentoBackendUrl
      */
-    private $backendUrlHelper;
+    private MagentoBackendUrl $backendUrlHelper;
     /**
      * @var OrderFactory
      */
-    private $orderFactory;
+    private OrderFactory $orderFactory;
     /**
-     * @var \Magento\Framework\UrlInterface
+     * @var UrlInterface
      */
-    private $urlBuilder;
+    private UrlInterface $urlBuilder;
 
     /**
      * UrlHelper constructor.
@@ -54,10 +55,10 @@ class UrlHelper
      */
     public function __construct(
         StoreManagerInterface $storeManager,
-        MagentoUrl            $urlHelper,
-        MagentoBackendUrl     $backendUrlHelper,
-        OrderFactory          $orderFactory,
-        UrlInterface          $urlBuilder
+        MagentoUrl $urlHelper,
+        MagentoBackendUrl $backendUrlHelper,
+        OrderFactory $orderFactory,
+        UrlInterface $urlBuilder
     ) {
         $this->storeManager = $storeManager;
         $this->urlHelper = $urlHelper;
@@ -71,6 +72,7 @@ class UrlHelper
      *
      * @param string $routePath Path.
      * @param array|null $routeParams Parameters.
+     *
      * @phpstan-param array<string, mixed>|null $routeParams
      *
      * @return string Publicly visible URL of the requested front-end controller.
@@ -94,6 +96,7 @@ class UrlHelper
      *
      * @param string $routePath Path.
      * @param array|null $routeParams Parameters.
+     *
      * @phpstan-param array<string, mixed>|null $routeParams
      *
      * @return string Publicly visible URL of the requested back-end controller.
@@ -107,6 +110,8 @@ class UrlHelper
      * Returns the URL for the Sequra order in the backend.
      *
      * @param string $orderReference The order reference.
+     *
+     * @throws Exception
      */
     public function getBackendUrlForSequraOrder(string $orderReference): string
     {
@@ -149,7 +154,7 @@ class UrlHelper
      *
      * @return int|null
      */
-    private function getOrderStoreId($orderReference): ?int
+    private function getOrderStoreId(string $orderReference): ?int
     {
         $order = $this->orderFactory->create();
         $seQuraOrder = $this->getOrderRepository()->getByOrderReference($orderReference);
@@ -167,7 +172,7 @@ class UrlHelper
      *
      * @return null|string
      */
-    private function getMerchantId($orderReference): ?string
+    private function getMerchantId(string $orderReference): ?string
     {
         $seQuraOrder = $this->getOrderRepository()->getByOrderReference($orderReference);
 

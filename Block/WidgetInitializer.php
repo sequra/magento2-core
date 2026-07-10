@@ -19,6 +19,8 @@ use Magento\Framework\Locale\ResolverInterface;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
 use SeQura\Core\BusinessLogic\CheckoutAPI\CheckoutAPI;
+use SeQura\Core\BusinessLogic\CheckoutAPI\Checkout\Requests\CheckoutInitializationRequest;
+use SeQura\Core\BusinessLogic\CheckoutAPI\Checkout\Responses\CheckoutInitializationResponse;
 use SeQura\Core\BusinessLogic\CheckoutAPI\PromotionalWidgets\Requests\PromotionalWidgetsCheckoutRequest;
 use SeQura\Core\BusinessLogic\CheckoutAPI\PromotionalWidgets\Responses\PromotionalWidgetsCheckoutResponse;
 use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
@@ -101,6 +103,41 @@ class WidgetInitializer extends Template
         $this->catalogHelper = $catalogHelper;
         $this->scopeConfig = $scopeConfig;
         $this->storeManager = $storeManager;
+    }
+
+    /**
+     * Returns the seQura checkout-library bootstrap config used to load sequra-checkout.min.js.
+     *
+     * Includes the script URL, merchant identity, locale formatting and supported products.
+     * Feature-neutral: it resolves whenever seQura has credentials for the shopper's country,
+     * independent of whether promotional widgets are enabled. This is what the storefront uses
+     * to inject the library, so every seQura frontend feature (widgets, educational popup,
+     * Express Checkout) can rely on it being loaded.
+     *
+     * @return mixed[]
+     */
+    public function getInitializationData(): array
+    {
+        try {
+            $quote = $this->session->getQuote();
+            $shippingCountry = $quote->getShippingAddress()->getCountryId() ?? '';
+            $storeId = (string)$this->_storeManager->getStore()->getId();
+            $currentCountry = $this->getCurrentCountry();
+
+            /** @var CheckoutInitializationResponse $initializationData */
+            $initializationData = CheckoutAPI::get()
+                ->checkout($storeId)
+                ->getInitializationData(
+                    new CheckoutInitializationRequest($shippingCountry, $currentCountry)
+                );
+
+            return $initializationData->isSuccessful() ? $initializationData->toArray() : [];
+        } catch (Exception $e) {
+            Logger::logError('Checkout initialization data failed: ' . $e->getMessage() .
+                ' Trace: ' . $e->getTraceAsString());
+
+            return [];
+        }
     }
 
     /**

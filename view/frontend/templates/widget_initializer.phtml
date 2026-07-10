@@ -3,22 +3,25 @@
 
 use Sequra\Core\Block\WidgetInitializer;
 
-$widgetData = $block->getWidgetInitializeData();
+// Feature-neutral library bootstrap: loads sequra-checkout.min.js whenever seQura is active for
+// the shopper's country, independent of whether promotional widgets are enabled. Every seQura
+// frontend feature (widgets, educational popup, Express Checkout) relies on this single loader.
+$bootstrapData = $block->getInitializationData();
 
-if (!empty($widgetData)):
+if (!empty($bootstrapData)):
     // phpcs:disable Magento2.Security.XssTemplate.FoundUnescaped
     ?>
     <script type="text/x-magento-init">
         {
             "*": {
                 "Sequra_Core/js/widget-initializer": {
-                    "scriptUri": "<?= $widgetData['scriptUri']; ?>",
-                "thousandSeparator": "<?= $widgetData['thousandSeparator']; ?>",
-                "decimalSeparator": "<?= $widgetData['decimalSeparator']; ?>",
-                "locale": "<?= $widgetData['locale']; ?>",
-                "merchant": "<?= $widgetData['merchant']; ?>",
-                "assetKey": "<?= $widgetData['assetKey']; ?>",
-                "products": <?= json_encode($widgetData['products'], JSON_THROW_ON_ERROR); ?>
+                    "scriptUri": "<?= $bootstrapData['scriptUri']; ?>",
+                "thousandSeparator": "<?= $bootstrapData['thousandSeparator']; ?>",
+                "decimalSeparator": "<?= $bootstrapData['decimalSeparator']; ?>",
+                "locale": "<?= $bootstrapData['locale']; ?>",
+                "merchant": "<?= $bootstrapData['merchant']; ?>",
+                "assetKey": "<?= $bootstrapData['assetKey']; ?>",
+                "products": <?= json_encode($bootstrapData['products'], JSON_THROW_ON_ERROR); ?>
         }
     }
 }

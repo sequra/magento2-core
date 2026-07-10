@@ -23,3 +23,18 @@
     max-width: 100%;
     height: auto;
 }
+
+.sequra-express-checkout--product {
+    position: relative;
+}
+
+/* The mini-cart button is injected into the `extra_actions` slot directly under the
+   "Proceed to Checkout" button; match Luma's spacing between the flyout actions. */
+.sequra-express-checkout--minicart {
+    margin-top: 15px;
+}
+
+.sequra-express-checkout--disabled {
+    pointer-events: none;
+    opacity: 0.5;
+}

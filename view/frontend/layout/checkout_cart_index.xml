@@ -19,5 +19,11 @@
                 </arguments>
             </block>
         </referenceContainer>
+        <referenceContainer name="checkout.cart.methods">
+            <block class="Sequra\Core\Block\ExpressCheckout\CartPage"
+                   name="sequra.express.cart"
+                   template="Sequra_Core::express/cart.phtml"
+                   after="checkout.cart.methods.onepage.bottom"/>
+        </referenceContainer>
     </body>
 </page>

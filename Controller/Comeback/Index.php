@@ -5,8 +5,10 @@ namespace Sequra\Core\Controller\Comeback;
 use Magento\Checkout\Controller\Onepage;
 use Magento\Customer\Api\AccountManagementInterface;
 use Magento\Customer\Api\CustomerRepositoryInterface;
+use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Stdlib\CookieManagerInterface;
 use Magento\Framework\Stdlib\Cookie\CookieMetadataFactory;
+use Sequra\Core\Model\Api\ExpressCheckout\SolicitService;
 use Sequra\Core\Services\BusinessLogic\Utility\SeQuraTranslationProvider;
 
 class Index extends Onepage
@@ -120,6 +122,25 @@ class Index extends Onepage
         }
 
         $session = $this->getOnepage()->getCheckout();
+
+        // Empty the shopper's real cart after a successful cart/mini-cart express purchase. That
+        // order was placed from a detached clone, so the live cart still holds the items;
+        // deactivating it drops it from active-cart resolution (a fresh empty cart is created on
+        // the next request). SolicitService paired the clone id with the live cart at solicit time;
+        // clearing only fires when THIS comeback's cartId is that clone, so an unrelated return
+        // (PDP express / regular checkout) never empties the wrong cart. One-shot: cleared on match.
+        $expressCloneId = $session->getData(SolicitService::SESSION_KEY_CLONE);
+        if (is_scalar($expressCloneId) && (int) $expressCloneId === (int) $cartId) {
+            $sourceCartId = $session->getData(SolicitService::SESSION_KEY_SOURCE);
+            // @phpstan-ignore-next-line magic method forwarded to Storage via SessionManager::__call
+            $session->unsetData(SolicitService::SESSION_KEY_CLONE);
+            // @phpstan-ignore-next-line magic method forwarded to Storage via SessionManager::__call
+            $session->unsetData(SolicitService::SESSION_KEY_SOURCE);
+            if (is_scalar($sourceCartId) && (int) $sourceCartId > 0) {
+                $this->emptySourceCart((int) $sourceCartId);
+            }
+        }
+
         // prepare session to success or cancellation page
         $session->clearHelperData();
         // TODO: Call to an undefined method Magento\Checkout\Model\Session::setLastQuoteId()
@@ -143,5 +164,26 @@ class Index extends Onepage
         }
 
         return $this->resultRedirectFactory->create()->setPath('checkout/onepage/success');
+    }
+
+    /**
+     * Deactivates the given cart so it drops out of active-cart resolution (i.e. empties it).
+     *
+     * @param int $cartId
+     *
+     * @return void
+     */
+    private function emptySourceCart(int $cartId): void
+    {
+        try {
+            $quote = $this->quoteRepository->get($cartId);
+        } catch (NoSuchEntityException $e) {
+            return;
+        }
+
+        if ($quote->getIsActive()) {
+            $quote->setIsActive(false);
+            $this->quoteRepository->save($quote);
+        }
     }
 }
