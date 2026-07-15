@@ -4,14 +4,17 @@ import { DataProvider } from 'playwright-fixture-for-plugins';
 const byLocation = (dataProvider) =>
   Object.fromEntries(dataProvider.bannerOptions().map(b => [b.displayLocation, b]));
 
+const seedBanners = async (helper, enabled) => {
+  const { dummy_config, clear_config, clear_front_end_cache } = helper.webhooks;
+  await helper.executeWebhook({ webhook: clear_config });
+  await helper.executeWebhook({ webhook: dummy_config, args: [{ name: 'banners', value: enabled ? '1' : '0' }] });
+  await helper.executeWebhook({ webhook: clear_front_end_cache });
+};
+
 test.describe('Storefront banners', () => {
 
   test('Display banners on every location for the resolved country', async ({ helper, dataProvider, homePage, categoryPage, productPage, cartPage }) => {
-    // Setup
-    const { dummy_config, clear_config, clear_front_end_cache } = helper.webhooks;
-    await helper.executeWebhook({ webhook: clear_config });
-    await helper.executeWebhook({ webhook: dummy_config, args: [{ name: 'banners', value: '1' }] });
-    await helper.executeWebhook({ webhook: clear_front_end_cache });
+    await seedBanners(helper, true);
 
     const banners = byLocation(dataProvider);
 
@@ -34,11 +37,7 @@ test.describe('Storefront banners', () => {
   });
 
   test('Do not display banners when none are configured', async ({ helper, homePage, categoryPage, productPage, cartPage }) => {
-    // Setup: seed the dummy config without banners.
-    const { dummy_config, clear_config, clear_front_end_cache } = helper.webhooks;
-    await helper.executeWebhook({ webhook: clear_config });
-    await helper.executeWebhook({ webhook: dummy_config, args: [{ name: 'banners', value: '0' }] });
-    await helper.executeWebhook({ webhook: clear_front_end_cache });
+    await seedBanners(helper, false);
 
     await homePage.goto();
     await homePage.expectBannerNotToBeVisible();
