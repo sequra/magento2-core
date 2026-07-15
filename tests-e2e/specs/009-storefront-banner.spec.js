@@ -14,7 +14,6 @@ const seedBanners = async (helper, enabled) => {
 // The storefront resolves the shopper country from the store locale, so switching
 // the locale is how these tests drive the resolved country.
 const DEFAULT_LOCALE = 'es_ES';
-const localeForCountry = { FR: 'fr_FR', IT: 'it_IT', PT: 'pt_PT' };
 
 const setLocale = async (helper, locale) => {
   const { set_config, clear_front_end_cache } = helper.webhooks;
@@ -23,11 +22,6 @@ const setLocale = async (helper, locale) => {
 };
 
 test.describe('Storefront banners', () => {
-
-  // Restore the baseline locale so a country switch never leaks into later specs.
-  test.afterEach(async ({ helper }) => {
-    await setLocale(helper, DEFAULT_LOCALE);
-  });
 
   test('Display banners on every location for the resolved country', async ({ helper, dataProvider, homePage, categoryPage, productPage, cartPage }) => {
     await seedBanners(helper, true);
@@ -72,17 +66,22 @@ test.describe('Storefront banners', () => {
   test('Select the home banner by resolved country, and show none for an unconfigured country', async ({ page, helper, dataProvider, homePage }) => {
     await seedBanners(helper, true);
 
-    for (const { country, banner } of dataProvider.bannerCountryOptions()) {
-      await setLocale(helper, localeForCountry[country]);
-      await homePage.goto();
-      // Force a fresh render: goto() short-circuits when already on the home URL.
-      await page.reload({ waitUntil: 'domcontentloaded' });
+    try {
+      for (const { locale, banner } of dataProvider.bannerCountryOptions()) {
+        await setLocale(helper, locale);
+        await homePage.goto();
+        // Force a fresh render: goto() short-circuits when already on the home URL.
+        await page.reload({ waitUntil: 'domcontentloaded' });
 
-      if (banner) {
-        await homePage.expectBannerToBeVisible(banner);
-      } else {
-        await homePage.expectBannerNotToBeVisible();
+        if (banner) {
+          await homePage.expectBannerToBeVisible(banner);
+        } else {
+          await homePage.expectBannerNotToBeVisible();
+        }
       }
+    } finally {
+      // Restore the baseline locale so the country switch never leaks into later specs.
+      await setLocale(helper, DEFAULT_LOCALE);
     }
   });
 });
