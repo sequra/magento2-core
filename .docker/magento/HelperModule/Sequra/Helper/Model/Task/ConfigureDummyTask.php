@@ -25,22 +25,22 @@ class ConfigureDummyTask extends Task
 {
 
     /**
-     * @var string[] Banner image files bundled with this module, keyed by display location
+     * Banners to seed, as [country, displayLocation, imageFile, linked].
+     * ES covers every location; FR/IT cover the home page with distinct images so
+     * country-based selection can be asserted; PT is intentionally absent (no banner).
+     *
+     * @var array<int, array{0: string, 1: string, 2: string, 3: bool}>
      */
-    private const BANNER_IMAGES = [
-        'displayOnHomePage'           => 'banner-white-728x90.png',
-        'displayOnProductPage'        => 'banner-black-728x90.png',
-        'displayOnProductListingPage' => 'banner-green-728x90.png',
-        'displayOnCartPage'           => 'banner-white-728x90.png',
+    private const BANNER_CONFIGS = [
+        ['ES', 'displayOnHomePage', 'banner-white-728x90.png', true],
+        ['ES', 'displayOnProductPage', 'banner-black-728x90.png', false],
+        ['ES', 'displayOnProductListingPage', 'banner-green-728x90.png', true],
+        ['ES', 'displayOnCartPage', 'banner-white-728x90.png', false],
+        ['FR', 'displayOnHomePage', 'banner-green-728x90.png', true],
+        ['IT', 'displayOnHomePage', 'banner-black-728x90.png', false],
     ];
 
-    /**
-     * @var string[] Display locations that render the image wrapped in a link
-     */
-    private const BANNER_LINKED_LOCATIONS = ['displayOnHomePage', 'displayOnProductListingPage'];
-
     private const BANNER_LINK_URL = 'https://sequra.com';
-    private const BANNER_COUNTRY = 'ES';
 
     /**
      * Check if dummy merchant configuration is in use
@@ -334,15 +334,17 @@ class ConfigureDummyTask extends Task
         $assetsDir = __DIR__ . '/../../assets/banners/';
 
         $configs = [];
-        foreach (self::BANNER_IMAGES as $displayLocation => $image) {
+        $written = [];
+        foreach (self::BANNER_CONFIGS as [$country, $displayLocation, $image, $linked]) {
             $relativePath = BannerService::BANNER_MEDIA_DIR . '/' . $image;
-            $mediaDir->writeFile($relativePath, (string) file_get_contents($assetsDir . $image));
+            if (!isset($written[$relativePath])) {
+                $mediaDir->writeFile($relativePath, (string) file_get_contents($assetsDir . $image));
+                $written[$relativePath] = true;
+            }
 
             $configs[] = [
-                'country'         => self::BANNER_COUNTRY,
-                'linkUrl'         => in_array($displayLocation, self::BANNER_LINKED_LOCATIONS, true)
-                    ? self::BANNER_LINK_URL
-                    : '',
+                'country'         => $country,
+                'linkUrl'         => $linked ? self::BANNER_LINK_URL : '',
                 'imageUrl'        => $mediaBaseUrl . $relativePath,
                 'displayLocation' => $displayLocation,
             ];
