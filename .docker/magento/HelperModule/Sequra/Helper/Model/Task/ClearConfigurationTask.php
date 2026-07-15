@@ -7,6 +7,10 @@
 
  namespace Sequra\Helper\Model\Task;
 
+use Magento\Framework\App\ObjectManager;
+use Magento\Framework\Filesystem;
+use Magento\Framework\App\Filesystem\DirectoryList;
+
 /**
  * Task class
  */
@@ -25,6 +29,19 @@ class ClearConfigurationTask extends Task
     public function execute(array $args = [])
     {
         $this->removeStoreDataFromEntityTable();
+        $this->removeBannerMedia();
         return $this->httpSuccessResponse();
+    }
+
+    /**
+     * Remove seeded banner images from the media directory
+     */
+    private function removeBannerMedia(): void
+    {
+        $mediaDir = ObjectManager::getInstance()->get(Filesystem::class)->getDirectoryWrite(DirectoryList::MEDIA);
+        $path = 'sequra/banners';
+        if ($mediaDir->isExist($path)) {
+            $mediaDir->delete($path);
+        }
     }
 }
