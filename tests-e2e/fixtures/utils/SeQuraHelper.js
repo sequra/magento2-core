@@ -13,6 +13,7 @@ export default class SeQuraHelper extends BaseSeQuraHelper {
             dummy_config: 'dummy_config',
             clear_front_end_cache: 'clear_front_end_cache',
             verify_order_has_merchant_id: 'verify_order_has_merchant_id',
+            set_config: 'set_config',
         };
     }
 
