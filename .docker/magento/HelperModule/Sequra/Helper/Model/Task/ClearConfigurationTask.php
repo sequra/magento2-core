@@ -10,6 +10,7 @@
 use Magento\Framework\App\ObjectManager;
 use Magento\Framework\Filesystem;
 use Magento\Framework\App\Filesystem\DirectoryList;
+use Sequra\Core\Services\BusinessLogic\BannerService;
 
 /**
  * Task class
@@ -43,7 +44,7 @@ class ClearConfigurationTask extends Task
          */
         $filesystem = ObjectManager::getInstance()->get(Filesystem::class);
         $mediaDir = $filesystem->getDirectoryWrite(DirectoryList::MEDIA);
-        $path = 'sequra/banners';
+        $path = BannerService::BANNER_MEDIA_DIR;
         if ($mediaDir->isExist($path)) {
             $mediaDir->delete($path);
         }

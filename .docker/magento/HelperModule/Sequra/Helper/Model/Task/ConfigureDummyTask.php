@@ -9,6 +9,7 @@
 namespace Sequra\Helper\Model\Task;
 
 use Sequra\Core\Setup\DatabaseHandler;
+use Sequra\Core\Services\BusinessLogic\BannerService;
 use Magento\Framework\App\ObjectManager;
 use Magento\Framework\Encryption\EncryptorInterface;
 use Magento\Framework\Filesystem;
@@ -38,7 +39,6 @@ class ConfigureDummyTask extends Task
      */
     private const BANNER_LINKED_LOCATIONS = ['displayOnHomePage', 'displayOnProductListingPage'];
 
-    private const BANNER_MEDIA_DIR = 'sequra/banners';
     private const BANNER_LINK_URL = 'https://sequra.com';
     private const BANNER_COUNTRY = 'ES';
 
@@ -335,7 +335,7 @@ class ConfigureDummyTask extends Task
 
         $configs = [];
         foreach (self::BANNER_IMAGES as $displayLocation => $image) {
-            $relativePath = self::BANNER_MEDIA_DIR . '/' . $image;
+            $relativePath = BannerService::BANNER_MEDIA_DIR . '/' . $image;
             $mediaDir->writeFile($relativePath, (string) file_get_contents($assetsDir . $image));
 
             $configs[] = [
