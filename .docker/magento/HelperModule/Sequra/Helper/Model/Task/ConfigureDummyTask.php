@@ -14,6 +14,7 @@ use Magento\Framework\Encryption\EncryptorInterface;
 use Magento\Framework\Filesystem;
 use Magento\Framework\App\Filesystem\DirectoryList;
 use Magento\Framework\UrlInterface;
+use Magento\Store\Model\Store;
 use Magento\Store\Model\StoreManagerInterface;
 
 /**
@@ -316,10 +317,20 @@ class ConfigureDummyTask extends Task
     private function buildBannerSettingsData(int $id): string
     {
         $objectManager = ObjectManager::getInstance();
-        $mediaDir = $objectManager->get(Filesystem::class)->getDirectoryWrite(DirectoryList::MEDIA);
-        $mediaBaseUrl = $objectManager->get(StoreManagerInterface::class)
-            ->getStore(1)
-            ->getBaseUrl(UrlInterface::URL_TYPE_MEDIA);
+        /**
+         * @var Filesystem $filesystem
+         */
+        $filesystem = $objectManager->get(Filesystem::class);
+        /**
+         * @var StoreManagerInterface $storeManager
+         */
+        $storeManager = $objectManager->get(StoreManagerInterface::class);
+        /**
+         * @var Store $store
+         */
+        $store = $storeManager->getStore(1);
+        $mediaDir = $filesystem->getDirectoryWrite(DirectoryList::MEDIA);
+        $mediaBaseUrl = $store->getBaseUrl(UrlInterface::URL_TYPE_MEDIA);
         $assetsDir = __DIR__ . '/../../assets/banners/';
 
         $configs = [];

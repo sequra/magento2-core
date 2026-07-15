@@ -38,7 +38,11 @@ class ClearConfigurationTask extends Task
      */
     private function removeBannerMedia(): void
     {
-        $mediaDir = ObjectManager::getInstance()->get(Filesystem::class)->getDirectoryWrite(DirectoryList::MEDIA);
+        /**
+         * @var Filesystem $filesystem
+         */
+        $filesystem = ObjectManager::getInstance()->get(Filesystem::class);
+        $mediaDir = $filesystem->getDirectoryWrite(DirectoryList::MEDIA);
         $path = 'sequra/banners';
         if ($mediaDir->isExist($path)) {
             $mediaDir->delete($path);
