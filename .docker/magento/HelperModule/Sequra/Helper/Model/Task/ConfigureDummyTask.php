@@ -9,8 +9,14 @@
 namespace Sequra\Helper\Model\Task;
 
 use Sequra\Core\Setup\DatabaseHandler;
+use Sequra\Core\Services\BusinessLogic\BannerService;
 use Magento\Framework\App\ObjectManager;
 use Magento\Framework\Encryption\EncryptorInterface;
+use Magento\Framework\Filesystem;
+use Magento\Framework\App\Filesystem\DirectoryList;
+use Magento\Framework\UrlInterface;
+use Magento\Store\Model\Store;
+use Magento\Store\Model\StoreManagerInterface;
 
 /**
  * Task class
@@ -19,20 +25,40 @@ class ConfigureDummyTask extends Task
 {
 
     /**
+     * Banners to seed, as [country, displayLocation, imageFile, linked].
+     * ES covers every location; FR/IT cover the home page with distinct images so
+     * country-based selection can be asserted; PT is intentionally absent (no banner).
+     *
+     * @var array<int, array{0: string, 1: string, 2: string, 3: bool}>
+     */
+    private const BANNER_CONFIGS = [
+        ['ES', 'displayOnHomePage', 'banner-white-728x90.png', true],
+        ['ES', 'displayOnProductPage', 'banner-black-728x90.png', false],
+        ['ES', 'displayOnProductListingPage', 'banner-green-728x90.png', true],
+        ['ES', 'displayOnCartPage', 'banner-white-728x90.png', false],
+        ['FR', 'displayOnHomePage', 'banner-green-728x90.png', true],
+        ['IT', 'displayOnHomePage', 'banner-black-728x90.png', false],
+    ];
+
+    private const BANNER_LINK_URL = 'https://sequra.com';
+
+    /**
      * Check if dummy merchant configuration is in use
      *
      * @param bool $widgets
      * @param bool $express
+     * @param bool $banners
      */
-    private function isDummyConfigInUse(bool $widgets, bool $express = false): bool
+    private function isDummyConfigInUse(bool $widgets, bool $express = false, bool $banners = false): bool
     {
-        $expected_rows = 1 + ($widgets ? 1 : 0) + ($express ? 1 : 0);
+        $expected_rows = 1 + ($widgets ? 1 : 0) + ($express ? 1 : 0) + ($banners ? 1 : 0);
         $table_name = DatabaseHandler::SEQURA_ENTITY_TABLE;
         $query      = "SELECT * FROM $table_name
         WHERE (`type` = 'ConnectionData'
         AND `data` LIKE '%\"username\":\"dummy_automated_tests\"%')
         OR (`type` = 'WidgetSettings' AND `data` LIKE '%\"displayOnProductPage\":true%')
-        OR (`type` = 'ExpressCheckoutSettings' AND `data` LIKE '%\"page\":\"product\",\"enabled\":true%')";
+        OR (`type` = 'ExpressCheckoutSettings' AND `data` LIKE '%\"page\":\"product\",\"enabled\":true%')
+        OR (`type` = 'BannerSettings' AND `data` LIKE '%\"displayOnHomePage\"%')";
         $result     = $this->conn->getConnection()->fetchAll($query);
         return is_array($result) && count($result) === $expected_rows;
     }
@@ -42,8 +68,9 @@ class ConfigureDummyTask extends Task
      *
      * @param bool $widgets
      * @param bool $express Whether to enable Express Checkout on every surface
+     * @param bool $banners Whether to seed storefront banners
      */
-    private function setDummyConfig(bool $widgets, bool $express = false): void
+    private function setDummyConfig(bool $widgets, bool $express = false, bool $banners = false): void
     {
         /**
          * @var EncryptorInterface $encryptor
@@ -266,6 +293,69 @@ class ConfigureDummyTask extends Task
                 ]
             );
         }
+
+        if ($banners) {
+            $conn->insert(
+                $table_name,
+                [
+                    'id'      => ++$id,
+                    'type'    => 'BannerSettings',
+                    'index_1' => '1',
+                    'data'    => $this->buildBannerSettingsData($id),
+                ]
+            );
+        }
+    }
+
+    /**
+     * Copy the bundled banner images into the media directory and build the BannerSettings entity payload
+     *
+     * @param int $id Entity id assigned to the row
+     *
+     * @return string JSON payload for the BannerSettings entity
+     */
+    private function buildBannerSettingsData(int $id): string
+    {
+        $objectManager = ObjectManager::getInstance();
+        /**
+         * @var Filesystem $filesystem
+         */
+        $filesystem = $objectManager->get(Filesystem::class);
+        /**
+         * @var StoreManagerInterface $storeManager
+         */
+        $storeManager = $objectManager->get(StoreManagerInterface::class);
+        /**
+         * @var Store $store
+         */
+        $store = $storeManager->getStore(1);
+        $mediaDir = $filesystem->getDirectoryWrite(DirectoryList::MEDIA);
+        $mediaBaseUrl = $store->getBaseUrl(UrlInterface::URL_TYPE_MEDIA);
+        $assetsDir = __DIR__ . '/../../assets/banners/';
+
+        $configs = [];
+        $written = [];
+        foreach (self::BANNER_CONFIGS as [$country, $displayLocation, $image, $linked]) {
+            $relativePath = BannerService::BANNER_MEDIA_DIR . '/' . $image;
+            if (!isset($written[$relativePath])) {
+                $mediaDir->writeFile($relativePath, (string) file_get_contents($assetsDir . $image));
+                $written[$relativePath] = true;
+            }
+
+            $configs[] = [
+                'country'         => $country,
+                'linkUrl'         => $linked ? self::BANNER_LINK_URL : '',
+                'imageUrl'        => $mediaBaseUrl . $relativePath,
+                'displayLocation' => $displayLocation,
+            ];
+        }
+
+        return (string) json_encode([
+            'class_name'     => \SeQura\Core\BusinessLogic\DataAccess\BannerSettings\Entities\BannerSettings::class,
+            'id'             => $id,
+            'storeId'        => '1',
+            'bannerSettings' => ['bannerConfigs' => $configs],
+        ]);
     }
 
     /**
@@ -281,9 +371,10 @@ class ConfigureDummyTask extends Task
     {
         $widgets = isset($args['widgets']) ? (bool) $args['widgets'] : true;
         $express = isset($args['express']) ? (bool) $args['express'] : false;
-        if (! $this->isDummyConfigInUse($widgets, $express)) {
+        $banners = isset($args['banners']) ? (bool) $args['banners'] : false;
+        if (! $this->isDummyConfigInUse($widgets, $express, $banners)) {
             $this->removeStoreDataFromEntityTable();
-            $this->setDummyConfig($widgets, $express);
+            $this->setDummyConfig($widgets, $express, $banners);
         }
         return $this->httpSuccessResponse();
     }
