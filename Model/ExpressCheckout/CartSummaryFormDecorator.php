@@ -2,6 +2,8 @@
 
 namespace Sequra\Core\Model\ExpressCheckout;
 
+use Exception;
+use Magento\Catalog\Helper\Image as ImageHelper;
 use Magento\Quote\Model\Quote;
 
 /**
@@ -25,6 +27,21 @@ class CartSummaryFormDecorator
      */
     private const POST_MESSAGE_ATTEMPTS = 20;
     private const POST_MESSAGE_INTERVAL_MS = 500;
+
+    /**
+     * @var ImageHelper
+     */
+    private ImageHelper $imageHelper;
+
+    /**
+     * CartSummaryFormDecorator constructor.
+     *
+     * @param ImageHelper $imageHelper
+     */
+    public function __construct(ImageHelper $imageHelper)
+    {
+        $this->imageHelper = $imageHelper;
+    }
 
     /**
      * Decorates the identification form HTML with the show_cart flag and the cart data script.
@@ -81,6 +98,7 @@ class CartSummaryFormDecorator
                 'type' => 'cartDataReady',
                 'shippingMethods' => $this->buildShippingMethods($quote),
                 'shippingAddresses' => $this->buildShippingAddresses($quote),
+                'itemImages' => $this->buildItemImages($quote),
             ],
             JSON_HEX_TAG | JSON_UNESCAPED_UNICODE
         );
@@ -131,12 +149,14 @@ HTML;
                 continue;
             }
 
+            // Carrier as the method name and method title as the description, matching the
+            // CartSummary card ("GLS" / "Entrega a domicilio 2-3 días").
             $method = [
                 'reference' => (string)$rate->getCode(),
-                'name' => (string)($rate->getMethodTitle() ?: $rate->getCode()),
+                'name' => (string)($rate->getCarrierTitle() ?: $rate->getCode()),
                 // ponytail: rate price is tax-exclusive; use the taxed shipping amount when productized.
                 'costWithTax' => (int)round((float)$rate->getPrice() * 100),
-                'description' => (string)$rate->getCarrierTitle(),
+                'description' => (string)$rate->getMethodTitle(),
             ];
 
             if ($method['reference'] === $appliedCode) {
@@ -147,6 +167,37 @@ HTML;
         }
 
         return $methods;
+    }
+
+    /**
+     * Maps the quote items to product thumbnails, keyed by SKU — the reference the SeQura order
+     * items carry — so the checkout-form can pair image and cart item.
+     *
+     * @param Quote $quote
+     *
+     * @return array<string, string>
+     */
+    private function buildItemImages(Quote $quote): array
+    {
+        $images = [];
+        foreach ($quote->getAllVisibleItems() as $item) {
+            $product = $item->getProduct();
+            if (!$product) {
+                continue;
+            }
+
+            try {
+                $url = $this->imageHelper->init($product, 'cart_page_product_thumbnail')->getUrl();
+            } catch (Exception $e) {
+                continue;
+            }
+
+            if ($url !== '') {
+                $images[(string)$item->getSku()] = $url;
+            }
+        }
+
+        return $images;
     }
 
     /**
@@ -162,10 +213,11 @@ HTML;
     {
         $address = $quote->getShippingAddress();
         $street = $address->getStreet();
+        $addressId = $address->getId();
 
         return [
             [
-                'reference' => (string)$address->getId(),
+                'reference' => is_scalar($addressId) ? (string)$addressId : '',
                 'fullName' => trim($address->getFirstname() . ' ' . $address->getLastname()),
                 'addressLine1' => is_array($street) ? implode(', ', array_filter($street)) : (string)$street,
                 'postalCode' => (string)$address->getPostcode(),
