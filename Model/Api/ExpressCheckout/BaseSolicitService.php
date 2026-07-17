@@ -8,6 +8,7 @@ use SeQura\Core\BusinessLogic\CheckoutAPI\CheckoutAPI;
 use SeQura\Core\BusinessLogic\CheckoutAPI\ExpressCheckout\Requests\ExpressCheckoutSolicitRequest;
 use Sequra\Core\Model\Api\Builders\CreateOrderRequestBuilderFactory;
 use Sequra\Core\Model\Api\CartProvider\CartProvider;
+use Sequra\Core\Model\ExpressCheckout\CartSummaryFormDecorator;
 use Sequra\Core\Model\ExpressCheckout\QuoteShippingResolver;
 
 /**
@@ -37,6 +38,10 @@ class BaseSolicitService
      * @var QuoteShippingResolver
      */
     private QuoteShippingResolver $shippingResolver;
+    /**
+     * @var CartSummaryFormDecorator
+     */
+    private CartSummaryFormDecorator $cartSummaryFormDecorator;
 
     /**
      * BaseSolicitService constructor.
@@ -44,15 +49,18 @@ class BaseSolicitService
      * @param CartProvider $cartProvider
      * @param CreateOrderRequestBuilderFactory $createOrderRequestBuilderFactory
      * @param QuoteShippingResolver $shippingResolver
+     * @param CartSummaryFormDecorator $cartSummaryFormDecorator
      */
     public function __construct(
         CartProvider $cartProvider,
         CreateOrderRequestBuilderFactory $createOrderRequestBuilderFactory,
-        QuoteShippingResolver $shippingResolver
+        QuoteShippingResolver $shippingResolver,
+        CartSummaryFormDecorator $cartSummaryFormDecorator
     ) {
         $this->cartProvider = $cartProvider;
         $this->createOrderRequestBuilderFactory = $createOrderRequestBuilderFactory;
         $this->shippingResolver = $shippingResolver;
+        $this->cartSummaryFormDecorator = $cartSummaryFormDecorator;
     }
 
     /**
@@ -94,7 +102,12 @@ class BaseSolicitService
             throw $this->notEligible();
         }
 
-        return $response->getIdentificationForm()->getForm();
+        // Express Checkout V1 spike (PAR-835): open the form on the CartSummary page and feed
+        // it the shipping data via the cartDataReady postMessage.
+        return $this->cartSummaryFormDecorator->decorate(
+            $response->getIdentificationForm()->getForm(),
+            $quote
+        );
     }
 
     /**
