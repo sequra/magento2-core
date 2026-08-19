@@ -48,7 +48,7 @@ class AvailabilityEvaluator
      * @param string[] $productIds Product entity IDs in context.
      * @param string[] $categoryIds Category IDs in context.
      *
-     * @return string One of self::STATE_*.
+     * @return array{state: string, buttonStyle: string|null} State is one of self::STATE_*.
      */
     public function evaluate(
         string $storeId,
@@ -59,7 +59,7 @@ class AvailabilityEvaluator
         string $ipAddress,
         array $productIds,
         array $categoryIds
-    ): string {
+    ): array {
         try {
             if ($isLoggedIn) {
                 /** @var ExpressCheckoutAvailabilityResponse $response */
@@ -74,9 +74,13 @@ class AvailabilityEvaluator
                     )
                 );
 
-                $available = $response->isSuccessful() && !empty($response->toArray()['available']);
+                $data = $response->toArray();
+                $available = $response->isSuccessful() && !empty($data['available']);
 
-                return $available ? self::STATE_BUTTON : self::STATE_MESSAGE;
+                return $this->result(
+                    $available ? self::STATE_BUTTON : self::STATE_MESSAGE,
+                    $data['buttonStyle'] ?? null
+                );
             }
 
             /** @var GuestExpressCheckoutAvailabilityResponse $response */
@@ -90,14 +94,33 @@ class AvailabilityEvaluator
                 )
             );
 
-            return ($response->isSuccessful() && !empty($response->toArray()['available']))
-                ? self::STATE_BUTTON
-                : self::STATE_HIDDEN;
+            $data = $response->toArray();
+
+            return $this->result(
+                ($response->isSuccessful() && !empty($data['available'])) ? self::STATE_BUTTON : self::STATE_HIDDEN,
+                $data['buttonStyle'] ?? null
+            );
         } catch (Exception $e) {
             Logger::logError('Checking Express Checkout availability failed: ' . $e->getMessage() .
                 ' Trace: ' . $e->getTraceAsString());
 
-            return self::STATE_HIDDEN;
+            return $this->result(self::STATE_HIDDEN, null);
         }
+    }
+
+    /**
+     * Builds the evaluator result.
+     *
+     * @param string $state
+     * @param mixed $buttonStyle Opaque style blob from the core response, passed through untouched.
+     *
+     * @return array{state: string, buttonStyle: string|null}
+     */
+    private function result(string $state, $buttonStyle): array
+    {
+        return [
+            'state' => $state,
+            'buttonStyle' => is_string($buttonStyle) ? $buttonStyle : null,
+        ];
     }
 }

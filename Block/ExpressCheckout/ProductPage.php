@@ -59,6 +59,12 @@ class ProductPage extends Template
      */
     private ?string $state = null;
     /**
+     * Memoized merchant-configured button style blob for the current request.
+     *
+     * @var string|null
+     */
+    private ?string $buttonStyle = null;
+    /**
      * Memoized product for the current request (null also means "resolved to nothing").
      *
      * @var Product|null
@@ -107,6 +113,18 @@ class ProductPage extends Template
     public function isAvailable(): bool
     {
         return $this->resolveState() === AvailabilityEvaluator::STATE_BUTTON;
+    }
+
+    /**
+     * The merchant-configured button style blob, forwarded verbatim to the checkout library.
+     *
+     * @return string|null
+     */
+    public function getButtonStyle(): ?string
+    {
+        $this->resolveState();
+
+        return $this->buttonStyle;
     }
 
     /**
@@ -171,7 +189,7 @@ class ProductPage extends Template
 
             // Always the guest (customer-agnostic) evaluation: the page is full-page cached, so
             // the session is depersonalized during render and the HTML is shared by all shoppers.
-            $this->state = $this->availabilityEvaluator->evaluate(
+            $result = $this->availabilityEvaluator->evaluate(
                 (string)$this->_storeManager->getStore()->getId(),
                 ExpressCheckoutPage::product()->getPage(),
                 false,
@@ -181,6 +199,9 @@ class ProductPage extends Template
                 [(string)$product->getId()],
                 $this->getProductCategoryIds($product)
             );
+
+            $this->state = $result['state'];
+            $this->buttonStyle = $result['buttonStyle'];
 
             return $this->state;
         } catch (Exception $e) {
