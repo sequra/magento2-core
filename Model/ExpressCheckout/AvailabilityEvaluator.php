@@ -73,54 +73,38 @@ class AvailabilityEvaluator
                         $categoryIds
                     )
                 );
-
-                $data = $response->toArray();
-                $available = $response->isSuccessful() && !empty($data['available']);
-
-                return $this->result(
-                    $available ? self::STATE_BUTTON : self::STATE_MESSAGE,
-                    $data['buttonStyle'] ?? null
+                $unavailableState = self::STATE_MESSAGE;
+            } else {
+                /** @var GuestExpressCheckoutAvailabilityResponse $response */
+                $response = CheckoutAPI::get()->expressCheckout($storeId)->isAvailableForGuest(
+                    new GuestExpressCheckoutAvailabilityRequest(
+                        $page,
+                        $currency,
+                        $ipAddress,
+                        $productIds,
+                        $categoryIds
+                    )
                 );
+                $unavailableState = self::STATE_HIDDEN;
             }
 
-            /** @var GuestExpressCheckoutAvailabilityResponse $response */
-            $response = CheckoutAPI::get()->expressCheckout($storeId)->isAvailableForGuest(
-                new GuestExpressCheckoutAvailabilityRequest(
-                    $page,
-                    $currency,
-                    $ipAddress,
-                    $productIds,
-                    $categoryIds
-                )
-            );
-
             $data = $response->toArray();
+            $buttonStyle = $data['buttonStyle'] ?? null;
 
-            return $this->result(
-                ($response->isSuccessful() && !empty($data['available'])) ? self::STATE_BUTTON : self::STATE_HIDDEN,
-                $data['buttonStyle'] ?? null
-            );
+            return [
+                'state' => ($response->isSuccessful() && !empty($data['available']))
+                    ? self::STATE_BUTTON
+                    : $unavailableState,
+                'buttonStyle' => is_string($buttonStyle) ? $buttonStyle : null,
+            ];
         } catch (Exception $e) {
             Logger::logError('Checking Express Checkout availability failed: ' . $e->getMessage() .
                 ' Trace: ' . $e->getTraceAsString());
 
-            return $this->result(self::STATE_HIDDEN, null);
+            return [
+                'state' => self::STATE_HIDDEN,
+                'buttonStyle' => null,
+            ];
         }
-    }
-
-    /**
-     * Builds the evaluator result.
-     *
-     * @param string $state
-     * @param mixed $buttonStyle Opaque style blob from the core response, passed through untouched.
-     *
-     * @return array{state: string, buttonStyle: string|null}
-     */
-    private function result(string $state, $buttonStyle): array
-    {
-        return [
-            'state' => $state,
-            'buttonStyle' => is_string($buttonStyle) ? $buttonStyle : null,
-        ];
     }
 }
