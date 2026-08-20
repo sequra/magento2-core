@@ -20,7 +20,7 @@
     "prefer-stable": true,
     "require": {
         "php": ">=7.4 <8.6",
-        "sequra/integration-core": "v5.5.0",
+        "sequra/integration-core": "dev-feature/PAR-848-Configurable-Express-Button-Styles",
         "ext-json": "*"
     },
     "autoload": {
