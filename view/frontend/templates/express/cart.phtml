@@ -3,9 +3,13 @@
 /** @var \Magento\Framework\Escaper $escaper */
 
 if ($block->isAvailable()):
+    $buttonStyle = (string)$block->getButtonStyle();
     ?>
     <div class="sequra-express-checkout" data-role="sequra-express-checkout">
         <div class="sequra-express-checkout-button"
+             <?php if ($buttonStyle !== ''): ?>
+             data-button-style="<?= $escaper->escapeHtmlAttr($buttonStyle); ?>"
+             <?php endif; ?>
              data-url="<?= $escaper->escapeHtmlAttr($block->getSolicitUrl()); ?>"></div>
     </div>
     <script type="text/x-magento-init">

@@ -4,11 +4,15 @@
 
 if ($block->isAvailable()):
     $solicitUrl = $block->getProductSolicitUrl() . '?product=' . $block->getProductId() . '&qty=1';
+    $buttonStyle = (string)$block->getButtonStyle();
     ?>
     <div class="sequra-express-checkout sequra-express-checkout--product sequra-express-checkout--disabled"
          data-role="sequra-express-checkout-product">
         <div class="sequra-express-checkout-button"
              data-amount="0"
+             <?php if ($buttonStyle !== ''): ?>
+             data-button-style="<?= $escaper->escapeHtmlAttr($buttonStyle); ?>"
+             <?php endif; ?>
              data-url="<?= $escaper->escapeHtmlAttr($solicitUrl); ?>"></div>
     </div>
     <script type="text/x-magento-init">

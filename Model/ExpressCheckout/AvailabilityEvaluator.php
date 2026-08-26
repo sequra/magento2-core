@@ -48,7 +48,7 @@ class AvailabilityEvaluator
      * @param string[] $productIds Product entity IDs in context.
      * @param string[] $categoryIds Category IDs in context.
      *
-     * @return string One of self::STATE_*.
+     * @return array{state: string, buttonStyle: string|null} State is one of self::STATE_*.
      */
     public function evaluate(
         string $storeId,
@@ -59,7 +59,7 @@ class AvailabilityEvaluator
         string $ipAddress,
         array $productIds,
         array $categoryIds
-    ): string {
+    ): array {
         try {
             if ($isLoggedIn) {
                 /** @var ExpressCheckoutAvailabilityResponse $response */
@@ -73,31 +73,38 @@ class AvailabilityEvaluator
                         $categoryIds
                     )
                 );
-
-                $available = $response->isSuccessful() && !empty($response->toArray()['available']);
-
-                return $available ? self::STATE_BUTTON : self::STATE_MESSAGE;
+                $unavailableState = self::STATE_MESSAGE;
+            } else {
+                /** @var GuestExpressCheckoutAvailabilityResponse $response */
+                $response = CheckoutAPI::get()->expressCheckout($storeId)->isAvailableForGuest(
+                    new GuestExpressCheckoutAvailabilityRequest(
+                        $page,
+                        $currency,
+                        $ipAddress,
+                        $productIds,
+                        $categoryIds
+                    )
+                );
+                $unavailableState = self::STATE_HIDDEN;
             }
 
-            /** @var GuestExpressCheckoutAvailabilityResponse $response */
-            $response = CheckoutAPI::get()->expressCheckout($storeId)->isAvailableForGuest(
-                new GuestExpressCheckoutAvailabilityRequest(
-                    $page,
-                    $currency,
-                    $ipAddress,
-                    $productIds,
-                    $categoryIds
-                )
-            );
+            $data = $response->toArray();
+            $buttonStyle = $data['buttonStyle'] ?? null;
 
-            return ($response->isSuccessful() && !empty($response->toArray()['available']))
-                ? self::STATE_BUTTON
-                : self::STATE_HIDDEN;
+            return [
+                'state' => ($response->isSuccessful() && !empty($data['available']))
+                    ? self::STATE_BUTTON
+                    : $unavailableState,
+                'buttonStyle' => is_string($buttonStyle) ? $buttonStyle : null,
+            ];
         } catch (Exception $e) {
             Logger::logError('Checking Express Checkout availability failed: ' . $e->getMessage() .
                 ' Trace: ' . $e->getTraceAsString());
 
-            return self::STATE_HIDDEN;
+            return [
+                'state' => self::STATE_HIDDEN,
+                'buttonStyle' => null,
+            ];
         }
     }
 }

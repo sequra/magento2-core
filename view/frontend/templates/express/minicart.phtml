@@ -3,6 +3,7 @@
 /** @var \Magento\Framework\Escaper $escaper */
 
 if ($block->isAvailable()):
+    $buttonStyle = (string)$block->getButtonStyle();
     ?>
     <?php // data-mage-init (not x-magento-init): the markup is re-injected by the Knockout
           // mini-cart on every `cart` section refresh, and only attribute-form init re-runs
@@ -12,6 +13,9 @@ if ($block->isAvailable()):
          data-mage-init='{"Sequra_Core/js/express/cart-express": {}}'
          data-availability-url="<?= $escaper->escapeHtmlAttr($block->getAvailabilityUrl()); ?>">
         <div class="sequra-express-checkout-button"
+             <?php if ($buttonStyle !== ''): ?>
+             data-button-style="<?= $escaper->escapeHtmlAttr($buttonStyle); ?>"
+             <?php endif; ?>
              data-url="<?= $escaper->escapeHtmlAttr($block->getSolicitUrl()); ?>"></div>
     </div>
     <?php

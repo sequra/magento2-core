@@ -46,6 +46,12 @@ abstract class AbstractExpressCheckoutBlock extends Template
      * @var string|null
      */
     private ?string $state = null;
+    /**
+     * Memoized merchant-configured button style blob for the current request.
+     *
+     * @var string|null
+     */
+    private ?string $buttonStyle = null;
 
     /**
      * @param ScopeResolverInterface $scopeResolver
@@ -110,6 +116,18 @@ abstract class AbstractExpressCheckoutBlock extends Template
     }
 
     /**
+     * The merchant-configured button style blob, forwarded verbatim to the checkout library.
+     *
+     * @return string|null
+     */
+    public function getButtonStyle(): ?string
+    {
+        $this->resolveState();
+
+        return $this->buttonStyle;
+    }
+
+    /**
      * The storefront solicit URL the CDN-library button fetches (GET, raw HTML response).
      *
      * @return string
@@ -161,7 +179,7 @@ abstract class AbstractExpressCheckoutBlock extends Template
                 ? (string)$this->shippingResolver->getResolvableShippingCountry($quote)
                 : '';
 
-            $this->state = $this->availabilityEvaluator->evaluate(
+            $result = $this->availabilityEvaluator->evaluate(
                 (string)$this->_storeManager->getStore()->getId(),
                 $this->getExpressCheckoutPage(),
                 $isLoggedIn,
@@ -171,6 +189,9 @@ abstract class AbstractExpressCheckoutBlock extends Template
                 $this->getCartProductIds($quote),
                 $this->getCartCategoryIds($quote)
             );
+
+            $this->state = $result['state'];
+            $this->buttonStyle = $result['buttonStyle'];
 
             return $this->state;
         } catch (Exception $e) {
