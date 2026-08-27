@@ -4,7 +4,10 @@ namespace Sequra\Core\Model\ExpressCheckout;
 
 use Exception;
 use Magento\Catalog\Helper\Image as ImageHelper;
+use Magento\Framework\UrlInterface;
 use Magento\Quote\Model\Quote;
+use Magento\Tax\Helper\Data as TaxHelper;
+use Magento\Theme\ViewModel\Block\Html\Header\LogoPathResolver;
 
 /**
  * Class CartSummaryFormDecorator
@@ -14,8 +17,10 @@ use Magento\Quote\Model\Quote;
  *
  *  1. Appends the `show_cart` flag to the form iframe URL (`data-base-url` and `src`), so
  *     SeQura emits the flag and the cart items in the form settings/metadata.
- *  2. Injects a script that posts the quote's shipping methods and address to the iframe
- *     via the `cartDataReady` message the checkout-form listens for.
+ *  2. Injects a script that posts everything the CartSummary page renders but the solicited
+ *     order does not carry — the order-scoped form endpoints, the store identity, the shopper's
+ *     email and address, the shipping methods and the cart item images — to the iframe via the
+ *     `cartDataReady` message the checkout-form listens for.
  *
  * ponytail: spike is always-on for express solicits; gate behind a store config when productized.
  */
@@ -32,15 +37,30 @@ class CartSummaryFormDecorator
      * @var ImageHelper
      */
     private ImageHelper $imageHelper;
+    /**
+     * @var TaxHelper
+     */
+    private TaxHelper $taxHelper;
+    /**
+     * @var LogoPathResolver
+     */
+    private LogoPathResolver $logoPathResolver;
 
     /**
      * CartSummaryFormDecorator constructor.
      *
      * @param ImageHelper $imageHelper
+     * @param TaxHelper $taxHelper
+     * @param LogoPathResolver $logoPathResolver
      */
-    public function __construct(ImageHelper $imageHelper)
-    {
+    public function __construct(
+        ImageHelper $imageHelper,
+        TaxHelper $taxHelper,
+        LogoPathResolver $logoPathResolver
+    ) {
         $this->imageHelper = $imageHelper;
+        $this->taxHelper = $taxHelper;
+        $this->logoPathResolver = $logoPathResolver;
     }
 
     /**
@@ -53,7 +73,10 @@ class CartSummaryFormDecorator
      */
     public function decorate(string $form, Quote $quote): string
     {
-        return $this->appendShowCartFlag($form) . $this->buildCartDataScript($quote);
+        // The endpoints are read back off the flagged HTML so they carry show_cart too.
+        $flagged = $this->appendShowCartFlag($form);
+
+        return $flagged . $this->buildCartDataScript($quote, $this->buildEndpoints($flagged));
     }
 
     /**
@@ -88,20 +111,36 @@ class CartSummaryFormDecorator
      * Builds the script that posts the cartDataReady message to the form iframe.
      *
      * @param Quote $quote
+     * @param array<string, string> $endpoints Order-scoped form endpoints, possibly empty.
      *
      * @return string
      */
-    private function buildCartDataScript(Quote $quote): string
+    private function buildCartDataScript(Quote $quote, array $endpoints): string
     {
-        $payload = json_encode(
-            [
-                'type' => 'cartDataReady',
-                'shippingMethods' => $this->buildShippingMethods($quote),
-                'shippingAddresses' => $this->buildShippingAddresses($quote),
-                'itemImages' => $this->buildItemImages($quote),
-            ],
-            JSON_HEX_TAG | JSON_UNESCAPED_UNICODE
-        );
+        $address = $this->buildShippingAddress($quote);
+
+        $data = [
+            'type' => 'cartDataReady',
+            'storeName' => $quote->getStore()->getFrontendName(),
+            'email' => $this->buildEmail($quote),
+            'address' => $address,
+            'shippingMethods' => $this->buildShippingMethods($quote),
+            'shippingAddresses' => [$address],
+            'itemImages' => $this->buildItemImages($quote),
+        ];
+
+        // Both keys are omitted rather than sent empty: the checkout-form only overwrites what
+        // it receives, and it rejects a store logo that is not an absolute http(s) URL.
+        if ($endpoints !== []) {
+            $data['endpoints'] = $endpoints;
+        }
+
+        $storeLogoUrl = $this->buildStoreLogoUrl($quote);
+        if ($storeLogoUrl !== null) {
+            $data['storeLogoUrl'] = $storeLogoUrl;
+        }
+
+        $payload = json_encode($data, JSON_HEX_TAG | JSON_UNESCAPED_UNICODE);
 
         $attempts = self::POST_MESSAGE_ATTEMPTS;
         $interval = self::POST_MESSAGE_INTERVAL_MS;
@@ -130,6 +169,89 @@ HTML;
     }
 
     /**
+     * Derives the order-scoped form endpoints from the iframe URL the solicit returned.
+     *
+     * Only the metadata endpoint is derivable, as the form URL with its last path segment swapped
+     * for `metadata`: that keeps the order id and every carried-over query parameter (product,
+     * campaign, validation code, show_cart). The identification endpoint needs the order secret
+     * and the shopper-token endpoint is not a SeQura URL at all; neither appears in the snippet,
+     * so both are omitted and the checkout-form keeps the ones it booted with.
+     *
+     * @param string $form Form HTML, already carrying the show_cart flag.
+     *
+     * @return array<string, string>
+     */
+    private function buildEndpoints(string $form): array
+    {
+        if (!preg_match('/\bdata-base-url="([^"]+)"/', $form, $matches)) {
+            return [];
+        }
+
+        // In the HTML the attribute value is escaped (&amp;), unlike the value getAttribute()
+        // hands the injected script at runtime.
+        $baseUrl = html_entity_decode($matches[1], ENT_QUOTES | ENT_HTML5);
+        if (!preg_match('#^https?://#i', $baseUrl)) {
+            return [];
+        }
+
+        $replacements = 0;
+        $metadataEndpoint = preg_replace(
+            '#(/orders/[^/?\#]+)/[^/?\#]+#',
+            '$1/metadata',
+            $baseUrl,
+            1,
+            $replacements
+        );
+
+        if ($metadataEndpoint === null || $replacements === 0) {
+            return [];
+        }
+
+        return ['metadataEndpoint' => $metadataEndpoint];
+    }
+
+    /**
+     * Absolute URL of the store's configured header logo, or null when there is none.
+     *
+     * Resolved the way Magento's own header logo block does it: the `design/header/logo_src`
+     * config under the logo upload directory, joined to the store's media base URL.
+     *
+     * ponytail: unlike the block this does not check the file is actually there — a stale
+     * config yields a broken image rather than the theme's fallback logo.
+     *
+     * @param Quote $quote
+     *
+     * @return string|null
+     */
+    private function buildStoreLogoUrl(Quote $quote): ?string
+    {
+        $path = (string)$this->logoPathResolver->getPath();
+        // With no logo configured the resolver returns the bare upload directory.
+        if ($path === '' || substr($path, -1) === '/') {
+            return null;
+        }
+
+        $baseUrl = $quote->getStore()->getBaseUrl(UrlInterface::URL_TYPE_MEDIA);
+
+        return rtrim($baseUrl, '/') . '/' . ltrim($path, '/');
+    }
+
+    /**
+     * The shopper's email, resolved through the same chain the create-order request uses so the
+     * CartSummary page shows the address the SeQura order was solicited with.
+     *
+     * @param Quote $quote
+     *
+     * @return string
+     */
+    private function buildEmail(Quote $quote): string
+    {
+        return (string)($quote->getCustomer()->getEmail()
+            ?: $quote->getBillingAddress()->getEmail()
+            ?: $quote->getShippingAddress()->getEmail());
+    }
+
+    /**
      * Maps the quote's collected shipping rates to the checkout-form ShippingMethod shape.
      * The rate applied to the quote goes first: the checkout-form preselects the first method,
      * and the solicited order total was computed with that rate.
@@ -142,6 +264,7 @@ HTML;
     {
         $shippingAddress = $quote->getShippingAddress();
         $appliedCode = (string)$shippingAddress->getShippingMethod();
+        $customerTaxClassId = $quote->getCustomerTaxClassId();
 
         $methods = [];
         foreach ($shippingAddress->getAllShippingRates() as $rate) {
@@ -154,8 +277,20 @@ HTML;
             $method = [
                 'reference' => (string)$rate->getCode(),
                 'name' => (string)($rate->getCarrierTitle() ?: $rate->getCode()),
-                // ponytail: rate price is tax-exclusive; use the taxed shipping amount when productized.
-                'costWithTax' => (int)round((float)$rate->getPrice() * 100),
+                // The rate price is tax-exclusive, and the checkout-form renders this as the
+                // shipping line and folds it into the total. Taxed per rate the same way
+                // Magento's own ShippingMethodConverter does it.
+                'costWithTax' => (int)round(
+                    (float)$this->taxHelper->getShippingPrice(
+                        (float)$rate->getPrice(),
+                        true,
+                        // The helper's docblock says Customer\Model\Address, but it is fed a quote
+                        // address here and by Magento's own ShippingMethodConverter.
+                        // @phpstan-ignore-next-line
+                        $shippingAddress,
+                        $customerTaxClassId
+                    ) * 100
+                ),
                 'description' => (string)$rate->getMethodTitle(),
             ];
 
@@ -202,28 +337,31 @@ HTML;
 
     /**
      * Maps the address the order was solicited with to the checkout-form ShippingAddress shape.
-     * Only that one is sent: the CartSummary page shows a single address and its edit flow
-     * (cart_address page) does not exist yet.
+     * Only that one is sent — as the `shippingAddresses` list and as the singular `address` the
+     * prefill takes — because the CartSummary page shows a single address.
+     *
+     * `fullName` is kept for the summary line while `givenName`/`surnames` feed the separate
+     * Nombre / Apellidos inputs of the address sheet.
      *
      * @param Quote $quote
      *
-     * @return array<int, array<string, string>>
+     * @return array<string, string>
      */
-    private function buildShippingAddresses(Quote $quote): array
+    private function buildShippingAddress(Quote $quote): array
     {
         $address = $quote->getShippingAddress();
         $street = $address->getStreet();
         $addressId = $address->getId();
 
         return [
-            [
-                'reference' => is_scalar($addressId) ? (string)$addressId : '',
-                'fullName' => trim($address->getFirstname() . ' ' . $address->getLastname()),
-                'addressLine1' => is_array($street) ? implode(', ', array_filter($street)) : (string)$street,
-                'postalCode' => (string)$address->getPostcode(),
-                'city' => (string)$address->getCity(),
-                'countryCode' => (string)$address->getCountryId(),
-            ],
+            'reference' => is_scalar($addressId) ? (string)$addressId : '',
+            'fullName' => trim($address->getFirstname() . ' ' . $address->getLastname()),
+            'givenName' => (string)$address->getFirstname(),
+            'surnames' => (string)$address->getLastname(),
+            'addressLine1' => is_array($street) ? implode(', ', array_filter($street)) : (string)$street,
+            'postalCode' => (string)$address->getPostcode(),
+            'city' => (string)$address->getCity(),
+            'countryCode' => (string)$address->getCountryId(),
         ];
     }
 }
