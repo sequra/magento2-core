@@ -146,6 +146,14 @@
     <preference for="Sequra\Core\Api\ExpressCheckout\ProductSolicitInterface"
                 type="Sequra\Core\Model\Api\ExpressCheckout\ProductSolicitService"/>
 
+    <!-- The cart-update endpoint re-solicits the quote the last solicit ran against, so it needs
+         the same customer-cart flavour of the solicit service the two solicit endpoints share. -->
+    <type name="Sequra\Core\Controller\ExpressCheckout\CartUpdate">
+        <arguments>
+            <argument name="solicitService" xsi:type="object">SequraExpressCustomerSolicitService</argument>
+        </arguments>
+    </type>
+
 
     <!-- <type name="Magento\PageBuilder\Model\WidgetInitializerConfig">
         <arguments>

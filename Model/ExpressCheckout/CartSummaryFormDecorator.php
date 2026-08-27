@@ -4,6 +4,7 @@ namespace Sequra\Core\Model\ExpressCheckout;
 
 use Exception;
 use Magento\Catalog\Helper\Image as ImageHelper;
+use Magento\Framework\Data\Form\FormKey;
 use Magento\Framework\UrlInterface;
 use Magento\Quote\Model\Quote;
 use Magento\Tax\Helper\Data as TaxHelper;
@@ -20,7 +21,9 @@ use Magento\Theme\ViewModel\Block\Html\Header\LogoPathResolver;
  *  2. Injects a script that posts everything the CartSummary page renders but the solicited
  *     order does not carry — the order-scoped form endpoints, the store identity, the shopper's
  *     email and address, the shipping methods and the cart item images — to the iframe via the
- *     `cartDataReady` message the checkout-form listens for.
+ *     `cartDataReady` message the checkout-form listens for. The same script relays the
+ *     `Sequra.cartUpdate` message the form posts back (address, carrier or email changed) to
+ *     the cart-update endpoint and forwards its refreshed payload on to the iframe.
  *
  * ponytail: spike is always-on for express solicits; gate behind a store config when productized.
  */
@@ -45,6 +48,10 @@ class CartSummaryFormDecorator
      * @var LogoPathResolver
      */
     private LogoPathResolver $logoPathResolver;
+    /**
+     * @var FormKey
+     */
+    private FormKey $formKey;
 
     /**
      * CartSummaryFormDecorator constructor.
@@ -52,15 +59,18 @@ class CartSummaryFormDecorator
      * @param ImageHelper $imageHelper
      * @param TaxHelper $taxHelper
      * @param LogoPathResolver $logoPathResolver
+     * @param FormKey $formKey
      */
     public function __construct(
         ImageHelper $imageHelper,
         TaxHelper $taxHelper,
-        LogoPathResolver $logoPathResolver
+        LogoPathResolver $logoPathResolver,
+        FormKey $formKey
     ) {
         $this->imageHelper = $imageHelper;
         $this->taxHelper = $taxHelper;
         $this->logoPathResolver = $logoPathResolver;
+        $this->formKey = $formKey;
     }
 
     /**
@@ -75,8 +85,27 @@ class CartSummaryFormDecorator
     {
         // The endpoints are read back off the flagged HTML so they carry show_cart too.
         $flagged = $this->appendShowCartFlag($form);
+        $data = $this->buildPayload($quote, $this->buildEndpoints($flagged));
 
-        return $flagged . $this->buildCartDataScript($quote, $this->buildEndpoints($flagged));
+        return $flagged . $this->buildCartDataScript($data, $quote);
+    }
+
+    /**
+     * The cartDataReady payload on its own, for the cart-update endpoint to answer a shopper
+     * change with.
+     *
+     * Same shape, same builders and the same endpoint derivation as the payload {@see decorate}
+     * injects: the checkout-form adopts the reply in place of the one it booted with, so the two
+     * must be produced by one piece of code.
+     *
+     * @param string $form Identification form HTML returned by the re-solicit.
+     * @param Quote $quote Re-solicited quote, already mutated and re-collected.
+     *
+     * @return array<string, mixed>
+     */
+    public function buildCartData(string $form, Quote $quote): array
+    {
+        return $this->buildPayload($quote, $this->buildEndpoints($this->appendShowCartFlag($form)));
     }
 
     /**
@@ -108,14 +137,15 @@ class CartSummaryFormDecorator
     }
 
     /**
-     * Builds the script that posts the cartDataReady message to the form iframe.
+     * Builds the cartDataReady payload: everything the CartSummary page renders that the
+     * solicited order does not carry.
      *
      * @param Quote $quote
      * @param array<string, string> $endpoints Order-scoped form endpoints, possibly empty.
      *
-     * @return string
+     * @return array<string, mixed>
      */
-    private function buildCartDataScript(Quote $quote, array $endpoints): string
+    private function buildPayload(Quote $quote, array $endpoints): array
     {
         $address = $this->buildShippingAddress($quote);
 
@@ -140,7 +170,35 @@ class CartSummaryFormDecorator
             $data['storeLogoUrl'] = $storeLogoUrl;
         }
 
+        return $data;
+    }
+
+    /**
+     * Builds the script that drives both directions of the CartSummary conversation: it posts
+     * the cartDataReady message into the form iframe, and it relays the `Sequra.cartUpdate`
+     * message the form posts back out (address saved, carrier picked, email saved) to the
+     * cart-update endpoint, forwarding that endpoint's refreshed payload on to the same iframe.
+     *
+     * The reply is targeted at the iframe's data-base-url origin, never '*', exactly like the
+     * initial message; inbound messages from any other origin are ignored.
+     *
+     * The endpoint is a state-changing frontend POST, so the request carries Magento's session
+     * form key — minted here rather than read from the form_key cookie, which is set by the page
+     * cache layer and cannot be relied on.
+     *
+     * @param array<string, mixed> $data cartDataReady payload.
+     * @param Quote $quote
+     *
+     * @return string
+     */
+    private function buildCartDataScript(array $data, Quote $quote): string
+    {
         $payload = json_encode($data, JSON_HEX_TAG | JSON_UNESCAPED_UNICODE);
+        $updateUrl = json_encode(
+            $quote->getStore()->getUrl('sequra/expresscheckout/cartupdate'),
+            JSON_HEX_TAG | JSON_UNESCAPED_SLASHES
+        );
+        $formKey = json_encode($this->formKey->getFormKey(), JSON_HEX_TAG);
 
         $attempts = self::POST_MESSAGE_ATTEMPTS;
         $interval = self::POST_MESSAGE_INTERVAL_MS;
@@ -150,19 +208,80 @@ class CartSummaryFormDecorator
 <script type="text/javascript">
     (function () {
         var payload = {$payload};
+        var updateUrl = {$updateUrl};
+        var formKey = {$formKey};
+
+        function formIframe() {
+            var el = document.getElementById(window.SequraFormElement);
+
+            return (el && el.contentWindow && el.getAttribute('data-base-url')) ? el : null;
+        }
+
+        function formOrigin(el) {
+            return new URL(el.getAttribute('data-base-url')).origin;
+        }
+
+        function send(el, data) {
+            el.contentWindow.postMessage(data, formOrigin(el));
+        }
+
         var attempts = 0;
         var timer = setInterval(function () {
-            var iframe = document.getElementById(window.SequraFormElement);
-            if (iframe && iframe.contentWindow && iframe.getAttribute('data-base-url')) {
-                iframe.contentWindow.postMessage(
-                    payload,
-                    new URL(iframe.getAttribute('data-base-url')).origin
-                );
+            var el = formIframe();
+            if (el) {
+                send(el, payload);
             }
             if (++attempts >= {$attempts}) {
                 clearInterval(timer);
             }
         }, {$interval});
+
+        // One listener per page. It resolves the iframe and its origin on every message, so a
+        // second solicit (cancel, then retry) is served by the listener the first one installed
+        // instead of stacking duplicate listeners that would each fire their own update.
+        if (window.SequraCartUpdateBound) {
+            return;
+        }
+        window.SequraCartUpdateBound = true;
+
+        window.addEventListener('message', function (event) {
+            var el = formIframe();
+            if (!el || event.origin !== formOrigin(el)) {
+                return;
+            }
+
+            var message = event.data;
+            if (typeof message === 'string') {
+                try {
+                    message = JSON.parse(message);
+                } catch (e) {
+                    return;
+                }
+            }
+            if (!message || message.action !== 'Sequra.cartUpdate') {
+                return;
+            }
+
+            var body = new URLSearchParams();
+            body.append('form_key', formKey);
+            body.append('payload', JSON.stringify({
+                address: message.address,
+                shippingMethodReference: message.shippingMethodReference,
+                email: message.email
+            }));
+
+            fetch(updateUrl, { method: 'POST', body: body, credentials: 'same-origin' })
+                .then(function (response) {
+                    return response.ok ? response.json() : null;
+                })
+                .then(function (data) {
+                    var target = formIframe();
+                    if (data && target) {
+                        send(target, data);
+                    }
+                })
+                .catch(function () {});
+        });
     })();
 </script>
 HTML;
@@ -246,7 +365,10 @@ HTML;
      */
     private function buildEmail(Quote $quote): string
     {
-        return (string)($quote->getCustomer()->getEmail()
+        // Quote-level first: an email the shopper saves on the CartSummary page is applied to
+        // the quote, and the (unchanged) account email would otherwise always win.
+        return (string)($quote->getCustomerEmail()
+            ?: $quote->getCustomer()->getEmail()
             ?: $quote->getBillingAddress()->getEmail()
             ?: $quote->getShippingAddress()->getEmail());
     }

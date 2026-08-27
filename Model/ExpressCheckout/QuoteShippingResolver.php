@@ -8,8 +8,10 @@ use Magento\Customer\Api\Data\AddressInterface;
 use Magento\Customer\Api\Data\CustomerInterface;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\Webapi\Exception as WebapiException;
 use Magento\Quote\Api\CartRepositoryInterface;
 use Magento\Quote\Model\Quote;
+use Magento\Quote\Model\Quote\Address;
 use Magento\Quote\Model\Quote\Address\Rate;
 use SeQura\Core\Infrastructure\Logger\Logger;
 use Sequra\Core\Model\Ui\ConfigProvider;
@@ -27,6 +29,9 @@ use Sequra\Core\Model\Ui\ConfigProvider;
  *    would hit every carrier on each request).
  *  - resolve() performs the actual mutate-and-save once, at solicit time, recomputing
  *    totals from a clean state so the shipping line cannot compound across calls.
+ *  - applyChange() is the re-solicit counterpart: it writes a shopper-supplied change from the
+ *    CartSummary form (address, carrier, email) instead of the customer's defaults, then
+ *    re-collects and saves the same way.
  */
 class QuoteShippingResolver
 {
@@ -153,6 +158,113 @@ class QuoteShippingResolver
     }
 
     /**
+     * Applies a shopper change coming from the CartSummary form — any combination of shipping
+     * address, chosen carrier and email — then re-collects rates from a clean state and saves,
+     * so the follow-up solicit sees the new figures.
+     *
+     * Unlike {@see resolve} this never re-imports the customer's default address: that is the
+     * whole point of the change. The billing address is left as the initial solicit imported it —
+     * the CartSummary page edits delivery only.
+     *
+     * ponytail: the region is only cleared on a country change, never re-derived from the new
+     * postcode; countries whose carriers key off the region need a region lookup here.
+     *
+     * @param Quote $quote Quote to mutate and save.
+     * @param mixed[] $change Validated change: address, shippingMethodReference, email.
+     *
+     * @return bool True when applied; false when the resulting address has no usable rate.
+     *
+     * @throws WebapiException HTTP 400 when the requested carrier is not one of the rates the
+     *                         quote actually offers.
+     * @throws LocalizedException If the quote cannot be saved.
+     */
+    public function applyChange(Quote $quote, array $change): bool
+    {
+        $shippingAddress = $quote->getShippingAddress();
+
+        if (isset($change['address']) && is_array($change['address'])) {
+            $this->applyAddress($shippingAddress, $change['address']);
+        }
+
+        if (isset($change['email']) && is_string($change['email'])) {
+            $quote->setCustomerEmail($change['email']);
+            $shippingAddress->setEmail($change['email']);
+            $quote->getBillingAddress()->setEmail($change['email']);
+        }
+
+        $preselectedMethod = (string)$shippingAddress->getShippingMethod();
+        $requestedMethod = isset($change['shippingMethodReference']) && is_string($change['shippingMethodReference'])
+            ? $change['shippingMethodReference']
+            : '';
+
+        $rates = $this->recollectRates($quote);
+
+        if ($requestedMethod !== '') {
+            $rate = $this->findRate($rates, $requestedMethod);
+            if ($rate === null) {
+                // A reference the quote does not offer: stale after an address change, or forged.
+                // Never written to the quote as-is — the shopper's carrier choice is only ever one
+                // of the collected rates.
+                throw new WebapiException(
+                    __('Invalid Express Checkout request.'),
+                    0,
+                    WebapiException::HTTP_BAD_REQUEST
+                );
+            }
+        } else {
+            $rate = $this->selectRate($rates, $preselectedMethod);
+        }
+
+        if ($rate === null) {
+            return false;
+        }
+
+        $shippingAddress->setShippingMethod($rate->getCode());
+        $shippingAddress->setCollectShippingRates(true);
+        $quote->setData('totals_collected_flag', false);
+        $quote->collectTotals();
+        $this->quoteRepository->save($quote);
+
+        return true;
+    }
+
+    /**
+     * Writes the shopper-supplied address fields onto the quote's shipping address.
+     *
+     * @param Address $shippingAddress Quote shipping address to overwrite.
+     * @param array<string, string> $address Validated address fields.
+     *
+     * @return void
+     */
+    private function applyAddress(Address $shippingAddress, array $address): void
+    {
+        $street = [$address['addressLine1']];
+        if (isset($address['addressLine2'])) {
+            $street[] = $address['addressLine2'];
+        }
+
+        $shippingAddress->setFirstname($address['givenName']);
+        $shippingAddress->setLastname($address['surnames']);
+        $shippingAddress->setStreet($street);
+        $shippingAddress->setPostcode($address['postalCode']);
+        $shippingAddress->setCity($address['city']);
+
+        $country = $address['countryCode'] ?? '';
+        if ($country !== '' && $country !== (string)$shippingAddress->getCountryId()) {
+            $shippingAddress->setCountryId($country);
+            // The stored region belongs to the previous country; carrying it over would quote
+            // rates (and place the order) against a region that does not exist there. Magento
+            // reads 0 / '' as "no region".
+            $shippingAddress->setRegionId(0);
+            $shippingAddress->setRegion('');
+        }
+
+        // The quote address no longer mirrors the customer address book entry it was imported
+        // from, so drop the link rather than leave it pointing at different data.
+        $shippingAddress->setCustomerAddressId(null);
+    }
+
+    /**
      * Loads the quote's customer, or null when the quote belongs to a guest.
      *
      * @param Quote $quote
@@ -217,8 +329,23 @@ class QuoteShippingResolver
      */
     private function collectRates(Quote $quote, AddressInterface $address): array
     {
+        $quote->getShippingAddress()->importCustomerAddressData($address);
+
+        return $this->recollectRates($quote);
+    }
+
+    /**
+     * (Re)collects the quote's shipping rates from a clean state — the selected method is cleared
+     * so every carrier is re-quoted for whatever address is currently on the quote — and returns
+     * them. Does not persist the quote.
+     *
+     * @param Quote $quote
+     *
+     * @return Rate[]
+     */
+    private function recollectRates(Quote $quote): array
+    {
         $shippingAddress = $quote->getShippingAddress();
-        $shippingAddress->importCustomerAddressData($address);
         $shippingAddress->setShippingMethod('');
         $shippingAddress->setCollectShippingRates(true);
 
@@ -240,14 +367,32 @@ class QuoteShippingResolver
     private function selectRate(array $rates, string $selectedCode): ?Rate
     {
         if ($selectedCode !== '') {
-            foreach ($rates as $rate) {
-                if (!$rate->getErrorMessage() && (string)$rate->getCode() === $selectedCode) {
-                    return $rate;
-                }
+            $rate = $this->findRate($rates, $selectedCode);
+            if ($rate !== null) {
+                return $rate;
             }
         }
 
         return $this->pickCheapestRate($rates);
+    }
+
+    /**
+     * Returns the usable rate carrying the given code, or null when the quote does not offer it.
+     *
+     * @param Rate[] $rates
+     * @param string $code Shipping method code to look for.
+     *
+     * @return Rate|null
+     */
+    private function findRate(array $rates, string $code): ?Rate
+    {
+        foreach ($rates as $rate) {
+            if (!$rate->getErrorMessage() && (string)$rate->getCode() === $code) {
+                return $rate;
+            }
+        }
+
+        return null;
     }
 
     /**
