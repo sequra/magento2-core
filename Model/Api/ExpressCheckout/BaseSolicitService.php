@@ -30,8 +30,10 @@ class BaseSolicitService
 {
     /**
      * HTTP status returned when the logged in customer is not eligible for Express Checkout
-     * (no supported default shipping address / unsupported country), so the storefront can
-     * show a specific "not available" message instead of a generic server error.
+     * (unsupported delivery country, or an address with no usable shipping rate), so the
+     * storefront can show a specific "not available" message instead of a generic server error.
+     * Having no address at all is NOT one of these: that is precisely what the express screen
+     * collects, so the solicit goes out with the addresses missing.
      */
     private const HTTP_NOT_ELIGIBLE = 422;
 

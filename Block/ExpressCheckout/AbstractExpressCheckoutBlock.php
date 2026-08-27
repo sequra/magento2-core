@@ -96,7 +96,7 @@ abstract class AbstractExpressCheckoutBlock extends Template
 
     /**
      * Whether the inline "not available" message should render in place of the button
-     * (logged in customer whose default shipping country is not supported).
+     * (logged in customer whose delivery country is not supported).
      *
      * @return bool
      */

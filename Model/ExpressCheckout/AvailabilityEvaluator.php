@@ -16,8 +16,11 @@ use SeQura\Core\Infrastructure\Logger\Logger;
  * Asks the integration-core availability guard whether SeQura Express Checkout applies for a
  * given storefront context and maps the answer to the render state shared by every surface
  * (cart, mini-cart, product page):
- *  - logged in customer: the per-country check. Not available (or no resolvable country)
- *    yields the inline "not available" message state.
+ *  - logged in customer: the per-country check on the country QuoteShippingResolver says the
+ *    solicit would use — their default shipping country, or the store default when they have no
+ *    address yet. Not available (or no resolvable country) yields the inline "not available"
+ *    message state. Only the country decides this; a customer without an address is eligible,
+ *    and adds it on the express screen.
  *  - guest: the country-agnostic guest check. Not available yields the hidden state; the
  *    customer's actual country is validated after login at solicit time (HTTP 422 backstop).
  */
