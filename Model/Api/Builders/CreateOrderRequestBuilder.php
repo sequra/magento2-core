@@ -426,13 +426,13 @@ class CreateOrderRequestBuilder implements CoreCreateOrderRequestBuilder
      */
     private function getCustomer(): array
     {
-        $email = $this->quote->getCustomer()->getEmail();
-        if (empty($email)) {
-            $email = $this->quote->getBillingAddress()->getEmail();
-        }
-        if (empty($email)) {
-            $email = $this->quote->getShippingAddress()->getEmail();
-        }
+        // Quote-level first: an email the shopper saves on the Express Checkout CartSummary page is
+        // applied to the quote, and the (unchanged) account email would otherwise always win. It is
+        // also the email Magento places the order with (QuoteManagement::submitQuote).
+        $email = (string)($this->quote->getCustomerEmail()
+            ?: $this->quote->getCustomer()->getEmail()
+            ?: $this->quote->getBillingAddress()->getEmail()
+            ?: $this->quote->getShippingAddress()->getEmail());
 
         return [
             'given_names' => $this->quote->getCustomer()->getFirstname(),
