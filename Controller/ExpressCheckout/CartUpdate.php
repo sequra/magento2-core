@@ -32,6 +32,9 @@ use Sequra\Core\Model\ExpressCheckout\SolicitRateLimiter;
  * length-bounded here, the carrier reference is matched against the quote's actually-available
  * rates before it is applied, and the cart itself is never named by the client — it is the quote
  * the last solicit recorded on the customer session.
+ *
+ * No login is required: the solicited quote is named by the session, never by the client, so a
+ * guest updates their own express cart exactly as a logged in customer does.
  */
 class CartUpdate implements HttpPostActionInterface
 {
@@ -125,15 +128,18 @@ class CartUpdate implements HttpPostActionInterface
             ->setHeader('Pragma', 'no-cache', true);
 
         try {
-            $customerId = (int)$this->customerSession->getCustomerId();
-            if ($customerId <= 0) {
-                // 401 matches the solicit endpoints: the storefront opens the login pop-up.
-                return $result->setHttpResponseCode(WebapiException::HTTP_UNAUTHORIZED)->setData([]);
+            // Throttle per solicited cart: every update re-solicits and therefore creates SeQura
+            // order state. Keyed on the quote the last solicit recorded rather than the customer
+            // id, which is empty for a guest and would put every guest in one shared bucket.
+            $solicitedQuoteId = $this->getSolicitedQuoteId();
+            if ($solicitedQuoteId === '') {
+                // No solicit has run in this session, so there is nothing to update — the same
+                // 400 the service would raise, decided before the throttle so the key is never
+                // empty.
+                return $result->setHttpResponseCode(WebapiException::HTTP_BAD_REQUEST)->setData([]);
             }
 
-            // Throttle per customer on the same counter as the solicits: every update re-solicits
-            // and therefore creates SeQura order state.
-            if ($this->rateLimiter->isExceeded((string)$customerId)) {
+            if ($this->rateLimiter->isExceeded($solicitedQuoteId)) {
                 return $result->setHttpResponseCode(429)->setData([]);
             }
 
@@ -150,6 +156,19 @@ class CartUpdate implements HttpPostActionInterface
 
             return $result->setHttpResponseCode(500)->setData([]);
         }
+    }
+
+    /**
+     * The id of the quote the last solicit ran against, as recorded on the customer session.
+     *
+     * @return string Quote id, or an empty string when no solicit has run in this session.
+     */
+    private function getSolicitedQuoteId(): string
+    {
+        $stored = $this->customerSession->getData(BaseSolicitService::SESSION_KEY_SOLICITED_QUOTE);
+        $quoteId = is_scalar($stored) ? (int)$stored : 0;
+
+        return $quoteId > 0 ? (string)$quoteId : '';
     }
 
     /**

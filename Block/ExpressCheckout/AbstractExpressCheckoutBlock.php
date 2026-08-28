@@ -4,7 +4,6 @@ namespace Sequra\Core\Block\ExpressCheckout;
 
 use Exception;
 use Magento\Checkout\Model\Session;
-use Magento\Customer\Model\Session as CustomerSession;
 use Magento\Framework\App\ScopeResolverInterface;
 use Magento\Framework\HTTP\PhpEnvironment\Request;
 use Magento\Framework\Locale\ResolverInterface;
@@ -28,10 +27,6 @@ abstract class AbstractExpressCheckoutBlock extends Template
 {
     use WidgetTrait;
 
-    /**
-     * @var CustomerSession
-     */
-    private CustomerSession $customerSession;
     /**
      * @var QuoteShippingResolver
      */
@@ -59,7 +54,6 @@ abstract class AbstractExpressCheckoutBlock extends Template
      * @param Context $context
      * @param Session $checkoutSession
      * @param Request $request
-     * @param CustomerSession $customerSession
      * @param QuoteShippingResolver $shippingResolver
      * @param AvailabilityEvaluator $availabilityEvaluator
      */
@@ -69,7 +63,6 @@ abstract class AbstractExpressCheckoutBlock extends Template
         Context $context,
         Session $checkoutSession,
         Request $request,
-        CustomerSession $customerSession,
         QuoteShippingResolver $shippingResolver,
         AvailabilityEvaluator $availabilityEvaluator
     ) {
@@ -79,7 +72,6 @@ abstract class AbstractExpressCheckoutBlock extends Template
         $this->localeResolver = $localeResolver;
         $this->checkoutSession = $checkoutSession;
         $this->request = $request;
-        $this->customerSession = $customerSession;
         $this->shippingResolver = $shippingResolver;
         $this->availabilityEvaluator = $availabilityEvaluator;
     }
@@ -96,7 +88,7 @@ abstract class AbstractExpressCheckoutBlock extends Template
 
     /**
      * Whether the inline "not available" message should render in place of the button
-     * (logged in customer whose delivery country is not supported).
+     * (the resolved delivery country is not supported).
      *
      * @return bool
      */
@@ -106,7 +98,7 @@ abstract class AbstractExpressCheckoutBlock extends Template
     }
 
     /**
-     * The inline message shown when Express Checkout is unavailable for the logged in customer.
+     * The inline message shown when Express Checkout is unavailable for the resolved country.
      *
      * @return string
      */
@@ -174,16 +166,14 @@ abstract class AbstractExpressCheckoutBlock extends Template
                 return $this->state;
             }
 
-            $isLoggedIn = $this->customerSession->isLoggedIn();
-            $country = $isLoggedIn
-                ? (string)$this->shippingResolver->getResolvableShippingCountry($quote)
-                : '';
-
+            // The cart surfaces are rendered per session, so the delivery country is known for
+            // every shopper — a guest has no customer default address, so the resolver falls
+            // through to the cart's own shipping estimate and then the store view's locale. Same
+            // country the solicit will use, so the button cannot appear where it would 422.
             $result = $this->availabilityEvaluator->evaluate(
                 (string)$this->_storeManager->getStore()->getId(),
                 $this->getExpressCheckoutPage(),
-                $isLoggedIn,
-                $country,
+                (string)$this->shippingResolver->getResolvableShippingCountry($quote),
                 $this->getCurrentCurrency(),
                 $this->getCustomerIpAddress(),
                 $this->getCartProductIds($quote),

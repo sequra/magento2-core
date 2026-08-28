@@ -18,16 +18,17 @@ use Magento\Store\Model\StoreManagerInterface;
  * Class TemporaryCartBuilder
  *
  * Builds a detached temporary quote for the SeQura Express Checkout product flow: a standalone
- * quote owned by the logged in customer containing only the viewed product with its selected
- * options and quantity. The shopper's real cart is never touched, so cancelling the express
- * purchase needs no restore.
+ * quote containing only the viewed product with its selected options and quantity. The shopper's
+ * real cart is never touched, so cancelling the express purchase needs no restore. No login is
+ * required — a guest gets a guest draft, and the express screen collects what the merchant could
+ * not supply.
  *
- * A single temporary quote is reused per customer (its id is remembered on the customer session)
- * for as long as it stays an open draft. Re-soliciting — e.g. cancelling a solicit and changing
- * the quantity — therefore keeps a stable cart reference, so integration-core deletes and
- * re-creates the SeQura order for that cart instead of leaving the cancelled solicit (with the
- * stale quantity) behind. A fresh quote is built only once the previous one has been placed as an
- * order or no longer exists.
+ * A single temporary quote is reused per session (its id is remembered on the customer session,
+ * which exists for guests too) for as long as it stays an open draft. Re-soliciting — e.g.
+ * cancelling a solicit and changing the quantity — therefore keeps a stable cart reference, so
+ * integration-core deletes and re-creates the SeQura order for that cart instead of leaving the
+ * cancelled solicit (with the stale quantity) behind. A fresh quote is built only once the
+ * previous one has been placed as an order or no longer exists.
  *
  * The draft is kept inactive between solicits ({@see deactivate}) so it never shadows the
  * shopper's real cart in active-cart resolution (cart page / mini-cart) after they cancel; it is
@@ -37,8 +38,7 @@ class TemporaryCartBuilder
 {
     /**
      * HTTP status returned when the request is not eligible for Express Checkout (invalid
-     * options or a virtual quote), surfaced by the storefront as the inline message. Guest
-     * callers get HTTP 401 instead, which the storefront answers with the login pop-up.
+     * options or a virtual quote), surfaced by the storefront as the inline message.
      */
     private const HTTP_NOT_ELIGIBLE = 422;
 
@@ -106,13 +106,13 @@ class TemporaryCartBuilder
      *
      * @return int Temporary quote ID.
      *
-     * @throws WebapiException If the caller is a guest (HTTP 401) or the quote is virtual (HTTP 422).
+     * @throws WebapiException If the quote is virtual (HTTP 422).
      * @throws NoSuchEntityException If the product does not exist.
      * @throws LocalizedException If the product cannot be added to the quote.
      */
     public function build(string $productId, array $buyRequest): int
     {
-        $customerId = $this->assertLoggedIn();
+        $customerId = $this->currentCustomerId();
 
         $store = $this->storeManager->getStore();
         /** @var Product $product */
@@ -145,14 +145,13 @@ class TemporaryCartBuilder
      *
      * @return int Temporary quote ID.
      *
-     * @throws WebapiException If the caller is a guest (HTTP 401), the cart is empty or the quote
-     *                         is virtual (HTTP 422).
+     * @throws WebapiException If the cart is empty or the quote is virtual (HTTP 422).
      * @throws NoSuchEntityException If a source item's product no longer exists.
      * @throws LocalizedException If an item cannot be added to the quote.
      */
     public function buildFromQuote(Quote $source): int
     {
-        $customerId = $this->assertLoggedIn();
+        $customerId = $this->currentCustomerId();
 
         $items = $source->getAllVisibleItems();
         if (empty($items)) {
@@ -189,27 +188,17 @@ class TemporaryCartBuilder
     }
 
     /**
-     * Asserts a logged in customer and returns the id.
+     * The id of the logged in customer, or 0 for a guest.
      *
      * The login state baked into cached pages and the customer-data section are both unreliable,
-     * so the server is the authority: 401 tells the storefront to open the login pop-up and retry.
+     * so the server session is the authority — but either answer is valid: a guest simply gets a
+     * guest draft.
      *
      * @return int
-     *
-     * @throws WebapiException When the caller is a guest (HTTP 401).
      */
-    private function assertLoggedIn(): int
+    private function currentCustomerId(): int
     {
-        $customerId = (int)$this->customerSession->getCustomerId();
-        if ($customerId <= 0) {
-            throw new WebapiException(
-                __('Log in to use SeQura Express Checkout.'),
-                0,
-                WebapiException::HTTP_UNAUTHORIZED
-            );
-        }
-
-        return $customerId;
+        return (int)$this->customerSession->getCustomerId();
     }
 
     /**
@@ -245,9 +234,9 @@ class TemporaryCartBuilder
     }
 
     /**
-     * Returns the customer's reusable draft (reactivated, emptied) or a fresh detached quote.
+     * Returns the session's reusable draft (reactivated, emptied) or a fresh detached quote.
      *
-     * @param int $customerId
+     * @param int $customerId Logged in customer id, or 0 for a guest.
      * @param int $storeId
      * @param string $draftKey One of self::DRAFT_KEY_*.
      *
@@ -259,7 +248,16 @@ class TemporaryCartBuilder
         if (!$quote) {
             $quote = $this->quoteFactory->create();
             $quote->setStoreId($storeId);
-            $quote->assignCustomer($this->customerSession->getCustomerData());
+            if ($customerId > 0) {
+                $quote->assignCustomer($this->customerSession->getCustomerData());
+            } else {
+                // Guest draft: there is no account to attach, so say so explicitly. The flag is
+                // what CreateOrderRequestBuilder reads for the order's `logged_in` field, and what
+                // Magento needs set to place the order without a customer; an unset flag would
+                // otherwise read as "logged in".
+                // @phpstan-ignore-next-line magic setter for the quote's customer_is_guest column
+                $quote->setCustomerIsGuest(true);
+            }
             $quote->setIsActive(true);
         }
 
@@ -267,11 +265,15 @@ class TemporaryCartBuilder
     }
 
     /**
-     * Returns this customer's reusable Express Checkout temporary quote, reactivated and emptied of
+     * Returns this session's reusable Express Checkout temporary quote, reactivated and emptied of
      * its items, or null when there is none to reuse (no remembered id, the quote is gone, it
      * belongs to another customer, or it has already been placed as an order).
      *
-     * @param int $customerId
+     * The owner check also covers the guest case: a guest draft carries customer_id 0, so a draft
+     * remembered before the shopper logged in (or a customer's draft after they logged out) is
+     * rebuilt rather than reused.
+     *
+     * @param int $customerId Logged in customer id, or 0 for a guest.
      * @param int $storeId
      * @param string $draftKey One of self::DRAFT_KEY_*.
      *

@@ -9,8 +9,8 @@ use Magento\Framework\Serialize\SerializerInterface;
  * Class SolicitRateLimiter
  *
  * Lightweight fixed-window rate limiter for the Express Checkout solicit endpoints. Each solicit
- * creates a SeQura order (and, on the product page, a temporary quote), so an authenticated caller
- * is throttled to a sane number of attempts per window to bound accidental or abusive flooding.
+ * creates a SeQura order (and, on the product page, a temporary quote), so each caller is throttled
+ * to a sane number of attempts per window to bound accidental or abusive flooding.
  * Backed by the shared cache so the counter is consistent across web nodes.
  *
  * The cap is best-effort, not hard: load → +1 → save is a non-atomic read-modify-write, so
@@ -64,12 +64,22 @@ class SolicitRateLimiter
      * Fail-open: any cache/serialization error is swallowed so a transient cache problem never
      * blocks a legitimate checkout.
      *
-     * @param string $key Stable per-caller identifier (e.g. the customer ID).
+     * An empty key is not throttled at all. There is no such thing as a shared counter here: an
+     * empty key would put every caller that reaches it into one bucket, so the first 30 attempts
+     * across all of them would lock out everyone else. Callers are expected to pass a real
+     * identifier (see the Express Checkout controllers); this only keeps a future one from
+     * silently turning the throttle into a site-wide lock.
+     *
+     * @param string $key Stable per-caller identifier (e.g. the cart or session ID).
      *
      * @return bool True when this attempt is over the allowed limit and should be rejected.
      */
     public function isExceeded(string $key): bool
     {
+        if ($key === '') {
+            return false;
+        }
+
         try {
             $cacheKey = self::CACHE_PREFIX . $key;
             $now = time();

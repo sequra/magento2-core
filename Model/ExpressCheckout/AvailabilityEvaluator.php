@@ -15,14 +15,17 @@ use SeQura\Core\Infrastructure\Logger\Logger;
  *
  * Asks the integration-core availability guard whether SeQura Express Checkout applies for a
  * given storefront context and maps the answer to the render state shared by every surface
- * (cart, mini-cart, product page):
- *  - logged in customer: the per-country check on the country QuoteShippingResolver says the
- *    solicit would use — their default shipping country, or the store default when they have no
- *    address yet. Not available (or no resolvable country) yields the inline "not available"
- *    message state. Only the country decides this; a customer without an address is eligible,
- *    and adds it on the express screen.
- *  - guest: the country-agnostic guest check. Not available yields the hidden state; the
- *    customer's actual country is validated after login at solicit time (HTTP 422 backstop).
+ * (cart, mini-cart, product page). What splits the two branches is whether the caller can name
+ * the delivery country, not whether the shopper is logged in:
+ *  - country known (the cart surfaces, for guests as much as for customers — see
+ *    QuoteShippingResolver::getResolvableShippingCountry, which ends in the store view's locale):
+ *    the per-country check on the very country the solicit would use. Not available yields the
+ *    inline "not available" message state. Only the country decides this; a shopper without an
+ *    address is eligible, and adds it on the express screen.
+ *  - no country (the product page, whose HTML is full-page cached and shared by every shopper, so
+ *    nothing shopper-specific may enter the render decision): the country-agnostic guest check —
+ *    a strict subset of the country-aware one. Not available yields the hidden state, and the
+ *    delivery country is validated at solicit time instead (HTTP 422 backstop).
  */
 class AvailabilityEvaluator
 {
@@ -44,8 +47,8 @@ class AvailabilityEvaluator
      *
      * @param string $storeId
      * @param string $page Integration-core page identifier (e.g. 'cart', 'mini-cart', 'product').
-     * @param bool $isLoggedIn Whether the shopper is a logged in customer.
-     * @param string $country ISO2 country used for the logged in check (ignored for guests).
+     * @param string $country ISO2 delivery country the solicit would use, or an empty string when
+     *                        the caller cannot name one (see the class docblock).
      * @param string $currency Display currency code.
      * @param string $ipAddress Shopper IP address.
      * @param string[] $productIds Product entity IDs in context.
@@ -56,7 +59,6 @@ class AvailabilityEvaluator
     public function evaluate(
         string $storeId,
         string $page,
-        bool $isLoggedIn,
         string $country,
         string $currency,
         string $ipAddress,
@@ -64,7 +66,7 @@ class AvailabilityEvaluator
         array $categoryIds
     ): array {
         try {
-            if ($isLoggedIn) {
+            if ($country !== '') {
                 /** @var ExpressCheckoutAvailabilityResponse $response */
                 $response = CheckoutAPI::get()->expressCheckout($storeId)->isAvailable(
                     new ExpressCheckoutAvailabilityRequest(

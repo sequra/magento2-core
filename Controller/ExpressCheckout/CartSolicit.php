@@ -4,7 +4,6 @@ namespace Sequra\Core\Controller\ExpressCheckout;
 
 use Exception;
 use Magento\Checkout\Model\Session as CheckoutSession;
-use Magento\Customer\Model\Session as CustomerSession;
 use Magento\Framework\App\Action\HttpGetActionInterface;
 use Magento\Framework\Controller\Result\Raw;
 use Magento\Framework\Controller\Result\RawFactory;
@@ -20,8 +19,10 @@ use Sequra\Core\Model\ExpressCheckout\SolicitRateLimiter;
  * Cart/mini-cart Express Checkout solicit endpoint for the SeQura button rendered by the shared
  * CDN library. The library calls the element's data-url with a plain GET and expects the
  * identification-form HTML back as a raw text/html body, so this controller solicits the
- * customer's current session cart and echoes the form HTML. Guests get HTTP 401, which the
- * storefront answers with the login pop-up before retrying.
+ * shopper's current session cart and echoes the form HTML.
+ *
+ * No login is required: express runs on whatever the session cart already holds, and the
+ * express screen collects the address and email the merchant could not supply.
  */
 class CartSolicit implements HttpGetActionInterface
 {
@@ -33,10 +34,6 @@ class CartSolicit implements HttpGetActionInterface
      * @var CheckoutSession
      */
     private CheckoutSession $checkoutSession;
-    /**
-     * @var CustomerSession
-     */
-    private CustomerSession $customerSession;
     /**
      * @var SolicitInterface
      */
@@ -51,20 +48,17 @@ class CartSolicit implements HttpGetActionInterface
      *
      * @param RawFactory $resultRawFactory
      * @param CheckoutSession $checkoutSession
-     * @param CustomerSession $customerSession
      * @param SolicitInterface $solicitService
      * @param SolicitRateLimiter $rateLimiter
      */
     public function __construct(
         RawFactory $resultRawFactory,
         CheckoutSession $checkoutSession,
-        CustomerSession $customerSession,
         SolicitInterface $solicitService,
         SolicitRateLimiter $rateLimiter
     ) {
         $this->resultRawFactory = $resultRawFactory;
         $this->checkoutSession = $checkoutSession;
-        $this->customerSession = $customerSession;
         $this->solicitService = $solicitService;
         $this->rateLimiter = $rateLimiter;
     }
@@ -73,7 +67,7 @@ class CartSolicit implements HttpGetActionInterface
      * Solicits the Express Checkout order for the current session cart.
      *
      * Returns the identification-form HTML as a raw text/html response. Solicit creates
-     * per-customer state and the response is per-session, so it must never be page-cached.
+     * per-shopper state and the response is per-session, so it must never be page-cached.
      *
      * @return Raw
      */
@@ -84,21 +78,17 @@ class CartSolicit implements HttpGetActionInterface
             ->setHeader('Pragma', 'no-cache', true);
 
         try {
-            if (!$this->customerSession->isLoggedIn()) {
-                // 401 tells the storefront to open the login pop-up and retry (the same
-                // contract as the product-page solicit endpoint).
-                return $result->setHttpResponseCode(WebapiException::HTTP_UNAUTHORIZED)->setContents('');
-            }
-
-            // Throttle per customer: each solicit creates a SeQura order, so bound flooding.
-            if ($this->rateLimiter->isExceeded((string)$this->customerSession->getCustomerId())) {
-                return $result->setHttpResponseCode(429)->setContents('');
-            }
-
             $rawQuoteId = $this->checkoutSession->getQuote()->getId();
             $quoteId = is_scalar($rawQuoteId) ? (string)$rawQuoteId : '';
             if ($quoteId === '') {
                 return $result->setHttpResponseCode(WebapiException::HTTP_BAD_REQUEST)->setContents('');
+            }
+
+            // Throttle per cart: each solicit creates a SeQura order, so bound flooding. The cart
+            // id is the key rather than the customer id, which is empty for a guest and would put
+            // every guest in one shared bucket. Resolved above, so it is never empty here.
+            if ($this->rateLimiter->isExceeded($quoteId)) {
+                return $result->setHttpResponseCode(429)->setContents('');
             }
 
             return $result

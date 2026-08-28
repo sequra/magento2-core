@@ -23,6 +23,17 @@ test.describe('Express checkout', () => {
     await expressCheckoutPage.expectButtonVisible('cart');
   });
 
+  test('A guest opens the express checkout form without being asked to log in', async ({ productPage, cartPage, expressCheckoutPage }) => {
+    // No accountPage.login(): express runs on the guest session cart, and startCheckout() waits
+    // for the identification form — which never appears if the solicit answers with a login gate.
+    await productPage.addToCart({ slug: 'push-it-messenger-bag', quantity: 1 });
+    await expressCheckoutPage.expectButtonVisible('product');
+
+    await cartPage.goto();
+    await expressCheckoutPage.expectButtonVisible('cart');
+    await expressCheckoutPage.startCheckout('cart');
+  });
+
   test('A registered customer completes an express checkout purchase from the product page', async ({ helper, dataProvider, accountPage, productPage, expressCheckoutPage, checkoutPage }) => {
     await accountPage.login(dataProvider.customer());
     const shopper = dataProvider.shopper('spain');

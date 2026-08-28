@@ -6,16 +6,14 @@ use Exception;
 use Magento\Customer\Api\CustomerRepositoryInterface;
 use Magento\Customer\Api\Data\AddressInterface;
 use Magento\Customer\Api\Data\CustomerInterface;
-use Magento\Directory\Helper\Data as DirectoryHelper;
-use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\Locale\ResolverInterface;
 use Magento\Framework\Webapi\Exception as WebapiException;
 use Magento\Quote\Api\CartRepositoryInterface;
 use Magento\Quote\Model\Quote;
 use Magento\Quote\Model\Quote\Address;
 use Magento\Quote\Model\Quote\Address\Rate;
-use Magento\Store\Model\ScopeInterface;
 use SeQura\Core\Infrastructure\Logger\Logger;
 use Sequra\Core\Model\Ui\ConfigProvider;
 
@@ -25,12 +23,14 @@ use Sequra\Core\Model\Ui\ConfigProvider;
  * Prepares a cart quote for SeQura Express Checkout using the customer's default
  * shipping/billing addresses and the cheapest applicable shipping rate.
  *
- * A customer with no address is not a blocker: the express screen exists to collect what the
- * merchant could not send, so the solicit goes out with the addresses missing (the create-order
- * request declares `addresses_may_be_missing`, see MerchantDataProvider::getOptions) and rates
- * are collected on the round trip, once applyChange() writes the address the shopper typed.
+ * A shopper with no address is not a blocker, and neither is a guest with no account at all: the
+ * express screen exists to collect what the merchant could not send, so the solicit goes out with
+ * the addresses missing (the create-order request declares `addresses_may_be_missing`, see
+ * MerchantDataProvider::getOptions) and rates are collected on the round trip, once applyChange()
+ * writes the address the shopper typed.
  * Only the country cannot be left blank — it is what picks the SeQura merchant — so
- * {@see resolveCountry} names one for a quote that has no address yet.
+ * {@see resolveCountry} names one for a quote that has no address yet, ending at the store view's
+ * locale so there is always an answer.
  *
  * Two entry points with different contracts:
  *  - getResolvableShippingCountry() is a read-only availability probe for storefront
@@ -54,30 +54,34 @@ class QuoteShippingResolver
      */
     private CartRepositoryInterface $quoteRepository;
     /**
-     * @var ScopeConfigInterface
+     * @var ResolverInterface
      */
-    private ScopeConfigInterface $scopeConfig;
+    private ResolverInterface $localeResolver;
 
     /**
      * QuoteShippingResolver constructor.
      *
      * @param CustomerRepositoryInterface $customerRepository
      * @param CartRepositoryInterface $quoteRepository
-     * @param ScopeConfigInterface $scopeConfig
+     * @param ResolverInterface $localeResolver
      */
     public function __construct(
         CustomerRepositoryInterface $customerRepository,
         CartRepositoryInterface $quoteRepository,
-        ScopeConfigInterface $scopeConfig
+        ResolverInterface $localeResolver
     ) {
         $this->customerRepository = $customerRepository;
         $this->quoteRepository = $quoteRepository;
-        $this->scopeConfig = $scopeConfig;
+        $this->localeResolver = $localeResolver;
     }
 
     /**
      * Read-only availability probe: returns the ISO2 country the solicit would deliver to, or
-     * null when the button should not render (guest, or no country to solicit against at all).
+     * null when there is no country to solicit against at all.
+     *
+     * Guests included: they simply have no customer default address, so the chain falls through
+     * to the quote's own shipping address and then the store view's locale — the very country the
+     * promotional widgets on the same page resolve.
      *
      * Answers only "which country", never "is this shopper eligible": having no address is not a
      * blocker any more, so the button decision is left entirely to the caller's per-country
@@ -100,11 +104,10 @@ class QuoteShippingResolver
     {
         try {
             $customer = $this->getQuoteCustomer($quote);
-            if ($customer === null) {
-                return null;
-            }
-
-            $country = $this->resolveCountry($quote, $this->findDefaultShippingAddress($customer));
+            $country = $this->resolveCountry(
+                $quote,
+                $customer !== null ? $this->findDefaultShippingAddress($customer) : null
+            );
 
             return $country !== '' ? $country : null;
         } catch (Exception $e) {
@@ -121,10 +124,10 @@ class QuoteShippingResolver
      * quote. The rate already selected by the shopper (e.g. on the cart/checkout) is kept when it
      * is still available; otherwise the cheapest rate is used.
      *
-     * A customer with no default shipping address is prepared without one: only the country is
-     * written (nothing else is known), no rates are collected, and the SeQura order is solicited
-     * with the addresses missing so the express screen can ask for them. See
-     * {@see prepareWithoutAddress}.
+     * A shopper with no default shipping address — a customer who never saved one, or a guest with
+     * no account — is prepared without one: only the country is written (nothing else is known),
+     * no rates are collected, and the SeQura order is solicited with the addresses missing so the
+     * express screen can ask for them. See {@see prepareWithoutAddress}.
      *
      * @param Quote $quote Cart quote to mutate and save.
      *
@@ -136,7 +139,9 @@ class QuoteShippingResolver
         try {
             $customer = $this->getQuoteCustomer($quote);
             if ($customer === null) {
-                return false;
+                // Guest cart: no account, so nothing to import. Same treatment as a customer with
+                // no saved address — the express screen collects it.
+                return $this->prepareWithoutAddress($quote);
             }
 
             $defaultShippingAddress = $this->findDefaultShippingAddress($customer);
@@ -178,8 +183,9 @@ class QuoteShippingResolver
     }
 
     /**
-     * Prepares a quote for a customer who has no address yet: writes the delivery country onto
-     * the empty shipping/billing addresses and nothing else, then saves.
+     * Prepares a quote for a shopper who has no address yet (guest, or a customer who never saved
+     * one): writes the delivery country onto the empty shipping/billing addresses and nothing
+     * else, then saves.
      *
      * No rates are collected — there is no destination to quote for — so the order is solicited
      * with no delivery method and no shipping line. Both arrive on the round trip, once the
@@ -215,21 +221,24 @@ class QuoteShippingResolver
     /**
      * The ISO2 country the express order is solicited against, most specific first: the
      * customer's default shipping country, then whatever the cart already ships to (the shopper's
-     * own shipping estimate), then the store's own default country.
+     * own shipping estimate), then the store view's own locale. A guest has no customer default
+     * address, so for them the chain starts at the cart's own shipping estimate.
      *
-     * The store default is a configured fact about where the merchant sells, not a guess about
-     * the shopper — Magento already uses it to preselect the country on every address form and
-     * shipping estimate. It is only a starting point: the shopper's real country arrives with
-     * the address they add on the express screen, and whether SeQura serves this one at all is
-     * decided by the caller's availability check, which reads the very same value.
+     * The locale country is the same last resort the promotional widgets use — they hand core
+     * {@see \Sequra\Core\Block\WidgetTrait::getShippingAddressCountry} and
+     * {@see \Sequra\Core\Block\WidgetTrait::getCurrentCountry} in that order — so a shopper
+     * with no address gets the country the widgets on that very page already resolved, instead of
+     * one that can silently disagree with them. It is only a starting point: the shopper's real
+     * country arrives with the address they add on the express screen, and whether SeQura serves
+     * this one at all is decided by the caller's availability check, which reads the same value.
      *
      * Both the probe and {@see prepareWithoutAddress} go through here, and both are handed the
      * same cart quote, so the country the button was granted for is the country the solicit uses.
      *
-     * @param Quote $quote Quote whose shipping address and store scope supply the fallbacks.
+     * @param Quote $quote Quote whose shipping address supplies the middle fallback.
      * @param AddressInterface|null $defaultShippingAddress Customer default shipping address, if any.
      *
-     * @return string ISO2 country, or an empty string when the store configures none.
+     * @return string ISO2 country. Never empty in practice: a store view always has a locale.
      */
     private function resolveCountry(Quote $quote, ?AddressInterface $defaultShippingAddress): string
     {
@@ -243,13 +252,9 @@ class QuoteShippingResolver
             return $country;
         }
 
-        $storeDefault = $this->scopeConfig->getValue(
-            DirectoryHelper::XML_PATH_DEFAULT_COUNTRY,
-            ScopeInterface::SCOPE_STORE,
-            $quote->getStoreId()
-        );
-
-        return is_scalar($storeDefault) ? (string)$storeDefault : '';
+        // The store view's locale always carries a region (Magento only offers full `xx_YY`
+        // locales, and falls back to en_US), so this names a real country for every store.
+        return (string)\Locale::getRegion((string)$this->localeResolver->getLocale());
     }
 
     /**

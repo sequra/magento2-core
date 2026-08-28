@@ -21,6 +21,9 @@ use Sequra\Core\Model\ExpressCheckout\SolicitRateLimiter;
  * identification-form HTML back as a raw text/html body (a JSON-encoded WebAPI response does
  * not satisfy that contract), so this controller re-serializes the query string into the
  * payload the existing solicit service already understands and echoes the form HTML.
+ *
+ * No login is required: the temporary quote is built for whoever is browsing, guest or customer,
+ * and the express screen collects the address and email the merchant could not supply.
  */
 class ProductSolicit implements HttpGetActionInterface
 {
@@ -72,7 +75,7 @@ class ProductSolicit implements HttpGetActionInterface
      * Solicits the Express Checkout order for the query-string add-to-cart data.
      *
      * Returns the identification-form HTML as a raw text/html response. Solicit creates
-     * per-customer state and the response is per-session, so it must never be page-cached.
+     * per-shopper state and the response is per-session, so it must never be page-cached.
      *
      * @return Raw
      */
@@ -83,14 +86,12 @@ class ProductSolicit implements HttpGetActionInterface
             ->setHeader('Pragma', 'no-cache', true);
 
         try {
-            $customerId = (int)$this->customerSession->getCustomerId();
-            if ($customerId <= 0) {
-                return $result->setHttpResponseCode(WebapiException::HTTP_UNAUTHORIZED)->setContents('');
-            }
-
-            // Throttle per customer: each solicit builds a temporary quote and creates a SeQura
-            // order, so bound flooding.
-            if ($this->rateLimiter->isExceeded((string)$customerId)) {
+            // Throttle per session: each solicit builds a temporary quote and creates a SeQura
+            // order, so bound flooding. Unlike the cart endpoints there is no quote yet at this
+            // point (the temporary one is built inside the solicit), and the customer id is empty
+            // for a guest, so the session id is the only per-caller key available here. It is
+            // never empty — reading it starts the session if it has not started already.
+            if ($this->rateLimiter->isExceeded((string)$this->customerSession->getSessionId())) {
                 return $result->setHttpResponseCode(429)->setContents('');
             }
 
@@ -98,8 +99,8 @@ class ProductSolicit implements HttpGetActionInterface
                 ->setHeader('Content-Type', 'text/html; charset=UTF-8', true)
                 ->setContents($this->solicitService->solicit($this->request->getParams()));
         } catch (WebapiException $e) {
-            // 400 invalid request / 401 guest / 422 virtual or not eligible — surfaced to
-            // the library's onError callback; the body is irrelevant to it.
+            // 400 invalid request / 422 virtual or not eligible — surfaced to the library's
+            // onError callback; the body is irrelevant to it.
             return $result->setHttpResponseCode($e->getHttpCode())->setContents('');
         } catch (Exception $e) {
             Logger::logError('Express Checkout product solicit failed: ' . $e->getMessage());
