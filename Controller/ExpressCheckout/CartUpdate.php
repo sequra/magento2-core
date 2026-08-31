@@ -51,12 +51,36 @@ class CartUpdate implements HttpPostActionInterface
         'postalCode' => 32,
         'city' => 128,
         'countryCode' => 2,
+        'mobilePhone' => 32,
     ];
 
     /**
      * Address fields that must be present and non-empty when an address is sent at all.
+     *
+     * The phone is one of them: it is required on `customer_address` in a default Magento, so an
+     * express order placed without one fails Quote\Address::validate() at placeOrder — after
+     * SeQura has already approved and charged the shopper. SeQura has no channel that gives it
+     * back, so the express summary is where it is collected.
      */
-    private const REQUIRED_ADDRESS_FIELDS = ['givenName', 'surnames', 'addressLine1', 'postalCode', 'city'];
+    private const REQUIRED_ADDRESS_FIELDS = [
+        'givenName',
+        'surnames',
+        'addressLine1',
+        'postalCode',
+        'city',
+        'mobilePhone',
+    ];
+
+    /**
+     * Characters a phone number may consist of, and the least digits one must carry.
+     *
+     * Same charset as Magento's own {@see \Magento\Customer\Model\Validator\Telephone} — that
+     * validator is not reused directly because it takes an address model rather than a string and
+     * never clears its accumulated messages between calls. Matching it matters: a phone this
+     * endpoint accepts but Magento would not is one that blocks the order later anyway.
+     */
+    private const PHONE_CHARSET_PATTERN = '/^[\d\s+().\/-]+$/u';
+    private const PHONE_MIN_DIGITS = 6;
 
     /**
      * Maximum accepted length of a shipping method reference.
@@ -224,6 +248,12 @@ class CartUpdate implements HttpPostActionInterface
             }
 
             $address['countryCode'] = strtoupper($address['countryCode']);
+        }
+
+        if (!preg_match(self::PHONE_CHARSET_PATTERN, $address['mobilePhone'])
+            || mb_strlen((string)preg_replace('/\D/', '', $address['mobilePhone'])) < self::PHONE_MIN_DIGITS
+        ) {
+            throw $this->badRequest();
         }
 
         return $address;

@@ -6,6 +6,7 @@ use Exception;
 use Magento\Customer\Api\CustomerRepositoryInterface;
 use Magento\Customer\Api\Data\AddressInterface;
 use Magento\Customer\Api\Data\CustomerInterface;
+use Magento\Directory\Model\RegionFactory;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Locale\ResolverInterface;
@@ -46,6 +47,30 @@ use Sequra\Core\Model\Ui\ConfigProvider;
 class QuoteShippingResolver
 {
     /**
+     * Spanish provinces in postal-code order: the first two digits of an ES postcode are the INE
+     * province code (08010 -> 08 -> Barcelona), so index = those digits - 1.
+     *
+     * The names are Magento's own `directory_country_region.default_name` values for ES, because
+     * that is what RegionFactory::loadByName() matches. Loading by *code* is not an option: for
+     * ES, Magento stores the province name in the code column too, so loadByCode('B', 'ES')
+     * finds nothing and the address would silently end up with no province at all — a wrong
+     * shipping quote and a wrong label.
+     *
+     * ponytail: ES only. IT and PT also have `general/region/state_required` set by default and
+     * get no region from here — their postcode-to-province maps are not a two-digit prefix, and a
+     * guessed province is worse than none. Add them the same way when express opens there.
+     */
+    private const ES_PROVINCES_BY_POSTCODE = [
+        'Alava', 'Albacete', 'Alicante', 'Almeria', 'Avila', 'Badajoz', 'Baleares', 'Barcelona',
+        'Burgos', 'Caceres', 'Cadiz', 'Castellon', 'Ciudad Real', 'Cordoba', 'A Coruña', 'Cuenca',
+        'Girona', 'Granada', 'Guadalajara', 'Guipuzcoa', 'Huelva', 'Huesca', 'Jaen', 'Leon',
+        'Lleida', 'La Rioja', 'Lugo', 'Madrid', 'Malaga', 'Murcia', 'Navarra', 'Ourense',
+        'Asturias', 'Palencia', 'Las Palmas', 'Pontevedra', 'Salamanca', 'Santa Cruz de Tenerife',
+        'Cantabria', 'Segovia', 'Sevilla', 'Soria', 'Tarragona', 'Teruel', 'Toledo', 'Valencia',
+        'Valladolid', 'Vizcaya', 'Zamora', 'Zaragoza', 'Ceuta', 'Melilla',
+    ];
+
+    /**
      * @var CustomerRepositoryInterface
      */
     private CustomerRepositoryInterface $customerRepository;
@@ -57,6 +82,10 @@ class QuoteShippingResolver
      * @var ResolverInterface
      */
     private ResolverInterface $localeResolver;
+    /**
+     * @var RegionFactory
+     */
+    private RegionFactory $regionFactory;
 
     /**
      * QuoteShippingResolver constructor.
@@ -64,15 +93,18 @@ class QuoteShippingResolver
      * @param CustomerRepositoryInterface $customerRepository
      * @param CartRepositoryInterface $quoteRepository
      * @param ResolverInterface $localeResolver
+     * @param RegionFactory $regionFactory
      */
     public function __construct(
         CustomerRepositoryInterface $customerRepository,
         CartRepositoryInterface $quoteRepository,
-        ResolverInterface $localeResolver
+        ResolverInterface $localeResolver,
+        RegionFactory $regionFactory
     ) {
         $this->customerRepository = $customerRepository;
         $this->quoteRepository = $quoteRepository;
         $this->localeResolver = $localeResolver;
+        $this->regionFactory = $regionFactory;
     }
 
     /**
@@ -274,11 +306,7 @@ class QuoteShippingResolver
      * so the follow-up solicit sees the new figures.
      *
      * Unlike {@see resolve} this never re-imports the customer's default address: that is the
-     * whole point of the change. The billing address is left as the initial solicit imported it —
-     * the CartSummary page edits delivery only.
-     *
-     * ponytail: the region is only cleared on a country change, never re-derived from the new
-     * postcode; countries whose carriers key off the region need a region lookup here.
+     * whole point of the change.
      *
      * @param Quote $quote Quote to mutate and save.
      * @param mixed[] $change Validated change: address, shippingMethodReference, email.
@@ -294,7 +322,7 @@ class QuoteShippingResolver
         $shippingAddress = $quote->getShippingAddress();
 
         if (isset($change['address']) && is_array($change['address'])) {
-            $this->applyAddress($shippingAddress, $change['address']);
+            $this->applyAddress($quote, $change['address']);
         }
 
         if (isset($change['email']) && is_string($change['email'])) {
@@ -345,32 +373,48 @@ class QuoteShippingResolver
     }
 
     /**
-     * Writes the shopper-supplied address fields onto the quote's shipping address.
+     * Writes the shopper-supplied address fields onto the quote's shipping address, derives the
+     * region, and gives the billing address the same data when it has none of its own.
      *
-     * @param Address $shippingAddress Quote shipping address to overwrite.
+     * Everything Magento's own placeOrder validation demands has to land here: an express order
+     * is approved and charged by SeQura before Magento ever sees it, so a shipping or billing
+     * address that fails Quote\Address::validate() is money taken with no order behind it.
+     *
+     * @param Quote $quote Quote whose addresses are overwritten.
      * @param array<string, string> $address Validated address fields.
      *
      * @return void
      */
-    private function applyAddress(Address $shippingAddress, array $address): void
+    private function applyAddress(Quote $quote, array $address): void
     {
+        $shippingAddress = $quote->getShippingAddress();
+
         $street = [$address['addressLine1']];
         if (isset($address['addressLine2'])) {
             $street[] = $address['addressLine2'];
         }
+
+        $previousCountry = (string)$shippingAddress->getCountryId();
+        $country = $address['countryCode'] ?? $previousCountry;
 
         $shippingAddress->setFirstname($address['givenName']);
         $shippingAddress->setLastname($address['surnames']);
         $shippingAddress->setStreet($street);
         $shippingAddress->setPostcode($address['postalCode']);
         $shippingAddress->setCity($address['city']);
+        $shippingAddress->setTelephone($address['mobilePhone']);
+        $shippingAddress->setCountryId($country);
 
-        $country = $address['countryCode'] ?? '';
-        if ($country !== '' && $country !== (string)$shippingAddress->getCountryId()) {
-            $shippingAddress->setCountryId($country);
-            // The stored region belongs to the previous country; carrying it over would quote
-            // rates (and place the order) against a region that does not exist there. Magento
-            // reads 0 / '' as "no region".
+        // Re-derived on every address change, not only on a country change: an intra-country move
+        // (08010 -> 46001) is a different province, and a carried-over one quotes the wrong rate
+        // and prints the wrong label.
+        $region = $this->resolveRegion($country, $address['postalCode']);
+        if ($region !== null) {
+            $shippingAddress->setRegionId($region['id']);
+            $shippingAddress->setRegion($region['name']);
+        } elseif ($country !== $previousCountry) {
+            // Nothing to derive and the country moved: the stored region belongs to the country
+            // the shopper just left. Magento reads 0 / '' as "no region".
             $shippingAddress->setRegionId(0);
             $shippingAddress->setRegion('');
         }
@@ -378,6 +422,70 @@ class QuoteShippingResolver
         // The quote address no longer mirrors the customer address book entry it was imported
         // from, so drop the link rather than leave it pointing at different data.
         $shippingAddress->setCustomerAddressId(null);
+
+        $this->applyBillingAddress($quote, $shippingAddress);
+    }
+
+    /**
+     * Copies the shipping address onto the billing address when the billing address is not one
+     * Magento would accept on its own.
+     *
+     * The express summary collects a single address, so on the guest path the billing address is
+     * whatever prepareWithoutAddress() left behind — a country and nothing else —
+     * and BillingAddressValidationRule rejects it at placeOrder. The shipping address is the only
+     * address the shopper gave, which makes it the only honest billing address as well; it is the
+     * same "same as billing" copy Magento's own one-address checkout performs.
+     *
+     * Gated on validate() so it is inert wherever the billing address already stands on its own:
+     * a logged-in customer whose default billing came from the address book via
+     * importCustomerAddressData() keeps it, delivery-only edits and all.
+     *
+     * @param Quote $quote Quote whose billing address is filled in.
+     * @param Address $shippingAddress Address to copy from.
+     *
+     * @return void
+     */
+    private function applyBillingAddress(Quote $quote, Address $shippingAddress): void
+    {
+        $billingAddress = $quote->getBillingAddress();
+        if ($billingAddress->validate() === true) {
+            return;
+        }
+
+        $email = (string)$billingAddress->getEmail();
+        $billingAddress->importCustomerAddressData($shippingAddress->exportCustomerAddress());
+        $billingAddress->setCustomerAddressId(null);
+        if ($email !== '') {
+            $billingAddress->setEmail($email);
+        }
+    }
+
+    /**
+     * The Magento region the given country/postcode pair names, or null when this country has no
+     * derivation here — in which case no region is written rather than a guessed one.
+     *
+     * @param string $country ISO2 country code.
+     * @param string $postcode Postcode as the shopper typed it.
+     *
+     * @return array{id: int, name: string}|null
+     */
+    private function resolveRegion(string $country, string $postcode): ?array
+    {
+        if ($country !== 'ES') {
+            return null;
+        }
+
+        // Junk, a foreign-shaped or an out-of-range postcode indexes nothing, and nothing is what
+        // gets written — the shopper is told there are no rates rather than sent a parcel to a
+        // province that was guessed for them.
+        $province = self::ES_PROVINCES_BY_POSTCODE[(int)substr($postcode, 0, 2) - 1] ?? null;
+        if ($province === null) {
+            return null;
+        }
+
+        $regionId = $this->regionFactory->create()->loadByName($province, $country)->getId();
+
+        return is_numeric($regionId) ? ['id' => (int)$regionId, 'name' => $province] : null;
     }
 
     /**

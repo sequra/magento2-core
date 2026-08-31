@@ -434,9 +434,19 @@ class CreateOrderRequestBuilder implements CoreCreateOrderRequestBuilder
      */
     private function getCustomer(): array
     {
+        // The account name, then the name on the addresses — for the same reason the email goes
+        // through QuoteEmailResolver: a guest has no account to read, and Express Checkout writes
+        // the name the shopper typed onto the quote address, not onto the (empty) customer.
+        // SeQura's customer block has no phone field at all; the phone travels on the address
+        // blocks below, see getAddress().
+        $billingAddress = $this->quote->getBillingAddress();
+        $shippingAddress = $this->quote->getShippingAddress();
+
         return [
-            'given_names' => $this->quote->getCustomer()->getFirstname(),
-            'surnames' => $this->quote->getCustomer()->getLastname(),
+            'given_names' => $this->quote->getCustomer()->getFirstname()
+                ?: $billingAddress->getFirstname() ?: $shippingAddress->getFirstname(),
+            'surnames' => $this->quote->getCustomer()->getLastname()
+                ?: $billingAddress->getLastname() ?: $shippingAddress->getLastname(),
             'email' => $this->emailResolver->resolve($this->quote),
             'logged_in' => !$this->quote->getCustomerIsGuest(),
             'language_code' => $this->quote->getStore()->getConfig('general/locale/code'),
@@ -445,8 +455,8 @@ class CreateOrderRequestBuilder implements CoreCreateOrderRequestBuilder
             // phpcs:ignore Magento2.Security.Superglobal.SuperglobalUsageWarning
             'user_agent' => $_SERVER["HTTP_USER_AGENT"],
             'date_of_birth' => $this->quote->getCustomer()->getDob(),
-            'company' => $this->quote->getBillingAddress()->getCompany(),
-            'vat_number' => $this->quote->getBillingAddress()->getVatId(),
+            'company' => $billingAddress->getCompany(),
+            'vat_number' => $billingAddress->getVatId(),
             'created_at' => $this->quote->getCustomer()->getCreatedAt(),
             'updated_at' => $this->quote->getCustomer()->getUpdatedAt(),
             'previous_orders' => $this->getPreviousOrders($this->quote->getCustomer()->getId()),

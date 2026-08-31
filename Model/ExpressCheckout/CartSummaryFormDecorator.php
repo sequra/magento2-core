@@ -502,6 +502,7 @@ HTML;
             'postalCode' => (string)$address->getPostcode(),
             'city' => (string)$address->getCity(),
             'countryCode' => (string)$address->getCountryId(),
+            'mobilePhone' => (string)$address->getTelephone(),
         ];
     }
 }
