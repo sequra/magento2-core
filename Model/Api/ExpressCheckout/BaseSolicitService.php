@@ -29,7 +29,7 @@ use Sequra\Core\Model\ExpressCheckout\QuoteShippingResolver;
 class BaseSolicitService
 {
     /**
-     * HTTP status returned when the logged in customer is not eligible for Express Checkout
+     * HTTP status returned when the shopper is not eligible for Express Checkout
      * (unsupported delivery country, or an address with no usable shipping rate), so the
      * storefront can show a specific "not available" message instead of a generic server error.
      * Having no address at all is NOT one of these: that is precisely what the express screen
@@ -43,7 +43,7 @@ class BaseSolicitService
      * both express flows solicit a detached draft built by TemporaryCartBuilder, and the client
      * is never told which one.
      */
-    public const SESSION_KEY_SOLICITED_QUOTE = 'sequra_express_solicited_quote_id';
+    private const SESSION_KEY_SOLICITED_QUOTE = 'sequra_express_solicited_quote_id';
 
     /**
      * @var CartProvider

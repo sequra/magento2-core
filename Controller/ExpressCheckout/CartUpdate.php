@@ -8,9 +8,7 @@ use Magento\Framework\App\Action\HttpPostActionInterface;
 use Magento\Framework\App\Request\Http as HttpRequest;
 use Magento\Framework\Controller\Result\Json;
 use Magento\Framework\Controller\Result\JsonFactory;
-use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Webapi\Exception as WebapiException;
-use SeQura\Core\Infrastructure\Logger\Logger;
 use Sequra\Core\Model\Api\ExpressCheckout\BaseSolicitService;
 use Sequra\Core\Model\ExpressCheckout\SolicitRateLimiter;
 
@@ -38,14 +36,14 @@ use Sequra\Core\Model\ExpressCheckout\SolicitRateLimiter;
  */
 class CartUpdate implements HttpPostActionInterface
 {
+    use ResponseTrait;
+
     /**
      * Address fields accepted from the form, mapped to their maximum accepted length. Anything
      * else in the posted address object is ignored; anything longer is rejected outright rather
      * than silently truncated into the quote.
      */
     private const ADDRESS_FIELD_LIMITS = [
-        'reference' => 64,
-        'fullName' => 255,
         'givenName' => 128,
         'surnames' => 128,
         'addressLine1' => 255,
@@ -124,51 +122,22 @@ class CartUpdate implements HttpPostActionInterface
     public function execute(): Json
     {
         $result = $this->resultJsonFactory->create();
-        $result->setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private', true)
-            ->setHeader('Pragma', 'no-cache', true);
+        $this->noStore($result);
 
         try {
-            // Throttle per solicited cart: every update re-solicits and therefore creates SeQura
-            // order state. Keyed on the quote the last solicit recorded rather than the customer
-            // id, which is empty for a guest and would put every guest in one shared bucket.
-            $solicitedQuoteId = $this->getSolicitedQuoteId();
-            if ($solicitedQuoteId === '') {
-                // No solicit has run in this session, so there is nothing to update — the same
-                // 400 the service would raise, decided before the throttle so the key is never
-                // empty.
-                return $result->setHttpResponseCode(WebapiException::HTTP_BAD_REQUEST)->setData([]);
-            }
-
-            if ($this->rateLimiter->isExceeded($solicitedQuoteId)) {
+            // Throttle per session, the same key the solicit endpoints use: every update
+            // re-solicits and therefore creates SeQura order state. With no solicit in this
+            // session update() raises NoSuchEntityException, which the ladder turns into a 400.
+            if ($this->rateLimiter->isExceeded((string)$this->customerSession->getSessionId())) {
                 return $result->setHttpResponseCode(429)->setData([]);
             }
 
             return $result->setData($this->solicitService->update($this->parseChange()));
-        } catch (WebapiException $e) {
-            // 400 malformed change / unavailable carrier, 422 not eligible.
-            return $result->setHttpResponseCode($e->getHttpCode())->setData([]);
-        } catch (NoSuchEntityException $e) {
-            // No solicit has run in this session, or its quote is gone (the order was placed in
-            // another tab) — there is nothing to update, so a 400 rather than an opaque 500.
-            return $result->setHttpResponseCode(WebapiException::HTTP_BAD_REQUEST)->setData([]);
         } catch (Exception $e) {
-            Logger::logError('Express Checkout cart update failed: ' . $e->getMessage());
-
-            return $result->setHttpResponseCode(500)->setData([]);
+            return $result
+                ->setHttpResponseCode($this->failureCode($e, 'Express Checkout cart update'))
+                ->setData([]);
         }
-    }
-
-    /**
-     * The id of the quote the last solicit ran against, as recorded on the customer session.
-     *
-     * @return string Quote id, or an empty string when no solicit has run in this session.
-     */
-    private function getSolicitedQuoteId(): string
-    {
-        $stored = $this->customerSession->getData(BaseSolicitService::SESSION_KEY_SOLICITED_QUOTE);
-        $quoteId = is_scalar($stored) ? (int)$stored : 0;
-
-        return $quoteId > 0 ? (string)$quoteId : '';
     }
 
     /**

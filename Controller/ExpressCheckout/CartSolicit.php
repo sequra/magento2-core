@@ -7,9 +7,7 @@ use Magento\Checkout\Model\Session as CheckoutSession;
 use Magento\Framework\App\Action\HttpGetActionInterface;
 use Magento\Framework\Controller\Result\Raw;
 use Magento\Framework\Controller\Result\RawFactory;
-use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Webapi\Exception as WebapiException;
-use SeQura\Core\Infrastructure\Logger\Logger;
 use Sequra\Core\Api\ExpressCheckout\SolicitInterface;
 use Sequra\Core\Model\ExpressCheckout\SolicitRateLimiter;
 
@@ -26,6 +24,8 @@ use Sequra\Core\Model\ExpressCheckout\SolicitRateLimiter;
  */
 class CartSolicit implements HttpGetActionInterface
 {
+    use ResponseTrait;
+
     /**
      * @var RawFactory
      */
@@ -74,38 +74,30 @@ class CartSolicit implements HttpGetActionInterface
     public function execute(): Raw
     {
         $result = $this->resultRawFactory->create();
-        $result->setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private', true)
-            ->setHeader('Pragma', 'no-cache', true);
+        $this->noStore($result);
 
         try {
+            // Throttle per session: each solicit creates a SeQura order, so bound flooding. The
+            // session is the caller — the customer id is empty for a guest, and a cart id would
+            // let a shopper reset their own throttle by rebuilding the cart. Never empty: reading
+            // it starts the session if it has not started already.
+            if ($this->rateLimiter->isExceeded((string)$this->checkoutSession->getSessionId())) {
+                return $result->setHttpResponseCode(429)->setContents('');
+            }
+
             $rawQuoteId = $this->checkoutSession->getQuote()->getId();
             $quoteId = is_scalar($rawQuoteId) ? (string)$rawQuoteId : '';
             if ($quoteId === '') {
                 return $result->setHttpResponseCode(WebapiException::HTTP_BAD_REQUEST)->setContents('');
             }
 
-            // Throttle per cart: each solicit creates a SeQura order, so bound flooding. The cart
-            // id is the key rather than the customer id, which is empty for a guest and would put
-            // every guest in one shared bucket. Resolved above, so it is never empty here.
-            if ($this->rateLimiter->isExceeded($quoteId)) {
-                return $result->setHttpResponseCode(429)->setContents('');
-            }
-
             return $result
                 ->setHeader('Content-Type', 'text/html; charset=UTF-8', true)
                 ->setContents($this->solicitService->solicit($quoteId));
-        } catch (WebapiException $e) {
-            // 422 not eligible — surfaced to the library's onError callback; the body is
-            // irrelevant to it.
-            return $result->setHttpResponseCode($e->getHttpCode())->setContents('');
-        } catch (NoSuchEntityException $e) {
-            // The session quote is gone/inactive (e.g. the order was placed in another tab),
-            // so there is nothing to solicit — a 400, not an opaque 500.
-            return $result->setHttpResponseCode(WebapiException::HTTP_BAD_REQUEST)->setContents('');
         } catch (Exception $e) {
-            Logger::logError('Express Checkout cart solicit failed: ' . $e->getMessage());
-
-            return $result->setHttpResponseCode(500)->setContents('');
+            return $result
+                ->setHttpResponseCode($this->failureCode($e, 'Express Checkout cart solicit'))
+                ->setContents('');
         }
     }
 }

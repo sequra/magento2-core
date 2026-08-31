@@ -8,8 +8,6 @@ use Magento\Framework\App\Action\HttpGetActionInterface;
 use Magento\Framework\App\Request\Http as HttpRequest;
 use Magento\Framework\Controller\Result\Raw;
 use Magento\Framework\Controller\Result\RawFactory;
-use Magento\Framework\Webapi\Exception as WebapiException;
-use SeQura\Core\Infrastructure\Logger\Logger;
 use Sequra\Core\Api\ExpressCheckout\ProductSolicitInterface;
 use Sequra\Core\Model\ExpressCheckout\SolicitRateLimiter;
 
@@ -27,6 +25,8 @@ use Sequra\Core\Model\ExpressCheckout\SolicitRateLimiter;
  */
 class ProductSolicit implements HttpGetActionInterface
 {
+    use ResponseTrait;
+
     /**
      * @var HttpRequest
      */
@@ -82,15 +82,11 @@ class ProductSolicit implements HttpGetActionInterface
     public function execute(): Raw
     {
         $result = $this->resultRawFactory->create();
-        $result->setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private', true)
-            ->setHeader('Pragma', 'no-cache', true);
+        $this->noStore($result);
 
         try {
-            // Throttle per session: each solicit builds a temporary quote and creates a SeQura
-            // order, so bound flooding. Unlike the cart endpoints there is no quote yet at this
-            // point (the temporary one is built inside the solicit), and the customer id is empty
-            // for a guest, so the session id is the only per-caller key available here. It is
-            // never empty — reading it starts the session if it has not started already.
+            // Throttle per session, same key as the other two solicit surfaces. Each solicit
+            // builds a temporary quote and creates a SeQura order, so bound flooding.
             if ($this->rateLimiter->isExceeded((string)$this->customerSession->getSessionId())) {
                 return $result->setHttpResponseCode(429)->setContents('');
             }
@@ -98,14 +94,10 @@ class ProductSolicit implements HttpGetActionInterface
             return $result
                 ->setHeader('Content-Type', 'text/html; charset=UTF-8', true)
                 ->setContents($this->solicitService->solicit($this->request->getParams()));
-        } catch (WebapiException $e) {
-            // 400 invalid request / 422 virtual or not eligible — surfaced to the library's
-            // onError callback; the body is irrelevant to it.
-            return $result->setHttpResponseCode($e->getHttpCode())->setContents('');
         } catch (Exception $e) {
-            Logger::logError('Express Checkout product solicit failed: ' . $e->getMessage());
-
-            return $result->setHttpResponseCode(500)->setContents('');
+            return $result
+                ->setHttpResponseCode($this->failureCode($e, 'Express Checkout product solicit'))
+                ->setContents('');
         }
     }
 }

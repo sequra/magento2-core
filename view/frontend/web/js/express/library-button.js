@@ -19,9 +19,9 @@
 define(
     [
         'jquery',
-        'Sequra_Core/js/express/identification-form'
+        'mage/translate'
     ],
-    function ($, identificationForm) {
+    function ($, $t) {
         'use strict';
 
         // HTTP status the solicit endpoints return when the request is not eligible.
@@ -42,6 +42,20 @@ define(
         }
 
         /**
+         * Replaces the button with an inline "not available" message.
+         *
+         * @param {jQuery} $button The Express Checkout button to replace.
+         */
+        function showUnavailable($button) {
+            $button.closest('.sequra-express-checkout').html(
+                $('<span/>', {
+                    'class': 'sequra-express-checkout-unavailable',
+                    'text': $t('SeQura is not available for your account.')
+                })
+            );
+        }
+
+        /**
          * Global solicit-error gate: 422 shows the inline "not available" message. The status
          * arrives in ctx.status; the message parse covers older bundles.
          *
@@ -52,7 +66,7 @@ define(
                 status = ctx && ctx.status ? ctx.status : (match ? parseInt(match[1], 10) : null);
 
             if (status === HTTP_NOT_ELIGIBLE) {
-                identificationForm.showUnavailable(resolveMount(ctx));
+                showUnavailable(resolveMount(ctx));
             }
         }
 

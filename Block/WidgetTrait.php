@@ -38,9 +38,9 @@ trait WidgetTrait
      */
     private function getCurrentCountry(): string
     {
-        // The store view's locale always carries a region (Magento only offers full `xx_YY`
-        // locales, and falls back to en_US), so this names a real country for every store.
-        return (string)\Locale::getRegion((string)$this->localeResolver->getLocale());
+        $parts = explode('_', $this->localeResolver->getLocale());
+
+        return strtoupper(count($parts) > 1 ? $parts[1] : $parts[0]);
     }
 
     /**

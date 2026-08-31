@@ -173,7 +173,7 @@ abstract class AbstractExpressCheckoutBlock extends Template
             $result = $this->availabilityEvaluator->evaluate(
                 (string)$this->_storeManager->getStore()->getId(),
                 $this->getExpressCheckoutPage(),
-                (string)$this->shippingResolver->getResolvableShippingCountry($quote),
+                $this->shippingResolver->getResolvableShippingCountry($quote),
                 $this->getCurrentCurrency(),
                 $this->getCustomerIpAddress(),
                 $this->getCartProductIds($quote),

@@ -112,7 +112,10 @@ class TemporaryCartBuilder
      */
     public function build(string $productId, array $buyRequest): int
     {
-        $customerId = $this->currentCustomerId();
+        // The server session is the authority on login state — the state baked into cached pages
+        // and the customer-data section are both unreliable. Either answer is valid: a guest
+        // simply gets a guest draft.
+        $customerId = (int)$this->customerSession->getCustomerId();
 
         $store = $this->storeManager->getStore();
         /** @var Product $product */
@@ -151,7 +154,8 @@ class TemporaryCartBuilder
      */
     public function buildFromQuote(Quote $source): int
     {
-        $customerId = $this->currentCustomerId();
+        // Server session, for the reason spelled out in build().
+        $customerId = (int)$this->customerSession->getCustomerId();
 
         $items = $source->getAllVisibleItems();
         if (empty($items)) {
@@ -164,9 +168,16 @@ class TemporaryCartBuilder
         $quote = $this->createOrReuseQuote($customerId, $storeId, self::DRAFT_KEY_CART);
 
         foreach ($items as $item) {
-            /** @var Product $product */
-            // @phpstan-ignore-next-line getProductId() is a magic DataObject getter
-            $product = $this->productRepository->getById((int)$item->getProductId(), false, $storeId);
+            // The source cart's item collection loaded every product in one query
+            // (Quote\Item\Collection::_assignProducts), so take it from the item rather than
+            // paying a full EAV load per cart line. Only a detached item has none.
+            $product = $item->getProduct();
+            if (!$product instanceof Product) {
+                /** @var Product $product */
+                // @phpstan-ignore-next-line getProductId() is a magic DataObject getter
+                $product = $this->productRepository->getById((int)$item->getProductId(), false, $storeId);
+            }
+
             // Re-add through the stored buy request so configurable/bundle/grouped selections and
             // custom options are preserved exactly as in the source cart.
             $result = $quote->addProduct($product, $item->getBuyRequest());
@@ -185,20 +196,6 @@ class TemporaryCartBuilder
         );
 
         return $this->finalizeQuote($quote, self::DRAFT_KEY_CART);
-    }
-
-    /**
-     * The id of the logged in customer, or 0 for a guest.
-     *
-     * The login state baked into cached pages and the customer-data section are both unreliable,
-     * so the server session is the authority — but either answer is valid: a guest simply gets a
-     * guest draft.
-     *
-     * @return int
-     */
-    private function currentCustomerId(): int
-    {
-        return (int)$this->customerSession->getCustomerId();
     }
 
     /**

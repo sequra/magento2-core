@@ -34,6 +34,7 @@ use SeQura\Core\BusinessLogic\Domain\Order\Models\OrderRequest\CreateOrderReques
 use SeQura\Core\BusinessLogic\Domain\Order\Models\OrderRequest\Item\ItemType;
 use SeQura\Core\BusinessLogic\Domain\Order\Builders\CreateOrderRequestBuilder as CoreCreateOrderRequestBuilder;
 use SeQura\Core\Infrastructure\Logger\Logger;
+use Sequra\Core\Model\QuoteEmailResolver;
 use Sequra\Core\Services\BusinessLogic\ProductService;
 use Throwable;
 
@@ -88,6 +89,10 @@ class CreateOrderRequestBuilder implements CoreCreateOrderRequestBuilder
      * @var Request
      */
     protected $request;
+    /**
+     * @var QuoteEmailResolver
+     */
+    private $emailResolver;
 
     /**
      * Constructor for CreateOrderRequestBuilder
@@ -103,6 +108,7 @@ class CreateOrderRequestBuilder implements CoreCreateOrderRequestBuilder
      * @param ProductService $productService
      * @param OrderFactory $orderFactory
      * @param Request $request
+     * @param QuoteEmailResolver $emailResolver
      */
     public function __construct(
         CartRepositoryInterface $quoteRepository,
@@ -115,7 +121,8 @@ class CreateOrderRequestBuilder implements CoreCreateOrderRequestBuilder
         string $storeId,
         ProductService $productService,
         OrderFactory $orderFactory,
-        Request $request
+        Request $request,
+        QuoteEmailResolver $emailResolver
     ) {
         $this->quoteRepository = $quoteRepository;
         $this->productMetadata = $productMetadata;
@@ -128,6 +135,7 @@ class CreateOrderRequestBuilder implements CoreCreateOrderRequestBuilder
         $this->productService = $productService;
         $this->orderFactory = $orderFactory;
         $this->request = $request;
+        $this->emailResolver = $emailResolver;
     }
 
     /**
@@ -426,18 +434,10 @@ class CreateOrderRequestBuilder implements CoreCreateOrderRequestBuilder
      */
     private function getCustomer(): array
     {
-        // Quote-level first: an email the shopper saves on the Express Checkout CartSummary page is
-        // applied to the quote, and the (unchanged) account email would otherwise always win. It is
-        // also the email Magento places the order with (QuoteManagement::submitQuote).
-        $email = (string)($this->quote->getCustomerEmail()
-            ?: $this->quote->getCustomer()->getEmail()
-            ?: $this->quote->getBillingAddress()->getEmail()
-            ?: $this->quote->getShippingAddress()->getEmail());
-
         return [
             'given_names' => $this->quote->getCustomer()->getFirstname(),
             'surnames' => $this->quote->getCustomer()->getLastname(),
-            'email' => $email,
+            'email' => $this->emailResolver->resolve($this->quote),
             'logged_in' => !$this->quote->getCustomerIsGuest(),
             'language_code' => $this->quote->getStore()->getConfig('general/locale/code'),
             'ip_number' => $this->getCustomerIpAddress(),

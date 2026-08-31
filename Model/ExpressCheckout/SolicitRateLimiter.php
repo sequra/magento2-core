@@ -64,22 +64,13 @@ class SolicitRateLimiter
      * Fail-open: any cache/serialization error is swallowed so a transient cache problem never
      * blocks a legitimate checkout.
      *
-     * An empty key is not throttled at all. There is no such thing as a shared counter here: an
-     * empty key would put every caller that reaches it into one bucket, so the first 30 attempts
-     * across all of them would lock out everyone else. Callers are expected to pass a real
-     * identifier (see the Express Checkout controllers); this only keeps a future one from
-     * silently turning the throttle into a site-wide lock.
-     *
-     * @param string $key Stable per-caller identifier (e.g. the cart or session ID).
+     * @param string $key Stable per-caller identifier. Every Express Checkout endpoint passes the
+     *                     session id, which is never empty — reading it starts the session.
      *
      * @return bool True when this attempt is over the allowed limit and should be rejected.
      */
     public function isExceeded(string $key): bool
     {
-        if ($key === '') {
-            return false;
-        }
-
         try {
             $cacheKey = self::CACHE_PREFIX . $key;
             $now = time();

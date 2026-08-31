@@ -14,7 +14,7 @@ use Sequra\Core\Model\ExpressCheckout\TemporaryCartBuilder;
 /**
  * Class SolicitService
  *
- * Express Checkout solicit endpoint for the cart page and mini-cart (logged in customers). The
+ * Express Checkout solicit endpoint for the cart page and mini-cart. The
  * solicit runs against a detached clone of the shopper's cart, never the live checkout-session
  * quote: resolving shipping imports the default address, forces the SeQura payment method and adds
  * a shipping line, so mutating the real quote would leave the cart altered if the shopper cancels

@@ -98,23 +98,22 @@ class QuoteShippingResolver
      *
      * @param Quote $quote Cart quote whose customer is probed (not mutated).
      *
-     * @return string|null ISO2 shipping country, or null when express is unavailable.
+     * @return string ISO2 shipping country, or '' when no country can be named at all.
      */
-    public function getResolvableShippingCountry(Quote $quote): ?string
+    public function getResolvableShippingCountry(Quote $quote): string
     {
         try {
             $customer = $this->getQuoteCustomer($quote);
-            $country = $this->resolveCountry(
+
+            return $this->resolveCountry(
                 $quote,
                 $customer !== null ? $this->findDefaultShippingAddress($customer) : null
             );
-
-            return $country !== '' ? $country : null;
         } catch (Exception $e) {
             Logger::logError('Express Checkout shipping availability check failed: ' . $e->getMessage() .
                 ' Trace: ' . $e->getTraceAsString());
 
-            return null;
+            return '';
         }
     }
 
@@ -137,15 +136,11 @@ class QuoteShippingResolver
     public function resolve(Quote $quote): bool
     {
         try {
+            // A guest cart has no account to import from, and a customer may never have saved a
+            // default address. Both get the same treatment — the express screen collects it.
             $customer = $this->getQuoteCustomer($quote);
-            if ($customer === null) {
-                // Guest cart: no account, so nothing to import. Same treatment as a customer with
-                // no saved address — the express screen collects it.
-                return $this->prepareWithoutAddress($quote);
-            }
-
-            $defaultShippingAddress = $this->findDefaultShippingAddress($customer);
-            if ($defaultShippingAddress === null) {
+            $defaultShippingAddress = $customer !== null ? $this->findDefaultShippingAddress($customer) : null;
+            if ($customer === null || $defaultShippingAddress === null) {
                 return $this->prepareWithoutAddress($quote);
             }
 
@@ -156,16 +151,14 @@ class QuoteShippingResolver
             // placed order and fail payment.
             $preselectedMethod = (string)$shippingAddress->getShippingMethod();
 
-            $rate = $this->selectRate(
-                $this->collectRates($quote, $defaultShippingAddress),
-                $preselectedMethod
-            );
+            $shippingAddress->importCustomerAddressData($defaultShippingAddress);
+
+            $rate = $this->selectRate($this->recollectRates($quote), $preselectedMethod);
             if ($rate === null) {
                 return false;
             }
 
             $shippingAddress->setShippingMethod($rate->getCode());
-            $shippingAddress->setCollectShippingRates(true);
 
             $quote->getBillingAddress()->importCustomerAddressData(
                 $this->findDefaultBillingAddress($customer) ?? $defaultShippingAddress
@@ -315,7 +308,15 @@ class QuoteShippingResolver
             ? $change['shippingMethodReference']
             : '';
 
-        $rates = $this->recollectRates($quote);
+        // Only an address change can invalidate the rates. A carrier pick or an email save reuses
+        // the ones the last collection already left on the address (they are persisted with it, see
+        // Quote\Address\Relation::processRelation), instead of calling every carrier again. The
+        // empty case still collects: the solicit leaves an addressless quote with no rates at all
+        // (see prepareWithoutAddress), and the shopper may save their email before their address.
+        $rates = isset($change['address']) ? [] : $shippingAddress->getAllShippingRates();
+        if ($rates === []) {
+            $rates = $this->recollectRates($quote);
+        }
 
         if ($requestedMethod !== '') {
             $rate = $this->findRate($rates, $requestedMethod);
@@ -338,10 +339,7 @@ class QuoteShippingResolver
         }
 
         $shippingAddress->setShippingMethod($rate->getCode());
-        $shippingAddress->setCollectShippingRates(true);
-        $quote->setData('totals_collected_flag', false);
-        $quote->collectTotals();
-        $this->quoteRepository->save($quote);
+        $this->applyPaymentAndSave($quote);
 
         return true;
     }
@@ -437,25 +435,16 @@ class QuoteShippingResolver
     }
 
     /**
-     * Imports the given address onto the quote's shipping address and (re)collects shipping rates
-     * from a clean state, returning every available rate. Does not persist the quote.
-     *
-     * @param Quote $quote
-     * @param AddressInterface $address
-     *
-     * @return Rate[]
-     */
-    private function collectRates(Quote $quote, AddressInterface $address): array
-    {
-        $quote->getShippingAddress()->importCustomerAddressData($address);
-
-        return $this->recollectRates($quote);
-    }
-
-    /**
      * (Re)collects the quote's shipping rates from a clean state — the selected method is cleared
      * so every carrier is re-quoted for whatever address is currently on the quote — and returns
      * them. Does not persist the quote.
+     *
+     * The collected rates stay on the address for the caller's follow-up collectTotals(): callers
+     * must NOT re-arm setCollectShippingRates(true) after choosing a method. Quote\Address::
+     * collectShippingRates() clears the flag itself and starts with removeAllShippingRates(), so a
+     * re-arm would throw these rates away and call every carrier a second time for one shopper
+     * interaction. With the flag down it returns early, and Shipping::collect() reads the method
+     * off a shipping assignment TotalsCollector rebuilds from the address on every pass.
      *
      * @param Quote $quote
      *

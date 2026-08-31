@@ -4,11 +4,13 @@ namespace Sequra\Core\Model\ExpressCheckout;
 
 use Exception;
 use Magento\Catalog\Helper\Image as ImageHelper;
+use Magento\Catalog\Model\Product\Configuration\Item\ItemResolverInterface;
 use Magento\Framework\Data\Form\FormKey;
 use Magento\Framework\UrlInterface;
+use Magento\Quote\Model\Cart\ShippingMethodConverter;
 use Magento\Quote\Model\Quote;
-use Magento\Tax\Helper\Data as TaxHelper;
 use Magento\Theme\ViewModel\Block\Html\Header\LogoPathResolver;
+use Sequra\Core\Model\QuoteEmailResolver;
 
 /**
  * Class CartSummaryFormDecorator
@@ -41,9 +43,13 @@ class CartSummaryFormDecorator
      */
     private ImageHelper $imageHelper;
     /**
-     * @var TaxHelper
+     * @var ItemResolverInterface
      */
-    private TaxHelper $taxHelper;
+    private ItemResolverInterface $itemResolver;
+    /**
+     * @var ShippingMethodConverter
+     */
+    private ShippingMethodConverter $shippingMethodConverter;
     /**
      * @var LogoPathResolver
      */
@@ -52,25 +58,35 @@ class CartSummaryFormDecorator
      * @var FormKey
      */
     private FormKey $formKey;
+    /**
+     * @var QuoteEmailResolver
+     */
+    private QuoteEmailResolver $emailResolver;
 
     /**
      * CartSummaryFormDecorator constructor.
      *
      * @param ImageHelper $imageHelper
-     * @param TaxHelper $taxHelper
+     * @param ItemResolverInterface $itemResolver
+     * @param ShippingMethodConverter $shippingMethodConverter
      * @param LogoPathResolver $logoPathResolver
      * @param FormKey $formKey
+     * @param QuoteEmailResolver $emailResolver
      */
     public function __construct(
         ImageHelper $imageHelper,
-        TaxHelper $taxHelper,
+        ItemResolverInterface $itemResolver,
+        ShippingMethodConverter $shippingMethodConverter,
         LogoPathResolver $logoPathResolver,
-        FormKey $formKey
+        FormKey $formKey,
+        QuoteEmailResolver $emailResolver
     ) {
         $this->imageHelper = $imageHelper;
-        $this->taxHelper = $taxHelper;
+        $this->itemResolver = $itemResolver;
+        $this->shippingMethodConverter = $shippingMethodConverter;
         $this->logoPathResolver = $logoPathResolver;
         $this->formKey = $formKey;
+        $this->emailResolver = $emailResolver;
     }
 
     /**
@@ -85,7 +101,7 @@ class CartSummaryFormDecorator
     {
         // The endpoints are read back off the flagged HTML so they carry show_cart too.
         $flagged = $this->appendShowCartFlag($form);
-        $data = $this->buildPayload($quote, $this->buildEndpoints($flagged));
+        $data = $this->buildPayload($quote, $this->buildEndpoints($flagged)) + $this->buildStaticData($quote);
 
         return $flagged . $this->buildCartDataScript($data, $quote);
     }
@@ -94,9 +110,10 @@ class CartSummaryFormDecorator
      * The cartDataReady payload on its own, for the cart-update endpoint to answer a shopper
      * change with.
      *
-     * Same shape, same builders and the same endpoint derivation as the payload {@see decorate}
-     * injects: the checkout-form adopts the reply in place of the one it booted with, so the two
-     * must be produced by one piece of code.
+     * Same builders and the same endpoint derivation as the payload {@see decorate} injects: the
+     * checkout-form adopts the reply in place of the one it booted with, so the two must be
+     * produced by one piece of code. The one difference is {@see buildStaticData}, deliberately
+     * left out — see there.
      *
      * @param string $form Identification form HTML returned by the re-solicit.
      * @param Quote $quote Re-solicited quote, already mutated and re-collected.
@@ -137,8 +154,8 @@ class CartSummaryFormDecorator
     }
 
     /**
-     * Builds the cartDataReady payload: everything the CartSummary page renders that the
-     * solicited order does not carry.
+     * Builds the part of the cartDataReady payload a shopper change can move: what the CartSummary
+     * page renders that the solicited order does not carry, minus {@see buildStaticData}.
      *
      * @param Quote $quote
      * @param array<string, string> $endpoints Order-scoped form endpoints, possibly empty.
@@ -151,20 +168,41 @@ class CartSummaryFormDecorator
 
         $data = [
             'type' => 'cartDataReady',
-            'storeName' => $quote->getStore()->getFrontendName(),
-            'email' => $this->buildEmail($quote),
+            'email' => $this->emailResolver->resolve($quote),
             'address' => $address,
             'shippingMethods' => $this->buildShippingMethods($quote),
             'shippingAddresses' => [$address],
-            'itemImages' => $this->buildItemImages($quote),
         ];
 
-        // Both keys are omitted rather than sent empty: the checkout-form only overwrites what
-        // it receives, and it rejects a store logo that is not an absolute http(s) URL.
+        // Omitted rather than sent empty: the checkout-form only overwrites what it receives.
         if ($endpoints !== []) {
             $data['endpoints'] = $endpoints;
         }
 
+        return $data;
+    }
+
+    /**
+     * The half of the payload nothing the shopper does on the CartSummary page can change: the
+     * store identity and the cart item thumbnails.
+     *
+     * Only the initial solicit sends it. An update rebuilding it would re-resolve one ImageHelper
+     * URL per cart line — a filesystem stat each, and an inline resize on a cold cache — to send
+     * the checkout-form bytes it already has, and it only overwrites what it receives.
+     *
+     * @param Quote $quote
+     *
+     * @return array<string, mixed>
+     */
+    private function buildStaticData(Quote $quote): array
+    {
+        $data = [
+            'storeName' => $quote->getStore()->getFrontendName(),
+            'itemImages' => $this->buildItemImages($quote),
+        ];
+
+        // Omitted rather than sent empty: the checkout-form rejects a store logo that is not an
+        // absolute http(s) URL.
         $storeLogoUrl = $this->buildStoreLogoUrl($quote);
         if ($storeLogoUrl !== null) {
             $data['storeLogoUrl'] = $storeLogoUrl;
@@ -356,27 +394,15 @@ HTML;
     }
 
     /**
-     * The shopper's email, resolved through the same chain the create-order request uses so the
-     * CartSummary page shows the address the SeQura order was solicited with.
-     *
-     * @param Quote $quote
-     *
-     * @return string
-     */
-    private function buildEmail(Quote $quote): string
-    {
-        // Quote-level first: an email the shopper saves on the CartSummary page is applied to
-        // the quote, and the (unchanged) account email would otherwise always win.
-        return (string)($quote->getCustomerEmail()
-            ?: $quote->getCustomer()->getEmail()
-            ?: $quote->getBillingAddress()->getEmail()
-            ?: $quote->getShippingAddress()->getEmail());
-    }
-
-    /**
      * Maps the quote's collected shipping rates to the checkout-form ShippingMethod shape.
      * The rate applied to the quote goes first: the checkout-form preselects the first method,
      * and the solicited order total was computed with that rate.
+     *
+     * Each rate goes through Magento's own ShippingMethodConverter — the same one
+     * ShippingMethodManagement::getList feeds the regular checkout — rather than a hand-rolled
+     * copy, so the price is taxed AND converted from the store's base currency into the quote
+     * currency. On a store displaying a currency other than its base one, doing the tax half only
+     * would put a base-currency shipping line next to a quote-currency total.
      *
      * @param Quote $quote
      *
@@ -386,37 +412,26 @@ HTML;
     {
         $shippingAddress = $quote->getShippingAddress();
         $appliedCode = (string)$shippingAddress->getShippingMethod();
-        $customerTaxClassId = $quote->getCustomerTaxClassId();
+        $quoteCurrencyCode = (string)$quote->getQuoteCurrencyCode();
 
         $methods = [];
         foreach ($shippingAddress->getAllShippingRates() as $rate) {
-            if ($rate->getErrorMessage()) {
+            $converted = $this->shippingMethodConverter->modelToDataObject($rate, $quoteCurrencyCode);
+            if (!$converted->getAvailable()) {
                 continue;
             }
 
+            $reference = (string)$rate->getCode();
             // Carrier as the method name and method title as the description, matching the
             // CartSummary card ("GLS" / "Entrega a domicilio 2-3 días").
             $method = [
-                'reference' => (string)$rate->getCode(),
-                'name' => (string)($rate->getCarrierTitle() ?: $rate->getCode()),
-                // The rate price is tax-exclusive, and the checkout-form renders this as the
-                // shipping line and folds it into the total. Taxed per rate the same way
-                // Magento's own ShippingMethodConverter does it.
-                'costWithTax' => (int)round(
-                    (float)$this->taxHelper->getShippingPrice(
-                        (float)$rate->getPrice(),
-                        true,
-                        // The helper's docblock says Customer\Model\Address, but it is fed a quote
-                        // address here and by Magento's own ShippingMethodConverter.
-                        // @phpstan-ignore-next-line
-                        $shippingAddress,
-                        $customerTaxClassId
-                    ) * 100
-                ),
-                'description' => (string)$rate->getMethodTitle(),
+                'reference' => $reference,
+                'name' => (string)($converted->getCarrierTitle() ?: $reference),
+                'costWithTax' => (int)round((float)$converted->getPriceInclTax() * 100),
+                'description' => (string)$converted->getMethodTitle(),
             ];
 
-            if ($method['reference'] === $appliedCode) {
+            if ($reference === $appliedCode) {
                 array_unshift($methods, $method);
             } else {
                 $methods[] = $method;
@@ -438,12 +453,15 @@ HTML;
     {
         $images = [];
         foreach ($quote->getAllVisibleItems() as $item) {
-            $product = $item->getProduct();
-            if (!$product) {
-                continue;
-            }
-
             try {
+                // getFinalProduct picks parent or child for configurable/grouped/bundle lines and
+                // honours checkout/cart/configurable_product_image, the way Magento's own cart and
+                // mini-cart thumbnails do (Checkout\CustomerData\DefaultItem).
+                $product = $this->itemResolver->getFinalProduct($item);
+                // getFinalProduct is typed to the interface; ImageHelper wants the concrete
+                // model, which is what every implementation hands back (and what
+                // Checkout\CustomerData\DefaultItem feeds it).
+                // @phpstan-ignore-next-line
                 $url = $this->imageHelper->init($product, 'cart_page_product_thumbnail')->getUrl();
             } catch (Exception $e) {
                 continue;
@@ -477,7 +495,7 @@ HTML;
 
         return [
             'reference' => is_scalar($addressId) ? (string)$addressId : '',
-            'fullName' => trim($address->getFirstname() . ' ' . $address->getLastname()),
+            'fullName' => trim((string)$address->getName()),
             'givenName' => (string)$address->getFirstname(),
             'surnames' => (string)$address->getLastname(),
             'addressLine1' => is_array($street) ? implode(', ', array_filter($street)) : (string)$street,
