@@ -25,7 +25,9 @@ use Sequra\Core\Model\QuoteEmailResolver;
  *     email and address, the shipping methods and the cart item images — to the iframe via the
  *     `cartDataReady` message the checkout-form listens for. The same script relays the
  *     `Sequra.cartUpdate` message the form posts back (address, carrier or email changed) to
- *     the cart-update endpoint and forwards its refreshed payload on to the iframe.
+ *     the cart-update endpoint and forwards its refreshed payload on to the iframe. When that
+ *     endpoint does not answer with a usable payload the iframe gets a `cartUpdateFailed`
+ *     message instead, so the form never waits on a reply that is not coming.
  *
  * ponytail: spike is always-on for express solicits; gate behind a store config when productized.
  */
@@ -217,6 +219,13 @@ class CartSummaryFormDecorator
      * message the form posts back out (address saved, carrier picked, email saved) to the
      * cart-update endpoint, forwarding that endpoint's refreshed payload on to the same iframe.
      *
+     * Every relayed update is answered, success or not: a request that does not yield a usable
+     * payload sends `{type: 'cartUpdateFailed', status: <int>}` instead. The status is the one
+     * the endpoint deliberately chose ({@see \Sequra\Core\Controller\ExpressCheckout\CartUpdate}
+     * maps 400/422/429/500), or 0 when no response arrived, and is all the form gets — enough to
+     * separate "your change was refused" from "try again", with no server text leaked into the
+     * page.
+     *
      * The reply is targeted at the iframe's data-base-url origin, never '*', exactly like the
      * initial message; inbound messages from any other origin are ignored.
      *
@@ -261,6 +270,17 @@ class CartSummaryFormDecorator
 
         function send(el, data) {
             el.contentWindow.postMessage(data, formOrigin(el));
+        }
+
+        // Tells the form the change was not applied. `status` is the HTTP status the endpoint
+        // answered with — 400/422 the shopper's change was refused, 429/500 the store could not
+        // deal with it right now — or 0 when there was no answer at all. Never the server's
+        // message: the form owns what the shopper reads.
+        function sendFailure(status) {
+            var el = formIframe();
+            if (el) {
+                send(el, { type: 'cartUpdateFailed', status: status });
+            }
         }
 
         var attempts = 0;
@@ -310,7 +330,13 @@ class CartSummaryFormDecorator
 
             fetch(updateUrl, { method: 'POST', body: body, credentials: 'same-origin' })
                 .then(function (response) {
-                    return response.ok ? response.json() : null;
+                    if (!response.ok) {
+                        sendFailure(response.status);
+
+                        return null;
+                    }
+
+                    return response.json();
                 })
                 .then(function (data) {
                     var target = formIframe();
@@ -318,7 +344,11 @@ class CartSummaryFormDecorator
                         send(target, data);
                     }
                 })
-                .catch(function () {});
+                .catch(function () {
+                    // No usable answer: the request never completed, or a 200 whose body did not
+                    // parse. Either way the form has been left waiting, so tell it so.
+                    sendFailure(0);
+                });
         });
     })();
 </script>
