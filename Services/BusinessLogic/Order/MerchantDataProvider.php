@@ -106,11 +106,16 @@ class MerchantDataProvider implements MerchantDataProviderInterface
     /**
      * Returns options
      *
+     * Declares `addresses_may_be_missing`: Express Checkout solicits before the shopper has an
+     * address (that is what the express screen collects), so this integration cannot promise
+     * both addresses on every create-order request. Regular checkout keeps sending them — the
+     * flag only stops SeQura rejecting the ones that cannot.
+     *
      * @return Options|null
      */
     public function getOptions(): ?Options
     {
-        return null;
+        return new Options(null, null, true);
     }
 
     /**

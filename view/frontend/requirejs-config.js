@@ -8,9 +8,6 @@ var config = {
             },
             'Magento_Swatches/js/swatch-renderer': {
                 'Sequra_Core/js/model/skuswitch': true
-            },
-            'Magento_Customer/js/action/login': {
-                'Sequra_Core/js/express/login-action-mixin': true
             }
         }
     }

@@ -146,6 +146,14 @@
     <preference for="Sequra\Core\Api\ExpressCheckout\ProductSolicitInterface"
                 type="Sequra\Core\Model\Api\ExpressCheckout\ProductSolicitService"/>
 
+    <!-- The cart-update endpoint re-solicits the quote the last solicit ran against, so it needs
+         the same customer-cart flavour of the solicit service the two solicit endpoints share. -->
+    <type name="Sequra\Core\Controller\ExpressCheckout\CartUpdate">
+        <arguments>
+            <argument name="solicitService" xsi:type="object">SequraExpressCustomerSolicitService</argument>
+        </arguments>
+    </type>
+
 
     <!-- <type name="Magento\PageBuilder\Model\WidgetInitializerConfig">
         <arguments>
@@ -224,6 +232,27 @@
     <type name="Sequra\Core\Services\BusinessLogic\Utility\SeQuraTranslationProvider">
         <arguments>
             <argument name="session" xsi:type="object">Magento\Backend\Model\Auth\Session\Proxy</argument>
+        </arguments>
+    </type>
+
+    <!-- Express Checkout solicit throttle: key the address bucket on the connection's own peer
+         address. Magento's stock RemoteAddress (see app/etc/di.xml) prefers X-Forwarded-For while
+         leaving the trusted-proxy list unset, which makes the address it reports the first,
+         client-supplied entry of that chain — free to change per request and so useless as a
+         throttle key. This instance reads REMOTE_ADDR and nothing else, which the caller cannot
+         forge. Overriding the inherited item's value is what removes X-Forwarded-For from the
+         lookup: a virtualType merges array items by name, so neither an empty array declaration
+         nor disable="true" (rejected by the schema) would drop it. -->
+    <virtualType name="SequraExpressSolicitPeerAddress" type="Magento\Framework\HTTP\PhpEnvironment\RemoteAddress">
+        <arguments>
+            <argument name="alternativeHeaders" xsi:type="array">
+                <item name="x-forwarded-for" xsi:type="string">REMOTE_ADDR</item>
+            </argument>
+        </arguments>
+    </virtualType>
+    <type name="Sequra\Core\Model\ExpressCheckout\SolicitRateLimiter">
+        <arguments>
+            <argument name="remoteAddress" xsi:type="object">SequraExpressSolicitPeerAddress</argument>
         </arguments>
     </type>
 </config>
