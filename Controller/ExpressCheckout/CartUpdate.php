@@ -19,7 +19,8 @@ use Sequra\Core\Model\ExpressCheckout\SolicitRateLimiter;
  * checkout-form posts a `Sequra.cartUpdate` message to the host page whenever the shopper saves
  * an address, picks a carrier or saves an email; the script CartSummaryFormDecorator injects
  * relays it here, and this controller applies the change to the solicited quote, re-solicits and
- * answers with the refreshed cartDataReady payload the form adopts without reloading its iframe.
+ * answers with the refreshed cartDataReady payload — which the form adopts in place, unless the
+ * re-solicit minted a new order, in which case the injected script reloads the iframe onto it.
  *
  * CSRF: this is a state-changing frontend POST, so it is left under Magento's default form-key
  * validation — no CsrfAwareActionInterface, no exemption. The injected script sends the session
@@ -51,6 +52,7 @@ class CartUpdate implements HttpPostActionInterface
         'postalCode' => 32,
         'city' => 128,
         'countryCode' => 2,
+        'regionId' => 32,
         'mobilePhone' => 32,
     ];
 
@@ -248,6 +250,15 @@ class CartUpdate implements HttpPostActionInterface
             }
 
             $address['countryCode'] = strtoupper($address['countryCode']);
+        }
+
+        // Shape only. Which country the id has to belong to is not knowable here: the express
+        // address sheet has no country field — the country is shown read-only and comes from the
+        // solicited quote — so the change never carries one, and a client-asserted country would
+        // be worth nothing anyway. QuoteShippingResolver::resolveRegion does the real check,
+        // against the country the quote actually has, and writes no region when it does not match.
+        if (isset($address['regionId']) && !ctype_digit($address['regionId'])) {
+            throw $this->badRequest();
         }
 
         if (!preg_match(self::PHONE_CHARSET_PATTERN, $address['mobilePhone'])

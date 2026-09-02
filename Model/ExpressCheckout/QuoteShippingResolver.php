@@ -47,8 +47,16 @@ use Sequra\Core\Model\Ui\ConfigProvider;
 class QuoteShippingResolver
 {
     /**
-     * Spanish provinces in postal-code order: the first two digits of an ES postcode are the INE
-     * province code (08010 -> 08 -> Barcelona), so index = those digits - 1.
+     * Fallback only, for a change that carries no region of its own: Spanish provinces in
+     * postal-code order, the first two digits of an ES postcode being the INE province code
+     * (08010 -> 08 -> Barcelona), so index = those digits - 1.
+     *
+     * The mechanism is now the shopper's own pick: the host sends the delivery country's
+     * `directory_country_region` rows in the cartDataReady payload and the express address sheet
+     * renders them as a selector, so `regionId` arrives with the address and wins over anything
+     * derived here (see {@see resolveRegion}). This map still has to stay: the initial solicit
+     * runs before the shopper has seen any sheet, so the first address written to a quote — the
+     * customer's imported default — carries no picked region at all.
      *
      * The names are Magento's own `directory_country_region.default_name` values for ES, because
      * that is what RegionFactory::loadByName() matches. Loading by *code* is not an option: for
@@ -56,9 +64,9 @@ class QuoteShippingResolver
      * finds nothing and the address would silently end up with no province at all — a wrong
      * shipping quote and a wrong label.
      *
-     * ponytail: ES only. IT and PT also have `general/region/state_required` set by default and
-     * get no region from here — their postcode-to-province maps are not a two-digit prefix, and a
-     * guessed province is worse than none. Add them the same way when express opens there.
+     * ponytail: ES only, and left that way — the other 38 state-required countries are covered by
+     * the selector rather than by more maps like this one. Retiring it altogether needs proof that
+     * every path reaching applyAddress() supplies a region, which the pre-sheet solicit does not.
      */
     private const ES_PROVINCES_BY_POSTCODE = [
         'Alava', 'Albacete', 'Alicante', 'Almeria', 'Avila', 'Badajoz', 'Baleares', 'Barcelona',
@@ -408,15 +416,17 @@ class QuoteShippingResolver
         // Re-derived on every address change, not only on a country change: an intra-country move
         // (08010 -> 46001) is a different province, and a carried-over one quotes the wrong rate
         // and prints the wrong label.
-        $region = $this->resolveRegion($country, $address['postalCode']);
+        $region = $this->resolveRegion($country, $address['postalCode'], $address['regionId'] ?? '');
         if ($region !== null) {
             $shippingAddress->setRegionId($region['id']);
             $shippingAddress->setRegion($region['name']);
+            $shippingAddress->setRegionCode($region['code']);
         } elseif ($country !== $previousCountry) {
             // Nothing to derive and the country moved: the stored region belongs to the country
             // the shopper just left. Magento reads 0 / '' as "no region".
             $shippingAddress->setRegionId(0);
             $shippingAddress->setRegion('');
+            $shippingAddress->setRegionCode('');
         }
 
         // The quote address no longer mirrors the customer address book entry it was imported
@@ -461,16 +471,37 @@ class QuoteShippingResolver
     }
 
     /**
-     * The Magento region the given country/postcode pair names, or null when this country has no
-     * derivation here — in which case no region is written rather than a guessed one.
+     * The Magento region to write on the address, or null when there is none to write — in which
+     * case no region is written rather than a guessed one.
+     *
+     * The shopper's own pick wins: `$regionId` is a `directory_country_region.region_id` the host
+     * offered them for this very country, already checked against it at the endpoint
+     * ({@see \Sequra\Core\Controller\ExpressCheckout\CartUpdate::parseRegionId}), and it is
+     * re-checked here so this method cannot write a foreign region however it is called. Only when
+     * no pick arrived — the solicit that runs before the shopper has seen the address sheet — does
+     * the ES postcode map get a say.
      *
      * @param string $country ISO2 country code.
      * @param string $postcode Postcode as the shopper typed it.
+     * @param string $regionId Region id the shopper picked, or '' when the change carried none.
      *
-     * @return array{id: int, name: string}|null
+     * @return array{id: int, name: string, code: string}|null
      */
-    private function resolveRegion(string $country, string $postcode): ?array
+    private function resolveRegion(string $country, string $postcode, string $regionId = ''): ?array
     {
+        if ($regionId !== '') {
+            $picked = $this->regionFactory->create();
+            $picked->load((int)$regionId);
+
+            if ((string)$picked->getCountryId() === $country) {
+                return [
+                    'id' => (int)$regionId,
+                    'name' => (string)$picked->getName(),
+                    'code' => (string)$picked->getCode(),
+                ];
+            }
+        }
+
         if ($country !== 'ES') {
             return null;
         }
@@ -483,9 +514,12 @@ class QuoteShippingResolver
             return null;
         }
 
-        $regionId = $this->regionFactory->create()->loadByName($province, $country)->getId();
+        $derived = $this->regionFactory->create()->loadByName($province, $country);
+        $derivedId = $derived->getId();
 
-        return is_numeric($regionId) ? ['id' => (int)$regionId, 'name' => $province] : null;
+        return is_numeric($derivedId)
+            ? ['id' => (int)$derivedId, 'name' => $province, 'code' => (string)$derived->getCode()]
+            : null;
     }
 
     /**
