@@ -85,8 +85,10 @@ class ProductSolicit implements HttpGetActionInterface
         $this->noStore($result);
 
         try {
-            // Throttle per session, same key as the other two solicit surfaces. Each solicit
-            // builds a temporary quote and creates a SeQura order, so bound flooding.
+            // Throttle on the same key as the other two solicit surfaces: session plus caller
+            // address. Each solicit builds a temporary quote and creates a SeQura order, so bound
+            // flooding. This surface needs no session state at all, so the address half of the key
+            // is what stops a cookie-less caller minting orders without limit.
             if ($this->rateLimiter->isExceeded((string)$this->customerSession->getSessionId())) {
                 return $result->setHttpResponseCode(429)->setContents('');
             }

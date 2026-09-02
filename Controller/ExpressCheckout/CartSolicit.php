@@ -77,10 +77,12 @@ class CartSolicit implements HttpGetActionInterface
         $this->noStore($result);
 
         try {
-            // Throttle per session: each solicit creates a SeQura order, so bound flooding. The
-            // session is the caller — the customer id is empty for a guest, and a cart id would
+            // Throttle: each solicit creates a SeQura order, so bound flooding. The session
+            // identifies the shopper — the customer id is empty for a guest, and a cart id would
             // let a shopper reset their own throttle by rebuilding the cart. Never empty: reading
-            // it starts the session if it has not started already.
+            // it starts the session if it has not started already. It is not the whole key though:
+            // no login is required, so the limiter also counts the caller's address, which a
+            // cookie-less caller cannot renew the way it renews a session.
             if ($this->rateLimiter->isExceeded((string)$this->checkoutSession->getSessionId())) {
                 return $result->setHttpResponseCode(429)->setContents('');
             }

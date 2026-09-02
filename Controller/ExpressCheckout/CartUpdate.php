@@ -151,9 +151,12 @@ class CartUpdate implements HttpPostActionInterface
         $this->noStore($result);
 
         try {
-            // Throttle per session, the same key the solicit endpoints use: every update
-            // re-solicits and therefore creates SeQura order state. With no solicit in this
-            // session update() raises NoSuchEntityException, which the ladder turns into a 400.
+            // Throttle the same way the solicit endpoints do: every update re-solicits and
+            // therefore creates SeQura order state. The limiter counts the attempt against both
+            // this session and the caller's address — no login is required here, so a cookie-less
+            // caller would otherwise get a fresh session, and a fresh budget, on every request.
+            // With no solicit in this session update() raises NoSuchEntityException, which the
+            // ladder turns into a 400.
             if ($this->rateLimiter->isExceeded((string)$this->customerSession->getSessionId())) {
                 return $result->setHttpResponseCode(429)->setData([]);
             }
