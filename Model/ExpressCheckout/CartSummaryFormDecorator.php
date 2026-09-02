@@ -5,10 +5,12 @@ namespace Sequra\Core\Model\ExpressCheckout;
 use Exception;
 use Magento\Catalog\Helper\Image as ImageHelper;
 use Magento\Catalog\Model\Product\Configuration\Item\ItemResolverInterface;
+use Magento\Directory\Helper\Data as DirectoryHelper;
 use Magento\Framework\Data\Form\FormKey;
 use Magento\Framework\UrlInterface;
 use Magento\Quote\Model\Cart\ShippingMethodConverter;
 use Magento\Quote\Model\Quote;
+use Magento\Quote\Model\Quote\Address;
 use Magento\Theme\ViewModel\Block\Html\Header\LogoPathResolver;
 use Sequra\Core\Model\QuoteEmailResolver;
 
@@ -21,11 +23,14 @@ use Sequra\Core\Model\QuoteEmailResolver;
  *  1. Appends the `show_cart` flag to the form iframe URL (`data-base-url` and `src`), so
  *     SeQura emits the flag and the cart items in the form settings/metadata.
  *  2. Injects a script that posts everything the CartSummary page renders but the solicited
- *     order does not carry — the order-scoped form endpoints, the store identity, the shopper's
- *     email and address, the shipping methods and the cart item images — to the iframe via the
- *     `cartDataReady` message the checkout-form listens for. The same script relays the
+ *     order does not carry, or carries frozen at the figures the boot-time solicit produced —
+ *     the order-scoped form endpoints, the store identity, the shopper's email and address, the
+ *     shipping methods, the cart item images and the quote's own total and shipping cost — to
+ *     the iframe via the `cartDataReady` message the checkout-form listens for. The same script
+ *     relays the
  *     `Sequra.cartUpdate` message the form posts back (address, carrier or email changed) to
- *     the cart-update endpoint and forwards its refreshed payload on to the iframe. When that
+ *     the cart-update endpoint and forwards its refreshed payload on to the iframe — first
+ *     reloading that iframe when the update landed on a freshly minted order. When that
  *     endpoint does not answer with a usable payload the iframe gets a `cartUpdateFailed`
  *     message instead, so the form never waits on a reply that is not coming.
  *
@@ -64,6 +69,10 @@ class CartSummaryFormDecorator
      * @var QuoteEmailResolver
      */
     private QuoteEmailResolver $emailResolver;
+    /**
+     * @var DirectoryHelper
+     */
+    private DirectoryHelper $directoryHelper;
 
     /**
      * CartSummaryFormDecorator constructor.
@@ -74,6 +83,7 @@ class CartSummaryFormDecorator
      * @param LogoPathResolver $logoPathResolver
      * @param FormKey $formKey
      * @param QuoteEmailResolver $emailResolver
+     * @param DirectoryHelper $directoryHelper
      */
     public function __construct(
         ImageHelper $imageHelper,
@@ -81,7 +91,8 @@ class CartSummaryFormDecorator
         ShippingMethodConverter $shippingMethodConverter,
         LogoPathResolver $logoPathResolver,
         FormKey $formKey,
-        QuoteEmailResolver $emailResolver
+        QuoteEmailResolver $emailResolver,
+        DirectoryHelper $directoryHelper
     ) {
         $this->imageHelper = $imageHelper;
         $this->itemResolver = $itemResolver;
@@ -89,6 +100,7 @@ class CartSummaryFormDecorator
         $this->logoPathResolver = $logoPathResolver;
         $this->formKey = $formKey;
         $this->emailResolver = $emailResolver;
+        $this->directoryHelper = $directoryHelper;
     }
 
     /**
@@ -103,7 +115,8 @@ class CartSummaryFormDecorator
     {
         // The endpoints are read back off the flagged HTML so they carry show_cart too.
         $flagged = $this->appendShowCartFlag($form);
-        $data = $this->buildPayload($quote, $this->buildEndpoints($flagged)) + $this->buildStaticData($quote);
+        $endpoints = $this->buildEndpoints($this->flaggedBaseUrl($flagged));
+        $data = $this->buildPayload($quote, $endpoints) + $this->buildStaticData($quote);
 
         return $flagged . $this->buildCartDataScript($data, $quote);
     }
@@ -112,10 +125,11 @@ class CartSummaryFormDecorator
      * The cartDataReady payload on its own, for the cart-update endpoint to answer a shopper
      * change with.
      *
-     * Same builders and the same endpoint derivation as the payload {@see decorate} injects: the
-     * checkout-form adopts the reply in place of the one it booted with, so the two must be
-     * produced by one piece of code. The one difference is {@see buildStaticData}, deliberately
-     * left out — see there.
+     * Same builders as the payload {@see decorate} injects — the checkout-form adopts the reply
+     * in place of the one it booted with, so the two must be produced by one piece of code — plus
+     * `reloadUrl`, the re-solicited form URL. The injected script compares it against the URL the
+     * iframe is showing and reloads onto the new order when they differ; it never reaches the
+     * form itself. See {@see buildCartDataScript}.
      *
      * @param string $form Identification form HTML returned by the re-solicit.
      * @param Quote $quote Re-solicited quote, already mutated and re-collected.
@@ -124,7 +138,16 @@ class CartSummaryFormDecorator
      */
     public function buildCartData(string $form, Quote $quote): array
     {
-        return $this->buildPayload($quote, $this->buildEndpoints($this->appendShowCartFlag($form)));
+        $baseUrl = $this->flaggedBaseUrl($this->appendShowCartFlag($form));
+
+        $data = $this->buildPayload($quote, $this->buildEndpoints($baseUrl)) + $this->buildStaticData($quote);
+
+        // Omitted rather than sent empty: with no usable URL there is nothing to reload onto.
+        if ($baseUrl !== null) {
+            $data['reloadUrl'] = $baseUrl;
+        }
+
+        return $data;
     }
 
     /**
@@ -157,7 +180,8 @@ class CartSummaryFormDecorator
 
     /**
      * Builds the part of the cartDataReady payload a shopper change can move: what the CartSummary
-     * page renders that the solicited order does not carry, minus {@see buildStaticData}.
+     * page renders that the solicited order does not carry — or carries frozen at the figures the
+     * boot-time solicit produced — minus {@see buildStaticData}.
      *
      * @param Quote $quote
      * @param array<string, string> $endpoints Order-scoped form endpoints, possibly empty.
@@ -174,23 +198,149 @@ class CartSummaryFormDecorator
             'address' => $address,
             'shippingMethods' => $this->buildShippingMethods($quote),
             'shippingAddresses' => [$address],
+            'totalWithTax' => $this->buildTotalWithTax($quote),
         ];
+
+        // Omitted rather than sent as 0: to the checkout-form a missing shipping cost is "not
+        // known yet" and renders as a dash, while 0 is free shipping. A quote with no rate
+        // applied has no shipping cost at all, and calling that free would be a lie the shopper
+        // reads as a promise.
+        $shippingCostWithTax = $this->buildShippingCostWithTax($quote);
+        if ($shippingCostWithTax !== null) {
+            $data['shippingCostWithTax'] = $shippingCostWithTax;
+        }
 
         // Omitted rather than sent empty: the checkout-form only overwrites what it receives.
         if ($endpoints !== []) {
             $data['endpoints'] = $endpoints;
         }
 
+        // Presence is the whole signal: the express address sheet renders the province selector
+        // when the key is there and skips it when it is not, so an empty list is never sent.
+        $regionOptions = $this->buildRegionOptions((string)$quote->getShippingAddress()->getCountryId());
+        if ($regionOptions !== []) {
+            $data['regionOptions'] = $regionOptions;
+        }
+
         return $data;
+    }
+
+    /**
+     * The quote's grand total in cents, tax included — the "Total a pagar hoy" line.
+     *
+     * Deliberately the exact expression {@see \Sequra\Core\Model\Api\Builders\CreateOrderRequestBuilder}
+     * sends as the order's `order_total_with_tax`, off the same quote in the same request, so the
+     * figure the shopper confirms is the figure SeQura was asked to fund rather than a second
+     * opinion assembled here. Adding the order lines up instead would drift the moment the total
+     * includes something that is not one of them.
+     *
+     * Quote currency, not base: `getGrandTotal()` is the side of the pair the builder declares as
+     * `cart.currency = getQuoteCurrencyCode()`, and the side {@see buildShippingMethods} already
+     * converts its rates into.
+     *
+     * Deliberately not part of {@see buildStaticData}: every change the shopper makes re-solicits,
+     * and a re-solicit is precisely when this moves.
+     *
+     * @param Quote $quote
+     *
+     * @return int
+     */
+    private function buildTotalWithTax(Quote $quote): int
+    {
+        return (int)round(100 * (float)$quote->getGrandTotal());
+    }
+
+    /**
+     * The shipping cost the quote actually applied, in cents and tax included, or null when the
+     * quote has no shipping to cost.
+     *
+     * The address's own `shipping_incl_tax`, which is the exact expression
+     * {@see \Sequra\Core\Model\Api\Builders\CreateOrderRequestBuilder} sends as the order's
+     * `handling` line — the line the checkout-form has been reading this figure off all along, so
+     * preferring this one changes nothing but its freshness. Deliberately not the applied rate's
+     * converted price from {@see buildShippingMethods}: that is the carrier's quote, while this is
+     * what the quote's totals collector settled on and therefore what the grand total above
+     * contains. They normally agree, and when they do not it is this one that makes the three
+     * summary rows add up.
+     *
+     * Quote currency on both counts: Magento keeps `shipping_incl_tax` on the address next to its
+     * `base_` twin, and the un-prefixed one is the converted one — the same side of the pair
+     * `getGrandTotal()` is on.
+     *
+     * Null when no rate is applied: an addressless quote, or one whose collected rates have not
+     * been chosen from. Not 0 — see the caller.
+     *
+     * @param Quote $quote
+     *
+     * @return int|null
+     */
+    private function buildShippingCostWithTax(Quote $quote): ?int
+    {
+        $shippingAddress = $quote->getShippingAddress();
+        if ((string)$shippingAddress->getShippingMethod() === '') {
+            return null;
+        }
+
+        return (int)round(100 * (float)$shippingAddress->getShippingInclTax());
+    }
+
+    /**
+     * The regions the delivery country accepts, as the checkout-form's {id, name} options, or an
+     * empty list when it needs none.
+     *
+     * Magento refuses placeOrder() without a region_id for every country in
+     * `general/region/state_required` (39 in a stock store), and it enumerates the acceptable ones
+     * in `directory_country_region` — so free text cannot satisfy it and the shopper has to pick
+     * from this list. `id` is Magento's own region_id: the form carries it back untouched, which
+     * is why no name or code mapping has to agree across the two systems.
+     *
+     * Empty for a country that requires no region, and empty for one that requires one but has no
+     * rows — that second case would be a store misconfiguration, and offering an empty selector is
+     * worse than offering none.
+     *
+     * Deliberately not part of {@see buildStaticData}: an address edit can move the country, and
+     * with it the whole list.
+     *
+     * @param string $countryId ISO2 delivery country, possibly empty on an addressless quote.
+     *
+     * @return array<int, array<string, string>>
+     */
+    private function buildRegionOptions(string $countryId): array
+    {
+        if ($countryId === '' || !$this->directoryHelper->isRegionRequired($countryId)) {
+            return [];
+        }
+
+        // Magento's own region source, the one the regular checkout's province selector is built
+        // from: the directory region collection, keyed by country and already carrying the
+        // store-locale name. Not the table — the helper owns the join and the sort order.
+        $rows = $this->directoryHelper->getRegionData()[$countryId] ?? null;
+        if (!is_array($rows)) {
+            return [];
+        }
+
+        $options = [];
+        foreach ($rows as $regionId => $row) {
+            $name = is_array($row) && isset($row['name']) && is_scalar($row['name']) ? (string)$row['name'] : '';
+            if ($name === '') {
+                continue;
+            }
+
+            $options[] = ['id' => (string)$regionId, 'name' => $name];
+        }
+
+        return $options;
     }
 
     /**
      * The half of the payload nothing the shopper does on the CartSummary page can change: the
      * store identity and the cart item thumbnails.
      *
-     * Only the initial solicit sends it. An update rebuilding it would re-resolve one ImageHelper
-     * URL per cart line — a filesystem stat each, and an inline resize on a cold cache — to send
-     * the checkout-form bytes it already has, and it only overwrites what it receives.
+     * Sent by updates too, not only by the initial solicit: an update may answer with a reload
+     * onto a freshly minted order, and the document that boots into it never sees the boot-time
+     * payload — that interval finished long ago — so leaving this out would drop the store name,
+     * the logo and the item thumbnails. It costs one ImageHelper resolution per cart line, which
+     * is nothing next to the round trip to SeQura the same request already made.
      *
      * @param Quote $quote
      *
@@ -218,6 +368,11 @@ class CartSummaryFormDecorator
      * the cartDataReady message into the form iframe, and it relays the `Sequra.cartUpdate`
      * message the form posts back out (address saved, carrier picked, email saved) to the
      * cart-update endpoint, forwarding that endpoint's refreshed payload on to the same iframe.
+     *
+     * That payload carries a `reloadUrl` the script strips before forwarding. When it differs
+     * from the URL the iframe is on, the re-solicit minted a new order and the iframe is
+     * pointed at it instead of being patched in place — see the branch itself for why nothing
+     * else can be done about a new order's secret.
      *
      * Every relayed update is answered, success or not: a request that does not yield a usable
      * payload sends `{type: 'cartUpdateFailed', status: <int>}` instead. The status is the one
@@ -283,16 +438,25 @@ class CartSummaryFormDecorator
             }
         }
 
-        var attempts = 0;
-        var timer = setInterval(function () {
-            var el = formIframe();
-            if (el) {
-                send(el, payload);
-            }
-            if (++attempts >= {$attempts}) {
-                clearInterval(timer);
-            }
-        }, {$interval});
+        // One timer for the page: an update starting its own loop retires the one still
+        // running, so two changes in quick succession cannot leave two loops posting.
+        var timer = null;
+
+        function postWithRetries(data) {
+            var attempts = 0;
+            clearInterval(timer);
+            timer = setInterval(function () {
+                var el = formIframe();
+                if (el) {
+                    send(el, data);
+                }
+                if (++attempts >= {$attempts}) {
+                    clearInterval(timer);
+                }
+            }, {$interval});
+        }
+
+        postWithRetries(payload);
 
         // One listener per page. It resolves the iframe and its origin on every message, so a
         // second solicit (cancel, then retry) is served by the listener the first one installed
@@ -316,7 +480,21 @@ class CartSummaryFormDecorator
                     return;
                 }
             }
-            if (!message || message.action !== 'Sequra.cartUpdate') {
+            if (!message) {
+                return;
+            }
+
+            // The form got the payload, so stop offering it. Left running, the retries keep
+            // re-delivering a payload the form has already applied: every arrival closes an open
+            // bottom sheet and, once an update has been applied, re-applying the boot-time one
+            // puts the shopper's own change back to what it was.
+            if (message.action === 'Sequra.cartDataReceived') {
+                clearInterval(timer);
+
+                return;
+            }
+
+            if (message.action !== 'Sequra.cartUpdate') {
                 return;
             }
 
@@ -340,7 +518,40 @@ class CartSummaryFormDecorator
                 })
                 .then(function (data) {
                     var target = formIframe();
-                    if (data && target) {
+                    if (!data || !target) {
+                        return;
+                    }
+
+                    // Ours, never the form's: it fingerprints the whole payload to decide the
+                    // update is a new one, so a key it does not know about would pollute that.
+                    var reloadUrl = data.reloadUrl;
+                    delete data.reloadUrl;
+
+                    if (reloadUrl && reloadUrl !== target.getAttribute('data-base-url')) {
+                        // The re-solicit minted a new order — SeQura will not reuse one whose
+                        // total moved, nor one already carrying an identification, which is
+                        // every recognised shopper here since the OTP runs before the summary.
+                        // A new order means a new uuid AND a new secret, and only the metadata
+                        // endpoint can be re-derived from the URL: the identification endpoint
+                        // needs the secret, which never reaches this server. A document left on
+                        // the old order would keep confirming against a deleted one — charging
+                        // the shopper with no shop order behind it — so point the iframe at the
+                        // new order rather than patching the document in place.
+                        target.setAttribute('data-base-url', reloadUrl);
+                        if (window.SequraFormInstance) {
+                            // Through the loader, which re-reads data-base-url and runs its own
+                            // buildIframeUrl: assigning src here would drop the webview
+                            // parameters it appends inside the SeQura app. Re-adding its message
+                            // listener is a no-op — same function on the same instance.
+                            window.SequraFormInstance.setElement(window.SequraFormElement);
+                        } else {
+                            target.src = reloadUrl;
+                        }
+
+                        // The reloaded document boots empty and misses anything sent before it
+                        // is listening, so keep offering the payload while it comes up.
+                        postWithRetries(data);
+                    } else {
                         send(target, data);
                     }
                 })
@@ -356,6 +567,27 @@ HTML;
     }
 
     /**
+     * The iframe URL the solicit returned, read off the flagged HTML, or null when the snippet
+     * carries no usable one.
+     *
+     * @param string $form Form HTML, already carrying the show_cart flag.
+     *
+     * @return string|null
+     */
+    private function flaggedBaseUrl(string $form): ?string
+    {
+        if (!preg_match('/\bdata-base-url="([^"]+)"/', $form, $matches)) {
+            return null;
+        }
+
+        // In the HTML the attribute value is escaped (&amp;), unlike the value getAttribute()
+        // hands the injected script at runtime.
+        $baseUrl = html_entity_decode($matches[1], ENT_QUOTES | ENT_HTML5);
+
+        return preg_match('#^https?://#i', $baseUrl) ? $baseUrl : null;
+    }
+
+    /**
      * Derives the order-scoped form endpoints from the iframe URL the solicit returned.
      *
      * Only the metadata endpoint is derivable, as the form URL with its last path segment swapped
@@ -364,20 +596,13 @@ HTML;
      * and the shopper-token endpoint is not a SeQura URL at all; neither appears in the snippet,
      * so both are omitted and the checkout-form keeps the ones it booted with.
      *
-     * @param string $form Form HTML, already carrying the show_cart flag.
+     * @param string|null $baseUrl Flagged iframe URL, or null when the snippet carried none.
      *
      * @return array<string, string>
      */
-    private function buildEndpoints(string $form): array
+    private function buildEndpoints(?string $baseUrl): array
     {
-        if (!preg_match('/\bdata-base-url="([^"]+)"/', $form, $matches)) {
-            return [];
-        }
-
-        // In the HTML the attribute value is escaped (&amp;), unlike the value getAttribute()
-        // hands the injected script at runtime.
-        $baseUrl = html_entity_decode($matches[1], ENT_QUOTES | ENT_HTML5);
-        if (!preg_match('#^https?://#i', $baseUrl)) {
+        if ($baseUrl === null) {
             return [];
         }
 
@@ -472,6 +697,21 @@ HTML;
     }
 
     /**
+     * The address's Magento region id as the string the checkout-form carries, or '' when the
+     * address has none.
+     *
+     * @param Address $address
+     *
+     * @return string
+     */
+    private function regionIdOf(Address $address): string
+    {
+        $regionId = $address->getRegionId();
+
+        return is_scalar($regionId) && (int)$regionId > 0 ? (string)$regionId : '';
+    }
+
+    /**
      * Maps the quote items to product thumbnails, keyed by SKU — the reference the SeQura order
      * items carry — so the checkout-form can pair image and cart item.
      *
@@ -513,6 +753,11 @@ HTML;
      * `fullName` is kept for the summary line while `givenName`/`surnames` feed the separate
      * Nombre / Apellidos inputs of the address sheet.
      *
+     * `regionId` is echoed back so the round trip is lossless: it is the id the shopper picked out
+     * of `regionOptions` (or, before they have seen the sheet, the one the solicit derived), and
+     * without it the province selector would reopen blank and the address card would stop naming
+     * the province the moment the store answers.
+     *
      * @param Quote $quote
      *
      * @return array<string, string>
@@ -532,6 +777,7 @@ HTML;
             'postalCode' => (string)$address->getPostcode(),
             'city' => (string)$address->getCity(),
             'countryCode' => (string)$address->getCountryId(),
+            'regionId' => $this->regionIdOf($address),
             'mobilePhone' => (string)$address->getTelephone(),
         ];
     }
