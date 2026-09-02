@@ -39,11 +39,17 @@ use Sequra\Core\Model\QuoteEmailResolver;
 class CartSummaryFormDecorator
 {
     /**
-     * The iframe never acknowledges the message, so the injected script re-sends
-     * cartDataReady until the app inside must have booted (20 × 500ms ≈ 10s).
+     * The form acknowledges cartDataReady, and the injected script stops re-sending as soon as it
+     * does. These bound the wait for an acknowledgement that never comes (20 × 500ms ≈ 10s).
      */
     private const POST_MESSAGE_ATTEMPTS = 20;
     private const POST_MESSAGE_INTERVAL_MS = 500;
+
+    /**
+     * How long to wait for a reloaded iframe's `load` before offering it the payload anyway.
+     * Only a backstop: `load` is what normally starts the retries.
+     */
+    private const RELOAD_LOAD_TIMEOUT_MS = 3000;
 
     /**
      * @var ImageHelper
@@ -404,6 +410,7 @@ class CartSummaryFormDecorator
 
         $attempts = self::POST_MESSAGE_ATTEMPTS;
         $interval = self::POST_MESSAGE_INTERVAL_MS;
+        $loadTimeout = self::RELOAD_LOAD_TIMEOUT_MS;
 
         return <<<HTML
 
@@ -454,6 +461,26 @@ class CartSummaryFormDecorator
                     clearInterval(timer);
                 }
             }, {$interval});
+        }
+
+        // Runs once the iframe has finished navigating. The document being replaced is still
+        // alive and still listening while the new one loads, and its acknowledgement would stop
+        // the retries before the new document has booted — leaving it with no cart data at all.
+        function onceLoaded(el, run) {
+            var ran = false;
+
+            function go() {
+                if (ran) {
+                    return;
+                }
+                ran = true;
+                el.removeEventListener('load', go);
+                run();
+            }
+
+            el.addEventListener('load', go);
+            // Backstop for a load event that never arrives; the retries are bounded either way.
+            setTimeout(go, {$loadTimeout});
         }
 
         postWithRetries(payload);
@@ -528,6 +555,10 @@ class CartSummaryFormDecorator
                     delete data.reloadUrl;
 
                     if (reloadUrl && reloadUrl !== target.getAttribute('data-base-url')) {
+                        // Nothing must be offered to the document on its way out, including a
+                        // loop still running from boot.
+                        clearInterval(timer);
+
                         // The re-solicit minted a new order — SeQura will not reuse one whose
                         // total moved, nor one already carrying an identification, which is
                         // every recognised shopper here since the OTP runs before the summary.
@@ -549,8 +580,11 @@ class CartSummaryFormDecorator
                         }
 
                         // The reloaded document boots empty and misses anything sent before it
-                        // is listening, so keep offering the payload while it comes up.
-                        postWithRetries(data);
+                        // is listening, so keep offering the payload while it comes up — but only
+                        // once it is the one listening.
+                        onceLoaded(target, function () {
+                            postWithRetries(data);
+                        });
                     } else {
                         send(target, data);
                     }
