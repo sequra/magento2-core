@@ -201,19 +201,6 @@
             <argument name="checkoutSession" xsi:type="object">Magento\Checkout\Model\Session\Proxy</argument>
         </arguments>
     </type>
-    <type name="Sequra\Core\Model\Logger\DebugHandler">
-        <arguments>
-            <argument name="name" xsi:type="string">debug</argument>
-            <argument name="handlers" xsi:type="array">
-                <item name="debug" xsi:type="object">Sequra\Core\Model\Logger\Handler\Debug</item>
-            </argument>
-        </arguments>
-    </type>
-    <type name="Sequra\Core\Services\Infrastructure\DefaultLoggerAdapter" shared="true">
-        <arguments>
-            <argument name="clientLogger" xsi:type="object">Sequra\Core\Model\Logger\DebugHandler</argument>
-        </arguments>
-    </type>
 
     <!-- Use Proxy for Backend Session to prevent "Area code not set" errors during installation -->
     <type name="Sequra\Core\Services\BusinessLogic\Utility\SeQuraTranslationProvider">
