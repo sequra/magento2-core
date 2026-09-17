@@ -18,19 +18,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Architecture
 
-**Bootstrap & service wiring.** `Services/Bootstrap.php` extends core's `BootstrapComponent`. It overrides `initServices()` and `initRepositories()` to register this module's concrete implementations against core's interfaces using `ServiceRegister::registerService(...)` and `RepositoryRegistry::registerRepository(...)`. `Observer/ServiceRegisterObserver.php` triggers `Bootstrap::init()` so the container is populated at runtime. To add a new integration service: implement the core `*ServiceInterface` under `Services/BusinessLogic/`, then register it in `Bootstrap::initServices()`.
+See the `architecture` skill for the full map of how the module is wired (bootstrap, persistence, gateway, checkout API, controllers, admin UI, order lifecycle).
 
-**Persistence.** All core entities (`ConnectionData`, `CountryConfiguration`, `GeneralSettings`, `SeQuraOrder`, `PaymentMethod`, `Credentials`, `Deployment`, queue items, etc.) are stored through core's ORM, backed here by `Repository/BaseRepository.php` (generic) and specialized repos like `Repository/SeQuraOrderRepository.php` and `Repository/QueueItemRepository.php`. Schema lives in `etc/db_schema.xml`; data migrations are versioned patches under `Setup/Patch/Data/Version*.php` and `Setup/Patch/Schema/`.
+Two things that live here because getting them wrong is expensive:
 
-**Payment gateway.** Configured almost entirely declaratively in `etc/di.xml` via Magento's payment-facade virtual types: `SequraPaymentGatewayFacade` (`Magento\Payment\Model\Method\Adapter`), `SequraPaymentGatewayCommandPool` (capture/refund), and the value-handler pool. PHP gateway classes under `Gateway/` (`Request/`, `Http/`, `Response/`) build, transfer, and handle responses for capture/refund/void/order-update against the SeQura API. The payment method code constant is `Sequra\Core\Model\Ui\ConfigProvider::CODE`.
-
-**Checkout payment-methods API.** Frontend checkout fetches available SeQura methods and the payment form through REST endpoints declared in `etc/webapi.xml` (`/V1/sequra_core/...`), served by `Model/Api/` services. There are guest vs. customer variants and a newer `Checkout/` set, wired through `di.xml` virtual types (`Sequra{Customer,Guest}PaymentService`, etc.) with `CartProvider` strategies.
-
-**Controllers.** `Controller/Webhook/` and `Controller/IntegrationWebhook/` receive SeQura callbacks; `Controller/Comeback/` and `Controller/Hpp/` handle the hosted-payment-page return flow; `Controller/AsyncProcess/` runs core's async task queue; `Controller/Adminhtml/Configuration/` backs the admin onboarding/settings UI. CSRF for webhook endpoints is handled by `Plugin/Framework/App/Request/CsrfValidator.php`.
-
-**Admin UI.** The configuration screen is a single-page app shipped as prebuilt assets from the `sequra-core-admin-fe` (a.k.a. `integration-core-ui`) npm package, copied into `view/adminhtml/web/`. Do **not** hand-edit those copied assets — update the package version and re-import (see below).
-
-**Order lifecycle.** `Observer/` hooks Magento order events (cancellation, shipment, address changes) to keep SeQura order state in sync; `Plugin/OrderDetails.php` and the widget plugins augment storefront/admin rendering. Promotional widgets and banners are configured through `Block/Widget*`, `Block/Banner.php`, and `Services/BusinessLogic/PromotionalWidget/`.
+- **Adding an integration service:** implement the core `*ServiceInterface` under `Services/BusinessLogic/`, then register it in `Bootstrap::initServices()`. Repositories register in `initRepositories()`.
+- **Never hand-edit the admin SPA assets** in `view/adminhtml/web/` — they are copied from the `sequra-core-admin-fe` npm package. Bump the package and re-import with `bin/update-integration-core-ui`.
 
 ## Common commands
 
@@ -72,43 +65,17 @@ E2E requires the container exposed to the internet for SeQura callbacks — run 
 
 ## Working style
 
-Behavioral guidelines to reduce common mistakes. These bias toward caution over speed — for trivial tasks, use judgment.
+Repo-specific guardrails. For trivial tasks, use judgment.
 
-### 1. Think before coding
+- **Confirm which side of an interface you're touching before editing.** The sharp edges here are the `Sequra\Core\` vs `SeQura\Core\` namespaces, the DI virtual types in `etc/di.xml`, and service registration in `Services/Bootstrap.php`.
+- **Prefer Magento's declarative wiring** (`di.xml`, `events.xml`, `db_schema.xml`) over bespoke PHP plumbing. A new integration is usually "implement the core `*ServiceInterface`, register it in `Bootstrap`" — not a new framework.
+- **Match the existing style.** Code must pass `bin/phpcs` (Magento2 standard) and PHPStan level 9 unchanged; don't reformat adjacent code, and remove only the imports/properties/`use` statements *your* change orphaned.
+- **Never hand-edit the copied admin SPA assets** in `view/adminhtml/web/` — bump the `sequra-core-admin-fe` package and re-import instead.
+- **Don't refactor what isn't broken.** If you spot unrelated dead code, mention it rather than delete it.
 
-Don't assume. Don't hide confusion. Surface tradeoffs.
+### Goal-driven execution
 
-- State assumptions explicitly; if uncertain, ask. This codebase has sharp edges — the two `Sequra\Core\` vs `SeQura\Core\` namespaces, DI virtual types in `etc/di.xml`, and service registration in `Services/Bootstrap.php`. Confirm which side of an interface you're touching before editing.
-- If multiple interpretations exist, present them — don't pick silently.
-- If a simpler approach exists, say so. Push back when warranted.
-- If something is unclear, stop, name what's confusing, and ask.
-
-### 2. Simplicity first
-
-Minimum code that solves the problem. Nothing speculative.
-
-- No features, abstractions, or configurability beyond what was asked.
-- Prefer Magento's declarative wiring (`di.xml`, `events.xml`, `db_schema.xml`) over bespoke PHP plumbing. A new integration is usually "implement the core `*ServiceInterface`, register it in `Bootstrap`" — not a new framework.
-- No error handling for impossible scenarios.
-- If you write 200 lines and it could be 50, rewrite it. Would a senior Magento engineer call this overcomplicated? If yes, simplify.
-
-### 3. Surgical changes
-
-Touch only what you must. Clean up only your own mess.
-
-- Match the existing style — code must pass `bin/phpcs` (Magento2 standard) and PHPStan level 9 unchanged. Don't reformat adjacent code.
-- Never hand-edit the copied admin SPA assets in `view/adminhtml/web/` — they come from the `sequra-core-admin-fe` npm package; bump the package and re-import instead.
-- Don't refactor things that aren't broken; if you spot unrelated dead code, mention it rather than delete it.
-- Remove only imports/properties/`use` statements that *your* change orphaned.
-- The test: every changed line should trace directly to the request.
-
-### 4. Goal-driven execution
-
-Define success criteria. Loop until verified.
-
-- "Add validation" → write a PHPUnit test (`Test/`) for the invalid input, then make it pass.
-- "Fix the bug" → write a test that reproduces it, then make it pass.
-- "Refactor X" → ensure `bin/phpcs`, `bin/phpstan`, and the tests pass before and after.
+Define success criteria, then loop until verified. "Add validation" or "fix the bug" → write the PHPUnit test (`Test/`) first, then make it pass. "Refactor X" → `bin/phpcs`, `bin/phpstan` and the tests pass before and after.
 
 For multi-step work, state a brief plan with a verify step each, e.g.:
 ```
