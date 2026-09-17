@@ -37,5 +37,8 @@
       "Bash(./teardown.sh:*)",
       "Bash(git push:*)"
     ]
+  },
+  "enabledPlugins": {
+    "sq-integrations@claude-sequra-tech-plugins": true
   }
 }

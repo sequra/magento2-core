@@ -3,51 +3,35 @@
 namespace Sequra\Core\Services\Infrastructure;
 
 use SeQura\Core\Infrastructure\Logger\Interfaces\DefaultLoggerAdapter as DefaultLoggerAdapterInterface;
-use Sequra\Core\Model\Logger\DebugHandler;
 use SeQura\Core\Infrastructure\Logger\LogData;
-use SeQura\Core\Infrastructure\Logger\Logger;
+use Sequra\Core\Model\Logger\LogFile;
 
 class DefaultLoggerAdapter implements DefaultLoggerAdapterInterface
 {
     /**
-     *  Debug handler for client log file.
+     * Debug log file of the store in context.
      *
-     * @var DebugHandler
+     * @var LogFile
      */
-    private DebugHandler $clientLogger;
+    private LogFile $logFile;
 
     /**
-     * Debug handler for client log file.
-     *
-     * @param DebugHandler $clientLogger
+     * @param LogFile $logFile
      */
-    public function __construct(DebugHandler $clientLogger)
+    public function __construct(LogFile $logFile)
     {
-        $this->clientLogger = $clientLogger;
+        $this->logFile = $logFile;
     }
 
     /**
      * Logs message in the system.
      *
      * @param LogData $data
+     *
+     * @return void
      */
     public function logMessage(LogData $data): void
     {
-        $message = $data->formatLogMessage();
-
-        switch ($data->getLogLevel()) {
-            case Logger::DEBUG:
-                $this->clientLogger->debug($message);
-                break;
-            case Logger::WARNING:
-                $this->clientLogger->warning($message);
-                break;
-            case Logger::ERROR:
-                $this->clientLogger->error($message);
-                break;
-            default:
-                $this->clientLogger->info($message);
-                break;
-        }
+        $this->logFile->append($data->formatLogMessage());
     }
 }

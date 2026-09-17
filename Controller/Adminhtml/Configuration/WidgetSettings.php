@@ -57,6 +57,10 @@ class WidgetSettings extends BaseConfigurationController
         $data = AdminAPI::get()->widgetConfiguration($this->storeId)->getWidgetSettings();
         $result = $data->toArray();
 
+        if (($result['widgetStyles'] ?? null) === null) {
+            unset($result['widgetStyles']);
+        }
+
         $this->addResponseCode($data);
 
         return $this->result->setData($result);

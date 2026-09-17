@@ -2,21 +2,21 @@
 
 namespace Sequra\Core\Services\BusinessLogic;
 
-use Magento\Framework\App\Filesystem\DirectoryList;
 use Magento\Framework\Exception\FileSystemException;
 use Magento\Framework\Filesystem\Driver\File as FileDriver;
 use Magento\Framework\Filesystem\Io\File;
 use SeQura\Core\BusinessLogic\Domain\Integration\Log\LogServiceInterface;
 use SeQura\Core\BusinessLogic\Domain\Log\Model\Log;
+use Sequra\Core\Model\Logger\LogFile;
 
 class LogService implements LogServiceInterface
 {
     private const MAX_READ_BYTES = 5 * 1024 * 1024;
 
     /**
-     * @var DirectoryList
+     * @var LogFile
      */
-    private DirectoryList $directoryList;
+    private LogFile $logFile;
     /**
      * @var File
      */
@@ -27,16 +27,16 @@ class LogService implements LogServiceInterface
     private FileDriver $fileDriver;
 
     /**
-     * @param DirectoryList $directoryList
+     * @param LogFile $logFile
      * @param File $fileIo
      * @param FileDriver $fileDriver
      */
     public function __construct(
-        DirectoryList $directoryList,
+        LogFile $logFile,
         File $fileIo,
         FileDriver $fileDriver
     ) {
-        $this->directoryList = $directoryList;
+        $this->logFile = $logFile;
         $this->fileIo = $fileIo;
         $this->fileDriver = $fileDriver;
     }
@@ -49,8 +49,7 @@ class LogService implements LogServiceInterface
      */
     public function getLog(): Log
     {
-        $logPath = $this->directoryList->getPath(DirectoryList::VAR_DIR)
-            . '/log/sequra_debug.log';
+        $logPath = $this->logFile->getPath();
 
         if (!$this->fileIo->fileExists($logPath)) {
             return new Log([]);
@@ -66,7 +65,7 @@ class LogService implements LogServiceInterface
             array_filter(
                 array_map(
                     static function (string $line): string {
-                        return (string)preg_replace('/^\[.*?\]\s\w+\.\w+:\s/', '', $line);
+                        return rtrim($line, "\r");
                     },
                     explode(PHP_EOL, $content)
                 ),
@@ -130,8 +129,7 @@ class LogService implements LogServiceInterface
      */
     public function removeLog(): void
     {
-        $logPath = $this->directoryList->getPath(DirectoryList::VAR_DIR)
-            . '/log/sequra_debug.log';
+        $logPath = $this->logFile->getPath();
 
         try {
             $handle = $this->fileDriver->fileOpen($logPath, 'c');
