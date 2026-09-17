@@ -57,15 +57,6 @@ class WidgetSettings extends BaseConfigurationController
         $data = AdminAPI::get()->widgetConfiguration($this->storeId)->getWidgetSettings();
         $result = $data->toArray();
 
-        // Core answers this with WidgetConfigurator::getDefaultWidgetSettings() when the store has
-        // never saved widget settings, and that default carries a null widgetStyles. The admin SPA
-        // probes the key with `typeof === 'undefined'`, so sending null tells it widgets are
-        // configured and lets it open the settings pages, while UIStateService — which reads the
-        // repository directly — still reports onboarding and bounces the merchant back to the first
-        // onboarding step on every visit. Omitting the key keeps the two in agreement; the form
-        // falls back to its own default styles, and the selector defaults below still reach it.
-        // A saved config is always valid JSON (setWidgetSettings rejects an empty one), so a null
-        // here can only mean "never saved".
         if (($result['widgetStyles'] ?? null) === null) {
             unset($result['widgetStyles']);
         }
