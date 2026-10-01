@@ -400,6 +400,18 @@ class QuoteShippingResolver
         }
 
         if ($rate === null) {
+            // No carrier could be picked. That is a genuine "not eligible" only when there was an
+            // address to quote against: a change that carried none, on a quote that still has none,
+            // is the shopper saving their email before their address — the order prepareWithoutAddress
+            // already tolerates. Most production carrier configurations (tablerate by postcode,
+            // anything calling a carrier API) return nothing for a country-only address, so failing
+            // here would tell a shopper SeQura is unavailable for typing their email in first.
+            if (!isset($change['address']) && (string)$shippingAddress->getPostcode() === '') {
+                $this->applyPaymentAndSave($quote);
+
+                return true;
+            }
+
             return false;
         }
 
