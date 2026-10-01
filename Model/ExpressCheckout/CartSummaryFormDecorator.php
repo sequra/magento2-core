@@ -13,6 +13,7 @@ use Magento\Quote\Model\Quote;
 use Magento\Quote\Model\Quote\Address;
 use Magento\Theme\ViewModel\Block\Html\Header\LogoPathResolver;
 use Sequra\Core\Model\QuoteEmailResolver;
+use SeQura\Core\Infrastructure\Logger\Logger;
 
 /**
  * Class CartSummaryFormDecorator
@@ -401,12 +402,19 @@ class CartSummaryFormDecorator
      */
     private function buildCartDataScript(array $data, Quote $quote): string
     {
-        $payload = json_encode($data, JSON_HEX_TAG | JSON_UNESCAPED_UNICODE);
-        $updateUrl = json_encode(
+        // Every value here is interpolated straight into the script, so an un-encodable one (a
+        // product name carrying invalid UTF-8, typically out of a legacy import) would emit
+        // `var payload = ;` and take the whole integration down with a parse error: no cart data
+        // posted, no update listener bound, an express summary frozen with nothing logged. Falling
+        // back to a valid literal keeps the script running, and the failure is logged and visible
+        // as an empty summary rather than as a dead page.
+        $payload = $this->encodeForScript($data, JSON_HEX_TAG | JSON_UNESCAPED_UNICODE, '{}');
+        $updateUrl = $this->encodeForScript(
             $quote->getStore()->getUrl('sequra/expresscheckout/cartupdate'),
-            JSON_HEX_TAG | JSON_UNESCAPED_SLASHES
+            JSON_HEX_TAG | JSON_UNESCAPED_SLASHES,
+            '""'
         );
-        $formKey = json_encode($this->formKey->getFormKey(), JSON_HEX_TAG);
+        $formKey = $this->encodeForScript($this->formKey->getFormKey(), JSON_HEX_TAG, '""');
 
         $attempts = self::POST_MESSAGE_ATTEMPTS;
         $interval = self::POST_MESSAGE_INTERVAL_MS;
@@ -445,20 +453,28 @@ class CartSummaryFormDecorator
             }
         }
 
-        // One timer for the page: an update starting its own loop retires the one still
-        // running, so two changes in quick succession cannot leave two loops posting.
-        var timer = null;
+        // One timer for the page, held on window rather than in this closure. Every solicit
+        // injects a fresh copy of this script, but only the first one binds the message listener
+        // below; a per-instance timer would leave that listener clearing its own dead handle while
+        // the newest instance kept posting the stale boot payload for the rest of the window —
+        // reverting, on each arrival, whatever the shopper had just saved.
+        function stopPosting() {
+            if (window.SequraCartDataTimer) {
+                clearInterval(window.SequraCartDataTimer);
+                window.SequraCartDataTimer = null;
+            }
+        }
 
         function postWithRetries(data) {
             var attempts = 0;
-            clearInterval(timer);
-            timer = setInterval(function () {
+            stopPosting();
+            window.SequraCartDataTimer = setInterval(function () {
                 var el = formIframe();
                 if (el) {
                     send(el, data);
                 }
                 if (++attempts >= {$attempts}) {
-                    clearInterval(timer);
+                    stopPosting();
                 }
             }, {$interval});
         }
@@ -516,7 +532,7 @@ class CartSummaryFormDecorator
             // bottom sheet and, once an update has been applied, re-applying the boot-time one
             // puts the shopper's own change back to what it was.
             if (message.action === 'Sequra.cartDataReceived') {
-                clearInterval(timer);
+                stopPosting();
 
                 return;
             }
@@ -557,7 +573,7 @@ class CartSummaryFormDecorator
                     if (reloadUrl && reloadUrl !== target.getAttribute('data-base-url')) {
                         // Nothing must be offered to the document on its way out, including a
                         // loop still running from boot.
-                        clearInterval(timer);
+                        stopPosting();
 
                         // The re-solicit minted a new order — SeQura will not reuse one whose
                         // total moved, nor one already carrying an identification, which is
@@ -757,6 +773,15 @@ HTML;
     {
         $images = [];
         foreach ($quote->getAllVisibleItems() as $item) {
+            $sku = (string)$item->getSku();
+            // Two visible lines can carry the same SKU (the same simple product added twice with
+            // different custom options). The form pairs image to item by SKU, so it can only hold
+            // one of them either way; resolving the first and keeping it makes which one
+            // deterministic, and saves the repeat image lookup.
+            if ($sku === '' || isset($images[$sku])) {
+                continue;
+            }
+
             try {
                 // getFinalProduct picks parent or child for configurable/grouped/bundle lines and
                 // honours checkout/cart/configurable_product_image, the way Magento's own cart and
@@ -772,11 +797,40 @@ HTML;
             }
 
             if ($url !== '') {
-                $images[(string)$item->getSku()] = $url;
+                $images[$sku] = $url;
             }
         }
 
         return $images;
+    }
+
+    /**
+     * JSON-encodes a value for interpolation into the injected script, never returning false.
+     *
+     * {@see json_encode} answers false for anything it cannot represent — most realistically a
+     * string carrying invalid UTF-8. Interpolated, that false becomes an empty slot and a
+     * JavaScript parse error that kills the whole script, so the caller gets a valid literal and
+     * a log line instead.
+     *
+     * @param mixed $value Value to encode.
+     * @param int $flags json_encode flags.
+     * @param string $fallback Literal to use when the value cannot be encoded.
+     *
+     * @return string
+     */
+    private function encodeForScript($value, int $flags, string $fallback): string
+    {
+        $encoded = json_encode($value, $flags);
+        if (!is_string($encoded)) {
+            Logger::logWarning(
+                'Express Checkout cart data could not be JSON-encoded for the CartSummary script; ' .
+                'falling back to ' . $fallback . '. Check the cart for invalid UTF-8.'
+            );
+
+            return $fallback;
+        }
+
+        return $encoded;
     }
 
     /**
