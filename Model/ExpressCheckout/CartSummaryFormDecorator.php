@@ -780,12 +780,50 @@ HTML;
     }
 
     /**
+     * Splits a stored street into the two lines the checkout-form address sheet shows.
+     *
+     * The inverse of the join {@see QuoteShippingResolver::applyAddress} performs: the first
+     * stored line is line 1 and everything after it is line 2, so an address the shopper saves
+     * survives being read back and saved again unchanged.
+     *
+     * @param string[]|string|null $street Street as the quote address stores it.
+     *
+     * @return array{0: string, 1: string}
+     */
+    private function splitStreet($street): array
+    {
+        if (!is_array($street)) {
+            return [trim((string)$street), ''];
+        }
+
+        $lines = array_values(array_filter(array_map(
+            static function ($line): string {
+                return trim((string)$line);
+            },
+            $street
+        ), static function (string $line): bool {
+            return $line !== '';
+        }));
+
+        return [
+            $lines[0] ?? '',
+            implode(', ', array_slice($lines, 1)),
+        ];
+    }
+
+    /**
      * Maps the address the order was solicited with to the checkout-form ShippingAddress shape.
      * Only that one is sent — as the `shippingAddresses` list and as the singular `address` the
      * prefill takes — because the CartSummary page shows a single address.
      *
      * `fullName` is kept for the summary line while `givenName`/`surnames` feed the separate
      * Nombre / Apellidos inputs of the address sheet.
+     *
+     * The street comes back split the way {@see QuoteShippingResolver::applyAddress} wrote it —
+     * first line to `addressLine1`, everything after it to `addressLine2`. Joining them into one
+     * field instead would make every save lossy: the sheet would reopen with line 2 blank and both
+     * lines crammed into line 1, and the next save would persist that single line as the address
+     * the order and the shipping label carry.
      *
      * `regionId` is echoed back so the round trip is lossless: it is the id the shopper picked out
      * of `regionOptions` (or, before they have seen the sheet, the one the solicit derived), and
@@ -799,7 +837,7 @@ HTML;
     private function buildShippingAddress(Quote $quote): array
     {
         $address = $quote->getShippingAddress();
-        $street = $address->getStreet();
+        $lines = $this->splitStreet($address->getStreet());
         $addressId = $address->getId();
 
         return [
@@ -807,7 +845,8 @@ HTML;
             'fullName' => trim((string)$address->getName()),
             'givenName' => (string)$address->getFirstname(),
             'surnames' => (string)$address->getLastname(),
-            'addressLine1' => is_array($street) ? implode(', ', array_filter($street)) : (string)$street,
+            'addressLine1' => $lines[0],
+            'addressLine2' => $lines[1],
             'postalCode' => (string)$address->getPostcode(),
             'city' => (string)$address->getCity(),
             'countryCode' => (string)$address->getCountryId(),
