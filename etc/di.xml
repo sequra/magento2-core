@@ -188,11 +188,6 @@
             </argument>
         </arguments>
     </type>
-    <!-- CSRF -->
-    <type name="Magento\Framework\App\Request\CsrfValidator">
-        <plugin name="sequra_disable_form_key_validation"
-                type="Sequra\Core\Plugin\Framework\App\Request\CsrfValidator"/>
-    </type>
     <!-- Fix circular dependency by using proxy for checkout session -->
     <type name="Sequra\Core\Plugin\MiniWidgets">
         <arguments>

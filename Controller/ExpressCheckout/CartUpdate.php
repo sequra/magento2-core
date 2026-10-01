@@ -5,7 +5,10 @@ namespace Sequra\Core\Controller\ExpressCheckout;
 use Exception;
 use Magento\Customer\Model\Session as CustomerSession;
 use Magento\Framework\App\Action\HttpPostActionInterface;
+use Magento\Framework\App\CsrfAwareActionInterface;
 use Magento\Framework\App\Request\Http as HttpRequest;
+use Magento\Framework\App\Request\InvalidRequestException;
+use Magento\Framework\App\RequestInterface;
 use Magento\Framework\Controller\Result\Json;
 use Magento\Framework\Controller\Result\JsonFactory;
 use Magento\Framework\Webapi\Exception as WebapiException;
@@ -22,10 +25,13 @@ use Sequra\Core\Model\ExpressCheckout\SolicitRateLimiter;
  * answers with the refreshed cartDataReady payload — which the form adopts in place, unless the
  * re-solicit minted a new order, in which case the injected script reloads the iframe onto it.
  *
- * CSRF: this is a state-changing frontend POST, so it is left under Magento's default form-key
- * validation — no CsrfAwareActionInterface, no exemption. The injected script sends the session
- * form key minted server-side alongside the payload, which is what
- * Magento\Framework\Data\Form\FormKey\Validator checks.
+ * CSRF: this is a state-changing frontend POST and is validated. The injected script sends the
+ * session form key minted server-side alongside the payload, which is what
+ * Magento\Framework\Data\Form\FormKey\Validator checks. CsrfAwareActionInterface is implemented
+ * only to shape the rejection, never to skip it: validateForCsrf() returns null so that default
+ * check still decides, while createCsrfValidationException() replaces Magento's 302-to-referer
+ * with a JSON 403. The redirect would otherwise reach the injected script's fetch as an ok
+ * response carrying HTML, which parses as a failure the shopper never sees.
  *
  * Everything in the body is shopper-supplied and treated as hostile: it is type-checked and
  * length-bounded here, the carrier reference is matched against the quote's actually-available
@@ -35,7 +41,7 @@ use Sequra\Core\Model\ExpressCheckout\SolicitRateLimiter;
  * No login is required: the solicited quote is named by the session, never by the client, so a
  * guest updates their own express cart exactly as a logged in customer does.
  */
-class CartUpdate implements HttpPostActionInterface
+class CartUpdate implements HttpPostActionInterface, CsrfAwareActionInterface
 {
     use ResponseTrait;
 
@@ -304,5 +310,32 @@ class CartUpdate implements HttpPostActionInterface
             0,
             WebapiException::HTTP_BAD_REQUEST
         );
+    }
+
+    /**
+     * Answers a failed form-key check with a JSON 403 instead of Magento's redirect to the referer.
+     *
+     * @param RequestInterface $request
+     *
+     * @return InvalidRequestException|null
+     */
+    public function createCsrfValidationException(RequestInterface $request): ?InvalidRequestException
+    {
+        $result = $this->resultJsonFactory->create();
+        $this->noStore($result);
+
+        return new InvalidRequestException($result->setHttpResponseCode(403)->setData([]));
+    }
+
+    /**
+     * Defers to Magento's default form-key validation.
+     *
+     * @param RequestInterface $request
+     *
+     * @return bool|null
+     */
+    public function validateForCsrf(RequestInterface $request): ?bool
+    {
+        return null;
     }
 }
