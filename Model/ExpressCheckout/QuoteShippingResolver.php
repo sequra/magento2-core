@@ -31,7 +31,9 @@ use Sequra\Core\Model\Ui\ConfigProvider;
  * writes the address the shopper typed.
  * Only the country cannot be left blank — it is what picks the SeQura merchant — so
  * {@see resolveCountry} names one for a quote that has no address yet, ending at the store view's
- * locale so there is always an answer.
+ * locale so the solicit always has an answer. The availability probe below deliberately stops one
+ * step earlier ({@see resolveKnownCountry}): a locale region is a fact about the storefront, not
+ * about this shopper, and must not be reported as their delivery country.
  *
  * Two entry points with different contracts:
  *  - getResolvableShippingCountry() is a read-only availability probe for storefront
@@ -126,8 +128,14 @@ class QuoteShippingResolver
      * Answers only "which country", never "is this shopper eligible": having no address is not a
      * blocker any more, so the button decision is left entirely to the caller's per-country
      * availability check on the country returned here. Because {@see resolve} resolves the
-     * country the same way, a supported answer here is a country the solicit can pick a merchant
-     * for — the button cannot appear where the solicit would 422 on the country.
+     * country the same way for every country this can name, a supported answer here is a country
+     * the solicit can pick a merchant for — the button cannot appear where the solicit would 422
+     * on the country.
+     *
+     * Returns '' when neither the customer's default address nor the cart names a country, rather
+     * than falling back to the store view's locale the way the solicit does. The caller maps that
+     * to the country-agnostic check, so an unknown destination hides the button instead of
+     * announcing that SeQura is unavailable on the strength of a locale guess.
      *
      * Deliberately does NOT collect shipping rates or touch the quote. This runs from the cart
      * customer-data section, which Magento serves uncached on nearly every navigation and cart
@@ -145,7 +153,7 @@ class QuoteShippingResolver
         try {
             $customer = $this->getQuoteCustomer($quote);
 
-            return $this->resolveCountry(
+            return $this->resolveKnownCountry(
                 $quote,
                 $customer !== null ? $this->findDefaultShippingAddress($customer) : null
             );
@@ -275,12 +283,7 @@ class QuoteShippingResolver
      */
     private function resolveCountry(Quote $quote, ?AddressInterface $defaultShippingAddress): string
     {
-        $country = $defaultShippingAddress !== null ? (string)$defaultShippingAddress->getCountryId() : '';
-        if ($country !== '') {
-            return $country;
-        }
-
-        $country = (string)$quote->getShippingAddress()->getCountryId();
+        $country = $this->resolveKnownCountry($quote, $defaultShippingAddress);
         if ($country !== '') {
             return $country;
         }
@@ -288,6 +291,32 @@ class QuoteShippingResolver
         // The store view's locale always carries a region (Magento only offers full `xx_YY`
         // locales, and falls back to en_US), so this names a real country for every store.
         return (string)\Locale::getRegion((string)$this->localeResolver->getLocale());
+    }
+
+    /**
+     * The delivery country the shopper's own data names, or '' when nothing does.
+     *
+     * Deliberately stops short of the store view's locale. A locale region is a property of the
+     * storefront, not a statement about where this shopper wants their goods, and treating it as
+     * one turns "we do not know yet" into "we do not serve you": on a store view whose locale
+     * country SeQura does not cover, every guest with an empty cart address would be told SeQura
+     * is not available instead of simply being shown nothing.
+     * {@see \Sequra\Core\Model\ExpressCheckout\AvailabilityEvaluator} maps the empty string to
+     * the country-agnostic check, whose negative answer is the hidden state.
+     *
+     * @param Quote $quote
+     * @param AddressInterface|null $defaultShippingAddress
+     *
+     * @return string ISO2 country code, or '' when neither the customer nor the cart names one.
+     */
+    private function resolveKnownCountry(Quote $quote, ?AddressInterface $defaultShippingAddress): string
+    {
+        $country = $defaultShippingAddress !== null ? (string)$defaultShippingAddress->getCountryId() : '';
+        if ($country !== '') {
+            return $country;
+        }
+
+        return (string)$quote->getShippingAddress()->getCountryId();
     }
 
     /**

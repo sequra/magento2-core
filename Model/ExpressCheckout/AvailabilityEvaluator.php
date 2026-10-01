@@ -17,15 +17,19 @@ use SeQura\Core\Infrastructure\Logger\Logger;
  * given storefront context and maps the answer to the render state shared by every surface
  * (cart, mini-cart, product page). What splits the two branches is whether the caller can name
  * the delivery country, not whether the shopper is logged in:
- *  - country known (the cart surfaces, for guests as much as for customers — see
- *    QuoteShippingResolver::getResolvableShippingCountry, which ends in the store view's locale):
- *    the per-country check on the very country the solicit would use. Not available yields the
- *    inline "not available" message state. Only the country decides this; a shopper without an
- *    address is eligible, and adds it on the express screen.
+ *  - country known (a cart surface where the customer's default address or the cart itself names
+ *    one — see QuoteShippingResolver::getResolvableShippingCountry): the per-country check on the
+ *    very country the solicit would use. Not available yields the inline "not available" message
+ *    state, which is a claim worth making only because the country is the shopper's own. Only the
+ *    country decides this; a shopper without an address is eligible, and adds it on the express
+ *    screen.
  *  - no country (the product page, whose HTML is full-page cached and shared by every shopper, so
- *    nothing shopper-specific may enter the render decision): the country-agnostic guest check —
- *    a strict subset of the country-aware one. Not available yields the hidden state, and the
- *    delivery country is validated at solicit time instead (HTTP 422 backstop).
+ *    nothing shopper-specific may enter the render decision; and any cart surface where nothing
+ *    names a delivery country yet): the country-agnostic guest check — a strict subset of the
+ *    country-aware one. Not available yields the hidden state, and the delivery country is
+ *    validated at solicit time instead (HTTP 422 backstop). Saying nothing is the right answer
+ *    when the destination is unknown: telling a shopper SeQura is unavailable on the strength of
+ *    the store view's locale would be wrong as often as it is right.
  */
 class AvailabilityEvaluator
 {

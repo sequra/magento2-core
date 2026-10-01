@@ -166,10 +166,11 @@ abstract class AbstractExpressCheckoutBlock extends Template
                 return $this->state;
             }
 
-            // The cart surfaces are rendered per session, so the delivery country is known for
-            // every shopper — a guest has no customer default address, so the resolver falls
-            // through to the cart's own shipping estimate and then the store view's locale. Same
-            // country the solicit will use, so the button cannot appear where it would 422.
+            // The cart surfaces are rendered per session, so the resolver may name the delivery
+            // country from the customer's default address or the cart's own shipping estimate —
+            // the same country the solicit will use, so the button cannot appear where it would
+            // 422. When neither names one it returns '', and the evaluator falls back to the
+            // country-agnostic check rather than judging the shopper on the store view's locale.
             $result = $this->availabilityEvaluator->evaluate(
                 (string)$this->_storeManager->getStore()->getId(),
                 $this->getExpressCheckoutPage(),
