@@ -210,9 +210,22 @@ class BaseSolicitService
      * Loaded by id rather than as the active cart: express drafts are left inactive between
      * solicits so they never shadow the shopper's real cart.
      *
+     * Refuses a quote that has already been converted into an order. The session key is only ever
+     * overwritten by the *next* solicit, so after the shopper pays it still points at the quote
+     * that was placed; a duplicate, late or replayed cart-update would otherwise mutate that quote
+     * and re-solicit it. Core's OrderService::solicitFor drops the stored SeQura order row and
+     * re-stores whatever comes back, so the record of the order the shopper actually paid for
+     * would be replaced by a fresh unpaid solicit — taking webhook, capture and refund sync with
+     * it. A reserved order id is the signal, exactly as {@see OrderCreation::activateCart} and
+     * {@see TemporaryCartBuilder::resolveReusableQuote} use it: it is set the moment a quote goes
+     * through placeOrder. The is_active flag is deliberately NOT used — express drafts are left
+     * inactive between solicits so they do not shadow the real cart, so an inactive quote is the
+     * normal case here, not a placed one.
+     *
      * @return Quote
      *
-     * @throws NoSuchEntityException When no solicit has run in this session, or its quote is gone.
+     * @throws NoSuchEntityException When no solicit has run in this session, its quote is gone, or
+     *                               its order has already been placed.
      */
     private function getSolicitedQuote(): Quote
     {
@@ -224,6 +237,12 @@ class BaseSolicitService
 
         /** @var Quote $quote */
         $quote = $this->quoteRepository->get($quoteId);
+
+        if ((string)$quote->getReservedOrderId() !== '') {
+            throw new NoSuchEntityException(
+                __('The solicited SeQura Express Checkout cart is no longer open for changes.')
+            );
+        }
 
         return $quote;
     }
