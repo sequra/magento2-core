@@ -170,8 +170,17 @@ class TemporaryCartBuilder
         foreach ($items as $item) {
             // The source cart's item collection loaded every product in one query
             // (Quote\Item\Collection::_assignProducts), so take it from the item rather than
-            // paying a full EAV load per cart line. Only a detached item has none.
-            $product = $item->getProduct();
+            // paying a full EAV load per cart line.
+            //
+            // AbstractItem::getProduct() throws rather than returning null when the item has no
+            // product assigned, so the detached case has to be caught, not type-checked: an
+            // instanceof guard alone never runs and the LocalizedException escapes as a 500.
+            try {
+                $product = $item->getProduct();
+            } catch (LocalizedException $e) {
+                $product = null;
+            }
+
             if (!$product instanceof Product) {
                 /** @var Product $product */
                 // @phpstan-ignore-next-line getProductId() is a magic DataObject getter
