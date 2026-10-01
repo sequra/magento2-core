@@ -517,7 +517,7 @@ class QuoteShippingResolver
      *
      * The shopper's own pick wins: `$regionId` is a `directory_country_region.region_id` the host
      * offered them for this very country, already checked against it at the endpoint
-     * ({@see \Sequra\Core\Controller\ExpressCheckout\CartUpdate::parseRegionId}), and it is
+     * ({@see \Sequra\Core\Controller\ExpressCheckout\CartUpdate::parseAddress}), and it is
      * re-checked here so this method cannot write a foreign region however it is called. Only when
      * no pick arrived — the solicit that runs before the shopper has seen the address sheet — does
      * the ES postcode map get a say.

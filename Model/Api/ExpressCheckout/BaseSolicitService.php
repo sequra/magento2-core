@@ -259,7 +259,10 @@ class BaseSolicitService
     private function rememberSolicitedQuote(Quote $quote): void
     {
         $quoteId = $quote->getId();
-        // @phpstan-ignore-next-line magic method forwarded to Storage via SessionManager::__call
+        // Not redundant: despite what CLAUDE.md states, phpstan.neon carries no
+        // `Magento\(Checkout|Customer)\Model\Session::` ignore pattern, so without this the
+        // analysis fails on setData() forwarding to Storage through SessionManager::__call.
+        // @phpstan-ignore-next-line
         $this->customerSession->setData(
             self::SESSION_KEY_SOLICITED_QUOTE,
             is_scalar($quoteId) ? (int)$quoteId : 0
