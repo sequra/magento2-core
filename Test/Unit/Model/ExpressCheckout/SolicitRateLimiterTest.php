@@ -131,6 +131,55 @@ class SolicitRateLimiterTest extends TestCase
     }
 
     /**
+     * A session that has already spent its own budget stops spending the shared address bucket.
+     *
+     * The address bucket is one counter for every shopper behind the same front (the class
+     * docblock spells out why REMOTE_ADDR cannot be finer), so anything that keeps consuming it
+     * after its own session verdict is consuming everybody's. Left unchecked, a single looping
+     * caller drains the storefront-wide ceiling and locks real shoppers out of Express Checkout
+     * for the rest of the window — a far worse outcome than the flooding the bucket exists to
+     * bound.
+     *
+     * @return void
+     */
+    public function testASpentSessionStopsDrainingTheSharedAddressBucket(): void
+    {
+        $limiter = $this->limiter('198.51.100.7');
+
+        // One session loops far past its own limit, against the address every shopper shares.
+        for ($attempt = 1; $attempt <= self::ADDRESS_LIMIT * 2; $attempt++) {
+            $limiter->isExceeded('the-looping-session');
+        }
+
+        // A different shopper, same front door, still has the shared budget available: the looping
+        // session can have taken at most SESSION_LIMIT out of it.
+        $this->assertFalse(
+            $limiter->isExceeded($this->freshSessionId()),
+            'One spent session must not lock the whole storefront out of Express Checkout.'
+        );
+    }
+
+    /**
+     * The shared bucket still binds a caller that renews its session on every request, which is
+     * the hole it exists to close.
+     *
+     * @return void
+     */
+    public function testTheAddressBucketStillBoundsACookielessCaller(): void
+    {
+        $limiter = $this->limiter('203.0.113.9');
+
+        for ($attempt = 1; $attempt <= self::ADDRESS_LIMIT; $attempt++) {
+            $this->assertFalse($limiter->isExceeded($this->freshSessionId()), 'Inside the shared budget.');
+        }
+
+        $this->assertTrue(
+            $limiter->isExceeded($this->freshSessionId()),
+            'A fresh session per request must not mean a fresh budget per request.'
+        );
+    }
+
+    /**
      * Builds a limiter that sees the given peer address, over the cache store shared by the test.
      *
      * @param string|false $clientAddress What RemoteAddress reports; false when it finds none.

@@ -123,8 +123,15 @@ class SolicitRateLimiter
     /**
      * Registers an attempt for the given session and reports whether the caller is over a limit.
      *
-     * Counts against the session bucket and the client-address bucket, and refuses when either is
-     * spent. Both are always registered, so tripping one never hides the attempt from the other.
+     * Counts against the session bucket first and, only while that one still has budget, against
+     * the shared client-address bucket. Refuses when either is spent.
+     *
+     * The order matters. The address bucket is shared by every shopper behind the same front (see
+     * the class docblock), so anything that keeps spending it after its own session budget is gone
+     * is spending everybody's: one caller looping past self::SESSION_LIMIT would otherwise drain
+     * the storefront-wide ceiling and lock real shoppers out of Express Checkout for the rest of
+     * the window. Stopping at the session verdict caps what a single session can take out of the
+     * shared bucket at self::SESSION_LIMIT.
      *
      * @param string $sessionId Session id of the caller. Every Express Checkout endpoint passes it
      *                          and it is never empty — reading it starts the session. On its own it
@@ -139,12 +146,14 @@ class SolicitRateLimiter
             self::SESSION_CACHE_PREFIX . $this->digest($sessionId),
             self::SESSION_LIMIT
         );
-        $addressSpent = $this->register(
+        if ($sessionSpent) {
+            return true;
+        }
+
+        return $this->register(
             self::ADDRESS_CACHE_PREFIX . $this->digest($this->clientAddress()),
             self::ADDRESS_LIMIT
         );
-
-        return $sessionSpent || $addressSpent;
     }
 
     /**
