@@ -5,6 +5,7 @@ namespace Sequra\Core\Services\BusinessLogic\Order;
 use Magento\Framework\UrlInterface;
 use SeQura\Core\BusinessLogic\Domain\Integration\Order\MerchantDataProviderInterface;
 use SeQura\Core\BusinessLogic\Domain\Order\Models\OrderRequest\Options;
+use Sequra\Core\Model\ExpressCheckout\ExpressCheckoutFlow;
 
 class MerchantDataProvider implements MerchantDataProviderInterface
 {
@@ -12,13 +13,19 @@ class MerchantDataProvider implements MerchantDataProviderInterface
      * @var UrlInterface
      */
     private UrlInterface $urlBuilder;
+    /**
+     * @var ExpressCheckoutFlow
+     */
+    private ExpressCheckoutFlow $expressFlow;
 
     /**
      * @param UrlInterface $urlBuilder
+     * @param ExpressCheckoutFlow $expressFlow
      */
-    public function __construct(UrlInterface $urlBuilder)
+    public function __construct(UrlInterface $urlBuilder, ExpressCheckoutFlow $expressFlow)
     {
         $this->urlBuilder = $urlBuilder;
+        $this->expressFlow = $expressFlow;
     }
 
     /**
@@ -106,16 +113,22 @@ class MerchantDataProvider implements MerchantDataProviderInterface
     /**
      * Returns options
      *
-     * Declares `addresses_may_be_missing`: Express Checkout solicits before the shopper has an
-     * address (that is what the express screen collects), so this integration cannot promise
-     * both addresses on every create-order request. Regular checkout keeps sending them — the
-     * flag only stops SeQura rejecting the ones that cannot.
+     * Declares `addresses_may_be_missing`, but only for Express Checkout: it solicits before the
+     * shopper has an address (that is what the express screen collects), so that flow cannot
+     * promise both addresses on its create-order request.
+     *
+     * Regular checkout deliberately keeps sending nothing. This hook is shared by every flow and
+     * has no way of its own to tell them apart ({@see ExpressCheckoutFlow} is what supplies that),
+     * and declaring the flag unconditionally would drop SeQura's server-side refusal of a regular
+     * checkout order whose address block arrived broken or empty — a third-party address plugin
+     * misbehaving, a mis-mapped B2B address. That refusal is how such a bug surfaces at checkout
+     * instead of becoming an order nobody can ship.
      *
      * @return Options|null
      */
     public function getOptions(): ?Options
     {
-        return new Options(null, null, true);
+        return $this->expressFlow->isSoliciting() ? new Options(null, null, true) : null;
     }
 
     /**

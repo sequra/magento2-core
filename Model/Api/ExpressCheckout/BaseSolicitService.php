@@ -13,6 +13,7 @@ use SeQura\Core\BusinessLogic\CheckoutAPI\ExpressCheckout\Requests\ExpressChecko
 use Sequra\Core\Model\Api\Builders\CreateOrderRequestBuilderFactory;
 use Sequra\Core\Model\Api\CartProvider\CartProvider;
 use Sequra\Core\Model\ExpressCheckout\CartSummaryFormDecorator;
+use Sequra\Core\Model\ExpressCheckout\ExpressCheckoutFlow;
 use Sequra\Core\Model\ExpressCheckout\QuoteShippingResolver;
 
 /**
@@ -69,6 +70,10 @@ class BaseSolicitService
      * @var CustomerSession
      */
     private CustomerSession $customerSession;
+    /**
+     * @var ExpressCheckoutFlow
+     */
+    private ExpressCheckoutFlow $expressFlow;
 
     /**
      * BaseSolicitService constructor.
@@ -79,6 +84,7 @@ class BaseSolicitService
      * @param CartSummaryFormDecorator $cartSummaryFormDecorator
      * @param CartRepositoryInterface $quoteRepository
      * @param CustomerSession $customerSession
+     * @param ExpressCheckoutFlow $expressFlow
      */
     public function __construct(
         CartProvider $cartProvider,
@@ -86,7 +92,8 @@ class BaseSolicitService
         QuoteShippingResolver $shippingResolver,
         CartSummaryFormDecorator $cartSummaryFormDecorator,
         CartRepositoryInterface $quoteRepository,
-        CustomerSession $customerSession
+        CustomerSession $customerSession,
+        ExpressCheckoutFlow $expressFlow
     ) {
         $this->cartProvider = $cartProvider;
         $this->createOrderRequestBuilderFactory = $createOrderRequestBuilderFactory;
@@ -94,6 +101,7 @@ class BaseSolicitService
         $this->cartSummaryFormDecorator = $cartSummaryFormDecorator;
         $this->quoteRepository = $quoteRepository;
         $this->customerSession = $customerSession;
+        $this->expressFlow = $expressFlow;
     }
 
     /**
@@ -163,16 +171,26 @@ class BaseSolicitService
     {
         $storeId = (string)$quote->getStore()->getId();
 
-        // The `true` flag enables core's country check: an unsupported delivery country yields
-        // an unsuccessful response (no exception, nothing logged) instead of the solicit
-        // hard-failing on the missing merchant.
-        // @phpstan-ignore-next-line
-        $response = CheckoutAPI::get()
-            ->expressCheckout($storeId)
-            ->solicit(new ExpressCheckoutSolicitRequest($this->createOrderRequestBuilderFactory->create([
-                'cartId' => $quote->getId(),
-                'storeId' => $storeId,
-            ]), true));
+        // Marks the create-order request this call builds as an express one, so
+        // MerchantDataProvider::getOptions declares `addresses_may_be_missing` for it and for
+        // nothing else. Cleared in the finally: the marker lives for this call only, never for
+        // the rest of the request.
+        $this->expressFlow->enterSolicit();
+
+        try {
+            // The `true` flag enables core's country check: an unsupported delivery country yields
+            // an unsuccessful response (no exception, nothing logged) instead of the solicit
+            // hard-failing on the missing merchant.
+            // @phpstan-ignore-next-line
+            $response = CheckoutAPI::get()
+                ->expressCheckout($storeId)
+                ->solicit(new ExpressCheckoutSolicitRequest($this->createOrderRequestBuilderFactory->create([
+                    'cartId' => $quote->getId(),
+                    'storeId' => $storeId,
+                ]), true));
+        } finally {
+            $this->expressFlow->leaveSolicit();
+        }
 
         if (!$response->isSuccessful()) {
             // An unsuccessful solicit means SeQura cannot produce an identification form for
