@@ -47,12 +47,6 @@ class CartSummaryFormDecorator
     private const POST_MESSAGE_INTERVAL_MS = 500;
 
     /**
-     * How long to wait for a reloaded iframe's `load` before offering it the payload anyway.
-     * Only a backstop: `load` is what normally starts the retries.
-     */
-    private const RELOAD_LOAD_TIMEOUT_MS = 3000;
-
-    /**
      * @var ImageHelper
      */
     private ImageHelper $imageHelper;
@@ -418,7 +412,6 @@ class CartSummaryFormDecorator
 
         $attempts = self::POST_MESSAGE_ATTEMPTS;
         $interval = self::POST_MESSAGE_INTERVAL_MS;
-        $loadTimeout = self::RELOAD_LOAD_TIMEOUT_MS;
 
         return <<<HTML
 
@@ -482,6 +475,11 @@ class CartSummaryFormDecorator
         // Runs once the iframe has finished navigating. The document being replaced is still
         // alive and still listening while the new one loads, and its acknowledgement would stop
         // the retries before the new document has booted — leaving it with no cart data at all.
+        //
+        // Nothing but the load event may start the retries. A timeout backstop cannot tell the
+        // two documents apart, so on a slow navigation it fires while the outgoing one is still
+        // the one listening — which is this race, not a guard against it. Call this before
+        // navigating, so a load that commits immediately is not missed either.
         function onceLoaded(el, run) {
             var ran = false;
 
@@ -495,8 +493,6 @@ class CartSummaryFormDecorator
             }
 
             el.addEventListener('load', go);
-            // Backstop for a load event that never arrives; the retries are bounded either way.
-            setTimeout(go, {$loadTimeout});
         }
 
         postWithRetries(payload);
@@ -575,6 +571,18 @@ class CartSummaryFormDecorator
                         // loop still running from boot.
                         stopPosting();
 
+                        // Registered before the navigation below, never after: the load can
+                        // commit before a later addEventListener would catch it, and with no
+                        // timeout backstop a missed load means the reloaded form never gets its
+                        // cart data.
+                        //
+                        // The reloaded document boots empty and misses anything sent before it
+                        // is listening, so keep offering the payload while it comes up — but
+                        // only once it is the one listening.
+                        onceLoaded(target, function () {
+                            postWithRetries(data);
+                        });
+
                         // The re-solicit minted a new order — SeQura will not reuse one whose
                         // total moved, nor one already carrying an identification, which is
                         // every recognised shopper here since the OTP runs before the summary.
@@ -594,13 +602,6 @@ class CartSummaryFormDecorator
                         } else {
                             target.src = reloadUrl;
                         }
-
-                        // The reloaded document boots empty and misses anything sent before it
-                        // is listening, so keep offering the payload while it comes up — but only
-                        // once it is the one listening.
-                        onceLoaded(target, function () {
-                            postWithRetries(data);
-                        });
                     } else {
                         send(target, data);
                     }

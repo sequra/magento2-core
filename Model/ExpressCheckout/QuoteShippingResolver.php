@@ -254,6 +254,14 @@ class QuoteShippingResolver
             }
         }
 
+        // No rates were collected, so any method still on the address is one TemporaryCartBuilder
+        // copied off the live cart — chosen for a destination this quote does not have. Left there
+        // it is read as a settled delivery: the create-order request sends it, and
+        // CartSummaryFormDecorator::buildShippingCostWithTax() answers 0 instead of null, which the
+        // checkout form shows as free shipping rather than "not known yet". A method is earned by
+        // being picked out of rates collected for a real address, which is what applyChange() does.
+        $quote->getShippingAddress()->setShippingMethod('');
+
         $this->applyPaymentAndSave($quote);
 
         return true;
