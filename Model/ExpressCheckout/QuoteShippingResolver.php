@@ -66,7 +66,7 @@ class QuoteShippingResolver
      * finds nothing and the address would silently end up with no province at all — a wrong
      * shipping quote and a wrong label.
      *
-     * ponytail: ES only, and left that way — the other 38 state-required countries are covered by
+     * Caveat: ES only, and left that way — the other 38 state-required countries are covered by
      * the selector rather than by more maps like this one. Retiring it altogether needs proof that
      * every path reaching applyAddress() supplies a region, which the pre-sheet solicit does not.
      */
@@ -119,11 +119,12 @@ class QuoteShippingResolver
 
     /**
      * Read-only availability probe: returns the ISO2 country the solicit would deliver to, or
-     * null when there is no country to solicit against at all.
+     * '' when the shopper's own data names none. Never null — '' is the sentinel, and the caller
+     * maps it to the country-agnostic check.
      *
-     * Guests included: they simply have no customer default address, so the chain falls through
-     * to the quote's own shipping address and then the store view's locale — the very country the
-     * promotional widgets on the same page resolve.
+     * Guests included: they simply have no customer default address, so the chain falls through to
+     * the quote's own shipping address and stops there. Deliberately short of the store view's
+     * locale, which only {@see resolveCountry} falls back to when it has to seed a solicit.
      *
      * Answers only "which country", never "is this shopper eligible": having no address is not a
      * blocker any more, so the button decision is left entirely to the caller's per-country
@@ -189,7 +190,15 @@ class QuoteShippingResolver
             $customer = $this->getQuoteCustomer($quote);
             $defaultShippingAddress = $customer !== null ? $this->findDefaultShippingAddress($customer) : null;
             if ($customer === null || $defaultShippingAddress === null) {
-                return $this->prepareWithoutAddress($quote);
+                // A customer can have saved a billing address and no shipping one. That billing
+                // address is real data they gave us, so it goes on the quote even though the
+                // delivery address still has to be collected — otherwise applyBillingAddress()
+                // later finds a country-only billing address, judges it unplaceable and copies the
+                // delivery address over it, invoicing them at an address they never chose.
+                return $this->prepareWithoutAddress(
+                    $quote,
+                    $customer !== null ? $this->findDefaultBillingAddress($customer) : null
+                );
             }
 
             $shippingAddress = $quote->getShippingAddress();
@@ -238,14 +247,21 @@ class QuoteShippingResolver
      * outright rather than defer the question to the express screen.
      *
      * @param Quote $quote Cart quote to mutate and save.
+     * @param AddressInterface|null $defaultBillingAddress Customer default billing address, when
+     *                                                     they have one. Kept rather than reduced
+     *                                                     to a country: only delivery is unknown.
      *
      * @return bool True when prepared; false when no delivery country can be named at all.
      */
-    private function prepareWithoutAddress(Quote $quote): bool
+    private function prepareWithoutAddress(Quote $quote, ?AddressInterface $defaultBillingAddress = null): bool
     {
         $country = $this->resolveCountry($quote, null);
         if ($country === '') {
             return false;
+        }
+
+        if ($defaultBillingAddress !== null) {
+            $quote->getBillingAddress()->importCustomerAddressData($defaultBillingAddress);
         }
 
         foreach ([$quote->getShippingAddress(), $quote->getBillingAddress()] as $address) {
@@ -399,11 +415,20 @@ class QuoteShippingResolver
             ? $change['shippingMethodReference']
             : '';
 
+        // An email saved before any address has nothing to quote against: the solicit left this
+        // quote with a country and no rates. Collecting would call every configured carrier with a
+        // country alone, discard whatever came back, and — with carriers that demand a destination
+        // — fail inside a third-party API on what is a perfectly valid save. A carrier pick is not
+        // this case: there are no rates to have picked from, so it still has to be refused below.
+        if (!isset($change['address']) && $requestedMethod === '' && (string)$shippingAddress->getPostcode() === '') {
+            $this->applyPaymentAndSave($quote);
+
+            return true;
+        }
+
         // Only an address change can invalidate the rates. A carrier pick or an email save reuses
         // the ones the last collection already left on the address (they are persisted with it, see
-        // Quote\Address\Relation::processRelation), instead of calling every carrier again. The
-        // empty case still collects: the solicit leaves an addressless quote with no rates at all
-        // (see prepareWithoutAddress), and the shopper may save their email before their address.
+        // Quote\Address\Relation::processRelation), instead of calling every carrier again.
         $rates = isset($change['address']) ? [] : $shippingAddress->getAllShippingRates();
         if ($rates === []) {
             $rates = $this->recollectRates($quote);
@@ -426,18 +451,8 @@ class QuoteShippingResolver
         }
 
         if ($rate === null) {
-            // No carrier could be picked. That is a genuine "not eligible" only when there was an
-            // address to quote against: a change that carried none, on a quote that still has none,
-            // is the shopper saving their email before their address — the order prepareWithoutAddress
-            // already tolerates. Most production carrier configurations (tablerate by postcode,
-            // anything calling a carrier API) return nothing for a country-only address, so failing
-            // here would tell a shopper SeQura is unavailable for typing their email in first.
-            if (!isset($change['address']) && (string)$shippingAddress->getPostcode() === '') {
-                $this->applyPaymentAndSave($quote);
-
-                return true;
-            }
-
+            // There was an address to quote against and no carrier would serve it. The
+            // email-before-address case returned above, so this is a genuine "not eligible".
             return false;
         }
 

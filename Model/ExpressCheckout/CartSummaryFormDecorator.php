@@ -35,7 +35,7 @@ use SeQura\Core\Infrastructure\Logger\Logger;
  *     endpoint does not answer with a usable payload the iframe gets a `cartUpdateFailed`
  *     message instead, so the form never waits on a reply that is not coming.
  *
- * ponytail: spike is always-on for express solicits; gate behind a store config when productized.
+ * Caveat: spike is always-on for express solicits; gate behind a store config when productized.
  */
 class CartSummaryFormDecorator
 {
@@ -696,7 +696,7 @@ HTML;
      * Resolved the way Magento's own header logo block does it: the `design/header/logo_src`
      * config under the logo upload directory, joined to the store's media base URL.
      *
-     * ponytail: unlike the block this does not check the file is actually there — a stale
+     * Caveat: unlike the block this does not check the file is actually there — a stale
      * config yields a broken image rather than the theme's fallback logo.
      *
      * @param Quote $quote

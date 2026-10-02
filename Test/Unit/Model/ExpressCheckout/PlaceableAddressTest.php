@@ -71,9 +71,12 @@ class PlaceableAddressTest extends TestCase
     public function testStillAcceptsAnEmailSavedBeforeAnyAddress(): void
     {
         $resolver = $this->resolver();
+        // No rates and no postcode: the quote prepareWithoutAddress() actually leaves behind. With
+        // a rate available the case would pass through ordinary carrier selection and would keep
+        // passing if the fallback were deleted, which is no test at all.
         $quote = $this->quote(
-            $this->address(['Street is required.']),
-            $this->address(['Street is required.'])
+            $this->address(['Street is required.'], []),
+            $this->address(['Street is required.'], [])
         );
 
         $this->assertTrue($resolver->applyChange($quote, ['email' => 'marina@example.com']));
@@ -130,10 +133,11 @@ class PlaceableAddressTest extends TestCase
      * An address answering the given verdict, carrying one flat rate.
      *
      * @param bool|string[] $verdict What validate() answers.
+     * @param Rate[]|null $rates Rates the address offers; null for the usual single flat rate.
      *
      * @return Address
      */
-    private function address($verdict): Address
+    private function address($verdict, ?array $rates = null): Address
     {
         $rate = $this->createMock(Rate::class);
         $rate->method('getCode')->willReturn('flatrate_flatrate');
@@ -149,7 +153,7 @@ class PlaceableAddressTest extends TestCase
                 'importCustomerAddressData',
             ])
             ->getMock();
-        $address->method('getAllShippingRates')->willReturn([$rate]);
+        $address->method('getAllShippingRates')->willReturn($rates ?? [$rate]);
         $address->method('validate')->willReturn($verdict);
         // Reached only when the billing address does not stand on its own and the shipping one is
         // copied over it; the copy itself is not what these cases are about.
