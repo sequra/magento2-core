@@ -65,6 +65,45 @@ class ClonedCartDestinationTest extends TestCase
     }
 
     /**
+     * A draft left over from a previous express attempt is stripped of that attempt's address and
+     * email before the new cart is written onto it.
+     *
+     * Emptying the items is not enough on its own: the shipping address keeps its street, postcode
+     * and region, and the quote keeps the email. Writing only the new country over that mixture
+     * produces an address the shopper never gave — the new country against the old province.
+     *
+     * @return void
+     */
+    public function testClearsTheReusedDraftBeforeFillingIt(): void
+    {
+        $cloneAddress = $this->address('', '');
+        $draft = $this->emptyQuote($cloneAddress);
+        $draft->expects($this->once())->method('removeAllAddresses');
+        $draft->setData('customer_email', 'marina@example.com');
+
+        // A remembered, still-open draft belonging to this guest on this store: reusable.
+        $customerSession = $this->createMock(CustomerSession::class);
+        $customerSession->method('getCustomerId')->willReturn(null);
+        $customerSession->method('getData')->willReturn(42);
+
+        $quoteRepository = $this->createMock(CartRepositoryInterface::class);
+        $quoteRepository->method('get')->willReturn($draft);
+
+        $builder = new TemporaryCartBuilder(
+            $customerSession,
+            $this->createMock(ProductRepositoryInterface::class),
+            $this->createMock(QuoteFactory::class),
+            $quoteRepository,
+            $this->createMock(StoreManagerInterface::class)
+        );
+
+        $builder->buildFromQuote($this->sourceQuote('FR'));
+
+        $this->assertSame('', (string)$draft->getData('customer_email'));
+        $this->assertSame('FR', (string)$cloneAddress->getData('country_id'));
+    }
+
+    /**
      * Runs buildFromQuote against a one-line source cart shipping to $country, and returns the
      * clone's shipping address as the builder left it.
      *
@@ -131,9 +170,16 @@ class ClonedCartDestinationTest extends TestCase
     {
         $quote = $this->getMockBuilder(Quote::class)
             ->disableOriginalConstructor()
-            ->onlyMethods(
-                ['getShippingAddress', 'addProduct', 'collectTotals', 'isVirtual', 'getAllVisibleItems', 'getId']
-            )
+            ->onlyMethods([
+                'getShippingAddress',
+                'addProduct',
+                'collectTotals',
+                'isVirtual',
+                'getAllVisibleItems',
+                'getId',
+                'removeAllItems',
+                'removeAllAddresses',
+            ])
             ->getMock();
         $quote->method('getShippingAddress')->willReturn($shippingAddress);
         // A non-string return is addProduct's success signal.
@@ -142,6 +188,8 @@ class ClonedCartDestinationTest extends TestCase
         $quote->method('isVirtual')->willReturn(false);
         $quote->method('getAllVisibleItems')->willReturn([]);
         $quote->method('getId')->willReturn(99);
+        // Matches the source cart's store, so a remembered draft counts as reusable.
+        $quote->setData('store_id', 1);
 
         return $quote;
     }

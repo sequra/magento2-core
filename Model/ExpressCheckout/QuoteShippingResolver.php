@@ -465,9 +465,13 @@ class QuoteShippingResolver
             $shippingAddress->setRegionId($region['id']);
             $shippingAddress->setRegion($region['name']);
             $shippingAddress->setRegionCode($region['code']);
-        } elseif ($country !== $previousCountry) {
-            // Nothing to derive and the country moved: the stored region belongs to the country
-            // the shopper just left. Magento reads 0 / '' as "no region".
+        } else {
+            // Nothing could be derived, so there is no region to write — and the one already on the
+            // address belongs to the address this change has just replaced, whether or not the
+            // country moved with it. A same-country move whose region cannot be resolved (an
+            // omitted or rejected regionId, a country the postcode derivation does not cover) would
+            // otherwise keep the old province against the new street and postcode, and a flat-rate
+            // carrier quotes it happily. Magento reads 0 / '' as "no region".
             $shippingAddress->setRegionId(0);
             $shippingAddress->setRegion('');
             $shippingAddress->setRegionCode('');

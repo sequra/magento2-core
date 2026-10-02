@@ -327,6 +327,17 @@ class TemporaryCartBuilder
         $quote->setIsActive(true);
         $quote->removeAllItems();
 
+        // Everything the previous express attempt left on the draft goes too, so a reused draft is
+        // indistinguishable from a fresh one. Emptying the items alone is not enough: the shipping
+        // address keeps its street, postcode, region, telephone and collected rates, and the quote
+        // keeps the email, none of which the next solicit necessarily overwrites. A shopper who
+        // cancels, changes where the cart ships to and solicits again would otherwise be given the
+        // new country over the old postcode and region — an address that was never theirs.
+        // removeAllAddresses() keeps one billing and one shipping row and refills them with
+        // defaults, which is what the rest of this class expects to find.
+        $quote->removeAllAddresses();
+        $quote->setCustomerEmail('');
+
         return $quote;
     }
 
