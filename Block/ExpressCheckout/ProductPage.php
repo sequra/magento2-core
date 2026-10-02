@@ -25,10 +25,13 @@ use Sequra\Core\Model\ExpressCheckout\AvailabilityEvaluator;
  * downloadable products never render the button; the per-selection virtual guard for
  * bundle/grouped products is enforced server-side at temp-cart build time.
  *
- * The render decision is deliberately customer-agnostic: the product page is full-page cached,
- * so Magento depersonalizes the session before blocks render (CustomerSession::isLoggedIn() is
- * always false here) and the produced HTML is served to every shopper. Per-customer eligibility
- * is enforced at click time by the solicit endpoint (401 guest / 422 not eligible).
+ * The render decision is deliberately shopper-agnostic: the product page is full-page cached, so
+ * Magento depersonalizes the session before blocks render and the produced HTML is served to
+ * every shopper. No delivery country is passed to the evaluator, which therefore runs the
+ * country-agnostic check; the country is validated at solicit time instead (422 not eligible).
+ * Naming a country here — even the store view's locale country, which is cache-safe — would hide
+ * the button for every shopper whenever that one country has no configured merchant, including
+ * customers whose own country does.
  */
 class ProductPage extends Template
 {
@@ -187,12 +190,12 @@ class ProductPage extends Template
                 return $this->state;
             }
 
-            // Always the guest (customer-agnostic) evaluation: the page is full-page cached, so
-            // the session is depersonalized during render and the HTML is shared by all shoppers.
+            // No country: the page is full-page cached, so the session is depersonalized during
+            // render and the HTML is shared by all shoppers. The evaluator therefore runs the
+            // country-agnostic check and the solicit validates the real country.
             $result = $this->availabilityEvaluator->evaluate(
                 (string)$this->_storeManager->getStore()->getId(),
                 ExpressCheckoutPage::product()->getPage(),
-                false,
                 '',
                 $this->getCurrentCurrency(),
                 $this->getCustomerIpAddress(),

@@ -6,10 +6,14 @@ use Exception;
 use Magento\Customer\Api\CustomerRepositoryInterface;
 use Magento\Customer\Api\Data\AddressInterface;
 use Magento\Customer\Api\Data\CustomerInterface;
+use Magento\Directory\Model\RegionFactory;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\Locale\ResolverInterface;
+use Magento\Framework\Webapi\Exception as WebapiException;
 use Magento\Quote\Api\CartRepositoryInterface;
 use Magento\Quote\Model\Quote;
+use Magento\Quote\Model\Quote\Address;
 use Magento\Quote\Model\Quote\Address\Rate;
 use SeQura\Core\Infrastructure\Logger\Logger;
 use Sequra\Core\Model\Ui\ConfigProvider;
@@ -20,16 +24,62 @@ use Sequra\Core\Model\Ui\ConfigProvider;
  * Prepares a cart quote for SeQura Express Checkout using the customer's default
  * shipping/billing addresses and the cheapest applicable shipping rate.
  *
+ * A shopper with no address is not a blocker, and neither is a guest with no account at all: the
+ * express screen exists to collect what the merchant could not send, so the solicit goes out with
+ * the addresses missing (the create-order request declares `addresses_may_be_missing`, see
+ * MerchantDataProvider::getOptions) and rates are collected on the round trip, once applyChange()
+ * writes the address the shopper typed.
+ * Only the country cannot be left blank — it is what picks the SeQura merchant — so
+ * {@see resolveCountry} names one for a quote that has no address yet, ending at the store view's
+ * locale so the solicit always has an answer. The availability probe below deliberately stops one
+ * step earlier ({@see resolveKnownCountry}): a locale region is a fact about the storefront, not
+ * about this shopper, and must not be reported as their delivery country.
+ *
  * Two entry points with different contracts:
  *  - getResolvableShippingCountry() is a read-only availability probe for storefront
- *    blocks: it returns the customer's default-shipping country without collecting rates
+ *    blocks: it returns the country the solicit would use without collecting rates
  *    or touching the cart (it runs on the uncached cart section, so forcing rate collection
  *    would hit every carrier on each request).
  *  - resolve() performs the actual mutate-and-save once, at solicit time, recomputing
  *    totals from a clean state so the shipping line cannot compound across calls.
+ *  - applyChange() is the re-solicit counterpart: it writes a shopper-supplied change from the
+ *    CartSummary form (address, carrier, email) instead of the customer's defaults, then
+ *    re-collects and saves the same way.
  */
 class QuoteShippingResolver
 {
+    /**
+     * Fallback only, for a change that carries no region of its own: Spanish provinces in
+     * postal-code order, the first two digits of an ES postcode being the INE province code
+     * (08010 -> 08 -> Barcelona), so index = those digits - 1.
+     *
+     * The mechanism is now the shopper's own pick: the host sends the delivery country's
+     * `directory_country_region` rows in the cartDataReady payload and the express address sheet
+     * renders them as a selector, so `regionId` arrives with the address and wins over anything
+     * derived here (see {@see resolveRegion}). This map still has to stay: the initial solicit
+     * runs before the shopper has seen any sheet, so the first address written to a quote — the
+     * customer's imported default — carries no picked region at all.
+     *
+     * The names are Magento's own `directory_country_region.default_name` values for ES, because
+     * that is what RegionFactory::loadByName() matches. Loading by *code* is not an option: for
+     * ES, Magento stores the province name in the code column too, so loadByCode('B', 'ES')
+     * finds nothing and the address would silently end up with no province at all — a wrong
+     * shipping quote and a wrong label.
+     *
+     * Caveat: ES only, and left that way — the other 38 state-required countries are covered by
+     * the selector rather than by more maps like this one. Retiring it altogether needs proof that
+     * every path reaching applyAddress() supplies a region, which the pre-sheet solicit does not.
+     */
+    private const ES_PROVINCES_BY_POSTCODE = [
+        'Alava', 'Albacete', 'Alicante', 'Almeria', 'Avila', 'Badajoz', 'Baleares', 'Barcelona',
+        'Burgos', 'Caceres', 'Cadiz', 'Castellon', 'Ciudad Real', 'Cordoba', 'A Coruña', 'Cuenca',
+        'Girona', 'Granada', 'Guadalajara', 'Guipuzcoa', 'Huelva', 'Huesca', 'Jaen', 'Leon',
+        'Lleida', 'La Rioja', 'Lugo', 'Madrid', 'Malaga', 'Murcia', 'Navarra', 'Ourense',
+        'Asturias', 'Palencia', 'Las Palmas', 'Pontevedra', 'Salamanca', 'Santa Cruz de Tenerife',
+        'Cantabria', 'Segovia', 'Sevilla', 'Soria', 'Tarragona', 'Teruel', 'Toledo', 'Valencia',
+        'Valladolid', 'Vizcaya', 'Zamora', 'Zaragoza', 'Ceuta', 'Melilla',
+    ];
+
     /**
      * @var CustomerRepositoryInterface
      */
@@ -38,24 +88,55 @@ class QuoteShippingResolver
      * @var CartRepositoryInterface
      */
     private CartRepositoryInterface $quoteRepository;
+    /**
+     * @var ResolverInterface
+     */
+    private ResolverInterface $localeResolver;
+    /**
+     * @var RegionFactory
+     */
+    private RegionFactory $regionFactory;
 
     /**
      * QuoteShippingResolver constructor.
      *
      * @param CustomerRepositoryInterface $customerRepository
      * @param CartRepositoryInterface $quoteRepository
+     * @param ResolverInterface $localeResolver
+     * @param RegionFactory $regionFactory
      */
     public function __construct(
         CustomerRepositoryInterface $customerRepository,
-        CartRepositoryInterface $quoteRepository
+        CartRepositoryInterface $quoteRepository,
+        ResolverInterface $localeResolver,
+        RegionFactory $regionFactory
     ) {
         $this->customerRepository = $customerRepository;
         $this->quoteRepository = $quoteRepository;
+        $this->localeResolver = $localeResolver;
+        $this->regionFactory = $regionFactory;
     }
 
     /**
-     * Read-only availability probe: returns the ISO2 country of the customer's default shipping
-     * address, or null when the button should not render (guest, or no default shipping address).
+     * Read-only availability probe: returns the ISO2 country the solicit would deliver to, or
+     * '' when the shopper's own data names none. Never null — '' is the sentinel, and the caller
+     * maps it to the country-agnostic check.
+     *
+     * Guests included: they simply have no customer default address, so the chain falls through to
+     * the quote's own shipping address and stops there. Deliberately short of the store view's
+     * locale, which only {@see resolveCountry} falls back to when it has to seed a solicit.
+     *
+     * Answers only "which country", never "is this shopper eligible": having no address is not a
+     * blocker any more, so the button decision is left entirely to the caller's per-country
+     * availability check on the country returned here. Because {@see resolve} resolves the
+     * country the same way for every country this can name, a supported answer here is a country
+     * the solicit can pick a merchant for — the button cannot appear where the solicit would 422
+     * on the country.
+     *
+     * Returns '' when neither the customer's default address nor the cart names a country, rather
+     * than falling back to the store view's locale the way the solicit does. The caller maps that
+     * to the country-agnostic check, so an unknown destination hides the button instead of
+     * announcing that SeQura is unavailable on the strength of a locale guess.
      *
      * Deliberately does NOT collect shipping rates or touch the quote. This runs from the cart
      * customer-data section, which Magento serves uncached on nearly every navigation and cart
@@ -66,29 +147,22 @@ class QuoteShippingResolver
      *
      * @param Quote $quote Cart quote whose customer is probed (not mutated).
      *
-     * @return string|null ISO2 shipping country, or null when express is unavailable.
+     * @return string ISO2 shipping country, or '' when no country can be named at all.
      */
-    public function getResolvableShippingCountry(Quote $quote): ?string
+    public function getResolvableShippingCountry(Quote $quote): string
     {
         try {
             $customer = $this->getQuoteCustomer($quote);
-            if ($customer === null) {
-                return null;
-            }
 
-            $defaultShippingAddress = $this->findDefaultShippingAddress($customer);
-            if ($defaultShippingAddress === null) {
-                return null;
-            }
-
-            $country = (string)$defaultShippingAddress->getCountryId();
-
-            return $country !== '' ? $country : null;
+            return $this->resolveKnownCountry(
+                $quote,
+                $customer !== null ? $this->findDefaultShippingAddress($customer) : null
+            );
         } catch (Exception $e) {
             Logger::logError('Express Checkout shipping availability check failed: ' . $e->getMessage() .
                 ' Trace: ' . $e->getTraceAsString());
 
-            return null;
+            return '';
         }
     }
 
@@ -98,22 +172,33 @@ class QuoteShippingResolver
      * quote. The rate already selected by the shopper (e.g. on the cart/checkout) is kept when it
      * is still available; otherwise the cheapest rate is used.
      *
+     * A shopper with no default shipping address — a customer who never saved one, or a guest with
+     * no account — is prepared without one: only the country is written (nothing else is known),
+     * no rates are collected, and the SeQura order is solicited with the addresses missing so the
+     * express screen can ask for them. See {@see prepareWithoutAddress}.
+     *
      * @param Quote $quote Cart quote to mutate and save.
      *
-     * @return bool True if the quote was prepared and saved; false if the customer
-     *              has no default shipping address or no shipping rate is available.
+     * @return bool True if the quote was prepared and saved; false if no delivery country can be
+     *              named at all, or the customer has an address but no shipping rate for it.
      */
     public function resolve(Quote $quote): bool
     {
         try {
+            // A guest cart has no account to import from, and a customer may never have saved a
+            // default address. Both get the same treatment — the express screen collects it.
             $customer = $this->getQuoteCustomer($quote);
-            if ($customer === null) {
-                return false;
-            }
-
-            $defaultShippingAddress = $this->findDefaultShippingAddress($customer);
-            if ($defaultShippingAddress === null) {
-                return false;
+            $defaultShippingAddress = $customer !== null ? $this->findDefaultShippingAddress($customer) : null;
+            if ($customer === null || $defaultShippingAddress === null) {
+                // A customer can have saved a billing address and no shipping one. That billing
+                // address is real data they gave us, so it goes on the quote even though the
+                // delivery address still has to be collected — otherwise applyBillingAddress()
+                // later finds a country-only billing address, judges it unplaceable and copies the
+                // delivery address over it, invoicing them at an address they never chose.
+                return $this->prepareWithoutAddress(
+                    $quote,
+                    $customer !== null ? $this->findDefaultBillingAddress($customer) : null
+                );
             }
 
             $shippingAddress = $quote->getShippingAddress();
@@ -123,25 +208,20 @@ class QuoteShippingResolver
             // placed order and fail payment.
             $preselectedMethod = (string)$shippingAddress->getShippingMethod();
 
-            $rate = $this->selectRate(
-                $this->collectRates($quote, $defaultShippingAddress),
-                $preselectedMethod
-            );
+            $shippingAddress->importCustomerAddressData($defaultShippingAddress);
+
+            $rate = $this->selectRate($this->recollectRates($quote), $preselectedMethod);
             if ($rate === null) {
                 return false;
             }
 
             $shippingAddress->setShippingMethod($rate->getCode());
-            $shippingAddress->setCollectShippingRates(true);
 
             $quote->getBillingAddress()->importCustomerAddressData(
                 $this->findDefaultBillingAddress($customer) ?? $defaultShippingAddress
             );
 
-            $quote->getPayment()->setMethod(ConfigProvider::CODE);
-            $quote->setData('totals_collected_flag', false);
-            $quote->collectTotals();
-            $this->quoteRepository->save($quote);
+            $this->applyPaymentAndSave($quote);
 
             return true;
         } catch (Exception $e) {
@@ -150,6 +230,400 @@ class QuoteShippingResolver
 
             return false;
         }
+    }
+
+    /**
+     * Prepares a quote for a shopper who has no address yet (guest, or a customer who never saved
+     * one): writes the delivery country onto the empty shipping/billing addresses and nothing
+     * else, then saves.
+     *
+     * No rates are collected — there is no destination to quote for — so the order is solicited
+     * with no delivery method and no shipping line. Both arrive on the round trip, once the
+     * shopper fills the missing-data card and {@see applyChange} re-collects against a real
+     * address.
+     *
+     * The country is the one exception to "leave it missing": it is what picks the SeQura
+     * merchant, both here and in core's country check, so a blank one would fail the solicit
+     * outright rather than defer the question to the express screen.
+     *
+     * @param Quote $quote Cart quote to mutate and save.
+     * @param AddressInterface|null $defaultBillingAddress Customer default billing address, when
+     *                                                     they have one. Kept rather than reduced
+     *                                                     to a country: only delivery is unknown.
+     *
+     * @return bool True when prepared; false when no delivery country can be named at all.
+     */
+    private function prepareWithoutAddress(Quote $quote, ?AddressInterface $defaultBillingAddress = null): bool
+    {
+        $country = $this->resolveCountry($quote, null);
+        if ($country === '') {
+            return false;
+        }
+
+        if ($defaultBillingAddress !== null) {
+            $quote->getBillingAddress()->importCustomerAddressData($defaultBillingAddress);
+        }
+
+        foreach ([$quote->getShippingAddress(), $quote->getBillingAddress()] as $address) {
+            if ((string)$address->getCountryId() === '') {
+                $address->setCountryId($country);
+            }
+        }
+
+        // No rates were collected, so any method still on the address is one TemporaryCartBuilder
+        // copied off the live cart — chosen for a destination this quote does not have. Left there
+        // it is read as a settled delivery: the create-order request sends it, and
+        // CartSummaryFormDecorator::buildShippingCostWithTax() answers 0 instead of null, which the
+        // checkout form shows as free shipping rather than "not known yet". A method is earned by
+        // being picked out of rates collected for a real address, which is what applyChange() does.
+        $quote->getShippingAddress()->setShippingMethod('');
+
+        $this->applyPaymentAndSave($quote);
+
+        return true;
+    }
+
+    /**
+     * The ISO2 country the express order is solicited against, most specific first: the
+     * customer's default shipping country, then whatever the cart already ships to (the shopper's
+     * own shipping estimate), then the store view's own locale. A guest has no customer default
+     * address, so for them the chain starts at the cart's own shipping estimate.
+     *
+     * The locale country is the same last resort the promotional widgets use — they hand core
+     * {@see \Sequra\Core\Block\WidgetTrait::getShippingAddressCountry} and
+     * {@see \Sequra\Core\Block\WidgetTrait::getCurrentCountry} in that order — so a shopper
+     * with no address gets the country the widgets on that very page already resolved, instead of
+     * one that can silently disagree with them. It is only a starting point: the shopper's real
+     * country arrives with the address they add on the express screen, and whether SeQura serves
+     * this one at all is decided by the caller's availability check, which reads the same value.
+     *
+     * Both the probe and {@see prepareWithoutAddress} go through here, so the country the button
+     * was granted for is the country the solicit uses. The cart flow solicits a detached clone
+     * rather than the cart the probe read, which is why
+     * {@see \Sequra\Core\Model\ExpressCheckout\TemporaryCartBuilder::buildFromQuote} copies the
+     * source cart's country onto it — without that the two would disagree for a guest.
+     *
+     * @param Quote $quote Quote whose shipping address supplies the middle fallback.
+     * @param AddressInterface|null $defaultShippingAddress Customer default shipping address, if any.
+     *
+     * @return string ISO2 country. Never empty in practice: a store view always has a locale.
+     */
+    private function resolveCountry(Quote $quote, ?AddressInterface $defaultShippingAddress): string
+    {
+        $country = $this->resolveKnownCountry($quote, $defaultShippingAddress);
+        if ($country !== '') {
+            return $country;
+        }
+
+        // The store view's locale always carries a region (Magento only offers full `xx_YY`
+        // locales, and falls back to en_US), so this names a real country for every store.
+        return (string)\Locale::getRegion((string)$this->localeResolver->getLocale());
+    }
+
+    /**
+     * The delivery country the shopper's own data names, or '' when nothing does.
+     *
+     * Deliberately stops short of the store view's locale. A locale region is a property of the
+     * storefront, not a statement about where this shopper wants their goods, and treating it as
+     * one turns "we do not know yet" into "we do not serve you": on a store view whose locale
+     * country SeQura does not cover, every guest with an empty cart address would be told SeQura
+     * is not available instead of simply being shown nothing.
+     * {@see \Sequra\Core\Model\ExpressCheckout\AvailabilityEvaluator} maps the empty string to
+     * the country-agnostic check, whose negative answer is the hidden state.
+     *
+     * @param Quote $quote
+     * @param AddressInterface|null $defaultShippingAddress
+     *
+     * @return string ISO2 country code, or '' when neither the customer nor the cart names one.
+     */
+    private function resolveKnownCountry(Quote $quote, ?AddressInterface $defaultShippingAddress): string
+    {
+        $country = $defaultShippingAddress !== null ? (string)$defaultShippingAddress->getCountryId() : '';
+        if ($country !== '') {
+            return $country;
+        }
+
+        return (string)$quote->getShippingAddress()->getCountryId();
+    }
+
+    /**
+     * Selects SeQura as the quote's payment method, recomputes totals from a clean state and
+     * persists the quote.
+     *
+     * @param Quote $quote Quote to finish preparing and save.
+     *
+     * @return void
+     *
+     * @throws LocalizedException If the quote cannot be saved.
+     */
+    private function applyPaymentAndSave(Quote $quote): void
+    {
+        $quote->getPayment()->setMethod(ConfigProvider::CODE);
+        $quote->setData('totals_collected_flag', false);
+        $quote->collectTotals();
+        $this->quoteRepository->save($quote);
+    }
+
+    /**
+     * Applies a shopper change coming from the CartSummary form — any combination of shipping
+     * address, chosen carrier and email — then re-collects rates from a clean state and saves,
+     * so the follow-up solicit sees the new figures.
+     *
+     * Unlike {@see resolve} this never re-imports the customer's default address: that is the
+     * whole point of the change.
+     *
+     * @param Quote $quote Quote to mutate and save.
+     * @param mixed[] $change Validated change: address, shippingMethodReference, email.
+     *
+     * @return bool True when applied; false when the resulting address has no usable rate.
+     *
+     * @throws WebapiException HTTP 400 when the requested carrier is not one of the rates the
+     *                         quote actually offers.
+     * @throws LocalizedException If the quote cannot be saved.
+     */
+    public function applyChange(Quote $quote, array $change): bool
+    {
+        $shippingAddress = $quote->getShippingAddress();
+
+        if (isset($change['address']) && is_array($change['address'])) {
+            $this->applyAddress($quote, $change['address']);
+        }
+
+        if (isset($change['email']) && is_string($change['email'])) {
+            $quote->setCustomerEmail($change['email']);
+            $shippingAddress->setEmail($change['email']);
+            $quote->getBillingAddress()->setEmail($change['email']);
+        }
+
+        // An address the shopper just gave has to survive the same check placeOrder will run, and
+        // it has to fail here rather than there. The endpoint can only enforce a fixed field list;
+        // what Magento actually demands depends on the destination (general/region/state_required
+        // and the country's postcode rules), and a flat-rate carrier quotes an address that misses
+        // those without complaint. The solicit that follows would then be approved and charged by
+        // SeQura for an order Magento refuses to place — the failure the whole of applyAddress() is
+        // written to avoid. Answering false puts it on the 422 path instead, which the express
+        // screen shows as "not available" while the shopper can still correct it.
+        //
+        // Only when a change carried an address: a quote that is still deliberately addressless is
+        // the shopper saving their email first, and it is not expected to validate yet.
+        if (isset($change['address']) && !$this->addressesArePlaceable($quote)) {
+            return false;
+        }
+
+        $preselectedMethod = (string)$shippingAddress->getShippingMethod();
+        $requestedMethod = isset($change['shippingMethodReference']) && is_string($change['shippingMethodReference'])
+            ? $change['shippingMethodReference']
+            : '';
+
+        // An email saved before any address has nothing to quote against: the solicit left this
+        // quote with a country and no rates. Collecting would call every configured carrier with a
+        // country alone, discard whatever came back, and — with carriers that demand a destination
+        // — fail inside a third-party API on what is a perfectly valid save. A carrier pick is not
+        // this case: there are no rates to have picked from, so it still has to be refused below.
+        if (!isset($change['address']) && $requestedMethod === '' && (string)$shippingAddress->getPostcode() === '') {
+            $this->applyPaymentAndSave($quote);
+
+            return true;
+        }
+
+        // Only an address change can invalidate the rates. A carrier pick or an email save reuses
+        // the ones the last collection already left on the address (they are persisted with it, see
+        // Quote\Address\Relation::processRelation), instead of calling every carrier again.
+        $rates = isset($change['address']) ? [] : $shippingAddress->getAllShippingRates();
+        if ($rates === []) {
+            $rates = $this->recollectRates($quote);
+        }
+
+        if ($requestedMethod !== '') {
+            $rate = $this->findRate($rates, $requestedMethod);
+            if ($rate === null) {
+                // A reference the quote does not offer: stale after an address change, or forged.
+                // Never written to the quote as-is — the shopper's carrier choice is only ever one
+                // of the collected rates.
+                throw new WebapiException(
+                    __('Invalid Express Checkout request.'),
+                    0,
+                    WebapiException::HTTP_BAD_REQUEST
+                );
+            }
+        } else {
+            $rate = $this->selectRate($rates, $preselectedMethod);
+        }
+
+        if ($rate === null) {
+            // There was an address to quote against and no carrier would serve it. The
+            // email-before-address case returned above, so this is a genuine "not eligible".
+            return false;
+        }
+
+        $shippingAddress->setShippingMethod($rate->getCode());
+        $this->applyPaymentAndSave($quote);
+
+        return true;
+    }
+
+    /**
+     * Whether both of the quote's addresses would survive Magento's own placeOrder validation.
+     *
+     * {@see \Magento\Customer\Model\Address\AbstractAddress::validate} is the very check
+     * BillingAddressValidationRule and ShippingAddressValidationRule run at placeOrder, so asking
+     * it here is asking the only question that matters: would this order be placeable if SeQura
+     * approved it?
+     *
+     * @param Quote $quote
+     *
+     * @return bool True when neither address has anything Magento would reject.
+     */
+    private function addressesArePlaceable(Quote $quote): bool
+    {
+        return $quote->getShippingAddress()->validate() === true
+            && $quote->getBillingAddress()->validate() === true;
+    }
+
+    /**
+     * Writes the shopper-supplied address fields onto the quote's shipping address, derives the
+     * region, and gives the billing address the same data when it has none of its own.
+     *
+     * Everything Magento's own placeOrder validation demands has to land here: an express order
+     * is approved and charged by SeQura before Magento ever sees it, so a shipping or billing
+     * address that fails Quote\Address::validate() is money taken with no order behind it.
+     *
+     * @param Quote $quote Quote whose addresses are overwritten.
+     * @param array<string, string> $address Validated address fields.
+     *
+     * @return void
+     */
+    private function applyAddress(Quote $quote, array $address): void
+    {
+        $shippingAddress = $quote->getShippingAddress();
+
+        $street = [$address['addressLine1']];
+        if (isset($address['addressLine2'])) {
+            $street[] = $address['addressLine2'];
+        }
+
+        $previousCountry = (string)$shippingAddress->getCountryId();
+        $country = $address['countryCode'] ?? $previousCountry;
+
+        $shippingAddress->setFirstname($address['givenName']);
+        $shippingAddress->setLastname($address['surnames']);
+        $shippingAddress->setStreet($street);
+        $shippingAddress->setPostcode($address['postalCode']);
+        $shippingAddress->setCity($address['city']);
+        $shippingAddress->setTelephone($address['mobilePhone']);
+        $shippingAddress->setCountryId($country);
+
+        // Re-derived on every address change, not only on a country change: an intra-country move
+        // (08010 -> 46001) is a different province, and a carried-over one quotes the wrong rate
+        // and prints the wrong label.
+        $region = $this->resolveRegion($country, $address['postalCode'], $address['regionId'] ?? '');
+        if ($region !== null) {
+            $shippingAddress->setRegionId($region['id']);
+            $shippingAddress->setRegion($region['name']);
+            $shippingAddress->setRegionCode($region['code']);
+        } else {
+            // Nothing could be derived, so there is no region to write — and the one already on the
+            // address belongs to the address this change has just replaced, whether or not the
+            // country moved with it. A same-country move whose region cannot be resolved (an
+            // omitted or rejected regionId, a country the postcode derivation does not cover) would
+            // otherwise keep the old province against the new street and postcode, and a flat-rate
+            // carrier quotes it happily. Magento reads 0 / '' as "no region".
+            $shippingAddress->setRegionId(0);
+            $shippingAddress->setRegion('');
+            $shippingAddress->setRegionCode('');
+        }
+
+        // The quote address no longer mirrors the customer address book entry it was imported
+        // from, so drop the link rather than leave it pointing at different data.
+        $shippingAddress->setCustomerAddressId(null);
+
+        $this->applyBillingAddress($quote, $shippingAddress);
+    }
+
+    /**
+     * Copies the shipping address onto the billing address when the billing address is not one
+     * Magento would accept on its own.
+     *
+     * The express summary collects a single address, so on the guest path the billing address is
+     * whatever prepareWithoutAddress() left behind — a country and nothing else —
+     * and BillingAddressValidationRule rejects it at placeOrder. The shipping address is the only
+     * address the shopper gave, which makes it the only honest billing address as well; it is the
+     * same "same as billing" copy Magento's own one-address checkout performs.
+     *
+     * Gated on validate() so it is inert wherever the billing address already stands on its own:
+     * a logged-in customer whose default billing came from the address book via
+     * importCustomerAddressData() keeps it, delivery-only edits and all.
+     *
+     * @param Quote $quote Quote whose billing address is filled in.
+     * @param Address $shippingAddress Address to copy from.
+     *
+     * @return void
+     */
+    private function applyBillingAddress(Quote $quote, Address $shippingAddress): void
+    {
+        $billingAddress = $quote->getBillingAddress();
+        if ($billingAddress->validate() === true) {
+            return;
+        }
+
+        $email = (string)$billingAddress->getEmail();
+        $billingAddress->importCustomerAddressData($shippingAddress->exportCustomerAddress());
+        $billingAddress->setCustomerAddressId(null);
+        if ($email !== '') {
+            $billingAddress->setEmail($email);
+        }
+    }
+
+    /**
+     * The Magento region to write on the address, or null when there is none to write — in which
+     * case no region is written rather than a guessed one.
+     *
+     * The shopper's own pick wins: `$regionId` is a `directory_country_region.region_id` the host
+     * offered them for this very country, already checked against it at the endpoint
+     * ({@see \Sequra\Core\Controller\ExpressCheckout\CartUpdate::parseAddress}), and it is
+     * re-checked here so this method cannot write a foreign region however it is called. Only when
+     * no pick arrived — the solicit that runs before the shopper has seen the address sheet — does
+     * the ES postcode map get a say.
+     *
+     * @param string $country ISO2 country code.
+     * @param string $postcode Postcode as the shopper typed it.
+     * @param string $regionId Region id the shopper picked, or '' when the change carried none.
+     *
+     * @return array{id: int, name: string, code: string}|null
+     */
+    private function resolveRegion(string $country, string $postcode, string $regionId = ''): ?array
+    {
+        if ($regionId !== '') {
+            $picked = $this->regionFactory->create();
+            $picked->load((int)$regionId);
+
+            if ((string)$picked->getCountryId() === $country) {
+                return [
+                    'id' => (int)$regionId,
+                    'name' => (string)$picked->getName(),
+                    'code' => (string)$picked->getCode(),
+                ];
+            }
+        }
+
+        if ($country !== 'ES') {
+            return null;
+        }
+
+        // Junk, a foreign-shaped or an out-of-range postcode indexes nothing, and nothing is what
+        // gets written — the shopper is told there are no rates rather than sent a parcel to a
+        // province that was guessed for them.
+        $province = self::ES_PROVINCES_BY_POSTCODE[(int)substr($postcode, 0, 2) - 1] ?? null;
+        if ($province === null) {
+            return null;
+        }
+
+        $derived = $this->regionFactory->create()->loadByName($province, $country);
+        $derivedId = $derived->getId();
+
+        return is_numeric($derivedId)
+            ? ['id' => (int)$derivedId, 'name' => $province, 'code' => (string)$derived->getCode()]
+            : null;
     }
 
     /**
@@ -207,18 +681,24 @@ class QuoteShippingResolver
     }
 
     /**
-     * Imports the given address onto the quote's shipping address and (re)collects shipping rates
-     * from a clean state, returning every available rate. Does not persist the quote.
+     * (Re)collects the quote's shipping rates from a clean state — the selected method is cleared
+     * so every carrier is re-quoted for whatever address is currently on the quote — and returns
+     * them. Does not persist the quote.
+     *
+     * The collected rates stay on the address for the caller's follow-up collectTotals(): callers
+     * must NOT re-arm setCollectShippingRates(true) after choosing a method. Quote\Address::
+     * collectShippingRates() clears the flag itself and starts with removeAllShippingRates(), so a
+     * re-arm would throw these rates away and call every carrier a second time for one shopper
+     * interaction. With the flag down it returns early, and Shipping::collect() reads the method
+     * off a shipping assignment TotalsCollector rebuilds from the address on every pass.
      *
      * @param Quote $quote
-     * @param AddressInterface $address
      *
      * @return Rate[]
      */
-    private function collectRates(Quote $quote, AddressInterface $address): array
+    private function recollectRates(Quote $quote): array
     {
         $shippingAddress = $quote->getShippingAddress();
-        $shippingAddress->importCustomerAddressData($address);
         $shippingAddress->setShippingMethod('');
         $shippingAddress->setCollectShippingRates(true);
 
@@ -240,14 +720,32 @@ class QuoteShippingResolver
     private function selectRate(array $rates, string $selectedCode): ?Rate
     {
         if ($selectedCode !== '') {
-            foreach ($rates as $rate) {
-                if (!$rate->getErrorMessage() && (string)$rate->getCode() === $selectedCode) {
-                    return $rate;
-                }
+            $rate = $this->findRate($rates, $selectedCode);
+            if ($rate !== null) {
+                return $rate;
             }
         }
 
         return $this->pickCheapestRate($rates);
+    }
+
+    /**
+     * Returns the usable rate carrying the given code, or null when the quote does not offer it.
+     *
+     * @param Rate[] $rates
+     * @param string $code Shipping method code to look for.
+     *
+     * @return Rate|null
+     */
+    private function findRate(array $rates, string $code): ?Rate
+    {
+        foreach ($rates as $rate) {
+            if (!$rate->getErrorMessage() && (string)$rate->getCode() === $code) {
+                return $rate;
+            }
+        }
+
+        return null;
     }
 
     /**

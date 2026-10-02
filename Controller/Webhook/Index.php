@@ -6,6 +6,9 @@ use Exception;
 use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\App\Action\Action;
 use Magento\Framework\App\Action\Context;
+use Magento\Framework\App\CsrfAwareActionInterface;
+use Magento\Framework\App\Request\InvalidRequestException;
+use Magento\Framework\App\RequestInterface;
 use Magento\Framework\DB\TransactionFactory;
 use Magento\Sales\Api\OrderRepositoryInterface;
 use Magento\Sales\Model\Order;
@@ -19,7 +22,7 @@ use SeQura\Core\BusinessLogic\WebhookAPI\WebhookAPI;
 use SeQura\Core\Infrastructure\Logger\Logger;
 use SeQura\Core\Infrastructure\ServiceRegister;
 
-class Index extends Action
+class Index extends Action implements CsrfAwareActionInterface
 {
     /**
      * @var string
@@ -258,5 +261,32 @@ class Index extends Action
     private function getSequraOrderRepository(): SeQuraOrderRepositoryInterface
     {
         return ServiceRegister::getService(SeQuraOrderRepositoryInterface::class);
+    }
+
+    /**
+     * Lets the default CSRF failure response stand.
+     *
+     * @param RequestInterface $request
+     *
+     * @return InvalidRequestException|null
+     */
+    public function createCsrfValidationException(RequestInterface $request): ?InvalidRequestException
+    {
+        return null;
+    }
+
+    /**
+     * Exempts SeQura's webhook callbacks from form-key validation.
+     *
+     * They are server-to-server posts that carry no Magento session, so no form key can exist.
+     * The payload is authenticated by the signature the WebhookAPI checks instead.
+     *
+     * @param RequestInterface $request
+     *
+     * @return bool|null
+     */
+    public function validateForCsrf(RequestInterface $request): ?bool
+    {
+        return true;
     }
 }

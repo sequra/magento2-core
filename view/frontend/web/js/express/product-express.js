@@ -13,12 +13,11 @@
  *  - `data-amount` follows the priceBox final price (informational; the solicit amount is
  *    computed server-side).
  *
- * Login gating is server-driven: the click always goes through to the library, and the solicit
- * endpoint answers 401 for guests — surfaced via the shared library-button error handler, which
- * opens the login pop-up and retries the solicit after a successful login. Client-side login
- * state (window.isCustomerLoggedIn, the customer-data section) is deliberately not consulted:
- * both are stale or absent on full-page-cached pages, which made the pop-up appear for logged
- * in shoppers. 422 (not eligible) renders the inline message instead.
+ * No Magento login is required: the click always goes through to the library and the solicit
+ * endpoint builds a temporary quote for whoever is browsing, guest or customer. Client-side login
+ * state (window.isCustomerLoggedIn, the customer-data section) is deliberately not consulted at
+ * all — both are stale or absent on full-page-cached pages. 422 (not eligible) renders the inline
+ * message via the shared library-button error handler.
  */
 define(
     [
@@ -126,8 +125,8 @@ define(
             }
 
             // The click happens inside the library's iframe and cannot be intercepted, so the
-            // solicit response is the gate: the shared error handler opens the login pop-up on
-            // 401 and retries, or shows the inline message on 422.
+            // solicit response is the gate: the shared error handler shows the inline message
+            // on 422.
             libraryButton.attachErrorHandler();
 
             $form.on('change', refresh);

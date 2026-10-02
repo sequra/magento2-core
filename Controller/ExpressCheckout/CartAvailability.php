@@ -25,6 +25,8 @@ use Sequra\Core\Model\ExpressCheckout\AvailabilityEvaluator;
  */
 class CartAvailability implements HttpGetActionInterface
 {
+    use ResponseTrait;
+
     /**
      * @var JsonFactory
      */
@@ -55,8 +57,7 @@ class CartAvailability implements HttpGetActionInterface
     public function execute(): Json
     {
         $result = $this->resultJsonFactory->create();
-        $result->setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private', true)
-            ->setHeader('Pragma', 'no-cache', true);
+        $this->noStore($result);
 
         try {
             /** @var MiniCart $block */

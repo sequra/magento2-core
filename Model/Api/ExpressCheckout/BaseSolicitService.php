@@ -3,25 +3,38 @@
 namespace Sequra\Core\Model\Api\ExpressCheckout;
 
 use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Webapi\Exception as WebapiException;
+use Magento\Quote\Api\CartRepositoryInterface;
+use Magento\Quote\Model\Quote;
 use SeQura\Core\BusinessLogic\CheckoutAPI\CheckoutAPI;
 use SeQura\Core\BusinessLogic\CheckoutAPI\ExpressCheckout\Requests\ExpressCheckoutSolicitRequest;
 use Sequra\Core\Model\Api\Builders\CreateOrderRequestBuilderFactory;
 use Sequra\Core\Model\Api\CartProvider\CartProvider;
+use Sequra\Core\Model\ExpressCheckout\CartSummaryFormDecorator;
+use Sequra\Core\Model\ExpressCheckout\ExpressCheckoutFlow;
 use Sequra\Core\Model\ExpressCheckout\QuoteShippingResolver;
+use Sequra\Core\Model\ExpressCheckout\SolicitedQuoteRegistry;
 
 /**
  * Class BaseSolicitService
  *
  * Builds the create-order request for a cart and solicits the SeQura Express Checkout
  * identification form via the integration-core CheckoutAPI.
+ *
+ * {@see update} is the same flow run again after the shopper changes something on the SeQura
+ * CartSummary page: it mutates the solicited quote first and answers with the refreshed
+ * cartDataReady payload instead of the form HTML. Re-soliciting is supported as-is — core's
+ * OrderService::solicitFor drops the stored order row and re-stores whatever comes back.
  */
 class BaseSolicitService
 {
     /**
-     * HTTP status returned when the logged in customer is not eligible for Express Checkout
-     * (no supported default shipping address / unsupported country), so the storefront can
-     * show a specific "not available" message instead of a generic server error.
+     * HTTP status returned when the shopper is not eligible for Express Checkout
+     * (unsupported delivery country, or an address with no usable shipping rate), so the
+     * storefront can show a specific "not available" message instead of a generic server error.
+     * Having no address at all is NOT one of these: that is precisely what the express screen
+     * collects, so the solicit goes out with the addresses missing.
      */
     private const HTTP_NOT_ELIGIBLE = 422;
 
@@ -37,6 +50,22 @@ class BaseSolicitService
      * @var QuoteShippingResolver
      */
     private QuoteShippingResolver $shippingResolver;
+    /**
+     * @var CartSummaryFormDecorator
+     */
+    private CartSummaryFormDecorator $cartSummaryFormDecorator;
+    /**
+     * @var CartRepositoryInterface
+     */
+    private CartRepositoryInterface $quoteRepository;
+    /**
+     * @var SolicitedQuoteRegistry
+     */
+    private SolicitedQuoteRegistry $solicitedQuotes;
+    /**
+     * @var ExpressCheckoutFlow
+     */
+    private ExpressCheckoutFlow $expressFlow;
 
     /**
      * BaseSolicitService constructor.
@@ -44,15 +73,27 @@ class BaseSolicitService
      * @param CartProvider $cartProvider
      * @param CreateOrderRequestBuilderFactory $createOrderRequestBuilderFactory
      * @param QuoteShippingResolver $shippingResolver
+     * @param CartSummaryFormDecorator $cartSummaryFormDecorator
+     * @param CartRepositoryInterface $quoteRepository
+     * @param SolicitedQuoteRegistry $solicitedQuotes
+     * @param ExpressCheckoutFlow $expressFlow
      */
     public function __construct(
         CartProvider $cartProvider,
         CreateOrderRequestBuilderFactory $createOrderRequestBuilderFactory,
-        QuoteShippingResolver $shippingResolver
+        QuoteShippingResolver $shippingResolver,
+        CartSummaryFormDecorator $cartSummaryFormDecorator,
+        CartRepositoryInterface $quoteRepository,
+        SolicitedQuoteRegistry $solicitedQuotes,
+        ExpressCheckoutFlow $expressFlow
     ) {
         $this->cartProvider = $cartProvider;
         $this->createOrderRequestBuilderFactory = $createOrderRequestBuilderFactory;
         $this->shippingResolver = $shippingResolver;
+        $this->cartSummaryFormDecorator = $cartSummaryFormDecorator;
+        $this->quoteRepository = $quoteRepository;
+        $this->solicitedQuotes = $solicitedQuotes;
+        $this->expressFlow = $expressFlow;
     }
 
     /**
@@ -68,22 +109,85 @@ class BaseSolicitService
     public function solicit(string $cartId): string
     {
         $quote = $this->cartProvider->getQuote($cartId);
-        $storeId = (string)$quote->getStore()->getId();
 
         if (!$this->shippingResolver->resolve($quote)) {
             throw $this->notEligible();
         }
 
-        // The `true` flag enables core's country check: an unsupported delivery country yields
-        // an unsuccessful response (no exception, nothing logged) instead of the solicit
-        // hard-failing on the missing merchant.
-        // @phpstan-ignore-next-line
-        $response = CheckoutAPI::get()
-            ->expressCheckout($storeId)
-            ->solicit(new ExpressCheckoutSolicitRequest($this->createOrderRequestBuilderFactory->create([
-                'cartId' => $quote->getId(),
-                'storeId' => $storeId,
-            ]), true));
+        $form = $this->solicitForm($quote);
+        $quoteId = $quote->getId();
+        $flowToken = $this->solicitedQuotes->remember(is_scalar($quoteId) ? (int)$quoteId : 0);
+
+        // Express Checkout V1 spike (PAR-835): open the form on the CartSummary page and feed
+        // it the shipping data via the cartDataReady postMessage.
+        return $this->cartSummaryFormDecorator->decorate($form, $quote, $flowToken);
+    }
+
+    /**
+     * Applies a CartSummary change, re-solicits and returns the refreshed cartDataReady payload.
+     *
+     * The change lands on the quote the form's own solicit ran against, never on the live cart and
+     * never on another form's. {@see SolicitedQuoteRegistry} is what tells them apart: a shopper
+     * with a product form and a cart form open at once has two live quotes, and the token each
+     * form carries is the only thing that says which one is asking.
+     *
+     * Same flow as {@see solicit} — resolve shipping, solicit through the CheckoutAPI, decorate —
+     * with the customer-defaults resolution swapped for the shopper's own change and the payload
+     * returned as data instead of wrapped in HTML.
+     *
+     * @param string $flowToken Token the form was given when its own solicit ran.
+     * @param mixed[] $change Validated change: address, shippingMethodReference, email.
+     *
+     * @return array<string, mixed> Refreshed cartDataReady payload.
+     *
+     * @throws WebapiException Not eligible (HTTP 422) or an unavailable carrier reference (HTTP 400)
+     * @throws NoSuchEntityException If the token names no solicited cart in this session, or it is gone
+     * @throws LocalizedException If the quote cannot be saved or the order cannot be solicited
+     */
+    public function update(string $flowToken, array $change): array
+    {
+        $quote = $this->getSolicitedQuote($flowToken);
+
+        if (!$this->shippingResolver->applyChange($quote, $change)) {
+            throw $this->notEligible();
+        }
+
+        return $this->cartSummaryFormDecorator->buildCartData($this->solicitForm($quote), $quote);
+    }
+
+    /**
+     * Solicits the SeQura order for an already-prepared quote, returning the raw form HTML.
+     *
+     * @param Quote $quote Quote with its address, shipping method and totals already settled.
+     *
+     * @return string
+     *
+     * @throws WebapiException If SeQura cannot produce an identification form (HTTP 422)
+     */
+    private function solicitForm(Quote $quote): string
+    {
+        $storeId = (string)$quote->getStore()->getId();
+
+        // Marks the create-order request this call builds as an express one, so
+        // MerchantDataProvider::getOptions declares `addresses_may_be_missing` for it and for
+        // nothing else. Cleared in the finally: the marker lives for this call only, never for
+        // the rest of the request.
+        $this->expressFlow->enterSolicit();
+
+        try {
+            // The `true` flag enables core's country check: an unsupported delivery country yields
+            // an unsuccessful response (no exception, nothing logged) instead of the solicit
+            // hard-failing on the missing merchant.
+            // @phpstan-ignore-next-line
+            $response = CheckoutAPI::get()
+                ->expressCheckout($storeId)
+                ->solicit(new ExpressCheckoutSolicitRequest($this->createOrderRequestBuilderFactory->create([
+                    'cartId' => $quote->getId(),
+                    'storeId' => $storeId,
+                ]), true));
+        } finally {
+            $this->expressFlow->leaveSolicit();
+        }
 
         if (!$response->isSuccessful()) {
             // An unsuccessful solicit means SeQura cannot produce an identification form for
@@ -95,6 +199,50 @@ class BaseSolicitService
         }
 
         return $response->getIdentificationForm()->getForm();
+    }
+
+    /**
+     * Loads the quote the last solicit ran against, as recorded on the customer session.
+     *
+     * Loaded by id rather than as the active cart: express drafts are left inactive between
+     * solicits so they never shadow the shopper's real cart.
+     *
+     * Refuses a quote that has already been converted into an order. A token keeps naming its
+     * quote until it falls out of the registry, so after the shopper pays it still resolves to the
+     * quote that was placed; a duplicate, late or replayed cart-update would otherwise mutate it
+     * and re-solicit it. Core's OrderService::solicitFor drops the stored SeQura order row and
+     * re-stores whatever comes back, so the record of the order the shopper actually paid for
+     * would be replaced by a fresh unpaid solicit — taking webhook, capture and refund sync with
+     * it. A reserved order id is the signal, exactly as {@see OrderCreation::activateCart} and
+     * {@see TemporaryCartBuilder::resolveReusableQuote} use it: it is set the moment a quote goes
+     * through placeOrder. The is_active flag is deliberately NOT used — express drafts are left
+     * inactive between solicits so they do not shadow the real cart, so an inactive quote is the
+     * normal case here, not a placed one.
+     *
+     * @param string $flowToken Token the form was given when its own solicit ran.
+     *
+     * @return Quote
+     *
+     * @throws NoSuchEntityException When the token names no solicit in this session, its quote is
+     *                               gone, or its order has already been placed.
+     */
+    private function getSolicitedQuote(string $flowToken): Quote
+    {
+        $quoteId = $this->solicitedQuotes->resolve($flowToken);
+        if ($quoteId <= 0) {
+            throw new NoSuchEntityException(__('No solicited SeQura Express Checkout cart in session.'));
+        }
+
+        /** @var Quote $quote */
+        $quote = $this->quoteRepository->get($quoteId);
+
+        if ((string)$quote->getReservedOrderId() !== '') {
+            throw new NoSuchEntityException(
+                __('The solicited SeQura Express Checkout cart is no longer open for changes.')
+            );
+        }
+
+        return $quote;
     }
 
     /**
