@@ -273,8 +273,11 @@ class QuoteShippingResolver
      * country arrives with the address they add on the express screen, and whether SeQura serves
      * this one at all is decided by the caller's availability check, which reads the same value.
      *
-     * Both the probe and {@see prepareWithoutAddress} go through here, and both are handed the
-     * same cart quote, so the country the button was granted for is the country the solicit uses.
+     * Both the probe and {@see prepareWithoutAddress} go through here, so the country the button
+     * was granted for is the country the solicit uses. The cart flow solicits a detached clone
+     * rather than the cart the probe read, which is why
+     * {@see \Sequra\Core\Model\ExpressCheckout\TemporaryCartBuilder::buildFromQuote} copies the
+     * source cart's country onto it — without that the two would disagree for a guest.
      *
      * @param Quote $quote Quote whose shipping address supplies the middle fallback.
      * @param AddressInterface|null $defaultShippingAddress Customer default shipping address, if any.

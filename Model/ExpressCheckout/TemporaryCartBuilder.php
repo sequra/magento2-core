@@ -141,8 +141,9 @@ class TemporaryCartBuilder
      * cancelling the express purchase therefore leaves the real cart untouched.
      *
      * The clone reproduces the cart the shopper saw: line items (with their options), the applied
-     * coupon, and the selected shipping method — so the solicited/placed total matches the cart
-     * rather than silently dropping a discount or downgrading shipping to the cheapest rate.
+     * coupon, the estimated delivery country, and the selected shipping method — so the
+     * solicited/placed total matches the cart rather than silently dropping a discount,
+     * downgrading shipping to the cheapest rate, or shipping somewhere else entirely.
      *
      * @param Quote $source Cart quote whose contents are cloned into the temporary quote.
      *
@@ -198,9 +199,17 @@ class TemporaryCartBuilder
         // Carry the coupon so cart-rule discounts reapply on collectTotals (collectTotals is run in
         // finalizeQuote); without it the clone would be solicited/placed at the full price.
         $quote->setCouponCode((string)$source->getCouponCode());
+
+        $shippingAddress = $quote->getShippingAddress();
+        // Carry the destination the shopper estimated against. The button's availability was
+        // granted on the source cart's country, but it is this clone the solicit resolves its own
+        // country from, and the clone starts with none: a guest who estimated for another country
+        // would fall through to the store view's locale and be solicited against a different
+        // merchant than the one they were judged eligible for — or 422 outright.
+        $shippingAddress->setCountryId((string)$source->getShippingAddress()->getCountryId());
         // Carry the shopper's selected shipping method so resolve() keeps it (it captures the
         // preselected method before re-collecting rates) instead of downgrading to the cheapest.
-        $quote->getShippingAddress()->setShippingMethod(
+        $shippingAddress->setShippingMethod(
             (string)$source->getShippingAddress()->getShippingMethod()
         );
 
