@@ -34,6 +34,12 @@ class CartUpdateRegionTest extends TestCase
      * A complete address, minus the region — and minus the country, exactly as the express
      * address sheet sends it.
      */
+    /**
+     * A well-formed flow token, as the injected script sends it back: 32 alphanumerics. The
+     * controller checks the shape before anything else, so a change cannot be parsed without one.
+     */
+    private const FLOW_TOKEN = 'k3Hs9QdL2mXv7PzR4tNbW1yC6gJfA8eU';
+
     private const ADDRESS = [
         'givenName' => 'Marina',
         'surnames' => 'Garcia',
@@ -70,7 +76,8 @@ class CartUpdateRegionTest extends TestCase
 
         $this->solicitService->expects($this->once())
             ->method('update')
-            ->with($this->callback(function (array $change): bool {
+            // The token is the first argument now, the parsed change the second.
+            ->with(self::FLOW_TOKEN, $this->callback(function (array $change): bool {
                 return isset($change['address']['regionId']) && $change['address']['regionId'] === '155';
             }))
             ->willReturn(['type' => 'cartDataReady']);
@@ -108,7 +115,13 @@ class CartUpdateRegionTest extends TestCase
         $payload = json_encode(['address' => self::ADDRESS + ['regionId' => $regionId]]);
 
         $request = $this->createMock(HttpRequest::class);
-        $request->method('getParam')->willReturn($payload);
+        // Per name: the token and the change arrive as separate POST fields, and handing the
+        // payload back for flow_token too would fail the shape check before any region parsing.
+        $request->method('getParam')->willReturnCallback(
+            function ($name) use ($payload) {
+                return $name === 'flow_token' ? self::FLOW_TOKEN : $payload;
+            }
+        );
 
         $this->responseCode = null;
         $this->result = $this->createMock(Json::class);

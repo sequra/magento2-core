@@ -21,6 +21,10 @@ use Magento\Framework\Math\Random;
  * id, and the map lives on the session, so a token lifted from one shopper resolves to nothing in
  * anyone else's. The quote id itself never reaches the client.
  *
+ * One quote is named by at most one token, which is what makes this hold for two tabs of the same
+ * surface: they share a reusable draft, so the newer solicit retires the older tab's token rather
+ * than letting two tokens address one quote. See {@see remember}.
+ *
  * The map is bounded. Tokens are only retired by falling out of the newest {@see MAX_FLOWS}, which
  * is well past what a shopper can have open and keeps a session from growing without limit.
  */
@@ -77,6 +81,23 @@ class SolicitedQuoteRegistry
         $token = $this->random->getRandomString(self::TOKEN_LENGTH);
 
         $flows = $this->flows();
+
+        // A distinct token per solicit is not on its own a distinct quote. TemporaryCartBuilder
+        // keeps one reusable draft per surface and empties and refills it on the next solicit, so
+        // two product tabs are handed the same quote id under two tokens. Leaving the older token
+        // alive would let that tab's update mutate the quote the newer tab is now showing — the
+        // collision this registry exists to stop, arriving by another route.
+        //
+        // The older tab is already stale by then: its draft was wiped and refilled, so the SeQura
+        // order its form holds is for a cart that no longer exists. Retiring its token turns a
+        // silent edit of someone else's cart into the "no solicited cart" the endpoint already
+        // reports.
+        foreach ($flows as $existing => $id) {
+            if (is_scalar($id) && (int)$id === $quoteId) {
+                unset($flows[$existing]);
+            }
+        }
+
         $flows[$token] = $quoteId;
         if (count($flows) > self::MAX_FLOWS) {
             $flows = array_slice($flows, -self::MAX_FLOWS, null, true);
