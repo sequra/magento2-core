@@ -2,7 +2,6 @@
 
 namespace Sequra\Core\Test\Unit\Model\ExpressCheckout;
 
-use Magento\Customer\Model\Session as CustomerSession;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Quote\Api\CartRepositoryInterface;
 use Magento\Quote\Model\Quote;
@@ -14,14 +13,15 @@ use Sequra\Core\Model\Api\Builders\CreateOrderRequestBuilderFactory;
 use Sequra\Core\Model\ExpressCheckout\CartSummaryFormDecorator;
 use Sequra\Core\Model\ExpressCheckout\ExpressCheckoutFlow;
 use Sequra\Core\Model\ExpressCheckout\QuoteShippingResolver;
+use Sequra\Core\Model\ExpressCheckout\SolicitedQuoteRegistry;
 
 /**
  * Class SolicitedQuoteGuardTest
  *
  * That a cart update cannot reach a quote whose order has already been placed.
  *
- * The session key naming the solicited quote is only ever overwritten by the *next* solicit, so
- * once the shopper has paid it still points at the quote that was converted. A duplicate, late or
+ * A flow token keeps naming its quote until it falls out of the registry, so once the shopper has
+ * paid it still resolves to the quote that was converted. A duplicate, late or
  * replayed update would otherwise mutate that quote and re-solicit it — and core's
  * OrderService::solicitFor drops the stored SeQura order row and re-stores whatever comes back,
  * so the record of the order the shopper actually paid for would be replaced by a fresh unpaid
@@ -53,7 +53,7 @@ class SolicitedQuoteGuardTest extends TestCase
 
         $this->expectException(NoSuchEntityException::class);
 
-        $service->update(['email' => 'marina@example.com']);
+        $service->update('aToken', ['email' => 'marina@example.com']);
     }
 
     /**
@@ -72,7 +72,7 @@ class SolicitedQuoteGuardTest extends TestCase
         // going on to solicit. Reaching applyChange at all is the point: the guard let it through.
         $this->expectExceptionMessage('SeQura Express Checkout is not available for this account.');
 
-        $service->update(['email' => 'marina@example.com']);
+        $service->update('aToken', ['email' => 'marina@example.com']);
     }
 
     /**
@@ -84,8 +84,8 @@ class SolicitedQuoteGuardTest extends TestCase
      */
     private function service(Quote $quote): BaseSolicitService
     {
-        $session = $this->createMock(CustomerSession::class);
-        $session->method('getData')->willReturn(77);
+        $registry = $this->createMock(SolicitedQuoteRegistry::class);
+        $registry->method('resolve')->willReturn(77);
 
         $quoteRepository = $this->createMock(CartRepositoryInterface::class);
         $quoteRepository->method('get')->willReturn($quote);
@@ -98,7 +98,7 @@ class SolicitedQuoteGuardTest extends TestCase
             $this->shippingResolver,
             $this->createMock(CartSummaryFormDecorator::class),
             $quoteRepository,
-            $session,
+            $registry,
             new ExpressCheckoutFlow()
         );
     }

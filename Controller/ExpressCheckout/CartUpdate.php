@@ -35,15 +35,24 @@ use Sequra\Core\Model\ExpressCheckout\SolicitRateLimiter;
  *
  * Everything in the body is shopper-supplied and treated as hostile: it is type-checked and
  * length-bounded here, the carrier reference is matched against the quote's actually-available
- * rates before it is applied, and the cart itself is never named by the client — it is the quote
- * the last solicit recorded on the customer session.
+ * rates before it is applied, and the cart itself is never named by the client. What the client
+ * does send is the opaque flow token its own solicit minted, which
+ * {@see \Sequra\Core\Model\ExpressCheckout\SolicitedQuoteRegistry} resolves against this
+ * session's map — so a token says which of the shopper's open forms is asking, and nothing more.
+ * A token that is unknown, stale or someone else's resolves to no cart at all.
  *
- * No login is required: the solicited quote is named by the session, never by the client, so a
- * guest updates their own express cart exactly as a logged in customer does.
+ * No login is required: the quote is resolved server-side from that map, so a guest updates their
+ * own express cart exactly as a logged in customer does.
  */
 class CartUpdate implements HttpPostActionInterface, CsrfAwareActionInterface
 {
     use ResponseTrait;
+
+    /**
+     * Length of the flow token minted by
+     * {@see \Sequra\Core\Model\ExpressCheckout\SolicitedQuoteRegistry}.
+     */
+    private const FLOW_TOKEN_LENGTH = 32;
 
     /**
      * Address fields accepted from the form, mapped to their maximum accepted length. Anything
@@ -167,12 +176,34 @@ class CartUpdate implements HttpPostActionInterface, CsrfAwareActionInterface
                 return $result->setHttpResponseCode(429)->setData([]);
             }
 
-            return $result->setData($this->solicitService->update($this->parseChange()));
+            return $result->setData(
+                $this->solicitService->update($this->parseFlowToken(), $this->parseChange())
+            );
         } catch (Exception $e) {
             return $result
                 ->setHttpResponseCode($this->failureCode($e, 'Express Checkout cart update'))
                 ->setData([]);
         }
+    }
+
+    /**
+     * Reads the flow token naming which of the shopper's open express forms is asking.
+     *
+     * Shape only: whether it names anything is the registry's question, and an unknown token is
+     * answered exactly like a missing one, so a caller cannot probe the map with it.
+     *
+     * @return string
+     *
+     * @throws WebapiException HTTP 400 when no token of the right shape was sent.
+     */
+    private function parseFlowToken(): string
+    {
+        $token = $this->parseString($this->request->getParam('flow_token'), self::FLOW_TOKEN_LENGTH);
+        if (preg_match('/^[a-zA-Z0-9]{' . self::FLOW_TOKEN_LENGTH . '}$/', $token) !== 1) {
+            throw $this->badRequest();
+        }
+
+        return $token;
     }
 
     /**

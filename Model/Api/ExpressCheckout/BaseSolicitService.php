@@ -2,7 +2,6 @@
 
 namespace Sequra\Core\Model\Api\ExpressCheckout;
 
-use Magento\Customer\Model\Session as CustomerSession;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Webapi\Exception as WebapiException;
@@ -15,6 +14,7 @@ use Sequra\Core\Model\Api\CartProvider\CartProvider;
 use Sequra\Core\Model\ExpressCheckout\CartSummaryFormDecorator;
 use Sequra\Core\Model\ExpressCheckout\ExpressCheckoutFlow;
 use Sequra\Core\Model\ExpressCheckout\QuoteShippingResolver;
+use Sequra\Core\Model\ExpressCheckout\SolicitedQuoteRegistry;
 
 /**
  * Class BaseSolicitService
@@ -39,14 +39,6 @@ class BaseSolicitService
     private const HTTP_NOT_ELIGIBLE = 422;
 
     /**
-     * Customer-session key holding the id of the quote the last Express Checkout solicit ran
-     * against. The cart-update endpoint re-solicits that same quote and never the live cart:
-     * both express flows solicit a detached draft built by TemporaryCartBuilder, and the client
-     * is never told which one.
-     */
-    private const SESSION_KEY_SOLICITED_QUOTE = 'sequra_express_solicited_quote_id';
-
-    /**
      * @var CartProvider
      */
     private CartProvider $cartProvider;
@@ -67,9 +59,9 @@ class BaseSolicitService
      */
     private CartRepositoryInterface $quoteRepository;
     /**
-     * @var CustomerSession
+     * @var SolicitedQuoteRegistry
      */
-    private CustomerSession $customerSession;
+    private SolicitedQuoteRegistry $solicitedQuotes;
     /**
      * @var ExpressCheckoutFlow
      */
@@ -83,7 +75,7 @@ class BaseSolicitService
      * @param QuoteShippingResolver $shippingResolver
      * @param CartSummaryFormDecorator $cartSummaryFormDecorator
      * @param CartRepositoryInterface $quoteRepository
-     * @param CustomerSession $customerSession
+     * @param SolicitedQuoteRegistry $solicitedQuotes
      * @param ExpressCheckoutFlow $expressFlow
      */
     public function __construct(
@@ -92,7 +84,7 @@ class BaseSolicitService
         QuoteShippingResolver $shippingResolver,
         CartSummaryFormDecorator $cartSummaryFormDecorator,
         CartRepositoryInterface $quoteRepository,
-        CustomerSession $customerSession,
+        SolicitedQuoteRegistry $solicitedQuotes,
         ExpressCheckoutFlow $expressFlow
     ) {
         $this->cartProvider = $cartProvider;
@@ -100,7 +92,7 @@ class BaseSolicitService
         $this->shippingResolver = $shippingResolver;
         $this->cartSummaryFormDecorator = $cartSummaryFormDecorator;
         $this->quoteRepository = $quoteRepository;
-        $this->customerSession = $customerSession;
+        $this->solicitedQuotes = $solicitedQuotes;
         $this->expressFlow = $expressFlow;
     }
 
@@ -123,33 +115,38 @@ class BaseSolicitService
         }
 
         $form = $this->solicitForm($quote);
-        $this->rememberSolicitedQuote($quote);
+        $quoteId = $quote->getId();
+        $flowToken = $this->solicitedQuotes->remember(is_scalar($quoteId) ? (int)$quoteId : 0);
 
         // Express Checkout V1 spike (PAR-835): open the form on the CartSummary page and feed
         // it the shipping data via the cartDataReady postMessage.
-        return $this->cartSummaryFormDecorator->decorate($form, $quote);
+        return $this->cartSummaryFormDecorator->decorate($form, $quote, $flowToken);
     }
 
     /**
      * Applies a CartSummary change, re-solicits and returns the refreshed cartDataReady payload.
      *
-     * The change lands on the quote the last solicit ran against, never on the live cart.
+     * The change lands on the quote the form's own solicit ran against, never on the live cart and
+     * never on another form's. {@see SolicitedQuoteRegistry} is what tells them apart: a shopper
+     * with a product form and a cart form open at once has two live quotes, and the token each
+     * form carries is the only thing that says which one is asking.
      *
      * Same flow as {@see solicit} — resolve shipping, solicit through the CheckoutAPI, decorate —
      * with the customer-defaults resolution swapped for the shopper's own change and the payload
      * returned as data instead of wrapped in HTML.
      *
+     * @param string $flowToken Token the form was given when its own solicit ran.
      * @param mixed[] $change Validated change: address, shippingMethodReference, email.
      *
      * @return array<string, mixed> Refreshed cartDataReady payload.
      *
      * @throws WebapiException Not eligible (HTTP 422) or an unavailable carrier reference (HTTP 400)
-     * @throws NoSuchEntityException If there is no solicited cart in the session, or it is gone
+     * @throws NoSuchEntityException If the token names no solicited cart in this session, or it is gone
      * @throws LocalizedException If the quote cannot be saved or the order cannot be solicited
      */
-    public function update(array $change): array
+    public function update(string $flowToken, array $change): array
     {
-        $quote = $this->getSolicitedQuote();
+        $quote = $this->getSolicitedQuote($flowToken);
 
         if (!$this->shippingResolver->applyChange($quote, $change)) {
             throw $this->notEligible();
@@ -210,9 +207,9 @@ class BaseSolicitService
      * Loaded by id rather than as the active cart: express drafts are left inactive between
      * solicits so they never shadow the shopper's real cart.
      *
-     * Refuses a quote that has already been converted into an order. The session key is only ever
-     * overwritten by the *next* solicit, so after the shopper pays it still points at the quote
-     * that was placed; a duplicate, late or replayed cart-update would otherwise mutate that quote
+     * Refuses a quote that has already been converted into an order. A token keeps naming its
+     * quote until it falls out of the registry, so after the shopper pays it still resolves to the
+     * quote that was placed; a duplicate, late or replayed cart-update would otherwise mutate it
      * and re-solicit it. Core's OrderService::solicitFor drops the stored SeQura order row and
      * re-stores whatever comes back, so the record of the order the shopper actually paid for
      * would be replaced by a fresh unpaid solicit — taking webhook, capture and refund sync with
@@ -222,15 +219,16 @@ class BaseSolicitService
      * inactive between solicits so they do not shadow the real cart, so an inactive quote is the
      * normal case here, not a placed one.
      *
+     * @param string $flowToken Token the form was given when its own solicit ran.
+     *
      * @return Quote
      *
-     * @throws NoSuchEntityException When no solicit has run in this session, its quote is gone, or
-     *                               its order has already been placed.
+     * @throws NoSuchEntityException When the token names no solicit in this session, its quote is
+     *                               gone, or its order has already been placed.
      */
-    private function getSolicitedQuote(): Quote
+    private function getSolicitedQuote(string $flowToken): Quote
     {
-        $stored = $this->customerSession->getData(self::SESSION_KEY_SOLICITED_QUOTE);
-        $quoteId = is_scalar($stored) ? (int)$stored : 0;
+        $quoteId = $this->solicitedQuotes->resolve($flowToken);
         if ($quoteId <= 0) {
             throw new NoSuchEntityException(__('No solicited SeQura Express Checkout cart in session.'));
         }
@@ -245,28 +243,6 @@ class BaseSolicitService
         }
 
         return $quote;
-    }
-
-    /**
-     * Records the solicited quote on the customer session, for the cart-update endpoint to reuse.
-     *
-     * Server-side only: the client never sees nor supplies a cart id.
-     *
-     * @param Quote $quote
-     *
-     * @return void
-     */
-    private function rememberSolicitedQuote(Quote $quote): void
-    {
-        $quoteId = $quote->getId();
-        // Not redundant: despite what CLAUDE.md states, phpstan.neon carries no
-        // `Magento\(Checkout|Customer)\Model\Session::` ignore pattern, so without this the
-        // analysis fails on setData() forwarding to Storage through SessionManager::__call.
-        // @phpstan-ignore-next-line
-        $this->customerSession->setData(
-            self::SESSION_KEY_SOLICITED_QUOTE,
-            is_scalar($quoteId) ? (int)$quoteId : 0
-        );
     }
 
     /**

@@ -109,17 +109,18 @@ class CartSummaryFormDecorator
      *
      * @param string $form Identification form HTML returned by the solicit.
      * @param Quote $quote Solicited quote, already resolved (address set, shipping rates collected).
+     * @param string $flowToken Token naming the solicited quote this form may change.
      *
      * @return string
      */
-    public function decorate(string $form, Quote $quote): string
+    public function decorate(string $form, Quote $quote, string $flowToken): string
     {
         // The endpoints are read back off the flagged HTML so they carry show_cart too.
         $flagged = $this->appendShowCartFlag($form);
         $endpoints = $this->buildEndpoints($this->flaggedBaseUrl($flagged));
         $data = $this->buildPayload($quote, $endpoints) + $this->buildStaticData($quote);
 
-        return $flagged . $this->buildCartDataScript($data, $quote);
+        return $flagged . $this->buildCartDataScript($data, $quote, $flowToken);
     }
 
     /**
@@ -389,12 +390,16 @@ class CartSummaryFormDecorator
      * form key — minted here rather than read from the form_key cookie, which is set by the page
      * cache layer and cannot be relied on.
      *
+     * The flow token rides along with the form key for the same reason the cart id never does:
+     * the client says which form is asking, not which quote to change.
+     *
      * @param array<string, mixed> $data cartDataReady payload.
      * @param Quote $quote
+     * @param string $flowToken Token naming the solicited quote this form may change.
      *
      * @return string
      */
-    private function buildCartDataScript(array $data, Quote $quote): string
+    private function buildCartDataScript(array $data, Quote $quote, string $flowToken): string
     {
         // Every value here is interpolated straight into the script, so an un-encodable one (a
         // product name carrying invalid UTF-8, typically out of a legacy import) would emit
@@ -409,6 +414,9 @@ class CartSummaryFormDecorator
             '""'
         );
         $formKey = $this->encodeForScript($this->formKey->getFormKey(), JSON_HEX_TAG, '""');
+        // Names which solicited quote this form may change. Every form gets its own, so a second
+        // one opened in another tab cannot redirect this one's updates onto its quote.
+        $token = $this->encodeForScript($flowToken, JSON_HEX_TAG, '""');
 
         $attempts = self::POST_MESSAGE_ATTEMPTS;
         $interval = self::POST_MESSAGE_INTERVAL_MS;
@@ -420,6 +428,14 @@ class CartSummaryFormDecorator
         var payload = {$payload};
         var updateUrl = {$updateUrl};
         var formKey = {$formKey};
+
+        // On window, not in this closure, for the reason the retry timer is: only the first
+        // injected script binds the message listener below, and that listener would otherwise
+        // keep sending the first solicit's token forever. A re-solicit on this page (cancel,
+        // change something, solicit again) mints a new one against a new quote, and the update
+        // has to name that quote rather than the abandoned one. Unlike updateUrl and formKey,
+        // which are constant for the page, this changes every solicit.
+        window.SequraCartFlowToken = {$token};
 
         function formIframe() {
             var el = document.getElementById(window.SequraFormElement);
@@ -539,6 +555,7 @@ class CartSummaryFormDecorator
 
             var body = new URLSearchParams();
             body.append('form_key', formKey);
+            body.append('flow_token', window.SequraCartFlowToken);
             body.append('payload', JSON.stringify({
                 address: message.address,
                 shippingMethodReference: message.shippingMethodReference,
