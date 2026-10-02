@@ -135,9 +135,12 @@ class StaleRegionTest extends TestCase
     ): Address {
         $address = $this->getMockBuilder(Address::class)
             ->disableOriginalConstructor()
-            ->onlyMethods(['getAllShippingRates'])
+            ->onlyMethods(['getAllShippingRates', 'validate'])
             ->getMock();
         $address->method('getAllShippingRates')->willReturn([]);
+        // Placeable unless a case says otherwise; what Magento demands of an address is its own
+        // question, and {@see PlaceableAddressTest} is where it is asked.
+        $address->method('validate')->willReturn(true);
         $address->setData('country_id', $country);
         $address->setData('postcode', $postcode);
         $address->setData('region_id', $regionId);

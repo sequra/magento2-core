@@ -371,6 +371,21 @@ class QuoteShippingResolver
             $quote->getBillingAddress()->setEmail($change['email']);
         }
 
+        // An address the shopper just gave has to survive the same check placeOrder will run, and
+        // it has to fail here rather than there. The endpoint can only enforce a fixed field list;
+        // what Magento actually demands depends on the destination (general/region/state_required
+        // and the country's postcode rules), and a flat-rate carrier quotes an address that misses
+        // those without complaint. The solicit that follows would then be approved and charged by
+        // SeQura for an order Magento refuses to place — the failure the whole of applyAddress() is
+        // written to avoid. Answering false puts it on the 422 path instead, which the express
+        // screen shows as "not available" while the shopper can still correct it.
+        //
+        // Only when a change carried an address: a quote that is still deliberately addressless is
+        // the shopper saving their email first, and it is not expected to validate yet.
+        if (isset($change['address']) && !$this->addressesArePlaceable($quote)) {
+            return false;
+        }
+
         $preselectedMethod = (string)$shippingAddress->getShippingMethod();
         $requestedMethod = isset($change['shippingMethodReference']) && is_string($change['shippingMethodReference'])
             ? $change['shippingMethodReference']
@@ -422,6 +437,24 @@ class QuoteShippingResolver
         $this->applyPaymentAndSave($quote);
 
         return true;
+    }
+
+    /**
+     * Whether both of the quote's addresses would survive Magento's own placeOrder validation.
+     *
+     * {@see \Magento\Customer\Model\Address\AbstractAddress::validate} is the very check
+     * BillingAddressValidationRule and ShippingAddressValidationRule run at placeOrder, so asking
+     * it here is asking the only question that matters: would this order be placeable if SeQura
+     * approved it?
+     *
+     * @param Quote $quote
+     *
+     * @return bool True when neither address has anything Magento would reject.
+     */
+    private function addressesArePlaceable(Quote $quote): bool
+    {
+        return $quote->getShippingAddress()->validate() === true
+            && $quote->getBillingAddress()->validate() === true;
     }
 
     /**
