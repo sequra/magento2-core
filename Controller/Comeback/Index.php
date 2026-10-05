@@ -6,16 +6,21 @@ use Magento\Checkout\Controller\Onepage;
 use Magento\Customer\Api\AccountManagementInterface;
 use Magento\Customer\Api\CustomerRepositoryInterface;
 use Magento\Framework\App\CsrfAwareActionInterface;
-use Magento\Framework\App\Request\InvalidRequestException;
-use Magento\Framework\App\RequestInterface;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Stdlib\CookieManagerInterface;
 use Magento\Framework\Stdlib\Cookie\CookieMetadataFactory;
+use Sequra\Core\Controller\CsrfExemptTrait;
 use Sequra\Core\Model\Api\ExpressCheckout\SolicitService;
 use Sequra\Core\Services\BusinessLogic\Utility\SeQuraTranslationProvider;
 
+/**
+ * Form-key validation is skipped ({@see CsrfExemptTrait}): the shopper returns from SeQura's
+ * own domain, so the request carries no form key of ours.
+ */
 class Index extends Onepage implements CsrfAwareActionInterface
 {
+    use CsrfExemptTrait;
+
     /**
      * @var \Magento\Framework\Message\ManagerInterface
      */
@@ -188,31 +193,5 @@ class Index extends Onepage implements CsrfAwareActionInterface
             $quote->setIsActive(false);
             $this->quoteRepository->save($quote);
         }
-    }
-
-    /**
-     * Lets the default CSRF failure response stand.
-     *
-     * @param RequestInterface $request
-     *
-     * @return InvalidRequestException|null
-     */
-    public function createCsrfValidationException(RequestInterface $request): ?InvalidRequestException
-    {
-        return null;
-    }
-
-    /**
-     * Exempts the hosted-payment-page return leg from form-key validation.
-     *
-     * The shopper arrives back from SeQura's domain, so the request carries no form key of ours.
-     *
-     * @param RequestInterface $request
-     *
-     * @return bool|null
-     */
-    public function validateForCsrf(RequestInterface $request): ?bool
-    {
-        return true;
     }
 }

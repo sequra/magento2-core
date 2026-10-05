@@ -188,17 +188,18 @@ class QuoteShippingResolver
             // A guest cart has no account to import from, and a customer may never have saved a
             // default address. Both get the same treatment — the express screen collects it.
             $customer = $this->getQuoteCustomer($quote);
-            $defaultShippingAddress = $customer !== null ? $this->findDefaultShippingAddress($customer) : null;
-            if ($customer === null || $defaultShippingAddress === null) {
+            if ($customer === null) {
+                return $this->prepareWithoutAddress($quote, null);
+            }
+
+            $defaultShippingAddress = $this->findDefaultShippingAddress($customer);
+            if ($defaultShippingAddress === null) {
                 // A customer can have saved a billing address and no shipping one. That billing
                 // address is real data they gave us, so it goes on the quote even though the
                 // delivery address still has to be collected — otherwise applyBillingAddress()
                 // later finds a country-only billing address, judges it unplaceable and copies the
                 // delivery address over it, invoicing them at an address they never chose.
-                return $this->prepareWithoutAddress(
-                    $quote,
-                    $customer !== null ? $this->findDefaultBillingAddress($customer) : null
-                );
+                return $this->prepareWithoutAddress($quote, $this->findDefaultBillingAddress($customer));
             }
 
             $shippingAddress = $quote->getShippingAddress();
@@ -253,7 +254,7 @@ class QuoteShippingResolver
      *
      * @return bool True when prepared; false when no delivery country can be named at all.
      */
-    private function prepareWithoutAddress(Quote $quote, ?AddressInterface $defaultBillingAddress = null): bool
+    private function prepareWithoutAddress(Quote $quote, ?AddressInterface $defaultBillingAddress): bool
     {
         $country = $this->resolveCountry($quote, null);
         if ($country === '') {
@@ -591,7 +592,7 @@ class QuoteShippingResolver
      *
      * @return array{id: int, name: string, code: string}|null
      */
-    private function resolveRegion(string $country, string $postcode, string $regionId = ''): ?array
+    private function resolveRegion(string $country, string $postcode, string $regionId): ?array
     {
         if ($regionId !== '') {
             $picked = $this->regionFactory->create();

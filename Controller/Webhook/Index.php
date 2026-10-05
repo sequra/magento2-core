@@ -7,7 +7,6 @@ use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\App\Action\Action;
 use Magento\Framework\App\Action\Context;
 use Magento\Framework\App\CsrfAwareActionInterface;
-use Magento\Framework\App\Request\InvalidRequestException;
 use Magento\Framework\App\RequestInterface;
 use Magento\Framework\DB\TransactionFactory;
 use Magento\Sales\Api\OrderRepositoryInterface;
@@ -21,9 +20,17 @@ use SeQura\Core\BusinessLogic\Webhook\Exceptions\OrderNotFoundException;
 use SeQura\Core\BusinessLogic\WebhookAPI\WebhookAPI;
 use SeQura\Core\Infrastructure\Logger\Logger;
 use SeQura\Core\Infrastructure\ServiceRegister;
+use Sequra\Core\Controller\CsrfExemptTrait;
 
+/**
+ * Form-key validation is skipped ({@see CsrfExemptTrait}): SeQura's callbacks are
+ * server-to-server posts with no Magento session, so no form key can exist. The signature the
+ * WebhookAPI checks is what authenticates them.
+ */
 class Index extends Action implements CsrfAwareActionInterface
 {
+    use CsrfExemptTrait;
+
     /**
      * @var string
      */
@@ -261,32 +268,5 @@ class Index extends Action implements CsrfAwareActionInterface
     private function getSequraOrderRepository(): SeQuraOrderRepositoryInterface
     {
         return ServiceRegister::getService(SeQuraOrderRepositoryInterface::class);
-    }
-
-    /**
-     * Lets the default CSRF failure response stand.
-     *
-     * @param RequestInterface $request
-     *
-     * @return InvalidRequestException|null
-     */
-    public function createCsrfValidationException(RequestInterface $request): ?InvalidRequestException
-    {
-        return null;
-    }
-
-    /**
-     * Exempts SeQura's webhook callbacks from form-key validation.
-     *
-     * They are server-to-server posts that carry no Magento session, so no form key can exist.
-     * The payload is authenticated by the signature the WebhookAPI checks instead.
-     *
-     * @param RequestInterface $request
-     *
-     * @return bool|null
-     */
-    public function validateForCsrf(RequestInterface $request): ?bool
-    {
-        return true;
     }
 }

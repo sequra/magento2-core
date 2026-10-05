@@ -13,6 +13,7 @@ use Magento\Quote\Model\Quote;
 use Magento\Quote\Model\Quote\Address;
 use Magento\Theme\ViewModel\Block\Html\Header\LogoPathResolver;
 use Sequra\Core\Model\QuoteEmailResolver;
+use Sequra\Core\Services\BusinessLogic\Utility\TransformEntityService;
 use SeQura\Core\Infrastructure\Logger\Logger;
 
 /**
@@ -117,8 +118,7 @@ class CartSummaryFormDecorator
     {
         // The endpoints are read back off the flagged HTML so they carry show_cart too.
         $flagged = $this->appendShowCartFlag($form);
-        $endpoints = $this->buildEndpoints($this->flaggedBaseUrl($flagged));
-        $data = $this->buildPayload($quote, $endpoints) + $this->buildStaticData($quote);
+        $data = $this->buildFullPayload($quote, $this->flaggedBaseUrl($flagged));
 
         return $flagged . $this->buildCartDataScript($data, $quote, $flowToken);
     }
@@ -142,7 +142,7 @@ class CartSummaryFormDecorator
     {
         $baseUrl = $this->flaggedBaseUrl($this->appendShowCartFlag($form));
 
-        $data = $this->buildPayload($quote, $this->buildEndpoints($baseUrl)) + $this->buildStaticData($quote);
+        $data = $this->buildFullPayload($quote, $baseUrl);
 
         // Omitted rather than sent empty: with no usable URL there is nothing to reload onto.
         if ($baseUrl !== null) {
@@ -178,6 +178,24 @@ class CartSummaryFormDecorator
         );
 
         return $result ?? $form;
+    }
+
+    /**
+     * The whole cartDataReady payload for a quote.
+     *
+     * The boot payload and the one the cart-update endpoint answers with have to be the same
+     * shape — the checkout form adopts the reply in place of what it booted with — so both
+     * {@see decorate} and {@see buildCartData} come through here rather than each spelling the
+     * composition out. `reloadUrl` is buildCartData()'s alone and is added by it.
+     *
+     * @param Quote $quote
+     * @param string|null $baseUrl Flagged form URL, or null when the HTML carried none.
+     *
+     * @return array<string, mixed>
+     */
+    private function buildFullPayload(Quote $quote, ?string $baseUrl): array
+    {
+        return $this->buildPayload($quote, $this->buildEndpoints($baseUrl)) + $this->buildStaticData($quote);
     }
 
     /**
@@ -249,7 +267,7 @@ class CartSummaryFormDecorator
      */
     private function buildTotalWithTax(Quote $quote): int
     {
-        return (int)round(100 * (float)$quote->getGrandTotal());
+        return TransformEntityService::transformPrice((float)$quote->getGrandTotal());
     }
 
     /**
@@ -283,7 +301,7 @@ class CartSummaryFormDecorator
             return null;
         }
 
-        return (int)round(100 * (float)$shippingAddress->getShippingInclTax());
+        return TransformEntityService::transformPrice((float)$shippingAddress->getShippingInclTax());
     }
 
     /**
@@ -497,13 +515,7 @@ class CartSummaryFormDecorator
         // the one listening — which is this race, not a guard against it. Call this before
         // navigating, so a load that commits immediately is not missed either.
         function onceLoaded(el, run) {
-            var ran = false;
-
             function go() {
-                if (ran) {
-                    return;
-                }
-                ran = true;
                 el.removeEventListener('load', go);
                 run();
             }
@@ -750,7 +762,7 @@ HTML;
             $method = [
                 'reference' => $reference,
                 'name' => (string)($converted->getCarrierTitle() ?: $reference),
-                'costWithTax' => (int)round((float)$converted->getPriceInclTax() * 100),
+                'costWithTax' => TransformEntityService::transformPrice((float)$converted->getPriceInclTax()),
                 'description' => (string)$converted->getMethodTitle(),
             ];
 

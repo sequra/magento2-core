@@ -7,16 +7,21 @@ use SeQura\Core\BusinessLogic\ConfigurationWebhookAPI\Handlers\Enums\Topics;
 use Magento\Framework\App\Action\HttpPostActionInterface;
 use Magento\Framework\App\CsrfAwareActionInterface;
 use Magento\Framework\App\Request\Http as HttpRequest;
-use Magento\Framework\App\Request\InvalidRequestException;
-use Magento\Framework\App\RequestInterface;
 use Magento\Framework\Controller\Result\JsonFactory;
 use Magento\Framework\Controller\Result\Json;
 use Magento\PageCache\Model\Cache\Type as PageCache;
+use Sequra\Core\Controller\CsrfExemptTrait;
 use Sequra\Core\Block\Banner;
 use Zend_Cache;
 
+/**
+ * Form-key validation is skipped ({@see CsrfExemptTrait}): server-to-server, with no Magento
+ * session behind it.
+ */
 class Index implements HttpPostActionInterface, CsrfAwareActionInterface
 {
+    use CsrfExemptTrait;
+
     /**
      * @var HttpRequest
      */
@@ -121,31 +126,5 @@ class Index implements HttpPostActionInterface, CsrfAwareActionInterface
             Zend_Cache::CLEANING_MODE_MATCHING_ANY_TAG,
             [Banner::CACHE_TAG . '_' . $storeId]
         );
-    }
-
-    /**
-     * Lets the default CSRF failure response stand.
-     *
-     * @param RequestInterface $request
-     *
-     * @return InvalidRequestException|null
-     */
-    public function createCsrfValidationException(RequestInterface $request): ?InvalidRequestException
-    {
-        return null;
-    }
-
-    /**
-     * Exempts SeQura's configuration webhook from form-key validation.
-     *
-     * It is a server-to-server post that carries no Magento session, so no form key can exist.
-     *
-     * @param RequestInterface $request
-     *
-     * @return bool|null
-     */
-    public function validateForCsrf(RequestInterface $request): ?bool
-    {
-        return true;
     }
 }
