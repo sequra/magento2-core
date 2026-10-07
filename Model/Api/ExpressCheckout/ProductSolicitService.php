@@ -58,7 +58,7 @@ class ProductSolicitService implements ProductSolicitInterface
      *
      * @return string
      *
-     * @throws WebapiException On invalid request (400), guest caller (401) or not eligible (422).
+     * @throws WebapiException On invalid request (400) or not eligible (422).
      * @throws LocalizedException If the order cannot be solicited.
      */
     public function solicit(array $payload): string

@@ -4,14 +4,22 @@ namespace Sequra\Core\Controller\AsyncProcess;
 
 use Magento\Framework\App\Action\Action;
 use Magento\Framework\App\Action\Context;
+use Magento\Framework\App\CsrfAwareActionInterface;
 use Magento\Framework\Controller\Result\JsonFactory;
 use SeQura\Core\Infrastructure\Logger\Logger;
 use SeQura\Core\Infrastructure\ServiceRegister;
 use SeQura\Core\Infrastructure\TaskExecution\Interfaces\AsyncProcessService;
 use SeQura\Core\Infrastructure\Logger\LogContextData;
+use Sequra\Core\Controller\CsrfExemptTrait;
 
-class AsyncProcess extends Action
+/**
+ * Form-key validation is skipped ({@see CsrfExemptTrait}): integration-core invokes this out of
+ * band with no browser session, and the guid it is called with is what authorises it.
+ */
+class AsyncProcess extends Action implements CsrfAwareActionInterface
 {
+    use CsrfExemptTrait;
+
     /**
      * @var JsonFactory
      */

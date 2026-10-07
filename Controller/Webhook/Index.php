@@ -6,6 +6,8 @@ use Exception;
 use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\App\Action\Action;
 use Magento\Framework\App\Action\Context;
+use Magento\Framework\App\CsrfAwareActionInterface;
+use Magento\Framework\App\RequestInterface;
 use Magento\Framework\DB\TransactionFactory;
 use Magento\Sales\Api\OrderRepositoryInterface;
 use Magento\Sales\Model\Order;
@@ -18,9 +20,17 @@ use SeQura\Core\BusinessLogic\Webhook\Exceptions\OrderNotFoundException;
 use SeQura\Core\BusinessLogic\WebhookAPI\WebhookAPI;
 use SeQura\Core\Infrastructure\Logger\Logger;
 use SeQura\Core\Infrastructure\ServiceRegister;
+use Sequra\Core\Controller\CsrfExemptTrait;
 
-class Index extends Action
+/**
+ * Form-key validation is skipped ({@see CsrfExemptTrait}): SeQura's callbacks are
+ * server-to-server posts with no Magento session, so no form key can exist. The signature the
+ * WebhookAPI checks is what authenticates them.
+ */
+class Index extends Action implements CsrfAwareActionInterface
 {
+    use CsrfExemptTrait;
+
     /**
      * @var string
      */

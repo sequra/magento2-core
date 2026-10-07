@@ -5,15 +5,23 @@ namespace Sequra\Core\Controller\IntegrationWebhook;
 use SeQura\Core\BusinessLogic\ConfigurationWebhookAPI\ConfigurationWebhookAPI;
 use SeQura\Core\BusinessLogic\ConfigurationWebhookAPI\Handlers\Enums\Topics;
 use Magento\Framework\App\Action\HttpPostActionInterface;
+use Magento\Framework\App\CsrfAwareActionInterface;
 use Magento\Framework\App\Request\Http as HttpRequest;
 use Magento\Framework\Controller\Result\JsonFactory;
 use Magento\Framework\Controller\Result\Json;
 use Magento\PageCache\Model\Cache\Type as PageCache;
+use Sequra\Core\Controller\CsrfExemptTrait;
 use Sequra\Core\Block\Banner;
 use Zend_Cache;
 
-class Index implements HttpPostActionInterface
+/**
+ * Form-key validation is skipped ({@see CsrfExemptTrait}): server-to-server, with no Magento
+ * session behind it.
+ */
+class Index implements HttpPostActionInterface, CsrfAwareActionInterface
 {
+    use CsrfExemptTrait;
+
     /**
      * @var HttpRequest
      */

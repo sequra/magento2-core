@@ -4,10 +4,9 @@
  * The button itself is rendered by the shared CDN library into the
  * `.sequra-express-checkout-button` mount element; the library owns the click and fetches the
  * element's data-url (the cart solicit endpoint). This initializer registers the shared
- * solicit-error gate (401 guest → login pop-up, 422 → inline message) and asks the library to
- * mount buttons injected after its boot scan — the mini-cart markup arrives via the `cart`
- * customer-data section and re-renders on every section refresh, re-running this initializer
- * through its data-mage-init attribute.
+ * solicit-error gate (422 → inline message) and asks the library to mount buttons injected after
+ * its boot scan — the mini-cart markup arrives via the `cart` customer-data section and re-renders
+ * on every section refresh, re-running this initializer through its data-mage-init attribute.
  *
  * The mini-cart markup is part of the cached `cart` section, so it can be stale after the merchant
  * disables Express Checkout in the portal (the section is only re-fetched on a cart change or
