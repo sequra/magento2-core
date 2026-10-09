@@ -1,4 +1,4 @@
-import { test } from '../fixtures/test';
+import { test, expect } from '../fixtures/test';
 
 test.describe('Express checkout', () => {
 
@@ -32,6 +32,28 @@ test.describe('Express checkout', () => {
     await cartPage.goto();
     await expressCheckoutPage.expectButtonVisible('cart');
     await expressCheckoutPage.startCheckout('cart');
+  });
+
+  test('The cart summary gets its data without posting into the form before it has loaded', async ({ page, productPage, cartPage, expressCheckoutPage }) => {
+    // The browser drops a message targeted at the form's origin while the iframe still holds its
+    // initial about:blank, and logs this warning for each one.
+    const refusedPosts = [];
+    page.on('console', message => {
+      if (message.text().includes('The target origin provided')) refusedPosts.push(message.text());
+    });
+
+    await productPage.addToCart({ slug: 'push-it-messenger-bag', quantity: 1 });
+    await cartPage.goto();
+
+    const cartDataReceived = page.evaluate(() => new Promise(resolve => {
+      window.addEventListener('message', event => {
+        if (typeof event.data === 'string' && event.data.includes('"Sequra.cartDataReceived"')) resolve();
+      });
+    }));
+    await expressCheckoutPage.startCheckout('cart');
+    await cartDataReceived;
+
+    expect(refusedPosts).toEqual([]);
   });
 
   test('A registered customer completes an express checkout purchase from the product page', async ({ helper, dataProvider, accountPage, productPage, expressCheckoutPage, checkoutPage }) => {
