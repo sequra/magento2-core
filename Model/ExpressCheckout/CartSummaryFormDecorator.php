@@ -42,9 +42,11 @@ class CartSummaryFormDecorator
 {
     /**
      * The form acknowledges cartDataReady, and the injected script stops re-sending as soon as it
-     * does. These bound the wait for an acknowledgement that never comes (20 × 500ms ≈ 10s).
+     * does. These bound the wait for an acknowledgement that never comes (20 × 500ms ≈ 10s once
+     * the form is up), and for a form that never comes up at all (120 × 500ms ≈ 60s).
      */
     private const POST_MESSAGE_ATTEMPTS = 20;
+    private const POST_MESSAGE_MAX_TICKS = 120;
     private const POST_MESSAGE_INTERVAL_MS = 500;
 
     /**
@@ -437,6 +439,7 @@ class CartSummaryFormDecorator
         $token = $this->encodeForScript($flowToken, JSON_HEX_TAG, '""');
 
         $attempts = self::POST_MESSAGE_ATTEMPTS;
+        $maxTicks = self::POST_MESSAGE_MAX_TICKS;
         $interval = self::POST_MESSAGE_INTERVAL_MS;
 
         return <<<HTML
@@ -469,6 +472,18 @@ class CartSummaryFormDecorator
             el.contentWindow.postMessage(data, formOrigin(el));
         }
 
+        // Until the form commits, the iframe holds its initial about:blank, which takes on this
+        // page's origin: the browser refuses a message targeted at the form's origin and logs a
+        // warning for it. A document this page can read is that placeholder; the form, served
+        // from SeQura, is unreadable from here.
+        function showsForm(el) {
+            try {
+                return el.contentWindow.location.origin === formOrigin(el);
+            } catch (e) {
+                return true;
+            }
+        }
+
         // Tells the form the change was not applied. `status` is the HTTP status the endpoint
         // answered with — 400/422 the shopper's change was refused, 429/500 the store could not
         // deal with it right now — or 0 when there was no answer at all. Never the server's
@@ -492,15 +507,20 @@ class CartSummaryFormDecorator
             }
         }
 
+        // Only a message the form could have received counts as an attempt: a slow form must not
+        // see the budget spent while it was still loading. The tick ceiling bounds the wait for a
+        // form that never shows up.
         function postWithRetries(data) {
             var attempts = 0;
+            var ticks = 0;
             stopPosting();
             window.SequraCartDataTimer = setInterval(function () {
                 var el = formIframe();
-                if (el) {
+                if (el && showsForm(el)) {
                     send(el, data);
+                    attempts++;
                 }
-                if (++attempts >= {$attempts}) {
+                if (attempts >= {$attempts} || ++ticks >= {$maxTicks}) {
                     stopPosting();
                 }
             }, {$interval});
