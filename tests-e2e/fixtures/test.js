@@ -2,6 +2,7 @@ import { test as baseTest, expect } from "@playwright/test";
 import BackOffice from "./base/BackOffice";
 import SeQuraHelper from "./utils/SeQuraHelper";
 import DataProvider from "./utils/DataProvider";
+import ShopRestApi from "./utils/ShopRestApi";
 import ProductPage from "./pages/ProductPage";
 import CheckoutPage from "./pages/CheckoutPage";
 import CartPage from "./pages/CartPage";
@@ -17,6 +18,7 @@ const test = baseTest.extend({
     dataProvider: async ({ page, baseURL, request }, use) => await use(new DataProvider(page, baseURL, expect, request)),
     backOffice: async ({ page, baseURL }, use) => await use(new BackOffice(page, baseURL, expect)),
     helper: async ({ page, baseURL, request }, use) => await use(new SeQuraHelper(page, baseURL, expect, request)),
+    shopRestApi: async ({ baseURL, request }, use) => await use(new ShopRestApi(baseURL, expect, request)),
     productPage: async ({ page, baseURL, request}, use) =>  await use(new ProductPage(page, baseURL, expect, request)),
     cartPage: async ({ page, baseURL, request}, use) =>  await use(new CartPage(page, baseURL, expect, request)),
     categoryPage: async ({ page, baseURL, request}, use) =>  await use(new CategoryPage(page, baseURL, expect, request)),
