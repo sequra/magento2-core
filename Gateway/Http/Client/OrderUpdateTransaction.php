@@ -5,11 +5,9 @@ namespace Sequra\Core\Gateway\Http\Client;
 use Magento\Payment\Gateway\Http\ClientInterface;
 use Magento\Payment\Gateway\Http\TransferInterface;
 use Magento\Sales\Model\Order;
-use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
-use SeQura\Core\BusinessLogic\Domain\Order\Models\OrderUpdateData;
-use SeQura\Core\BusinessLogic\Domain\Order\Service\OrderService;
+use SeQura\Core\BusinessLogic\AdminAPI\OrderManagement\Requests\OrderUpdateRequest;
 use SeQura\Core\Infrastructure\Logger\Logger;
-use SeQura\Core\Infrastructure\ServiceRegister;
+use Sequra\Core\Model\Api\OrderUpdater;
 use Sequra\Core\Services\BusinessLogic\Utility\SeQuraTranslationProvider;
 use Sequra\Core\Services\BusinessLogic\Utility\TransformEntityService;
 use SeQura\Core\Infrastructure\Logger\LogContextData;
@@ -30,17 +28,25 @@ class OrderUpdateTransaction implements ClientInterface
     private $transformService;
 
     /**
+     * @var OrderUpdater
+     */
+    private $orderUpdater;
+
+    /**
      * Constructor
      *
      * @param SeQuraTranslationProvider $translationProvider
      * @param TransformEntityService $transformService
+     * @param OrderUpdater $orderUpdater
      */
     public function __construct(
         SeQuraTranslationProvider $translationProvider,
-        TransformEntityService $transformService
+        TransformEntityService $transformService,
+        OrderUpdater $orderUpdater
     ) {
         $this->translationProvider = $translationProvider;
         $this->transformService = $transformService;
+        $this->orderUpdater = $orderUpdater;
     }
 
     /**
@@ -81,29 +87,10 @@ class OrderUpdateTransaction implements ClientInterface
         
         $storeId = (string) $order->getStoreId();
 
-        /**
-         * @var OrderService $orderService
-         */
-        $orderService = StoreContext::doWithStore($storeId, function () {
-            return ServiceRegister::getService(OrderService::class);
-        });
-
         try {
-            /**
-            * @var \SeQura\Core\BusinessLogic\Domain\Order\Models\SeQuraOrder $sequraOrder
-            */
-            $sequraOrder = StoreContext::doWithStore(
+            $sequraOrder = $this->orderUpdater->update(
                 $storeId,
-                [$orderService, 'updateOrder'],
-                [
-                new OrderUpdateData(
-                    $order->getIncrementId(),
-                    $shippedCart,
-                    $unshippedCart,
-                    null,
-                    null
-                )
-                ]
+                new OrderUpdateRequest($order->getIncrementId(), $shippedCart, $unshippedCart)
             );
         } catch (\Exception $exception) {
             Logger::logError(

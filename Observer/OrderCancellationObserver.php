@@ -9,12 +9,10 @@ use Magento\Framework\Exception\LocalizedException;
 use Magento\Sales\Model\Order;
 use Magento\Sales\Model\Order\Interceptor as MagentoOrder;
 use Sequra\Core\Controller\Webhook\Index as WebhookController;
-use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
+use SeQura\Core\BusinessLogic\AdminAPI\OrderManagement\Requests\OrderUpdateRequest;
 use SeQura\Core\BusinessLogic\Domain\Order\Models\OrderRequest\Cart as SeQuraCart;
-use SeQura\Core\BusinessLogic\Domain\Order\Models\OrderUpdateData;
-use SeQura\Core\BusinessLogic\Domain\Order\Service\OrderService;
 use SeQura\Core\Infrastructure\Logger\Logger;
-use SeQura\Core\Infrastructure\ServiceRegister;
+use Sequra\Core\Model\Api\OrderUpdater;
 use Sequra\Core\Model\Ui\ConfigProvider;
 use Sequra\Core\Services\BusinessLogic\Utility\SeQuraTranslationProvider;
 
@@ -26,11 +24,18 @@ class OrderCancellationObserver implements ObserverInterface
     private $translationProvider;
 
     /**
-     * @param SeQuraTranslationProvider $translationProvider
+     * @var OrderUpdater
      */
-    public function __construct(SeQuraTranslationProvider $translationProvider)
+    private $orderUpdater;
+
+    /**
+     * @param SeQuraTranslationProvider $translationProvider
+     * @param OrderUpdater $orderUpdater
+     */
+    public function __construct(SeQuraTranslationProvider $translationProvider, OrderUpdater $orderUpdater)
     {
         $this->translationProvider = $translationProvider;
+        $this->orderUpdater = $orderUpdater;
     }
 
     /**
@@ -71,22 +76,14 @@ class OrderCancellationObserver implements ObserverInterface
             throw new LocalizedException($this->translationProvider->translate('sequra.error.cannotCancel'));
         }
 
-        /**
-         * @var OrderService $orderService
-         */
-        $orderService = StoreContext::doWithStore((string)$orderData->getStoreId(), function () {
-            return ServiceRegister::getService(OrderService::class);
-        });
-
-        StoreContext::doWithStore((string)$orderData->getStoreId(), [$orderService, 'updateOrder'], [
-            new OrderUpdateData(
+        $this->orderUpdater->update(
+            (string)$orderData->getStoreId(),
+            new OrderUpdateRequest(
                 $orderData->getIncrementId(),
                 new SeQuraCart($orderData->getOrderCurrencyCode() ?? ''),
-                new SeQuraCart($orderData->getOrderCurrencyCode() ?? ''),
-                null,
-                null
+                new SeQuraCart($orderData->getOrderCurrencyCode() ?? '')
             )
-        ]);
+        );
     }
 
     /**
