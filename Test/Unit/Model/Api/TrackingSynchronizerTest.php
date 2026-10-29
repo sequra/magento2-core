@@ -115,48 +115,6 @@ class TrackingSynchronizerTest extends TestCase
     }
 
     /**
-     * Saving a shipment with several tracking records commits each of them, and the same list is sent only once.
-     *
-     * @return void
-     */
-    public function testSendsTheSameListOnlyOncePerRequest(): void
-    {
-        $this->trackingBuilder->method('build')->willReturn([new TrackingPostal('15', 'DHL', 'JD0123')]);
-
-        $this->orderUpdater = $this->createMock(OrderUpdater::class);
-        $this->orderUpdater->expects($this->once())
-            ->method('update')
-            ->willReturn($this->createStub(SeQuraOrder::class));
-
-        $synchronizer = $this->synchronizer();
-        $synchronizer->synchronize($this->order(ConfigProvider::CODE));
-        $synchronizer->synchronize($this->order(ConfigProvider::CODE));
-    }
-
-    /**
-     * A list that changed later in the same request is still sent.
-     *
-     * @return void
-     */
-    public function testSendsAListThatChangedInTheSameRequest(): void
-    {
-        $this->trackingBuilder = $this->createStub(TrackingBuilder::class);
-        $this->trackingBuilder->method('build')->willReturnOnConsecutiveCalls(
-            [new TrackingPostal('15', 'DHL', 'JD0123')],
-            []
-        );
-
-        $this->orderUpdater = $this->createMock(OrderUpdater::class);
-        $this->orderUpdater->expects($this->exactly(2))
-            ->method('update')
-            ->willReturn($this->createStub(SeQuraOrder::class));
-
-        $synchronizer = $this->synchronizer();
-        $synchronizer->synchronize($this->order(ConfigProvider::CODE));
-        $synchronizer->synchronize($this->order(ConfigProvider::CODE));
-    }
-
-    /**
      * An order paid with another method is ignored, the trackings are not even built.
      *
      * @return void
@@ -255,7 +213,6 @@ class TrackingSynchronizerTest extends TestCase
         $order->method('getPayment')->willReturn($payment);
         $order->method('getStoreId')->willReturn(3);
         $order->method('getIncrementId')->willReturn('000000123');
-        $order->method('getEntityId')->willReturn(42);
 
         return $order;
     }

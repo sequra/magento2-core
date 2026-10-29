@@ -5,6 +5,7 @@ namespace Sequra\Core\Model\Api\Checkout;
 use Magento\Framework\App\Request\Http;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Serialize\Serializer\Json;
+use Magento\Catalog\Model\Product;
 use Magento\Quote\Model\Quote;
 use SeQura\Core\BusinessLogic\CheckoutAPI\CheckoutAPI;
 use SeQura\Core\BusinessLogic\CheckoutAPI\Solicitation\Controller\SolicitationController;
@@ -14,6 +15,7 @@ use SeQura\Core\BusinessLogic\CheckoutAPI\Solicitation\Response\SolicitationResp
 use Sequra\Core\Model\Api\Builders\CreateOrderRequestBuilder;
 use Sequra\Core\Model\Api\Builders\CreateOrderRequestBuilderFactory;
 use Sequra\Core\Model\Api\CartProvider\CartProvider;
+use Sequra\Core\Services\BusinessLogic\ProductService;
 use Sequra\Core\Services\BusinessLogic\Utility\SeQuraTranslationProvider;
 
 class BaseSequraPaymentMethodsService
@@ -39,6 +41,10 @@ class BaseSequraPaymentMethodsService
      * @var SeQuraTranslationProvider
      */
     private $translationProvider;
+    /**
+     * @var ProductService
+     */
+    private $productService;
 
     /**
      * BaseSequraPaymentMethodsService constructor.
@@ -47,19 +53,22 @@ class BaseSequraPaymentMethodsService
      * @param CartProvider $cartProvider
      * @param CreateOrderRequestBuilderFactory $createOrderRequestBuilderFactory
      * @param SeQuraTranslationProvider $translationProvider
+     * @param ProductService $productService
      */
     public function __construct(
         Http $request,
         Json $jsonSerializer,
         CartProvider $cartProvider,
         \Sequra\Core\Model\Api\Builders\CreateOrderRequestBuilderFactory $createOrderRequestBuilderFactory,
-        SeQuraTranslationProvider $translationProvider
+        SeQuraTranslationProvider $translationProvider,
+        ProductService $productService
     ) {
         $this->request = $request;
         $this->jsonSerializer = $jsonSerializer;
         $this->cartProvider = $cartProvider;
         $this->createOrderRequestBuilderFactory = $createOrderRequestBuilderFactory;
         $this->translationProvider = $translationProvider;
+        $this->productService = $productService;
     }
 
     /**
@@ -166,7 +175,8 @@ class BaseSequraPaymentMethodsService
      * Returns the IDs of the products in the quote, as strings.
      *
      * Child items are included, so the variant of a configurable product and the products of a bundle are checked
-     * against the exclusions together with their parent.
+     * against the exclusions together with their parent. The products already loaded on the items are handed to
+     * the product service, so integration-core does not load each of them again.
      *
      * @param Quote $quote
      *
@@ -174,15 +184,17 @@ class BaseSequraPaymentMethodsService
      */
     private function getCartProductIds(Quote $quote): array
     {
-        $productIds = [];
+        $products = [];
         foreach ($quote->getAllItems() as $item) {
             $product = $item->getProduct();
             $productId = $product ? (string)$product->getId() : '';
-            if ($productId !== '') {
-                $productIds[$productId] = $productId;
+            if ($product instanceof Product && $productId !== '') {
+                $products[$productId] = $product;
             }
         }
 
-        return array_values($productIds);
+        $this->productService->rememberProducts(array_values($products));
+
+        return array_map('strval', array_keys($products));
     }
 }

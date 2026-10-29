@@ -74,7 +74,10 @@ class ProductService implements ProductServiceInterface
             return null;
         }
 
-        return $product->getSku() ?? '';
+        // The product's own SKU: getSku() of a configurable product taken from a cart answers the chosen variant's.
+        $sku = $product->getData('sku');
+
+        return is_string($sku) ? $sku : '';
     }
 
     /**
@@ -142,6 +145,25 @@ class ProductService implements ProductServiceInterface
         self::$products[$productId] = $product;
 
         return $product;
+    }
+
+    /**
+     * Keeps products that are already loaded, so the checks integration-core runs on them do not load them again.
+     *
+     * Grouped products are left out, as getProductById() never returns them.
+     *
+     * @param Product[] $products
+     *
+     * @return void
+     */
+    public function rememberProducts(array $products): void
+    {
+        foreach ($products as $product) {
+            $productId = (int) $product->getId();
+            if ($productId > 0 && $product->getTypeId() !== 'grouped') {
+                self::$products[$productId] = $product;
+            }
+        }
     }
 
     /**
