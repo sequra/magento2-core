@@ -21,7 +21,7 @@ class Onboarding extends BaseConfigurationController
     {
         parent::__construct($context, $jsonFactory);
 
-        $this->allowedActions = ['getConnectionData', 'connect', 'validateConnectionData'];
+        $this->allowedActions = ['getConnectionData', 'connect'];
     }
 
     /**
@@ -48,7 +48,6 @@ class Onboarding extends BaseConfigurationController
         /**
          * @var array{
          *     environment?: string,
-         *     sendStatisticalData?: bool,
          *     connectionData?: array<array{
          *         merchantId?: string,
          *         username?: string,
@@ -58,11 +57,6 @@ class Onboarding extends BaseConfigurationController
          * } $data
          */
         $data = $this->getSequraPostData();
-
-        /**
-         * @var bool $sendStatisticalData
-         */
-        $sendStatisticalData = $data['sendStatisticalData'] ?? true;
 
         /**
          * @var array<array{merchantId?: string,
@@ -89,57 +83,7 @@ class Onboarding extends BaseConfigurationController
         }
 
         // @phpstan-ignore-next-line
-        $response = AdminAPI::get()->connection($this->storeId)->connect(new OnboardingRequest(
-            $connectionRequests,
-            $sendStatisticalData
-        ));
-        $this->addResponseCode($response);
-
-        return $this->result->setData($response->toArray());
-    }
-
-    /**
-     * Validates connection data.
-     *
-     * @return Json
-     */
-    protected function validateConnectionData(): Json
-    {
-        /**
-         * @var array<string, string>
-         */
-        $data = $this->getSequraPostData();
-        /**
-         * @var string $environment
-         */
-        $environment = $data['environment'] ?? '';
-        /**
-         * @var string $merchantId
-         */
-        $merchantId = $data['merchantId'] ?? '';
-        /**
-         * @var string $username
-         */
-        $username = $data['username'] ?? '';
-        /**
-         * @var string $password
-         */
-        $password = $data['password'] ?? '';
-
-        /**
-         * @var string $deploymentId
-         */
-        $deploymentId = $data['deploymentId'] ?? '';
-
-        // @phpstan-ignore-next-line
-        $response = AdminAPI::get()->connection($this->storeId)->isConnectionDataValid(new ConnectionRequest(
-            $environment,
-            $merchantId,
-            $username,
-            $password,
-            $deploymentId
-        ));
-
+        $response = AdminAPI::get()->connection($this->storeId)->connect(new OnboardingRequest($connectionRequests));
         $this->addResponseCode($response);
 
         return $this->result->setData($response->toArray());
