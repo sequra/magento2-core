@@ -161,7 +161,7 @@ abstract class AbstractExpressCheckoutBlock extends Template
             }
 
             // SeQura is unavailable when the cart contains a virtual product, mirroring the
-            // regular checkout guard (CreateOrderRequestBuilder::isAllowedFor). Render nothing.
+            // virtual product exclusion integration-core applies to the regular checkout. Render nothing.
             if ($this->hasVirtualItem($quote)) {
                 return $this->state;
             }
