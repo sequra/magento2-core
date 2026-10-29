@@ -5,8 +5,12 @@ namespace Sequra\Core\Model\Api\Checkout;
 use Magento\Framework\App\Request\Http;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Serialize\Serializer\Json;
-use SeQura\Core\BusinessLogic\AdminAPI\AdminAPI;
+use Magento\Quote\Model\Quote;
 use SeQura\Core\BusinessLogic\CheckoutAPI\CheckoutAPI;
+use SeQura\Core\BusinessLogic\CheckoutAPI\Solicitation\Controller\SolicitationController;
+use SeQura\Core\BusinessLogic\CheckoutAPI\Solicitation\Requests\SolicitationRequest;
+use SeQura\Core\BusinessLogic\CheckoutAPI\Solicitation\Response\IdentificationFormResponse;
+use SeQura\Core\BusinessLogic\CheckoutAPI\Solicitation\Response\SolicitationResponse;
 use Sequra\Core\Model\Api\Builders\CreateOrderRequestBuilder;
 use Sequra\Core\Model\Api\Builders\CreateOrderRequestBuilderFactory;
 use Sequra\Core\Model\Api\CartProvider\CartProvider;
@@ -73,28 +77,19 @@ class BaseSequraPaymentMethodsService
             return [];
         }
 
-        /** @var CreateOrderRequestBuilder $builder */
-        $builder = $this->createOrderRequestBuilderFactory->create([
-            'cartId' => $quote->getId(),
-            'storeId' => (string)$quote->getStore()->getId(),
-        ]);
+        /** @var SolicitationController $solicitationController */
+        $solicitationController = CheckoutAPI::get()->solicitation((string)$quote->getStore()->getId());
+        /** @var SolicitationResponse $response */
+        $response = $solicitationController->solicitFor($this->createSolicitationRequest($quote));
 
-        // @phpstan-ignore-next-line
-        $generalSettings = AdminAPI::get()->generalSettings((string)$quote->getStore()->getId())->getGeneralSettings();
-        if (!$generalSettings->isSuccessful() || !$builder->isAllowedFor($generalSettings)) {
+        if (!$response->isSuccessful() || $response->getSolicitedOrder() === null) {
             return [];
         }
 
-        // @phpstan-ignore-next-line
-        $response = CheckoutAPI::get()
-            ->solicitation((string)$quote->getStore()->getId())
-            ->solicitFor($builder);
+        /** @var array<array<string, string>> $paymentMethods */
+        $paymentMethods = $response->toArray()['availablePaymentMethods'];
 
-        if (!$response->isSuccessful()) {
-            return [];
-        }
-
-        return $response->toArray()['availablePaymentMethods'];
+        return $paymentMethods;
     }
 
     /**
@@ -109,16 +104,17 @@ class BaseSequraPaymentMethodsService
     {
         $quote = $this->cartProvider->getQuote($cartId);
 
-        // @phpstan-ignore-next-line
-        $response = CheckoutAPI::get()
-            ->solicitation((string)$quote->getStore()->getId())
-            ->solicitFor($this->createOrderRequestBuilderFactory->create([
-                'cartId' => $quote->getId(),
-                'storeId' => (string)$quote->getStore()->getId(),
-            ]));
+        /** @var SolicitationController $solicitationController */
+        $solicitationController = CheckoutAPI::get()->solicitation((string)$quote->getStore()->getId());
+        /** @var SolicitationResponse $response */
+        $response = $solicitationController->solicitFor($this->createSolicitationRequest($quote));
 
         if (!$response->isSuccessful()) {
             throw new LocalizedException($this->translationProvider->translate('sequra.error.serverError'));
+        }
+
+        if ($response->getSolicitedOrder() === null) {
+            throw new LocalizedException($this->translationProvider->translate('sequra.error.notAvailable'));
         }
 
         $payload = [];
@@ -131,15 +127,59 @@ class BaseSequraPaymentMethodsService
         $campaign = !empty($payload['product_data']['sequra_campaign']) ?
             $payload['product_data']['sequra_campaign'] : null;
 
-        // @phpstan-ignore-next-line
-        $formResponse = CheckoutAPI::get()
-            ->solicitation((string)$quote->getStore()->getId())
-            ->getIdentificationForm($quote->getId(), $product, $campaign);
+        $quoteId = $quote->getId();
+        /** @var IdentificationFormResponse $formResponse */
+        $formResponse = $solicitationController->getIdentificationForm(
+            is_scalar($quoteId) ? (string)$quoteId : '',
+            $product,
+            $campaign
+        );
 
         if (!$formResponse->isSuccessful()) {
             throw new LocalizedException($this->translationProvider->translate('sequra.error.serverError'));
         }
 
         return $formResponse->getIdentificationForm()->getForm();
+    }
+
+    /**
+     * Wraps the order builder of the quote together with the products it holds.
+     *
+     * The product IDs let integration-core apply the product and category exclusions the merchant configured.
+     *
+     * @param Quote $quote
+     *
+     * @return SolicitationRequest
+     */
+    private function createSolicitationRequest(Quote $quote): SolicitationRequest
+    {
+        /** @var CreateOrderRequestBuilder $builder */
+        $builder = $this->createOrderRequestBuilderFactory->create([
+            'cartId' => $quote->getId(),
+            'storeId' => (string)$quote->getStore()->getId(),
+        ]);
+
+        return new SolicitationRequest($builder, $this->getCartProductIds($quote));
+    }
+
+    /**
+     * Returns the IDs of the products in the quote, as strings.
+     *
+     * @param Quote $quote
+     *
+     * @return string[]
+     */
+    private function getCartProductIds(Quote $quote): array
+    {
+        $productIds = [];
+        foreach ($quote->getAllVisibleItems() as $item) {
+            $product = $item->getProduct();
+            $productId = $product ? (string)$product->getId() : '';
+            if ($productId !== '') {
+                $productIds[$productId] = $productId;
+            }
+        }
+
+        return array_values($productIds);
     }
 }
