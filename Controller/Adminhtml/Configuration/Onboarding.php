@@ -6,7 +6,6 @@ use Magento\Backend\App\Action\Context;
 use Magento\Framework\Controller\Result\Json;
 use Magento\Framework\Controller\Result\JsonFactory;
 use SeQura\Core\BusinessLogic\AdminAPI\AdminAPI;
-use SeQura\Core\BusinessLogic\AdminAPI\Connection\ConnectionController;
 use SeQura\Core\BusinessLogic\AdminAPI\Connection\Requests\ConnectionRequest;
 use SeQura\Core\BusinessLogic\AdminAPI\Connection\Requests\OnboardingRequest;
 
@@ -83,9 +82,7 @@ class Onboarding extends BaseConfigurationController
             );
         }
 
-        /** @var ConnectionController $connectionController */
-        $connectionController = AdminAPI::get()->connection($this->storeId);
-        $response = $connectionController->connect(new OnboardingRequest($connectionRequests));
+        $response = AdminAPI::get()->connection($this->storeId)->connect(new OnboardingRequest($connectionRequests));
         $this->addResponseCode($response);
 
         return $this->result->setData($response->toArray());

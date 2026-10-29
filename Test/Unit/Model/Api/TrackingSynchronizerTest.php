@@ -2,6 +2,11 @@
 
 namespace Sequra\Core\Test\Unit\Model\Api;
 
+use Magento\Framework\Api\SearchCriteria;
+use Magento\Framework\Api\SearchCriteriaBuilder;
+use Magento\Sales\Api\Data\OrderPaymentSearchResultInterface;
+use Magento\Sales\Api\OrderPaymentRepositoryInterface;
+use Magento\Sales\Api\OrderRepositoryInterface;
 use Magento\Sales\Model\Order;
 use Magento\Sales\Model\Order\Payment;
 use PHPUnit\Framework\MockObject\Exception;
@@ -27,8 +32,8 @@ use Sequra\Core\Model\Ui\ConfigProvider;
 /**
  * Class TrackingSynchronizerTest
  *
- * That only seQura orders get their tracking list sent, the list alone and in full, and that a failed update
- * never reaches the shipment being saved.
+ * That only seQura orders get their tracking list sent, the list alone and in full, that other orders are not
+ * even loaded, and that a failed update never reaches the shipment being saved.
  */
 class TrackingSynchronizerTest extends TestCase
 {
@@ -43,6 +48,18 @@ class TrackingSynchronizerTest extends TestCase
     private $trackingBuilder;
 
     /**
+     * @var (MockObject&OrderRepositoryInterface)|(Stub&OrderRepositoryInterface)
+     */
+    private $orderRepository;
+
+    /**
+     * Payment method of order 42 as the payment repository answers it, null for an order without payment.
+     *
+     * @var string|null
+     */
+    private $paymentMethod = ConfigProvider::CODE;
+
+    /**
      * @return void
      *
      * @throws Exception
@@ -51,6 +68,8 @@ class TrackingSynchronizerTest extends TestCase
     {
         $this->orderUpdater = $this->createStub(OrderUpdater::class);
         $this->trackingBuilder = $this->createStub(TrackingBuilder::class);
+        $this->orderRepository = $this->createStub(OrderRepositoryInterface::class);
+        $this->orderRepository->method('get')->willReturn($this->order());
     }
 
     /**
@@ -88,7 +107,7 @@ class TrackingSynchronizerTest extends TestCase
             }))
             ->willReturn($this->createStub(SeQuraOrder::class));
 
-        $this->synchronizer()->synchronize($this->order(ConfigProvider::CODE));
+        $this->synchronizer()->synchronize(42);
     }
 
     /**
@@ -111,7 +130,7 @@ class TrackingSynchronizerTest extends TestCase
             }))
             ->willReturn($this->createStub(SeQuraOrder::class));
 
-        $this->synchronizer()->synchronize($this->order(ConfigProvider::CODE));
+        $this->synchronizer()->synchronize(42);
     }
 
     /**
@@ -121,12 +140,15 @@ class TrackingSynchronizerTest extends TestCase
      */
     public function testIgnoresAnOrderPaidWithAnotherMethod(): void
     {
+        $this->paymentMethod = 'checkmo';
+        $this->orderRepository = $this->createMock(OrderRepositoryInterface::class);
+        $this->orderRepository->expects($this->never())->method('get');
         $this->trackingBuilder = $this->createMock(TrackingBuilder::class);
         $this->trackingBuilder->expects($this->never())->method('build');
         $this->orderUpdater = $this->createMock(OrderUpdater::class);
         $this->orderUpdater->expects($this->never())->method('update');
 
-        $this->synchronizer()->synchronize($this->order('checkmo'));
+        $this->synchronizer()->synchronize(42);
     }
 
     /**
@@ -136,13 +158,11 @@ class TrackingSynchronizerTest extends TestCase
      */
     public function testIgnoresAnOrderWithoutPayment(): void
     {
-        $order = $this->createStub(Order::class);
-        $order->method('getPayment')->willReturn(null);
-
+        $this->paymentMethod = null;
         $this->orderUpdater = $this->createMock(OrderUpdater::class);
         $this->orderUpdater->expects($this->never())->method('update');
 
-        $this->synchronizer()->synchronize($order);
+        $this->synchronizer()->synchronize(42);
     }
 
     /**
@@ -161,17 +181,39 @@ class TrackingSynchronizerTest extends TestCase
         $shopLogger->expects($this->once())->method('logMessage');
         $this->registerLogger($shopLogger);
 
-        $this->synchronizer()->synchronize($this->order(ConfigProvider::CODE));
+        $this->synchronizer()->synchronize(42);
     }
 
     /**
-     * Builds the synchronizer over the mocked builder and updater.
+     * Builds the synchronizer over the mocked builder, updater and repositories.
      *
      * @return TrackingSynchronizer
      */
     private function synchronizer(): TrackingSynchronizer
     {
-        return new TrackingSynchronizer($this->trackingBuilder, $this->orderUpdater);
+        $payments = [];
+        if ($this->paymentMethod !== null) {
+            $payment = $this->createStub(Payment::class);
+            $payment->method('getMethod')->willReturn($this->paymentMethod);
+            $payments[] = $payment;
+        }
+
+        $searchResult = $this->createStub(OrderPaymentSearchResultInterface::class);
+        $searchResult->method('getItems')->willReturn($payments);
+        $paymentRepository = $this->createStub(OrderPaymentRepositoryInterface::class);
+        $paymentRepository->method('getList')->willReturn($searchResult);
+
+        $searchCriteriaBuilder = $this->createMock(SearchCriteriaBuilder::class);
+        $searchCriteriaBuilder->expects($this->once())->method('addFilter')->with('parent_id', 42)->willReturnSelf();
+        $searchCriteriaBuilder->method('create')->willReturn($this->createStub(SearchCriteria::class));
+
+        return new TrackingSynchronizer(
+            $this->trackingBuilder,
+            $this->orderUpdater,
+            $this->orderRepository,
+            $paymentRepository,
+            $searchCriteriaBuilder
+        );
     }
 
     /**
@@ -198,19 +240,13 @@ class TrackingSynchronizerTest extends TestCase
     }
 
     /**
-     * Returns order 000000123 of store 3 paid with the given method.
-     *
-     * @param string $paymentMethod
+     * Returns order 000000123 of store 3.
      *
      * @return Order
      */
-    private function order(string $paymentMethod): Order
+    private function order(): Order
     {
-        $payment = $this->createStub(Payment::class);
-        $payment->method('getMethod')->willReturn($paymentMethod);
-
         $order = $this->createStub(Order::class);
-        $order->method('getPayment')->willReturn($payment);
         $order->method('getStoreId')->willReturn(3);
         $order->method('getIncrementId')->willReturn('000000123');
 

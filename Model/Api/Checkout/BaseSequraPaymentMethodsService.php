@@ -5,13 +5,10 @@ namespace Sequra\Core\Model\Api\Checkout;
 use Magento\Framework\App\Request\Http;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\Serialize\Serializer\Json;
-use Magento\Catalog\Model\Product;
 use Magento\Quote\Model\Quote;
 use SeQura\Core\BusinessLogic\CheckoutAPI\CheckoutAPI;
 use SeQura\Core\BusinessLogic\CheckoutAPI\Solicitation\Controller\SolicitationController;
 use SeQura\Core\BusinessLogic\CheckoutAPI\Solicitation\Requests\SolicitationRequest;
-use SeQura\Core\BusinessLogic\CheckoutAPI\Solicitation\Response\IdentificationFormResponse;
-use SeQura\Core\BusinessLogic\CheckoutAPI\Solicitation\Response\SolicitationResponse;
 use Sequra\Core\Model\Api\Builders\CreateOrderRequestBuilder;
 use Sequra\Core\Model\Api\Builders\CreateOrderRequestBuilderFactory;
 use Sequra\Core\Model\Api\CartProvider\CartProvider;
@@ -88,10 +85,9 @@ class BaseSequraPaymentMethodsService
 
         /** @var SolicitationController $solicitationController */
         $solicitationController = CheckoutAPI::get()->solicitation((string)$quote->getStore()->getId());
-        /** @var SolicitationResponse $response */
         $response = $solicitationController->solicitFor($this->createSolicitationRequest($quote));
 
-        if (!$response->isSuccessful() || $response->getSolicitedOrder() === null) {
+        if (!$response->isSuccessful()) {
             return [];
         }
 
@@ -115,7 +111,6 @@ class BaseSequraPaymentMethodsService
 
         /** @var SolicitationController $solicitationController */
         $solicitationController = CheckoutAPI::get()->solicitation((string)$quote->getStore()->getId());
-        /** @var SolicitationResponse $response */
         $response = $solicitationController->solicitFor($this->createSolicitationRequest($quote));
 
         if (!$response->isSuccessful()) {
@@ -137,7 +132,6 @@ class BaseSequraPaymentMethodsService
             $payload['product_data']['sequra_campaign'] : null;
 
         $quoteId = $quote->getId();
-        /** @var IdentificationFormResponse $formResponse */
         $formResponse = $solicitationController->getIdentificationForm(
             is_scalar($quoteId) ? (string)$quoteId : '',
             $product,
@@ -175,8 +169,8 @@ class BaseSequraPaymentMethodsService
      * Returns the IDs of the products in the quote, as strings.
      *
      * Child items are included, so the variant of a configurable product and the products of a bundle are checked
-     * against the exclusions together with their parent. The products already loaded on the items are handed to
-     * the product service, so integration-core does not load each of them again.
+     * against the exclusions together with their parent. The products are preloaded with one query, so
+     * integration-core does not load each of them on its own.
      *
      * @param Quote $quote
      *
@@ -184,17 +178,17 @@ class BaseSequraPaymentMethodsService
      */
     private function getCartProductIds(Quote $quote): array
     {
-        $products = [];
+        $productIds = [];
         foreach ($quote->getAllItems() as $item) {
-            $product = $item->getProduct();
-            $productId = $product ? (string)$product->getId() : '';
-            if ($product instanceof Product && $productId !== '') {
-                $products[$productId] = $product;
+            $productId = (string)$item->getProductId();
+            if ($productId !== '' && $productId !== '0') {
+                $productIds[$productId] = $productId;
             }
         }
 
-        $this->productService->rememberProducts(array_values($products));
+        $productIds = array_values($productIds);
+        $this->productService->preloadProducts($productIds);
 
-        return array_map('strval', array_keys($products));
+        return $productIds;
     }
 }

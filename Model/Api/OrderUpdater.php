@@ -3,9 +3,7 @@
 namespace Sequra\Core\Model\Api;
 
 use SeQura\Core\BusinessLogic\AdminAPI\AdminAPI;
-use SeQura\Core\BusinessLogic\AdminAPI\OrderManagement\OrderManagementController;
 use SeQura\Core\BusinessLogic\AdminAPI\OrderManagement\Requests\OrderUpdateRequest;
-use SeQura\Core\BusinessLogic\AdminAPI\OrderManagement\Responses\OrderUpdateResponse;
 use SeQura\Core\BusinessLogic\Domain\Order\Models\SeQuraOrder;
 use Sequra\Core\Model\Api\Exception\OrderUpdateFailedException;
 
@@ -30,10 +28,7 @@ class OrderUpdater
      */
     public function update(string $storeId, OrderUpdateRequest $request): SeQuraOrder
     {
-        /** @var OrderManagementController $orderManagementController */
-        $orderManagementController = AdminAPI::get()->orderManagement($storeId);
-        /** @var OrderUpdateResponse $response */
-        $response = $orderManagementController->updateOrder($request);
+        $response = AdminAPI::get()->orderManagement($storeId)->updateOrder($request);
 
         if (!$response->isSuccessful()) {
             $error = $response->toArray();

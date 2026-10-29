@@ -10,21 +10,18 @@ export default class SeQuraAdminPage extends Page {
     }
 
     async expectConnectionSettingsPage(options = {}) {
-        const { timeout = 30000 } = options;
-
-        await this.expect(this.locators.connectForm(), 'The connection settings page is shown').toBeVisible({ timeout });
-        await this.expect
-            .poll(() => new URL(this.page.url()).hash, { message: 'The application settled on the connection settings', timeout })
-            .toBe('#settings-connection');
+        await this.expectConnectFormAt('#settings-connection', 'The application settled on the connection settings', options);
     }
 
     async expectConnectStep(options = {}) {
+        await this.expectConnectFormAt('#onboarding-connect', 'The application stays on the connect step', options);
+    }
+
+    async expectConnectFormAt(hash, message, options = {}) {
         const { timeout = 30000 } = options;
 
-        await this.expect(this.locators.connectForm(), 'The connect step is shown').toBeVisible({ timeout });
-        await this.expect
-            .poll(() => new URL(this.page.url()).hash, { message: 'The application stays on the connect step', timeout })
-            .toBe('#onboarding-connect');
+        await this.expect(this.locators.connectForm(), 'The connect form is shown').toBeVisible({ timeout });
+        await this.expect.poll(() => new URL(this.page.url()).hash, { message, timeout }).toBe(hash);
     }
 
     async expectDeploymentTargetsStep(options = {}) {

@@ -74,10 +74,7 @@ class ProductService implements ProductServiceInterface
             return null;
         }
 
-        // The product's own SKU: getSku() of a configurable product taken from a cart answers the chosen variant's.
-        $sku = $product->getData('sku');
-
-        return is_string($sku) ? $sku : '';
+        return $product->getSku() ?? '';
     }
 
     /**
@@ -148,20 +145,26 @@ class ProductService implements ProductServiceInterface
     }
 
     /**
-     * Keeps products that are already loaded, so the checks integration-core runs on them do not load them again.
+     * Loads the given products with one query.
      *
-     * Grouped products are left out, as getProductById() never returns them.
+     * The checks integration-core runs on each of them then do not load them one by one. Grouped products are left
+     * out, as getProductById() never returns them.
      *
-     * @param Product[] $products
+     * @param string[] $productIds
      *
      * @return void
      */
-    public function rememberProducts(array $products): void
+    public function preloadProducts(array $productIds): void
     {
-        foreach ($products as $product) {
-            $productId = (int) $product->getId();
-            if ($productId > 0 && $product->getTypeId() !== 'grouped') {
-                self::$products[$productId] = $product;
+        $missing = array_diff(array_map('intval', $productIds), array_keys(self::$products));
+        if (!$missing) {
+            return;
+        }
+
+        /** @var Product $product */
+        foreach ($this->productCollectionFactory->create()->addIdFilter($missing) as $product) {
+            if ($product->getTypeId() !== 'grouped') {
+                self::$products[(int) $product->getId()] = $product;
             }
         }
     }
@@ -175,7 +178,7 @@ class ProductService implements ProductServiceInterface
      *
      * @throws NoSuchEntityException
      */
-    public function getAllProductCategoryIds(array $categoryIds): array
+    private function getAllProductCategoryIds(array $categoryIds): array
     {
         if (!$categoryIds) {
             return [];

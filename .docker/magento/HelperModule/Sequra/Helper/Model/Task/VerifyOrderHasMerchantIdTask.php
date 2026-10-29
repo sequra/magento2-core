@@ -8,7 +8,6 @@
 
 namespace Sequra\Helper\Model\Task;
 
-use Sequra\Core\Setup\DatabaseHandler;
 use Magento\Framework\App\ObjectManager;
 use Magento\Framework\Encryption\EncryptorInterface;
 
@@ -35,24 +34,15 @@ class VerifyOrderHasMerchantIdTask extends Task
         $orderId = $args['order_id'];
         $merchantId = $args['merchant_id'];
 
-        $table_name = DatabaseHandler::SEQURA_ORDER_TABLE;
-        $query      = "SELECT `data` FROM $table_name WHERE `index_3` = '$orderId' LIMIT 1";
-        $result     = $this->conn->getConnection()->fetchAll($query);
-        if (!isset($result[0]['data'])) {
-            $this->httpErrorResponse('Order not found', 404);
-        }
-        /**
-         * @var array $data
-         * @phpstan-var array<string, array<string, string>>
-         */
-        $data = json_decode($result[0]['data'], true);
-        if (!is_array($data) || !is_array($data['merchant']) || !isset($data['merchant']['id'])) {
+        $data = $this->getSeQuraOrderData((string) $orderId);
+        $merchant = $data['merchant'] ?? null;
+        if (!is_array($merchant) || !isset($merchant['id'])) {
             $this->httpErrorResponse('Merchant ID not found in order data', 404);
         }
         /**
          * @var string $currentMerchantId
          */
-        $currentMerchantId = $data['merchant']['id'];
+        $currentMerchantId = $merchant['id'];
         if ($currentMerchantId !== $merchantId) {
             $this->httpErrorResponse("Merchant ID '$currentMerchantId' does not match '$merchantId'", 400);
         }
