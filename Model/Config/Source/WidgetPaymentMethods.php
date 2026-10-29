@@ -5,6 +5,7 @@ namespace Sequra\Core\Model\Config\Source;
 use Magento\Store\Model\StoreManagerInterface;
 use Magento\Framework\Data\OptionSourceInterface;
 use SeQura\Core\BusinessLogic\CheckoutAPI\CheckoutAPI;
+use SeQura\Core\BusinessLogic\CheckoutAPI\PaymentMethods\CachedPaymentMethodsController;
 use SeQura\Core\BusinessLogic\CheckoutAPI\PaymentMethods\Requests\GetCachedPaymentMethodsRequest;
 use SeQura\Core\BusinessLogic\CheckoutAPI\PaymentMethods\Responses\CachedPaymentMethodsResponse;
 use SeQura\Core\Infrastructure\Logger\Logger;
@@ -50,8 +51,10 @@ class WidgetPaymentMethods implements OptionSourceInterface
                 continue;
             }
 
+            /** @var CachedPaymentMethodsController $paymentMethodsController */
+            $paymentMethodsController = CheckoutAPI::get()->cachedPaymentMethods($storeId);
             /** @var CachedPaymentMethodsResponse $cachedPaymentMethods */
-            $cachedPaymentMethods = CheckoutAPI::get()->cachedPaymentMethods($storeId)
+            $cachedPaymentMethods = $paymentMethodsController
                 ->getCachedPaymentMethods(new GetCachedPaymentMethodsRequest($country->getMerchantId()));
             foreach ($cachedPaymentMethods->toArray() as $paymentMethod) {
                 if (!is_array($paymentMethod) ||

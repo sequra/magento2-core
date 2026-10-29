@@ -59,7 +59,10 @@ class Index implements HttpPostActionInterface, CsrfAwareActionInterface
     {
         $result = $this->jsonFactory->create();
 
-        $payload = json_decode($this->request->getContent(), true) ?? [];
+        $payload = json_decode($this->request->getContent(), true);
+        if (!is_array($payload)) {
+            $payload = [];
+        }
 
         $param = $this->request->getParam('storeId', '');
 
@@ -68,7 +71,10 @@ class Index implements HttpPostActionInterface, CsrfAwareActionInterface
         }
 
         $storeId = (string)$param;
-        $signature = $this->request->getParam('signature');
+        $signature = $this->request->getParam('signature', '');
+        if (!is_string($signature)) {
+            $signature = '';
+        }
 
         if (!$storeId) {
             return $result

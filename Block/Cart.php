@@ -10,6 +10,7 @@ use Magento\Framework\App\ScopeResolverInterface;
 use Magento\Framework\Locale\ResolverInterface;
 use Magento\Framework\HTTP\PhpEnvironment\Request;
 use SeQura\Core\BusinessLogic\CheckoutAPI\CheckoutAPI;
+use SeQura\Core\BusinessLogic\CheckoutAPI\PromotionalWidgets\PromotionalWidgetsCheckoutController;
 use SeQura\Core\BusinessLogic\CheckoutAPI\PromotionalWidgets\Requests\PromotionalWidgetsCheckoutRequest;
 use SeQura\Core\BusinessLogic\CheckoutAPI\PromotionalWidgets\Responses\GetWidgetsCheckoutResponse;
 use SeQura\Core\Infrastructure\Logger\Logger;
@@ -53,8 +54,10 @@ class Cart extends Template
     {
         try {
             $storeId = (string)$this->_storeManager->getStore()->getId();
+            /** @var PromotionalWidgetsCheckoutController $widgetsController */
+            $widgetsController = CheckoutAPI::get()->promotionalWidgets($storeId);
             /** @var GetWidgetsCheckoutResponse $widget */
-            $widget = CheckoutAPI::get()->promotionalWidgets($storeId)
+            $widget = $widgetsController
                 ->getAvailableWidgetForCartPage(new PromotionalWidgetsCheckoutRequest(
                     $this->getShippingAddressCountry(),
                     $this->getCurrentCountry(),

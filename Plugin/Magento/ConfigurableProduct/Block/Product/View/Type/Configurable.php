@@ -68,9 +68,9 @@ class Configurable
     /**
      * Get the general settings
      *
-     * @return GeneralSettings|null
+     * @return GeneralSettings
      */
-    private function getGeneralSettings(): ?GeneralSettings
+    private function getGeneralSettings(): GeneralSettings
     {
         /** @var GeneralSettingsService $service */
         $service = ServiceRegister::getService(GeneralSettingsService::class);

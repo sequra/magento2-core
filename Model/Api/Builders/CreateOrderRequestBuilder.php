@@ -618,7 +618,11 @@ class CreateOrderRequestBuilder implements CoreCreateOrderRequestBuilder
 
         $merchantId = null;
         foreach ($data->toArray() as $country) {
-            if ($country['countryCode'] === $shippingCountry && !empty($country['merchantId'])) {
+            if (!is_array($country) || !isset($country['merchantId']) || !is_string($country['merchantId'])) {
+                continue;
+            }
+
+            if (($country['countryCode'] ?? null) === $shippingCountry && $country['merchantId'] !== '') {
                 $merchantId = $country['merchantId'];
             }
         }
