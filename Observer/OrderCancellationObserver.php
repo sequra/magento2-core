@@ -72,7 +72,9 @@ class OrderCancellationObserver implements ObserverInterface
     private function handleCancellation(MagentoOrder $orderData): void
     {
         $statusHistory = $orderData->getAllStatusHistory();
-        if ($statusHistory && $statusHistory[count($statusHistory) - 2]->getStatus() === Order::STATE_PAYMENT_REVIEW) {
+        if (count($statusHistory) >= 2
+            && $statusHistory[count($statusHistory) - 2]->getStatus() === Order::STATE_PAYMENT_REVIEW
+        ) {
             throw new LocalizedException($this->translationProvider->translate('sequra.error.cannotCancel'));
         }
 

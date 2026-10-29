@@ -165,6 +165,9 @@ class BaseSequraPaymentMethodsService
     /**
      * Returns the IDs of the products in the quote, as strings.
      *
+     * Child items are included, so the variant of a configurable product and the products of a bundle are checked
+     * against the exclusions together with their parent.
+     *
      * @param Quote $quote
      *
      * @return string[]
@@ -172,7 +175,7 @@ class BaseSequraPaymentMethodsService
     private function getCartProductIds(Quote $quote): array
     {
         $productIds = [];
-        foreach ($quote->getAllVisibleItems() as $item) {
+        foreach ($quote->getAllItems() as $item) {
             $product = $item->getProduct();
             $productId = $product ? (string)$product->getId() : '';
             if ($productId !== '') {

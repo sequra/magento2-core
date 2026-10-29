@@ -4,6 +4,8 @@ namespace Sequra\Core\Test\Unit\Model\Api\Builders;
 
 use Magento\Framework\Api\SearchCriteria;
 use Magento\Framework\Api\SearchCriteriaBuilder;
+use Magento\Framework\Api\SortOrder;
+use Magento\Framework\Api\SortOrderBuilder;
 use Magento\Sales\Api\Data\ShipmentTrackSearchResultInterface;
 use Magento\Sales\Api\ShipmentTrackRepositoryInterface;
 use Magento\Sales\Model\Order;
@@ -129,12 +131,18 @@ class TrackingBuilderTest extends TestCase
 
         $searchCriteriaBuilder = $this->createMock(SearchCriteriaBuilder::class);
         $searchCriteriaBuilder->expects($this->once())->method('addFilter')->with('order_id', 42)->willReturnSelf();
+        $searchCriteriaBuilder->expects($this->once())->method('addSortOrder')->willReturnSelf();
         $searchCriteriaBuilder->method('create')->willReturn($this->createStub(SearchCriteria::class));
+
+        $sortOrderBuilder = $this->createMock(SortOrderBuilder::class);
+        $sortOrderBuilder->expects($this->once())->method('setField')->with('entity_id')->willReturnSelf();
+        $sortOrderBuilder->expects($this->once())->method('setDirection')->with(SortOrder::SORT_ASC)->willReturnSelf();
+        $sortOrderBuilder->method('create')->willReturn($this->createStub(SortOrder::class));
 
         $this->shippingHelper = $this->createStub(ShippingHelper::class);
         $this->shippingHelper->method('getTrackingPopupUrlBySalesModel')->willReturn($popupUrl);
 
-        return new TrackingBuilder($repository, $searchCriteriaBuilder, $this->shippingHelper);
+        return new TrackingBuilder($repository, $searchCriteriaBuilder, $sortOrderBuilder, $this->shippingHelper);
     }
 
     /**

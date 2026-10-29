@@ -8,7 +8,6 @@ use PHPUnit\Framework\MockObject\Exception;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
-use RuntimeException;
 use SeQura\Core\BusinessLogic\AdminAPI\OrderManagement\Requests\OrderUpdateRequest;
 use SeQura\Core\BusinessLogic\Domain\Order\Models\OrderRequest\Tracking\TrackingPostal;
 use SeQura\Core\BusinessLogic\Domain\Order\Models\OrderUpdateData;
@@ -20,6 +19,7 @@ use SeQura\Core\Infrastructure\Logger\LoggerConfiguration;
 use SeQura\Core\Infrastructure\ServiceRegister;
 use SeQura\Core\Infrastructure\Utility\TimeProvider;
 use Sequra\Core\Model\Api\Builders\TrackingBuilder;
+use Sequra\Core\Model\Api\Exception\OrderUpdateFailedException;
 use Sequra\Core\Model\Api\OrderUpdater;
 use Sequra\Core\Model\Api\TrackingSynchronizer;
 use Sequra\Core\Model\Ui\ConfigProvider;
@@ -115,6 +115,48 @@ class TrackingSynchronizerTest extends TestCase
     }
 
     /**
+     * Saving a shipment with several tracking records commits each of them, and the same list is sent only once.
+     *
+     * @return void
+     */
+    public function testSendsTheSameListOnlyOncePerRequest(): void
+    {
+        $this->trackingBuilder->method('build')->willReturn([new TrackingPostal('15', 'DHL', 'JD0123')]);
+
+        $this->orderUpdater = $this->createMock(OrderUpdater::class);
+        $this->orderUpdater->expects($this->once())
+            ->method('update')
+            ->willReturn($this->createStub(SeQuraOrder::class));
+
+        $synchronizer = $this->synchronizer();
+        $synchronizer->synchronize($this->order(ConfigProvider::CODE));
+        $synchronizer->synchronize($this->order(ConfigProvider::CODE));
+    }
+
+    /**
+     * A list that changed later in the same request is still sent.
+     *
+     * @return void
+     */
+    public function testSendsAListThatChangedInTheSameRequest(): void
+    {
+        $this->trackingBuilder = $this->createStub(TrackingBuilder::class);
+        $this->trackingBuilder->method('build')->willReturnOnConsecutiveCalls(
+            [new TrackingPostal('15', 'DHL', 'JD0123')],
+            []
+        );
+
+        $this->orderUpdater = $this->createMock(OrderUpdater::class);
+        $this->orderUpdater->expects($this->exactly(2))
+            ->method('update')
+            ->willReturn($this->createStub(SeQuraOrder::class));
+
+        $synchronizer = $this->synchronizer();
+        $synchronizer->synchronize($this->order(ConfigProvider::CODE));
+        $synchronizer->synchronize($this->order(ConfigProvider::CODE));
+    }
+
+    /**
      * An order paid with another method is ignored, the trackings are not even built.
      *
      * @return void
@@ -153,7 +195,9 @@ class TrackingSynchronizerTest extends TestCase
     public function testLogsARefusedUpdateInsteadOfRaisingIt(): void
     {
         $this->trackingBuilder->method('build')->willReturn([]);
-        $this->orderUpdater->method('update')->willThrowException(new RuntimeException('Order not found.'));
+        $this->orderUpdater->method('update')->willThrowException(
+            new OrderUpdateFailedException('Order not found.', 'general.errors.order.notFound', 404)
+        );
 
         $shopLogger = $this->createMock(ShopLoggerAdapter::class);
         $shopLogger->expects($this->once())->method('logMessage');
@@ -211,6 +255,7 @@ class TrackingSynchronizerTest extends TestCase
         $order->method('getPayment')->willReturn($payment);
         $order->method('getStoreId')->willReturn(3);
         $order->method('getIncrementId')->willReturn('000000123');
+        $order->method('getEntityId')->willReturn(42);
 
         return $order;
     }

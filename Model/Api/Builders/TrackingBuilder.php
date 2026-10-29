@@ -3,6 +3,8 @@
 namespace Sequra\Core\Model\Api\Builders;
 
 use Magento\Framework\Api\SearchCriteriaBuilder;
+use Magento\Framework\Api\SortOrder;
+use Magento\Framework\Api\SortOrderBuilder;
 use Magento\Sales\Api\Data\ShipmentTrackInterface;
 use Magento\Sales\Api\ShipmentTrackRepositoryInterface;
 use Magento\Sales\Model\Order;
@@ -27,6 +29,11 @@ class TrackingBuilder
     private $searchCriteriaBuilder;
 
     /**
+     * @var SortOrderBuilder
+     */
+    private $sortOrderBuilder;
+
+    /**
      * @var ShippingHelper
      */
     private $shippingHelper;
@@ -34,22 +41,26 @@ class TrackingBuilder
     /**
      * @param ShipmentTrackRepositoryInterface $trackRepository
      * @param SearchCriteriaBuilder $searchCriteriaBuilder
+     * @param SortOrderBuilder $sortOrderBuilder
      * @param ShippingHelper $shippingHelper
      */
     public function __construct(
         ShipmentTrackRepositoryInterface $trackRepository,
         SearchCriteriaBuilder $searchCriteriaBuilder,
+        SortOrderBuilder $sortOrderBuilder,
         ShippingHelper $shippingHelper
     ) {
         $this->trackRepository = $trackRepository;
         $this->searchCriteriaBuilder = $searchCriteriaBuilder;
+        $this->sortOrderBuilder = $sortOrderBuilder;
         $this->shippingHelper = $shippingHelper;
     }
 
     /**
      * Returns one postal tracking per tracking record of the order, read from the database.
      *
-     * The records are read again instead of taken from the order, so a record deleted in this request is not sent.
+     * The records are read again instead of taken from the order, so a record deleted in this request is not sent,
+     * and always in the same order, because integration-core compares the list with the last one sent by position.
      *
      * @param Order $order
      *
@@ -59,6 +70,12 @@ class TrackingBuilder
     {
         $searchCriteria = $this->searchCriteriaBuilder
             ->addFilter(ShipmentTrackInterface::ORDER_ID, $order->getEntityId())
+            ->addSortOrder(
+                $this->sortOrderBuilder
+                    ->setField(ShipmentTrackInterface::ENTITY_ID)
+                    ->setDirection(SortOrder::SORT_ASC)
+                    ->create()
+            )
             ->create();
 
         $trackings = [];
