@@ -7,7 +7,7 @@
   "scripts": {
     "copy-assets": "cp -r node_modules/sequra-core-admin-fe/dist/resources/assets/* view/adminhtml/web/assets/",
     "copy-css": "cp -r node_modules/sequra-core-admin-fe/dist/resources/css/* view/adminhtml/web/css/",
-    "copy-js": "cp -r node_modules/sequra-core-admin-fe/dist/resources/js/* view/adminhtml/web/js/",
+    "copy-js": "rm -rf view/adminhtml/web/js/sequra-core && mkdir -p view/adminhtml/web/js/sequra-core && cp -R node_modules/sequra-core-admin-fe/dist/resources/js/. view/adminhtml/web/js/sequra-core/",
     "copy-lang": "cp -r node_modules/sequra-core-admin-fe/dist/resources/lang/* view/adminhtml/web/lang/",
     "copy-resources": "npm run copy-assets && npm run copy-css && npm run copy-js && npm run copy-lang"
   },
@@ -15,9 +15,9 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@playwright/test": "^1.56.1",
+    "@playwright/test": "1.58.2",
     "@types/node": "^22.10.7",
     "playwright-fixture-for-plugins": "github:sequra/playwright-fixture-for-plugins#1.6.0",
-    "sequra-core-admin-fe": "github:sequra/integration-core-ui#2.3.0"
+    "sequra-core-admin-fe": "github:sequra/integration-core-ui#3.0.0"
   }
 }

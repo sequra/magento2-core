@@ -1,8 +1,8 @@
 import { test as baseTest, expect } from "@playwright/test";
-import { ConnectionSettingsPage, GeneralSettingsPage, OnboardingSettingsPage, PaymentMethodsSettingsPage, WidgetSettingsPage } from "playwright-fixture-for-plugins";
 import BackOffice from "./base/BackOffice";
 import SeQuraHelper from "./utils/SeQuraHelper";
 import DataProvider from "./utils/DataProvider";
+import ShopRestApi from "./utils/ShopRestApi";
 import ProductPage from "./pages/ProductPage";
 import CheckoutPage from "./pages/CheckoutPage";
 import CartPage from "./pages/CartPage";
@@ -10,12 +10,15 @@ import CategoryPage from "./pages/CategoryPage";
 import HomePage from "./pages/HomePage";
 import AccountPage from "./pages/AccountPage";
 import ExpressCheckoutPage from "./pages/ExpressCheckoutPage";
+import OnboardingSettingsPage from "./pages/OnboardingSettingsPage";
+import ConnectionSettingsPage from "./pages/ConnectionSettingsPage";
+import SeQuraAdminPage from "./pages/SeQuraAdminPage";
 
 const test = baseTest.extend({
     dataProvider: async ({ page, baseURL, request }, use) => await use(new DataProvider(page, baseURL, expect, request)),
     backOffice: async ({ page, baseURL }, use) => await use(new BackOffice(page, baseURL, expect)),
     helper: async ({ page, baseURL, request }, use) => await use(new SeQuraHelper(page, baseURL, expect, request)),
-    paymentMethodsSettingsPage: async ({ page, baseURL, request, backOffice, helper}, use) =>  await use(new PaymentMethodsSettingsPage(page, baseURL, expect, request, backOffice, helper)),
+    shopRestApi: async ({ baseURL, request }, use) => await use(new ShopRestApi(baseURL, expect, request)),
     productPage: async ({ page, baseURL, request}, use) =>  await use(new ProductPage(page, baseURL, expect, request)),
     cartPage: async ({ page, baseURL, request}, use) =>  await use(new CartPage(page, baseURL, expect, request)),
     categoryPage: async ({ page, baseURL, request}, use) =>  await use(new CategoryPage(page, baseURL, expect, request)),
@@ -24,9 +27,8 @@ const test = baseTest.extend({
     checkoutPage: async ({ page, baseURL, request}, use) =>  await use(new CheckoutPage(page, baseURL, expect, request)),
     accountPage: async ({ page, baseURL, request}, use) =>  await use(new AccountPage(page, baseURL, expect, request)),
     expressCheckoutPage: async ({ page, baseURL}, use) =>  await use(new ExpressCheckoutPage(page, baseURL, expect)),
-    generalSettingsPage: async ({ page, baseURL, request, backOffice, helper}, use) =>  await use(new GeneralSettingsPage(page, baseURL, expect, request, backOffice, helper)),
     connectionSettingsPage: async ({ page, baseURL, request, backOffice, helper}, use) =>  await use(new ConnectionSettingsPage(page, baseURL, expect, request, backOffice, helper)),
-    widgetSettingsPage: async ({ page, baseURL, request, backOffice, helper}, use) =>  await use(new WidgetSettingsPage(page, baseURL, expect, request, backOffice, helper)),
+    sequraAdmin: async ({ page, baseURL, request}, use) =>  await use(new SeQuraAdminPage(page, baseURL, expect, request)),
 });
 
 test.afterEach(async ({ page }, testInfo) => {

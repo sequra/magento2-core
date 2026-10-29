@@ -19,6 +19,15 @@
     <event name="sales_order_shipment_save_before">
         <observer name="sequra_order_shipment_update" instance="Sequra\Core\Observer\OrderShipmentObserver"/>
     </event>
+    <event name="sales_order_shipment_save_commit_after">
+        <observer name="sequra_shipment_tracking_sync" instance="Sequra\Core\Observer\ShipmentTrackingObserver"/>
+    </event>
+    <event name="sales_order_shipment_track_save_commit_after">
+        <observer name="sequra_shipment_tracking_sync" instance="Sequra\Core\Observer\ShipmentTrackingObserver"/>
+    </event>
+    <event name="sales_order_shipment_track_delete_commit_after">
+        <observer name="sequra_shipment_tracking_sync" instance="Sequra\Core\Observer\ShipmentTrackingObserver"/>
+    </event>
     <event name="sales_order_save_before">
         <observer name="sequra_order_cancellation" instance="Sequra\Core\Observer\OrderCancellationObserver"/>
     </event>

@@ -9,6 +9,7 @@
     <exclude-pattern>.docker/(?!magento).*</exclude-pattern>
 	<exclude-pattern>.github/</exclude-pattern>
 	<exclude-pattern>.vscode/</exclude-pattern>
+	<exclude-pattern>.idea/</exclude-pattern>
 	<exclude-pattern>.history/</exclude-pattern>
 	<exclude-pattern>.magento-src/</exclude-pattern>
 	<exclude-pattern>bin/</exclude-pattern>
@@ -18,6 +19,7 @@
 	<exclude-pattern>test-results/</exclude-pattern>
 	<exclude-pattern>tests-e2e/</exclude-pattern>
 	<exclude-pattern>view/adminhtml/web/</exclude-pattern>
+	<exclude-pattern>vendor/</exclude-pattern>
 	<exclude-pattern>.env</exclude-pattern>
 	<exclude-pattern>.env.sample</exclude-pattern>
 	<exclude-pattern>.gitattributes</exclude-pattern>

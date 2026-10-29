@@ -20,8 +20,6 @@ use Magento\Sales\Model\Order;
 use Magento\Sales\Model\OrderFactory;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Tax\Model\Config;
-use SeQura\Core\BusinessLogic\AdminAPI\AdminAPI;
-use SeQura\Core\BusinessLogic\AdminAPI\GeneralSettings\Responses\GeneralSettingsResponse;
 use SeQura\Core\BusinessLogic\Domain\Order\Exceptions\InvalidCartItemsException;
 use SeQura\Core\BusinessLogic\Domain\Order\Exceptions\InvalidDateException;
 use SeQura\Core\BusinessLogic\Domain\Order\Exceptions\InvalidDurationException;
@@ -33,10 +31,7 @@ use SeQura\Core\BusinessLogic\Domain\Order\Exceptions\InvalidUrlException;
 use SeQura\Core\BusinessLogic\Domain\Order\Models\OrderRequest\CreateOrderRequest;
 use SeQura\Core\BusinessLogic\Domain\Order\Models\OrderRequest\Item\ItemType;
 use SeQura\Core\BusinessLogic\Domain\Order\Builders\CreateOrderRequestBuilder as CoreCreateOrderRequestBuilder;
-use SeQura\Core\Infrastructure\Logger\Logger;
 use Sequra\Core\Model\QuoteEmailResolver;
-use Sequra\Core\Services\BusinessLogic\ProductService;
-use Throwable;
 
 class CreateOrderRequestBuilder implements CoreCreateOrderRequestBuilder
 {
@@ -78,10 +73,6 @@ class CreateOrderRequestBuilder implements CoreCreateOrderRequestBuilder
     private $scopeConfig;
 
     /**
-     * @var ProductService
-     */
-    private $productService;
-    /**
      * @var OrderFactory
      */
     private $orderFactory;
@@ -105,7 +96,6 @@ class CreateOrderRequestBuilder implements CoreCreateOrderRequestBuilder
      * @param ScopeConfigInterface $scopeConfig
      * @param string $cartId
      * @param string $storeId
-     * @param ProductService $productService
      * @param OrderFactory $orderFactory
      * @param Request $request
      * @param QuoteEmailResolver $emailResolver
@@ -119,7 +109,6 @@ class CreateOrderRequestBuilder implements CoreCreateOrderRequestBuilder
         ScopeConfigInterface $scopeConfig,
         string $cartId,
         string $storeId,
-        ProductService $productService,
         OrderFactory $orderFactory,
         Request $request,
         QuoteEmailResolver $emailResolver
@@ -132,7 +121,6 @@ class CreateOrderRequestBuilder implements CoreCreateOrderRequestBuilder
         $this->scopeConfig = $scopeConfig;
         $this->cartId = $cartId;
         $this->storeId = $storeId;
-        $this->productService = $productService;
         $this->orderFactory = $orderFactory;
         $this->request = $request;
         $this->emailResolver = $emailResolver;
@@ -166,77 +154,6 @@ class CreateOrderRequestBuilder implements CoreCreateOrderRequestBuilder
         }
 
         return $this->generateCreateOrderRequest();
-    }
-
-    /**
-     * Returns true if SeQura payment methods are available for current checkout. Otherwise it returns false.
-     *
-     * @param GeneralSettingsResponse $generalSettingsResponse
-     *
-     * @return bool
-     */
-    public function isAllowedFor(GeneralSettingsResponse $generalSettingsResponse): bool
-    {
-        try {
-            $generalSettings = $generalSettingsResponse->toArray();
-            // TODO: Property $quote (Magento\Quote\Model\Quote) does not accept Magento\Quote\Api\Data\CartInterface.
-            // @phpstan-ignore-next-line
-            $this->quote = $this->quoteRepository->getActive((int)$this->cartId);
-            $merchantId = $this->getMerchantId();
-
-            if (!$merchantId) {
-                return false;
-            }
-
-            if (!empty($generalSettings['allowedIPAddresses']) &&
-                !empty($ipAddress = $this->getCustomerIpAddress()) &&
-                is_array($generalSettings['allowedIPAddresses']) &&
-                !in_array($ipAddress, $generalSettings['allowedIPAddresses'], true)
-            ) {
-                return false;
-            }
-
-            if (empty($generalSettings['excludedProducts']) &&
-                empty($generalSettings['excludedCategories'])
-            ) {
-                return true;
-            }
-
-            // TODO: Property $quote (Magento\Quote\Model\Quote) does not accept Magento\Quote\Api\Data\CartInterface.
-            // @phpstan-ignore-next-line
-            $this->quote = $this->quoteRepository->getActive((int)$this->cartId);
-            // TODO: Call to an undefined method Magento\Quote\Api\Data\CartInterface::getAllVisibleItems().
-            // @phpstan-ignore-next-line
-            foreach ($this->quote->getAllVisibleItems() as $item) {
-                if (!empty($generalSettings['excludedProducts']) &&
-                    !empty($item->getSku()) &&
-                    (in_array($item->getProduct()->getData('sku'), $generalSettings['excludedProducts'], true) ||
-                        in_array($item->getProduct()->getSku(), $generalSettings['excludedProducts'], true))
-                ) {
-                    return false;
-                }
-
-                if ($item->getIsVirtual()) {
-                    return false;
-                }
-
-                if (!empty($generalSettings['excludedCategories']) &&
-                    !empty(array_intersect(
-                        $generalSettings['excludedCategories'],
-                        $this->productService->getAllProductCategoryIds($item->getProduct()->getCategoryIds())
-                    ))
-                ) {
-                    return false;
-                }
-            }
-
-            return true;
-        } catch (Throwable $exception) {
-            Logger::logWarning('Unexpected error occurred while checking if SeQura payment methods are available.
-             Reason: ' . $exception->getMessage() . ' . Stack trace: ' . $exception->getTraceAsString());
-
-            return false;
-        }
     }
 
     /**
@@ -600,30 +517,6 @@ class CreateOrderRequestBuilder implements CoreCreateOrderRequestBuilder
             'db_version' => (string)$this->sqlVersionProvider->getSqlVersion(),
             'php_version' => (string)phpversion(),
         ];
-    }
-
-    /**
-     * Get merchant ID based on the shipping country
-     *
-     * @return string|null
-     */
-    private function getMerchantId(): ?string
-    {
-        $shippingCountry = $this->quote->getShippingAddress()->getCountryId();
-        // @phpstan-ignore-next-line
-        $data = AdminAPI::get()->countryConfiguration($this->storeId)->getCountryConfigurations();
-        if (!$data->isSuccessful()) {
-            return null;
-        }
-
-        $merchantId = null;
-        foreach ($data->toArray() as $country) {
-            if ($country['countryCode'] === $shippingCountry && !empty($country['merchantId'])) {
-                $merchantId = $country['merchantId'];
-            }
-        }
-
-        return $merchantId;
     }
 
     /**

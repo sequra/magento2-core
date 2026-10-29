@@ -4,6 +4,7 @@ namespace Sequra\Core\Model\ExpressCheckout;
 
 use Exception;
 use SeQura\Core\BusinessLogic\CheckoutAPI\CheckoutAPI;
+use SeQura\Core\BusinessLogic\CheckoutAPI\ExpressCheckout\Controller\ExpressCheckoutController;
 use SeQura\Core\BusinessLogic\CheckoutAPI\ExpressCheckout\Requests\ExpressCheckoutAvailabilityRequest;
 use SeQura\Core\BusinessLogic\CheckoutAPI\ExpressCheckout\Requests\GuestExpressCheckoutAvailabilityRequest;
 use SeQura\Core\BusinessLogic\CheckoutAPI\ExpressCheckout\Responses\ExpressCheckoutAvailabilityResponse;
@@ -70,9 +71,11 @@ class AvailabilityEvaluator
         array $categoryIds
     ): array {
         try {
+            /** @var ExpressCheckoutController $expressCheckoutController */
+            $expressCheckoutController = CheckoutAPI::get()->expressCheckout($storeId);
             if ($country !== '') {
                 /** @var ExpressCheckoutAvailabilityResponse $response */
-                $response = CheckoutAPI::get()->expressCheckout($storeId)->isAvailable(
+                $response = $expressCheckoutController->isAvailable(
                     new ExpressCheckoutAvailabilityRequest(
                         $page,
                         $currency,
@@ -85,7 +88,7 @@ class AvailabilityEvaluator
                 $unavailableState = self::STATE_MESSAGE;
             } else {
                 /** @var GuestExpressCheckoutAvailabilityResponse $response */
-                $response = CheckoutAPI::get()->expressCheckout($storeId)->isAvailableForGuest(
+                $response = $expressCheckoutController->isAvailableForGuest(
                     new GuestExpressCheckoutAvailabilityRequest(
                         $page,
                         $currency,

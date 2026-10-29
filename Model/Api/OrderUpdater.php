@@ -1,0 +1,47 @@
+<?php
+
+namespace Sequra\Core\Model\Api;
+
+use SeQura\Core\BusinessLogic\AdminAPI\AdminAPI;
+use SeQura\Core\BusinessLogic\AdminAPI\OrderManagement\Requests\OrderUpdateRequest;
+use SeQura\Core\BusinessLogic\Domain\Order\Models\SeQuraOrder;
+use Sequra\Core\Model\Api\Exception\OrderUpdateFailedException;
+
+/**
+ * Sends order updates to seQura through the integration-core order management Admin API.
+ */
+class OrderUpdater
+{
+    /**
+     * Submits the order update for the store and returns the order as seQura knows it afterwards.
+     *
+     * The Admin API answers a failure with an unsuccessful response instead of throwing, so it is turned back
+     * into an exception here for the callers that block or log on a failed update, carrying the error code and
+     * status of the response. The original exception is logged by integration-core.
+     *
+     * @param string $storeId
+     * @param OrderUpdateRequest $request
+     *
+     * @return SeQuraOrder
+     *
+     * @throws OrderUpdateFailedException When seQura or integration-core did not accept the update.
+     */
+    public function update(string $storeId, OrderUpdateRequest $request): SeQuraOrder
+    {
+        $response = AdminAPI::get()->orderManagement($storeId)->updateOrder($request);
+
+        if (!$response->isSuccessful()) {
+            $error = $response->toArray();
+
+            throw new OrderUpdateFailedException(
+                isset($error['errorMessage']) && is_string($error['errorMessage'])
+                    ? $error['errorMessage']
+                    : 'The order update was not accepted.',
+                isset($error['errorCode']) && is_string($error['errorCode']) ? $error['errorCode'] : '',
+                isset($error['statusCode']) && is_int($error['statusCode']) ? $error['statusCode'] : 0
+            );
+        }
+
+        return $response->getOrder();
+    }
+}

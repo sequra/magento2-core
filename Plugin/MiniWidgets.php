@@ -11,6 +11,7 @@ use Magento\Framework\HTTP\PhpEnvironment\Request;
 use Magento\Framework\Pricing\Render\Amount;
 use Magento\Store\Model\StoreManagerInterface;
 use SeQura\Core\BusinessLogic\CheckoutAPI\CheckoutAPI;
+use SeQura\Core\BusinessLogic\CheckoutAPI\PromotionalWidgets\PromotionalWidgetsCheckoutController;
 use SeQura\Core\BusinessLogic\CheckoutAPI\PromotionalWidgets\Requests\PromotionalWidgetsCheckoutRequest;
 use SeQura\Core\BusinessLogic\CheckoutAPI\PromotionalWidgets\Responses\GetWidgetsCheckoutResponse;
 use SeQura\Core\Infrastructure\Logger\Logger;
@@ -86,8 +87,10 @@ class MiniWidgets
 
         try {
             $storeId = (string)$this->storeManager->getStore()->getId();
+            /** @var PromotionalWidgetsCheckoutController $widgetsController */
+            $widgetsController = CheckoutAPI::get()->promotionalWidgets($storeId);
             /** @var GetWidgetsCheckoutResponse $miniWidget */
-            $miniWidget = CheckoutAPI::get()->promotionalWidgets($storeId)
+            $miniWidget = $widgetsController
                 ->getAvailableMiniWidgetForProductListingPage(new PromotionalWidgetsCheckoutRequest(
                     $this->getShippingAddressCountry(),
                     $this->getCurrentCountry(),

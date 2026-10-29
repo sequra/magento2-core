@@ -232,4 +232,14 @@
             <argument name="remoteAddress" xsi:type="object">SequraExpressSolicitPeerAddress</argument>
         </arguments>
     </type>
+    <virtualType name="SequraStorefrontShippingHelper" type="Magento\Shipping\Helper\Data">
+        <arguments>
+            <argument name="url" xsi:type="object">Magento\Framework\Url</argument>
+        </arguments>
+    </virtualType>
+    <type name="Sequra\Core\Model\Api\Builders\TrackingBuilder">
+        <arguments>
+            <argument name="shippingHelper" xsi:type="object">SequraStorefrontShippingHelper</argument>
+        </arguments>
+    </type>
 </config>

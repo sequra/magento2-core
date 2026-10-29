@@ -19,7 +19,7 @@ class Integration extends BaseConfigurationController
     {
         parent::__construct($context, $jsonFactory);
 
-        $this->allowedActions = ['getVersion', 'getState', 'getShopName'];
+        $this->allowedActions = ['getVersion', 'getState'];
     }
 
     /**
@@ -45,20 +45,6 @@ class Integration extends BaseConfigurationController
     {
         // @phpstan-ignore-next-line
         $data = AdminAPI::get()->integration($this->storeId)->getUIState();
-        $this->addResponseCode($data);
-
-        return $this->result->setData($data->toArray());
-    }
-
-    /**
-     * Returns the integration shop name.
-     *
-     * @return Json
-     */
-    protected function getShopName(): Json
-    {
-        // @phpstan-ignore-next-line
-        $data = AdminAPI::get()->integration($this->storeId)->getShopName();
         $this->addResponseCode($data);
 
         return $this->result->setData($data->toArray());

@@ -145,6 +145,31 @@ class ProductService implements ProductServiceInterface
     }
 
     /**
+     * Loads the given products with one query.
+     *
+     * The checks integration-core runs on each of them then do not load them one by one. Grouped products are left
+     * out, as getProductById() never returns them.
+     *
+     * @param string[] $productIds
+     *
+     * @return void
+     */
+    public function preloadProducts(array $productIds): void
+    {
+        $missing = array_diff(array_map('intval', $productIds), array_keys(self::$products));
+        if (!$missing) {
+            return;
+        }
+
+        /** @var Product $product */
+        foreach ($this->productCollectionFactory->create()->addIdFilter($missing) as $product) {
+            if ($product->getTypeId() !== 'grouped') {
+                self::$products[(int) $product->getId()] = $product;
+            }
+        }
+    }
+
+    /**
      * Get all product categories
      *
      * @param array<string> $categoryIds
@@ -153,7 +178,7 @@ class ProductService implements ProductServiceInterface
      *
      * @throws NoSuchEntityException
      */
-    public function getAllProductCategoryIds(array $categoryIds): array
+    private function getAllProductCategoryIds(array $categoryIds): array
     {
         if (!$categoryIds) {
             return [];

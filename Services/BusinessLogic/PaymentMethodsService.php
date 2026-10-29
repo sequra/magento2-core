@@ -5,6 +5,7 @@ namespace Sequra\Core\Services\BusinessLogic;
 use Exception;
 use SeQura\Core\BusinessLogic\AdminAPI\AdminAPI;
 use SeQura\Core\BusinessLogic\CheckoutAPI\CheckoutAPI;
+use SeQura\Core\BusinessLogic\CheckoutAPI\PaymentMethods\CachedPaymentMethodsController;
 use SeQura\Core\BusinessLogic\CheckoutAPI\PaymentMethods\Requests\GetCachedPaymentMethodsRequest;
 use SeQura\Core\BusinessLogic\CheckoutAPI\PaymentMethods\Responses\CachedPaymentMethodsResponse;
 use SeQura\Core\BusinessLogic\Domain\Integration\Store\StoreServiceInterface;
@@ -38,7 +39,12 @@ class PaymentMethodsService
                 ->getCountryConfigurations()->toArray();
             $firstConfig = array_shift($countryConfigurations);
 
-            if (!$firstConfig || isset($firstConfig['errorCode'])) {
+            if (!is_array($firstConfig) || isset($firstConfig['errorCode'])) {
+                continue;
+            }
+
+            $merchantId = $firstConfig['merchantId'] ?? '';
+            if (!is_string($merchantId) || $merchantId === '') {
                 continue;
             }
 
@@ -49,9 +55,11 @@ class PaymentMethodsService
                 continue;
             }
 
+            /** @var CachedPaymentMethodsController $paymentMethodsController */
+            $paymentMethodsController = CheckoutAPI::get()->cachedPaymentMethods($storeId);
             /** @var CachedPaymentMethodsResponse $paymentMethods */
-            $paymentMethods = CheckoutAPI::get()->cachedPaymentMethods($storeId)
-                ->getCachedPaymentMethods(new GetCachedPaymentMethodsRequest($firstConfig['merchantId']));
+            $paymentMethods = $paymentMethodsController
+                ->getCachedPaymentMethods(new GetCachedPaymentMethodsRequest($merchantId));
 
             if (!$paymentMethods->isSuccessful()) {
                 continue;

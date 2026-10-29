@@ -56,25 +56,18 @@ class Index extends Template
      * @param string $controllerName Name of the configuration controller.
      * @param string $storeId Store id.
      * @param string $action Controller action.
-     * @param string|null $identifier Optional identifier parameter.
      *
      * @return string URL to backend configuration controller.
      *
      * @throws LocalizedException
      */
-    public function getControllerUrl(
-        string $controllerName,
-        string $storeId,
-        string $action,
-        ?string $identifier = null
-    ): string {
+    public function getControllerUrl(string $controllerName, string $storeId, string $action): string
+    {
         $routeParams = [
             'storeId' => $storeId,
             'action' => $action,
             'form_key' => $this->formKey->getFormKey()
         ];
-
-        $identifier && $routeParams['identifier'] = $identifier;
 
         return $this->urlHelper->getBackendUrl('sequra/configuration/' . strtolower($controllerName), $routeParams);
     }
@@ -109,17 +102,6 @@ class Index extends Template
             'default' => str_replace("'", "\\'", (string) json_encode($default)),
             'current' => str_replace("'", "\\'", (string) json_encode($current)),
         ];
-    }
-
-    /**
-     * Get the admin language
-     *
-     * @return string
-     */
-    public function getAdminLanguage(): string
-    {
-        $user = $this->authSession->getUser();
-        return strtoupper($user ? substr($user->getInterfaceLocale(), 0, 2) : 'en');
     }
 
     /**

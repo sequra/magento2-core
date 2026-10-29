@@ -8,11 +8,9 @@ use Magento\Framework\Event\ObserverInterface;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Sales\Model\Order;
 use Magento\Sales\Model\Order\Shipment as MagentoShipment;
-use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
-use SeQura\Core\BusinessLogic\Domain\Order\Models\OrderUpdateData;
-use SeQura\Core\BusinessLogic\Domain\Order\Service\OrderService;
+use SeQura\Core\BusinessLogic\AdminAPI\OrderManagement\Requests\OrderUpdateRequest;
 use SeQura\Core\Infrastructure\Logger\Logger;
-use SeQura\Core\Infrastructure\ServiceRegister;
+use Sequra\Core\Model\Api\OrderUpdater;
 use Sequra\Core\Model\Ui\ConfigProvider;
 use Sequra\Core\Services\BusinessLogic\Utility\SeQuraTranslationProvider;
 use Sequra\Core\Services\BusinessLogic\Utility\TransformEntityService;
@@ -35,13 +33,23 @@ class OrderShipmentObserver implements ObserverInterface
     private $transformService;
 
     /**
+     * @var OrderUpdater
+     */
+    private $orderUpdater;
+
+    /**
      * @param SeQuraTranslationProvider $translationProvider
      * @param TransformEntityService $transformService
+     * @param OrderUpdater $orderUpdater
      */
-    public function __construct(SeQuraTranslationProvider $translationProvider, TransformEntityService $transformService)
-    {
+    public function __construct(
+        SeQuraTranslationProvider $translationProvider,
+        TransformEntityService $transformService,
+        OrderUpdater $orderUpdater
+    ) {
         $this->translationProvider = $translationProvider;
         $this->transformService = $transformService;
+        $this->orderUpdater = $orderUpdater;
     }
 
     /**
@@ -88,23 +96,10 @@ class OrderShipmentObserver implements ObserverInterface
         $unshippedCart = $this->transformService->transformOrderCartToSeQuraCart($orderData, false);
         $shippedCart = $this->transformService->transformOrderCartToSeQuraCart($orderData, true);
 
-        $storeId = (string) $orderData->getStoreId();
-        /**
-         * @var OrderService $orderService
-         */
-        $orderService = StoreContext::doWithStore($storeId, function () {
-            return ServiceRegister::getService(OrderService::class);
-        });
-
-        StoreContext::doWithStore($storeId, [$orderService, 'updateOrder'], [
-            new OrderUpdateData(
-                $orderData->getIncrementId(),
-                $shippedCart,
-                $unshippedCart,
-                null,
-                null
-            )
-        ]);
+        $this->orderUpdater->update(
+            (string) $orderData->getStoreId(),
+            new OrderUpdateRequest($orderData->getIncrementId(), $shippedCart, $unshippedCart)
+        );
     }
 
     /**
