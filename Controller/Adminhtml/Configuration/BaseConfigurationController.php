@@ -34,11 +34,6 @@ class BaseConfigurationController extends Action
     protected $storeId;
 
     /**
-     * @var string|null
-     */
-    protected $identifier;
-
-    /**
      * Configuration constructor.
      *
      * @param Context $context
@@ -82,12 +77,6 @@ class BaseConfigurationController extends Action
          */
         $storeId = $request->getParam('storeId');
         $this->storeId = $storeId;
-
-        /**
-         * @var string $identifier
-         */
-        $identifier = $request->getParam('identifier');
-        $this->identifier = $identifier;
 
         // These AJAX actions only read request params and call the SeQura API; they never touch session data.
         // Release the session write lock now so the onboarding page's parallel requests don't exhaust the
