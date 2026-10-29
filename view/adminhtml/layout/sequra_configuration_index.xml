@@ -5,32 +5,26 @@
         <title>SeQura</title>
 
         <css src="Sequra_Core::css/sequra-core.css"/>
-        <link src="Sequra_Core::js/ImagesProvider.js"/>
-        <link src="Sequra_Core::js/AjaxService.js"/>
-        <link src="Sequra_Core::js/TranslationService.js"/>
-        <link src="Sequra_Core::js/TemplateService.js"/>
-        <link src="Sequra_Core::js/override/UtilityService.js"/>
-        <link src="Sequra_Core::js/ResponseService.js"/>
-        <link src="Sequra_Core::js/PageControllerFactory.js"/>
-        <link src="Sequra_Core::js/FormFactory.js"/>
-        <link src="Sequra_Core::js/StateUUIDService.js"/>
-        <link src="Sequra_Core::js/ElementGenerator.js"/>
-        <link src="Sequra_Core::js/ModalComponent.js"/>
-        <link src="Sequra_Core::js/DropdownComponent.js"/>
-        <link src="Sequra_Core::js/MultiItemSelectorComponent.js"/>
-        <link src="Sequra_Core::js/DataTableComponent.js"/>
-        <link src="Sequra_Core::js/PageHeaderComponent.js"/>
-        <link src="Sequra_Core::js/ConnectionSettingsForm.js"/>
-        <link src="Sequra_Core::js/DeploymentsSettingsForm.js"/>
-        <link src="Sequra_Core::js/WidgetSettingsForm.js"/>
-        <link src="Sequra_Core::js/RepeaterFieldsComponent.js"/>
-        <link src="Sequra_Core::js/GeneralSettingsForm.js"/>
-        <link src="Sequra_Core::js/OrderStatusMappingSettingsForm.js"/>
-        <link src="Sequra_Core::js/override/StateController.js"/>
-        <link src="Sequra_Core::js/OnboardingController.js"/>
-        <link src="Sequra_Core::js/PaymentController.js"/>
-        <link src="Sequra_Core::js/SettingsController.js"/>
-        <link src="Sequra_Core::js/DeploymentsModalForm.js"/>
+        <link src="Sequra_Core::js/sequra-core/ImagesProvider.js"/>
+        <link src="Sequra_Core::js/sequra-core/AjaxService.js"/>
+        <link src="Sequra_Core::js/sequra-core/TranslationService.js"/>
+        <link src="Sequra_Core::js/sequra-core/TemplateService.js"/>
+        <link src="Sequra_Core::js/sequra-core/UtilityService.js"/>
+        <link src="Sequra_Core::js/sequra-core/ResponseService.js"/>
+        <link src="Sequra_Core::js/sequra-core/PageControllerFactory.js"/>
+        <link src="Sequra_Core::js/sequra-core/FormFactory.js"/>
+        <link src="Sequra_Core::js/sequra-core/StateUUIDService.js"/>
+        <link src="Sequra_Core::js/sequra-core/ElementGenerator.js"/>
+        <link src="Sequra_Core::js/sequra-core/ModalComponent.js"/>
+        <link src="Sequra_Core::js/sequra-core/DropdownComponent.js"/>
+        <link src="Sequra_Core::js/sequra-core/MultiItemSelectorComponent.js"/>
+        <link src="Sequra_Core::js/sequra-core/PageHeaderComponent.js"/>
+        <link src="Sequra_Core::js/sequra-core/ConnectionSettingsForm.js"/>
+        <link src="Sequra_Core::js/sequra-core/DeploymentsSettingsForm.js"/>
+        <link src="Sequra_Core::js/sequra-core/DeploymentsModalForm.js"/>
+        <link src="Sequra_Core::js/sequra-core/StateController.js"/>
+        <link src="Sequra_Core::js/sequra-core/OnboardingController.js"/>
+        <link src="Sequra_Core::js/sequra-core/SettingsController.js"/>
     </head>
     <body>
         <referenceContainer name="page.messages">

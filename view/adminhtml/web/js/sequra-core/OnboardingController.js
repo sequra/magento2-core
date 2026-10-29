@@ -10,14 +10,7 @@ if (!window.SequraFE) {
      * validateConnectionDataUrl: string,
      * getConnectionDataUrl: string,
      * connectUrl: string,
-     * getSellingCountriesUrl: string,
-     * getCountrySettingsUrl: string,
-     * saveCountrySettingsUrl: string,
-     * getWidgetSettingsUrl: string,
-     * saveWidgetSettingsUrl: string,
-     * getPaymentMethodsUrl: string,
-     * getAllAvailablePaymentMethodsUrl: string,
-     * configurableSelectorsForMiniWidgets: string
+     * getDeploymentsUrl: string,
      * page: string}} configuration
      * @constructor
      */
@@ -37,12 +30,8 @@ if (!window.SequraFE) {
         let version;
         /** @type Store[] */
         let stores;
-        /** @type CountrySettings[] **/
-        let countrySettings;
         /** @type ConnectionSettings **/
         let connectionSettings;
-        /** @type WidgetSettings **/
-        let widgetSettings;
         /** @type DeploymentSettings[] **/
         let deploymentsSettings;
 
@@ -58,8 +47,6 @@ if (!window.SequraFE) {
             stores = SequraFE.state.getData('stores');
             version = SequraFE.state.getData('version');
             connectionSettings = SequraFE.state.getData('connectionSettings');
-            countrySettings = SequraFE.state.getData('countrySettings');
-            widgetSettings = SequraFE.state.getData('widgetSettings');
             deploymentsSettings = SequraFE.state.getData('deploymentsSettings');
 
             initializePage();
@@ -76,23 +63,10 @@ if (!window.SequraFE) {
             let promises;
 
             switch (page) {
-                case SequraFE.appPages.ONBOARDING.COUNTRIES:
-                    renderer = renderCountrySettingsForm;
-                    promises = Promise.all([
-                        SequraFE.state.getData('sellingCountries') ?? api.get(configuration.getSellingCountriesUrl, null, SequraFE.customHeader)
-                    ])
-                    break;
-                case SequraFE.appPages.ONBOARDING.WIDGETS:
-                    renderer = renderWidgetSettingsForm;
-                    promises = Promise.all([
-                        SequraFE.state.getData('allAvailablePaymentMethods') ?? api.get(configuration.getAllAvailablePaymentMethodsUrl, null, SequraFE.customHeader),
-                    ])
-                    break;
-
                 case SequraFE.appPages.ONBOARDING.DEPLOYMENTS:
                     renderer = renderDeploymentsSettingForm;
                     promises = Promise.all([
-                        SequraFE.state.getData('deploymentsSettings') ?? api.get(configuration.getDeploymentSettingsUrl, null, SequraFE.customHeader)
+                        SequraFE.state.getData('deploymentsSettings') ?? api.get(configuration.getDeploymentsUrl, null, SequraFE.customHeader)
                     ]);
                     break;
 
@@ -109,25 +83,6 @@ if (!window.SequraFE) {
                 .finally(() => utilities.hideLoader());
         };
 
-        /**
-         * Renders the country settings form.
-         *
-         * @param sellingCountries
-         */
-        const renderCountrySettingsForm = (sellingCountries) => {
-            if (!SequraFE.state.getData('sellingCountries')) {
-                SequraFE.state.setData('sellingCountries', sellingCountries)
-            }
-
-            const form = formFactory.getInstance(
-                'generalSettings',
-                {countrySettings, sellingCountries, connectionSettings},
-                {...configuration, appState: SequraFE.appStates.ONBOARDING}
-            );
-
-            form?.render();
-        }
-
         const renderDeploymentsSettingForm = (deploymentsSettings) => {
             if (!SequraFE.state.getData('deploymentsSettings')) {
                 SequraFE.state.setData('deploymentsSettings', deploymentsSettings);
@@ -143,18 +98,12 @@ if (!window.SequraFE) {
         };
 
         /**
-         * Renders the widgets settings form.
-         *
-         * @param allAvailablePaymentMethods
+         * Renders the connection settings form.
          */
-        const renderWidgetSettingsForm = (allAvailablePaymentMethods) => {
-            if (!SequraFE.state.getData('allAvailablePaymentMethods')) {
-                SequraFE.state.setData('allAvailablePaymentMethods', allAvailablePaymentMethods)
-            }
-
+        const renderConnectionSettingsForm = () => {
             const form = formFactory.getInstance(
-                'widgetSettings',
-                {widgetSettings, connectionSettings, countrySettings, allAvailablePaymentMethods},
+                'connectionSettings',
+                {connectionSettings, activeDeploymentsIds: getActiveDeploymentsIds()},
                 {...configuration, appState: SequraFE.appStates.ONBOARDING}
             );
 
@@ -162,16 +111,25 @@ if (!window.SequraFE) {
         }
 
         /**
-         * Renders the connection settings form.
+         * Returns the deployments the connection form asks credentials for.
+         *
+         * @returns {string[]}
          */
-        const renderConnectionSettingsForm = () => {
-            const form = formFactory.getInstance(
-                'connectionSettings',
-                {connectionSettings},
-                {...configuration, appState: SequraFE.appStates.ONBOARDING}
-            );
+        const getActiveDeploymentsIds = () => {
+            const connectedIds = (connectionSettings?.connectionData || [])
+                .map(connection => connection.deployment)
+                .filter(Boolean);
+            if (connectedIds.length > 0) {
+                // A connected store sent back here to reconnect: the `active` selection only
+                // lives for the page session that made it, so it is gone after a reload.
+                return connectedIds;
+            }
 
-            form?.render();
+            const deployments = SequraFE.state.getData('deploymentsSettings') || [];
+            const selectedIds = deployments.filter(deployment => deployment.active).map(deployment => deployment.id);
+
+            // Without a deployments page in the onboarding there is no selection to honour.
+            return selectedIds.length > 0 ? selectedIds : deployments.map(deployment => deployment.id);
         }
 
         /**
@@ -187,12 +145,8 @@ if (!window.SequraFE) {
                 isCompleted: true
             };
 
-            const lastStep = {
-                label: 'sidebar.stepFiveLabel',
-                href: '#',
-            }
-
-            const pageSteps = SequraFE.pages.onboarding.map((page) => {
+            const onboardingPages = SequraFE.state.getOnboardingPages();
+            const pageSteps = onboardingPages.map((page) => {
                 const activePage = SequraFE.state.getPage() ?? SequraFE.pages.settings[0];
 
                 switch (page) {
@@ -200,8 +154,8 @@ if (!window.SequraFE) {
                         return {
                             label: 'sidebar.stepDeployments',
                             href: '#onboarding-deployments',
-                            isCompleted: SequraFE.pages.onboarding.indexOf(SequraFE.state.getPage()) >
-                                SequraFE.pages.onboarding.indexOf(SequraFE.appPages.ONBOARDING.DEPLOYMENTS),
+                            isCompleted: onboardingPages.indexOf(SequraFE.state.getPage()) >
+                                onboardingPages.indexOf(SequraFE.appPages.ONBOARDING.DEPLOYMENTS),
                             isActive: activePage === SequraFE.appPages.ONBOARDING.DEPLOYMENTS
                         }
 
@@ -209,30 +163,14 @@ if (!window.SequraFE) {
                         return {
                             label: 'sidebar.stepTwoLabel',
                             href: '#onboarding-connect',
-                            isCompleted: SequraFE.pages.onboarding.indexOf(SequraFE.state.getPage()) >
-                                SequraFE.pages.onboarding.indexOf(SequraFE.appPages.ONBOARDING.CONNECT),
+                            isCompleted: onboardingPages.indexOf(SequraFE.state.getPage()) >
+                                onboardingPages.indexOf(SequraFE.appPages.ONBOARDING.CONNECT),
                             isActive: activePage === SequraFE.appPages.ONBOARDING.CONNECT
                         }
-                    case SequraFE.appPages.ONBOARDING.COUNTRIES:
-                        return {
-                            label: 'sidebar.stepThreeLabel',
-                            href: '#onboarding-countries',
-                            isCompleted: SequraFE.pages.onboarding.indexOf(SequraFE.state.getPage()) >
-                                SequraFE.pages.onboarding.indexOf(SequraFE.appPages.ONBOARDING.COUNTRIES),
-                            isActive: activePage === SequraFE.appPages.ONBOARDING.COUNTRIES
-                        }
-                    case SequraFE.appPages.ONBOARDING.WIDGETS:
-                        return {
-                            label: 'sidebar.stepFourLabel',
-                            href: '#onboarding-widgets',
-                            isCompleted: SequraFE.pages.onboarding.indexOf(SequraFE.state.getPage()) >
-                                SequraFE.pages.onboarding.indexOf(SequraFE.appPages.ONBOARDING.WIDGETS),
-                            isActive: activePage === SequraFE.appPages.ONBOARDING.WIDGETS
-                        }
                 }
-            });
+            }).filter(Boolean);
 
-            return [firstStep, ...pageSteps, lastStep]
+            return [firstStep, ...pageSteps]
         }
 
         /**
@@ -267,7 +205,7 @@ if (!window.SequraFE) {
                     generator.createElement('main', 'sq-content', '', null, [
                         generator.createElement('div', 'sqp-content-header', '', null, [
                             generator.createElementFromHTML(SequraFE.imagesProvider.logo || ''),
-                            stores.length <= 1 ? [] : generator.createStoreSwitcher({
+                            (!SequraFE.flags.isStoreSwitcherVisible || stores.length <= 1) ? [] : generator.createStoreSwitcher({
                                 label: 'general.selectStore',
                                 value: currentStoreId,
                                 options: stores.map((store) => ({

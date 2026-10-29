@@ -14,12 +14,6 @@ if (typeof SequraFE.regex === 'undefined'){
      * @property {string} message The error message.
      */
 
-    /**
-     * @typedef CategoryPaymentMethod
-     * @property {string|null} category
-     * @property {string|null} product
-     * @property {string|null} title
-     */
 
     const validationRule = {
         numeric: 'numeric',
@@ -222,29 +216,6 @@ if (typeof SequraFE.regex === 'undefined'){
     };
 
     /**
-     * Validates if the value is a valid date or duration following ISO 8601 format.
-     *
-     * @param {string} str
-     * @return {boolean}
-     */
-    const validateDateOrDuration = (str) => {
-        const regex = new RegExp(SequraFE.regex.dateOrDuration);
-        return regex.test(str) && 'P' !== str && !str.endsWith('T');
-    };
-
-    /**
-     * Check if a given string is a valid IP address.
-     *
-     * @param {string} str
-     *
-     * @returns {boolean}
-     */
-    const validateIpAddress = (str) => {
-        const regex = new RegExp(SequraFE.regex.ip);
-        return regex.test(str);
-    };
-
-    /**
      * Validates the provided JSON string and marks field invalid if the JSON is invalid.
      *
      * @param {HTMLElement} element
@@ -281,79 +252,6 @@ if (typeof SequraFE.regex === 'undefined'){
         return true;
     };
 
-    /**
-     * Validates custom locations.
-     * @param {Array<HTMLElement>} element Each element in the array should be the details element containing the
-     *     custom location data.
-     * @param {Array<Object>} value
-     * @param {string} value[].selForTarget CSS selector for the target element.
-     * @param {string} value[].widgetStyles JSON string representing the styles for the widget.
-     * @param {string} value[].product Product name.
-     * @param {CategoryPaymentMethod[]} allowedPaymentMethods Array of allowed payment methods.
-     * @return {boolean}
-     */
-    const validateCustomLocations = (element, value, allowedPaymentMethods) => {
-        let isValid = true;
-
-        for (let i = 0; i < element.length; i++) {
-            const location = value[i];
-            const detailsElement = element[i];
-
-            isValid = validateCssSelector(
-                detailsElement.querySelector('input[type="text"]'),
-                false,
-                'validation.invalidField'
-            ) && isValid;
-
-            isValid = validateJSON(
-                detailsElement.querySelector('textarea'),
-                false,
-                'validation.invalidJSON'
-            ) && isValid;
-
-            let isPaymentMethodValid = allowedPaymentMethods.some(pm => pm.product === location.product)
-                && value.filter(l => l.product === location.product).length === 1;
-
-            isValid = validateField(
-                detailsElement.querySelector('select'),
-                !isPaymentMethodValid,
-                'validation.invalidField'
-            ) && isValid;
-        }
-
-        return isValid;
-    }
-
-    /**
-     * Validates related fields and disables the footer if any of them is invalid.
-     * @param {string} parentField The parent field name that controls the visibility of related fields.
-     * @param {Array<Object>} fieldsRelationships An array of objects containing the relationships between fields.
-     * @param {string} fieldsRelationships[].parentField The parent field name that controls the visibility of related
-     *     fields.
-     * @param {Array<string>} fieldsRelationships[].requiredFields An array of field names that are required when the
-     *     parent field is shown.
-     * @param {Array<string>} fieldsRelationships[].fields An array of field names that are related to the parent
-     *     field.
-     * @param {boolean} show Whether to show or hide the related fields.
-     * @return {boolean} Returns true if all related fields are valid, false otherwise.
-     */
-    const validateRelatedFields = (parentField, fieldsRelationships, show) => {
-        if (!show) {
-            return true;
-        }
-
-        let isValid = true;
-        const { requiredFields, fields } = fieldsRelationships.find(group => group.parentField === parentField) || { requiredFields: [], fields: [] };
-        for (let i = 0; i < fields.length; i++) {
-            isValid = validateCssSelector(
-                document.querySelector(`[name="${fields[i]}"]`),
-                requiredFields.includes(fields[i]),
-                'validation.invalidField'
-            ) && isValid;
-        }
-        return isValid;
-    }
-
     SequraFE.validationService = {
         setError,
         removeError,
@@ -363,12 +261,8 @@ if (typeof SequraFE.regex === 'undefined'){
         validateMaxLength,
         validateCssSelector,
         validateJSON,
-        validateRelatedFields,
-        validateCustomLocations,
         validateField,
         validateRequiredField,
-        validateDateOrDuration,
-        validateIpAddress,
         handleValidationErrors
     };
 })();

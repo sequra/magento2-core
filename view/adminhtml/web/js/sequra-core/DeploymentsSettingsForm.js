@@ -153,8 +153,9 @@
             SequraFE.state.setData('deploymentsSettings', allDeployments);
 
             if (configuration.appState === SequraFE.appStates.ONBOARDING) {
-                const index = SequraFE.pages.onboarding.indexOf(SequraFE.appPages.ONBOARDING.DEPLOYMENTS);
-                const nextPage = SequraFE.pages.onboarding[index + 1];
+                const onboardingPages = SequraFE.state.getOnboardingPages();
+                const index = onboardingPages.indexOf(SequraFE.appPages.ONBOARDING.DEPLOYMENTS);
+                const nextPage = onboardingPages[index + 1];
 
                 window.location.hash = nextPage ? `${configuration.appState}-${nextPage}` : SequraFE.appStates.SETTINGS;
             } else {

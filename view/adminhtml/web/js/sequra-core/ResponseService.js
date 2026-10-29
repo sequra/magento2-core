@@ -64,9 +64,8 @@ if (!window.SequraFE) {
          * @returns {Promise<void>}
          */
         this.unauthorizedHandler = (response) => {
-            let page = response.statusCode === 403 ? SequraFE.appPages.ONBOARDING.COUNTRIES : SequraFE.appPages.ONBOARDING.CONNECT;
             SequraFE.state.setCredentialsChanged();
-            SequraFE.state.goToState(SequraFE.appStates.ONBOARDING + '-' + page);
+            SequraFE.state.goToState(SequraFE.appStates.ONBOARDING + '-' + SequraFE.appPages.ONBOARDING.CONNECT);
             SequraFE.utilities.hideLoader();
 
             return this.errorHandler(response);

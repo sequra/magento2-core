@@ -108,25 +108,16 @@ if (!String.prototype.sqReplaceUrlPlaceholder) {
         };
 
         /**
-         * Returns the menu item array for page navigation.
+         * Returns the menu item array for the page header navigation.
+         *
+         * The toolkit offers a single section, the settings, and one destination is not a
+         * navigation: the page shows without a menu bar above it that leads nowhere else. A
+         * store that adds sections of its own supplies its own menu items to the page header.
          *
          * @param {string} activePage
          * @return {Array<{label: string, href: string, isActive: boolean}>}
          */
-        this.getMenuItems = (activePage) => {
-            return SequraFE.isPromotional ? [] : [
-                {
-                    label: 'general.paymentMethods',
-                    href: window.location.href.split('#')[0] + '#payment',
-                    isActive: activePage === SequraFE.appStates.PAYMENT
-                },
-                {
-                    label: 'general.settings',
-                    href: window.location.href.split('#')[0] + '#settings',
-                    isActive: activePage === SequraFE.appStates.SETTINGS
-                }
-            ];
-        };
+        this.getMenuItems = (activePage) => [];
     }
 
     SequraFE.utilities = new UtilityService();

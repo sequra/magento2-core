@@ -265,19 +265,6 @@ if (!window.SequraFE) {
         return createFieldWrapper(input, label, description, variation, error, '');
     };
 
-    /**
-     * Creates a text area field.
-     *
-     * @param {ElementProps & { type?: 'text' | 'number', variation?: 'label-left' }} props The properties.
-     * @return {HTMLElement}
-     */
-    const createTextArea = ({ className = '', label, description, variation, error, onChange, ...rest }) => {
-        /** @type HTMLInputElement */
-        const textArea = createElement('textarea', `sqp-field-component ${className}`, '', { ...rest });
-        onChange && textArea.addEventListener('change', (event) => onChange(event.currentTarget?.value));
-
-        return createFieldWrapper(textArea, label, description, variation, error, 'sqp-textarea-field');
-    };
 
     /**
      * Creates a country input field.
@@ -695,7 +682,6 @@ if (!window.SequraFE) {
         createDropdownField,
         createPasswordField,
         createTextField,
-        createTextArea,
         createNumberField,
         createToggleField,
         createCheckboxField,

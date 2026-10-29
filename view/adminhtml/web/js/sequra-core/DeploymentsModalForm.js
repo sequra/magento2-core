@@ -153,8 +153,9 @@ window.SequraFE.showDeploymentsModal = function (
                 }
 
                 const result = await api.post(configuration.connectUrl, finalSettings, SequraFE.customHeader);
-                if (!areCredentialsValid(result)) {
-                    handleValidationError();
+                // The backend does not save a connection whose merchant it cannot find.
+                if (!result.isValid) {
+                    handleValidationError(result);
 
                     return;
                 }
@@ -164,7 +165,11 @@ window.SequraFE.showDeploymentsModal = function (
                     confirmed: true,
                     selectedDeploymentId: activeDeploymentId,
                     hasChanges,
-                    updatedSettings: changedSettings,
+                    updatedSettings: {
+                        ...finalSettings,
+                        portalUrls: result.portalUrls,
+                        portalUrl: result.portalUrl ?? finalSettings.portalUrl
+                    },
                     activatedDeployment: notConnectedDeployments.find(deployment => deployment.id === activeDeploymentId)
                 });
             } catch (error) {
@@ -173,15 +178,6 @@ window.SequraFE.showDeploymentsModal = function (
                 utilities.hideLoader();
             }
         };
-
-        /**
-         * Returns true if username and password are valid.
-         *
-         * @param {{isValid: boolean, reason: string|null}} result
-         */
-        const areCredentialsValid = (result) => {
-            return result.isValid || result.reason.includes('merchantId');
-        }
 
         this.errorHandler = (response) => {
             const {utilities, templateService, elementGenerator} = SequraFE;
@@ -202,8 +198,12 @@ window.SequraFE.showDeploymentsModal = function (
         /**
          * Handle connection validation error.
          */
-        const handleValidationError = () => {
-            this.errorHandler({errorCode: 'general.errors.connection.invalidUsernameOrPassword'}).catch(() => {
+        const handleValidationError = (result = null) => {
+            const errorCode = result?.reason === 'merchantId'
+                ? 'general.errors.connection.invalidMerchantId'
+                : 'general.errors.connection.invalidUsernameOrPassword';
+
+            this.errorHandler({errorCode}).catch(() => {
             });
 
             utilities.hideLoader();
