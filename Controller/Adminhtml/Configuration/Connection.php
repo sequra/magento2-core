@@ -51,6 +51,6 @@ class Connection extends BaseConfigurationController
         );
         $this->addResponseCode($response);
 
-        return $this->result->setData(['isSuccessful' => $response->isSuccessful()]);
+        return $this->result->setData($response->toArray());
     }
 }
