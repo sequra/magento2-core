@@ -14,7 +14,23 @@ import OnboardingSettingsPage from "./pages/OnboardingSettingsPage";
 import ConnectionSettingsPage from "./pages/ConnectionSettingsPage";
 import SeQuraAdminPage from "./pages/SeQuraAdminPage";
 
+const NGROK_HEADER = 'ngrok-skip-browser-warning';
+
+const sendNgrokHeaderOnlyToTheShop = async (page, baseURL) => {
+    const shopOrigin = new URL(baseURL).origin;
+    await page.route(url => url.origin !== shopOrigin, route => {
+        const { [NGROK_HEADER]: _, ...headers } = route.request().headers();
+        return route.continue({ headers });
+    });
+};
+
 const test = baseTest.extend({
+    page: async ({ page, baseURL }, use) => {
+        if (baseURL && baseURL.includes('ngrok')) {
+            await sendNgrokHeaderOnlyToTheShop(page, baseURL);
+        }
+        await use(page);
+    },
     dataProvider: async ({ page, baseURL, request }, use) => await use(new DataProvider(page, baseURL, expect, request)),
     backOffice: async ({ page, baseURL }, use) => await use(new BackOffice(page, baseURL, expect)),
     helper: async ({ page, baseURL, request }, use) => await use(new SeQuraHelper(page, baseURL, expect, request)),

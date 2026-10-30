@@ -13,7 +13,7 @@ export default class CheckoutPage extends BaseCheckoutPage {
     initLocators() {
         return {
             ...super.initLocators(),
-            loader: () => this.page.locator('.loading-mask', { state: 'visible' }),
+            loader: () => this.page.locator('.loading-mask:visible'),
             email: () => this.page.locator('#customer-email'),
             firstName: () => this.page.locator('[name=firstname]'),
             lastName: () => this.page.locator('[name=lastname]'),
@@ -108,9 +108,7 @@ export default class CheckoutPage extends BaseCheckoutPage {
      * @returns {Promise<void>}
      */
     async #waitForFinishLoading() {
-        do {
-            await this.expect(this.locators.loader().first()).toBeHidden();
-        } while ((await this.locators.loader()) > 0);
+        await this.expect(this.locators.loader()).toHaveCount(0, { timeout: 60000 });
     }
 
     /**
@@ -239,5 +237,21 @@ export default class CheckoutPage extends BaseCheckoutPage {
             await this.waitForOrderStatus({ orderNumber, status: fromStatus, waitFor: 10 });
         }
         await this.waitForOrderStatus({ orderNumber, status: toStatus, waitFor });
+    }
+
+    async fillExpressCheckoutForm(product, options) {
+        const form = this.checkoutForm;
+        const { expressIframeLocator, expressIframe, acceptPrivacyPolicy, iframeBtn } = form.locators;
+        await expressIframeLocator().waitFor({ state: 'attached', timeout: 20000 });
+        const iframe = expressIframe();
+
+        await iframe.locator(`[data-testid^="express-payment-option-${product}-"]`).first().click();
+        await iframe.locator('[data-testid="cart-summary-continue"]').click();
+
+        await form.fillPersonalInfo(iframe, options);
+        await acceptPrivacyPolicy(iframe).click();
+        await iframeBtn(iframe).click();
+
+        await form.fillOtp(iframe, options);
     }
 }
