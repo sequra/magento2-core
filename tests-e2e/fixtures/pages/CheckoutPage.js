@@ -27,7 +27,8 @@ export default class CheckoutPage extends BaseCheckoutPage {
             continueButton: () => this.page.locator('.action.continue'),
             submitCheckout: () => this.page.locator('.payment-method._active .action.checkout'),
             orderRowStatus: orderNumber => this.page.locator(`.data-row:has(td:has-text("${orderNumber}")) td:nth-child(9)`),
-            orderNumber: () => this.page.locator('.checkout-success p > span, .checkout-success p > a')
+            orderNumber: () => this.page.locator('.checkout-success p > span, .checkout-success p > a'),
+            reviewMessage: () => this.page.locator('.checkout-success .sequra-review-message')
         };
     }
 
@@ -239,5 +240,28 @@ export default class CheckoutPage extends BaseCheckoutPage {
             await this.waitForOrderStatus({ orderNumber, status: fromStatus, waitFor: 10 });
         }
         await this.waitForOrderStatus({ orderNumber, status: toStatus, waitFor });
+    }
+
+    async returnFromSeQura(cartId) {
+        await this.page.goto(`${this.baseURL}/sequra/comeback/index?cartId=${cartId}`);
+        await this.waitForOrderSuccess();
+    }
+
+    async expectReviewMessageToBeVisible() {
+        const message = this.locators.reviewMessage();
+        await this.expect(message.locator('p')).toHaveText([
+            'seQura está procesando tu solicitud.',
+            'En unos minutos recibirás un email con el resultado de tu solicitud. seQura podría ponerse en contacto contigo para pedirte más información.',
+            '¡Gracias por elegir seQura!',
+        ]);
+        await this.expect(message.locator('b')).toHaveText([
+            'recibirás un email con el resultado de tu solicitud',
+            '¡Gracias por elegir seQura!',
+        ]);
+    }
+
+    async expectReviewMessageNotToBeVisible() {
+        await this.expect(this.locators.orderNumber().first()).toBeVisible();
+        await this.expect(this.locators.reviewMessage()).toHaveCount(0);
     }
 }
