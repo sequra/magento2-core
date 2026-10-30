@@ -3,15 +3,17 @@
 namespace Sequra\Core\Repository;
 
 use Magento\Framework\App\ObjectManager;
+use Magento\Framework\Exception\LocalizedException;
 use SeQura\Core\Infrastructure\ORM\Entity;
 use SeQura\Core\Infrastructure\ORM\Exceptions\QueryFilterInvalidParamException;
+use SeQura\Core\Infrastructure\ORM\Interfaces\ConditionallyDeletes;
 use SeQura\Core\Infrastructure\ORM\Interfaces\RepositoryInterface;
 use SeQura\Core\Infrastructure\ORM\QueryFilter\QueryFilter;
 use Sequra\Core\ResourceModel\SequraEntity;
 
 // TODO: Remove static methods
 // phpcs:disable Magento2.Functions.StaticFunction.StaticFunction
-class BaseRepository implements RepositoryInterface
+class BaseRepository implements RepositoryInterface, ConditionallyDeletes
 {
     /**
      * Fully qualified name of this class.
@@ -76,7 +78,7 @@ class BaseRepository implements RepositoryInterface
      *
      * @return Entity[] All entities as arrays.
      *
-     * @throws \Magento\Framework\Exception\LocalizedException
+     * @throws LocalizedException
      */
     public function selectAll()
     {
@@ -91,7 +93,7 @@ class BaseRepository implements RepositoryInterface
      * @return Entity[] A list of found entities ot empty array.
      *
      * @throws QueryFilterInvalidParamException
-     * @throws \Magento\Framework\Exception\LocalizedException
+     * @throws LocalizedException
      */
     public function select(?QueryFilter $filter = null)
     {
@@ -110,7 +112,7 @@ class BaseRepository implements RepositoryInterface
      * @return Entity|null First found entity or NULL.
      *
      * @throws QueryFilterInvalidParamException
-     * @throws \Magento\Framework\Exception\LocalizedException
+     * @throws LocalizedException
      */
     public function selectOne(?QueryFilter $filter = null)
     {
@@ -149,7 +151,7 @@ class BaseRepository implements RepositoryInterface
      *
      * @return bool TRUE if operation succeeded; otherwise, FALSE.
      *
-     * @throws \Magento\Framework\Exception\LocalizedException
+     * @throws LocalizedException
      */
     public function update(Entity $entity)
     {
@@ -163,7 +165,7 @@ class BaseRepository implements RepositoryInterface
      *
      * @return bool TRUE if operation succeeded; otherwise, FALSE.
      *
-     * @throws \Magento\Framework\Exception\LocalizedException
+     * @throws LocalizedException
      */
     public function delete(Entity $entity)
     {
@@ -178,11 +180,28 @@ class BaseRepository implements RepositoryInterface
      * @return int Number of records that match filter criteria.
      *
      * @throws QueryFilterInvalidParamException
-     * @throws \Magento\Framework\Exception\LocalizedException
+     * @throws LocalizedException
      */
     public function count(?QueryFilter $filter = null)
     {
         return count($this->select($filter));
+    }
+
+    /**
+     * Deletes the entities that match the filter, every entity of the repository's type without one.
+     *
+     * @param QueryFilter|null $queryFilter Filter for query.
+     *
+     * @return void
+     *
+     * @throws QueryFilterInvalidParamException
+     * @throws LocalizedException
+     */
+    public function deleteWhere(?QueryFilter $queryFilter = null): void
+    {
+        /** @var Entity $entity */
+        $entity = new $this->entityClass;
+        $this->resourceEntity->deleteEntities($queryFilter, $entity);
     }
 
     /**
