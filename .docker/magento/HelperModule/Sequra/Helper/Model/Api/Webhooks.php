@@ -8,6 +8,7 @@ use Sequra\Helper\Model\Task\ClearConfigurationTask;
 use Sequra\Helper\Model\Task\ClearFrontEndCacheTask;
 use Sequra\Helper\Model\Task\ConfigureDummyTask;
 use Sequra\Helper\Model\Task\GetOrderTrackingsTask;
+use Sequra\Helper\Model\Task\PutOrderOnHoldTask;
 use Sequra\Helper\Model\Task\SetConfigTask;
 use Sequra\Helper\Model\Task\Task;
 use Sequra\Helper\Model\Task\VerifyOrderHasMerchantIdTask;
@@ -58,6 +59,7 @@ class Webhooks implements WebhooksInterface
             'verify_order_has_merchant_id' => VerifyOrderHasMerchantIdTask::class,
             'set_config'            => SetConfigTask::class,
             'get_order_trackings'   => GetOrderTrackingsTask::class,
+            'put_order_on_hold'     => PutOrderOnHoldTask::class,
         ];
         return ! isset($map[$webhook]) ? new Task($this->conn) : new $map[$webhook]($this->conn);
     }
