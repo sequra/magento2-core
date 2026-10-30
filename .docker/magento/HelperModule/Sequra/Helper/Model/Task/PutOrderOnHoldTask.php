@@ -8,14 +8,14 @@
 
 namespace Sequra\Helper\Model\Task;
 
-use Magento\Framework\App\ObjectManager;
-use Magento\Sales\Api\OrderRepositoryInterface;
 use Magento\Sales\Model\Order;
-use SeQura\Core\BusinessLogic\Domain\Order\Models\OrderRequest\OrderRequestStates;
-use Sequra\Core\Setup\DatabaseHandler;
+use SeQura\Core\BusinessLogic\Domain\Order\OrderStates;
+use SeQura\Core\BusinessLogic\Domain\Webhook\Models\Webhook;
+use SeQura\Core\BusinessLogic\Webhook\Services\ShopOrderService;
+use SeQura\Core\Infrastructure\ServiceRegister;
 
 /**
- * Puts a seQura order on hold the way a needs_review webhook does.
+ * Puts a seQura order on hold through the same order update a needs_review webhook runs.
  *
  * The sandbox resolves the review of its test shoppers within seconds, before the shopper is back
  * in the shop, so the on hold state has to be set by hand to reach the confirmation page with it.
@@ -39,28 +39,18 @@ class PutOrderOnHoldTask extends Task
 
         $orderId = (string) $args['order_id'];
         $data = $this->getSeQuraOrderData($orderId);
-        $data['state'] = OrderRequestStates::ON_HOLD;
-        $this->conn->getConnection()->update(
-            DatabaseHandler::SEQURA_ORDER_TABLE,
-            ['data' => json_encode($data)],
-            ['index_3 = ?' => $orderId]
-        );
+        $reference = $data['reference'] ?? '';
+        $webhook = Webhook::fromArray([
+            'order_ref' => is_string($reference) ? $reference : '',
+            'order_ref_1' => $orderId,
+            'sq_state' => OrderStates::STATE_NEEDS_REVIEW,
+        ]);
 
-        $objectManager = ObjectManager::getInstance();
         /**
-         * @var Order $order
+         * @var ShopOrderService $shopOrderService
          */
-        $order = $objectManager->create(Order::class);
-        $order->loadByIncrementId($orderId);
-        if (!$order->getId()) {
-            $this->httpErrorResponse('Order not found', 404);
-        }
-        $order->addCommentToStatusHistory('Put on hold by the seQura helper', Order::STATE_PAYMENT_REVIEW);
-        /**
-         * @var OrderRepositoryInterface $orderRepository
-         */
-        $orderRepository = $objectManager->get(OrderRepositoryInterface::class);
-        $orderRepository->save($order);
+        $shopOrderService = ServiceRegister::getService(ShopOrderService::class);
+        $shopOrderService->updateStatus($webhook, Order::STATE_PAYMENT_REVIEW);
 
         return ['success' => true, 'data' => ['cart_id' => (string) ($data['cartId'] ?? '')]];
     }

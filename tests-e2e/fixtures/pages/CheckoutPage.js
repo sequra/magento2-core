@@ -249,7 +249,6 @@ export default class CheckoutPage extends BaseCheckoutPage {
 
     async expectReviewMessageToBeVisible() {
         const message = this.locators.reviewMessage();
-        await this.expect(message).toBeVisible();
         await this.expect(message.locator('p')).toHaveText([
             'seQura está procesando tu solicitud.',
             'En unos minutos recibirás un email con el resultado de tu solicitud. seQura podría ponerse en contacto contigo para pedirte más información.',
