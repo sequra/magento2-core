@@ -1,0 +1,18 @@
+<?php
+/**
+ * @var \Sequra\Core\Block\Checkout\Success\ReviewMessage $block
+ * @var \Magento\Framework\Escaper $escaper
+ */
+if (!$block->isVisible()) {
+    return;
+}
+?>
+<div class="sequra-review-message">
+    <p><?= $escaper->escapeHtml(__('seQura is processing your request.')) ?></p>
+    <p><?= $escaper->escapeHtml(
+        __('After a few minutes <b>you will get an email with your request result</b>. '
+            . 'seQura might contact you to get some more information.'),
+        ['b']
+    ) ?></p>
+    <p><?= $escaper->escapeHtml(__('<b>Thanks for choosing seQura!</b>'), ['b']) ?></p>
+</div>
