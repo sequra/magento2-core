@@ -5,7 +5,6 @@ namespace Sequra\Core\Setup\Patch\Data;
 use Magento\Framework\Setup\ModuleDataSetupInterface;
 use Magento\Framework\Setup\Patch\DataPatchInterface;
 use Magento\Framework\Stdlib\DateTime\TimezoneInterface;
-use Random\RandomException;
 use SeQura\Core\BusinessLogic\Domain\OrderCleanup\Services\OrderCleanupService;
 use SeQura\Core\Infrastructure\Logger\Logger;
 use SeQura\Core\Infrastructure\ServiceRegister;
@@ -87,18 +86,15 @@ class ScheduleOrderCleanup implements DataPatchInterface
     }
 
     /**
-     * Returns the timestamp of tomorrow at the first run hour in the shop's timezone, plus up to an hour.
+     * Returns the timestamp of tomorrow at the first run hour in the shop's timezone, plus a random minute.
      *
      * @return int
-     *
-     * @throws \DateMalformedStringException
-     * @throws RandomException
      */
     private function getFirstRunTimestamp(): int
     {
         return $this->timezone->date()
             ->modify('+1 day')
-            ->setTime(self::FIRST_RUN_HOUR, random_int(0, 59), random_int(0, 59))
+            ->setTime(self::FIRST_RUN_HOUR, random_int(0, 59))
             ->getTimestamp();
     }
 }
