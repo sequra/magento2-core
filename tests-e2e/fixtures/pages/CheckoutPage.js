@@ -5,6 +5,23 @@ import { BackOffice, CheckoutPage as BaseCheckoutPage } from "playwright-fixture
  */
 export default class CheckoutPage extends BaseCheckoutPage {
 
+    constructor(page, baseURL, expect, request) {
+        super(page, baseURL, expect, request);
+        this.#followTheExpressFormWithACartSummary();
+    }
+
+    #followTheExpressFormWithACartSummary() {
+        const locators = this.checkoutForm.locators;
+        const actionButton = locators.iframeBtn;
+        locators.paymentOption = (iframe, product) => iframe
+            .locator(`[data-testid^="express-payment-option-${product}-"]`)
+            .first();
+        locators.iframeBtn = iframe => iframe
+            .locator('[data-testid="cart-summary-continue"]:visible')
+            .or(actionButton(iframe))
+            .first();
+    }
+
     /**
     * Init the locators with the locators available
     * 
@@ -237,21 +254,5 @@ export default class CheckoutPage extends BaseCheckoutPage {
             await this.waitForOrderStatus({ orderNumber, status: fromStatus, waitFor: 10 });
         }
         await this.waitForOrderStatus({ orderNumber, status: toStatus, waitFor });
-    }
-
-    async fillExpressCheckoutForm(product, options) {
-        const form = this.checkoutForm;
-        const { expressIframeLocator, expressIframe, acceptPrivacyPolicy, iframeBtn } = form.locators;
-        await expressIframeLocator().waitFor({ state: 'attached', timeout: 20000 });
-        const iframe = expressIframe();
-
-        await iframe.locator(`[data-testid^="express-payment-option-${product}-"]`).first().click();
-        await iframe.locator('[data-testid="cart-summary-continue"]').click();
-
-        await form.fillPersonalInfo(iframe, options);
-        await acceptPrivacyPolicy(iframe).click();
-        await iframeBtn(iframe).click();
-
-        await form.fillOtp(iframe, options);
     }
 }
