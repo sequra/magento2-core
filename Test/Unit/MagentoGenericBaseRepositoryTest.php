@@ -6,6 +6,7 @@ use Magento\Framework\App\ObjectManager;
 use Magento\Framework\App\ResourceConnection;
 use Magento\Setup\Module\Setup;
 use SeQura\Core\Infrastructure\ORM\Exceptions\RepositoryNotRegisteredException;
+use SeQura\Core\Infrastructure\ORM\Interfaces\RepositoryInterface;
 use Sequra\Core\Services\Bootstrap;
 use SeQura\Core\Infrastructure\ORM\Exceptions\QueryFilterInvalidParamException;
 use SeQura\Core\Infrastructure\ORM\QueryFilter\Operators;
@@ -61,7 +62,7 @@ class MagentoGenericBaseRepositoryTest extends AbstractGenericStudentRepositoryT
     public function testDeleteWhereByIdIn()
     {
         $ids = [$this->saveStudent('ana'), $this->saveStudent('bob'), $this->saveStudent('eve')];
-        $repository = RepositoryRegistry::getRepository(StudentEntity::getClassName());
+        $repository = $this->repository();
 
         $repository->deleteWhere((new QueryFilter())->where('id', Operators::IN, [$ids[0], $ids[2]]));
 
@@ -81,7 +82,7 @@ class MagentoGenericBaseRepositoryTest extends AbstractGenericStudentRepositoryT
         $this->saveStudent('ana', null);
         $this->saveStudent('bob', '');
         $this->saveStudent('eve', 'eve@example.com');
-        $repository = RepositoryRegistry::getRepository(StudentEntity::getClassName());
+        $repository = $this->repository();
 
         $repository->deleteWhere(
             (new QueryFilter())->where('email', Operators::NULL)->orWhere('email', Operators::EQUALS, '')
@@ -103,7 +104,7 @@ class MagentoGenericBaseRepositoryTest extends AbstractGenericStudentRepositoryT
         $this->saveStudent('ana');
         $this->saveStudent('bob');
         $this->saveStudent('eve');
-        $repository = RepositoryRegistry::getRepository(StudentEntity::getClassName());
+        $repository = $this->repository();
 
         $repository->deleteWhere((new QueryFilter())->orderBy('id')->setLimit(2));
 
@@ -123,7 +124,7 @@ class MagentoGenericBaseRepositoryTest extends AbstractGenericStudentRepositoryT
         $this->saveStudent('bob');
         $connection = $this->getConnection();
         $connection->insert($connection->getTableName(TestRepository::TABLE_NAME), ['type' => 'Other', 'data' => '{}']);
-        $repository = RepositoryRegistry::getRepository(StudentEntity::getClassName());
+        $repository = $this->repository();
 
         $repository->deleteWhere();
 
@@ -141,11 +142,23 @@ class MagentoGenericBaseRepositoryTest extends AbstractGenericStudentRepositoryT
      */
     public function testDeleteWhereOnANotIndexedColumnThrows()
     {
-        $repository = RepositoryRegistry::getRepository(StudentEntity::getClassName());
+        $repository = $this->repository();
 
         $this->expectException(QueryFilterInvalidParamException::class);
 
         $repository->deleteWhere((new QueryFilter())->where('addresses', Operators::EQUALS, 'x'));
+    }
+
+    /**
+     * Returns the repository of the student entity under test.
+     *
+     * @return RepositoryInterface
+     *
+     * @throws RepositoryNotRegisteredException
+     */
+    private function repository()
+    {
+        return RepositoryRegistry::getRepository(StudentEntity::getClassName());
     }
 
     /**
@@ -168,7 +181,7 @@ class MagentoGenericBaseRepositoryTest extends AbstractGenericStudentRepositoryT
         $student->firstName = $username;
         $student->lastName = $username;
 
-        return (int)RepositoryRegistry::getRepository(StudentEntity::getClassName())->save($student);
+        return (int)$this->repository()->save($student);
     }
 
     /**
@@ -181,8 +194,7 @@ class MagentoGenericBaseRepositoryTest extends AbstractGenericStudentRepositoryT
      */
     private function remainingUsernames()
     {
-        $students = RepositoryRegistry::getRepository(StudentEntity::getClassName())
-            ->select((new QueryFilter())->orderBy('id'));
+        $students = $this->repository()->select((new QueryFilter())->orderBy('id'));
 
         return array_map(static function (StudentEntity $student) {
             return $student->username;
