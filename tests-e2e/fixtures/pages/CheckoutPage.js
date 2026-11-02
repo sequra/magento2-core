@@ -18,8 +18,7 @@ export default class CheckoutPage extends BaseCheckoutPage {
             .first();
         locators.iframeBtn = iframe => iframe
             .locator('[data-testid="cart-summary-continue"]:visible')
-            .or(actionButton(iframe))
-            .first();
+            .or(actionButton(iframe));
     }
 
     /**
