@@ -6,7 +6,7 @@ use Magento\Framework\App\ObjectManager;
 use Magento\Framework\App\ResourceConnection;
 use Magento\Setup\Module\Setup;
 use SeQura\Core\Infrastructure\ORM\Exceptions\RepositoryNotRegisteredException;
-use SeQura\Core\Infrastructure\ORM\Interfaces\RepositoryInterface;
+use Sequra\Core\Repository\BaseRepository;
 use Sequra\Core\Services\Bootstrap;
 use SeQura\Core\Infrastructure\ORM\Exceptions\QueryFilterInvalidParamException;
 use SeQura\Core\Infrastructure\ORM\QueryFilter\Operators;
@@ -152,20 +152,23 @@ class MagentoGenericBaseRepositoryTest extends AbstractGenericStudentRepositoryT
     /**
      * Returns the repository of the student entity under test.
      *
-     * @return RepositoryInterface
+     * @return BaseRepository
      *
      * @throws RepositoryNotRegisteredException
      */
     private function repository()
     {
-        return RepositoryRegistry::getRepository(StudentEntity::getClassName());
+        /** @var BaseRepository $repository */
+        $repository = RepositoryRegistry::getRepository(StudentEntity::getClassName());
+
+        return $repository;
     }
 
     /**
      * Saves a student with the given username and email.
      *
      * @param string $username
-     * @param string $email
+     * @param string|null $email
      *
      * @return int
      *
