@@ -9,11 +9,7 @@ use Sequra\Core\Model\Ui\ConfigProvider;
 /**
  * Class OrderCanCancelPlugin
  *
- * A SeQura order in payment review cannot be cancelled until SeQura decides.
- *
- * Refusing it in canCancel() keeps Order::cancel() from running at all, so no stock is returned and the
- * admin does not show the Cancel button. The cancellation that SeQura itself sends through the webhook
- * is let through.
+ * Refuses canCancel() for a SeQura order in payment review, unless a SeQura webhook is being processed.
  */
 class OrderCanCancelPlugin
 {
