@@ -2,6 +2,7 @@
 
 namespace Sequra\Core\Test\Unit\Observer;
 
+use Exception;
 use Magento\Framework\DB\Adapter\AdapterInterface;
 use Magento\Framework\DB\Select;
 use Magento\Framework\Event\Observer;
@@ -18,6 +19,7 @@ use SeQura\Core\BusinessLogic\Domain\Order\Models\OrderUpdateData;
 use SeQura\Core\BusinessLogic\Domain\Order\Service\OrderService;
 use SeQura\Core\Infrastructure\Logger\Logger;
 use SeQura\Core\Infrastructure\ServiceRegister;
+use Sequra\Core\Controller\Webhook\Index as WebhookController;
 use Sequra\Core\Model\Ui\ConfigProvider;
 use Sequra\Core\Observer\OrderCancellationObserver;
 use Sequra\Core\Services\BusinessLogic\Utility\SeQuraTranslationProvider;
@@ -40,6 +42,16 @@ class OrderCancellationObserverTest extends TestCase
     private $orderService;
 
     /**
+     * @var MockObject&AdapterInterface
+     */
+    private $connection;
+
+    /**
+     * @var string[]
+     */
+    private $loggedMessages = [];
+
+    /**
      * @return void
      */
     protected function setUp(): void
@@ -52,7 +64,7 @@ class OrderCancellationObserverTest extends TestCase
         ServiceRegister::registerService(StoreIdProvider::class, static function () {
             return new StoreIdProvider();
         });
-        $this->silenceLogger();
+        $this->replaceLogger();
     }
 
     /**
@@ -60,6 +72,8 @@ class OrderCancellationObserverTest extends TestCase
      */
     protected function tearDown(): void
     {
+        $this->setStatic(ServiceRegister::class, 'instance', null);
+        $this->setStatic(WebhookController::class, 'isWebhookProcessing', false);
         Logger::resetInstance();
     }
 
@@ -70,6 +84,9 @@ class OrderCancellationObserverTest extends TestCase
      */
     public function testSendsTheCancellationToSequra(): void
     {
+        $observer = $this->observer(Order::STATE_PENDING_PAYMENT);
+
+        $this->connection->expects($this->once())->method('fetchOne');
         $this->orderService->expects($this->once())
             ->method('updateOrder')
             ->with($this->callback(static function (OrderUpdateData $data) {
@@ -78,7 +95,7 @@ class OrderCancellationObserverTest extends TestCase
                     && $data->getUnshippedCart() !== null && $data->getUnshippedCart()->getItems() === [];
             }));
 
-        $this->observer(Order::STATE_PENDING_PAYMENT)->execute($this->event($this->cancelledOrder()));
+        $observer->execute($this->event($this->cancelledOrder()));
     }
 
     /**
@@ -88,11 +105,13 @@ class OrderCancellationObserverTest extends TestCase
      */
     public function testRefusesToCancelAnOrderInPaymentReview(): void
     {
+        $observer = $this->observer(Order::STATE_PAYMENT_REVIEW);
+
         $this->orderService->expects($this->never())->method('updateOrder');
 
         $this->expectException(LocalizedException::class);
 
-        $this->observer(Order::STATE_PAYMENT_REVIEW)->execute($this->event($this->cancelledOrder()));
+        $observer->execute($this->event($this->cancelledOrder()));
     }
 
     /**
@@ -102,22 +121,58 @@ class OrderCancellationObserverTest extends TestCase
      */
     public function testIgnoresAnOrderThatWasAlreadyCancelled(): void
     {
+        $observer = $this->observer(Order::STATE_CANCELED);
+
         $this->orderService->expects($this->never())->method('updateOrder');
 
-        $this->observer(Order::STATE_CANCELED)->execute($this->event($this->cancelledOrder()));
+        $observer->execute($this->event($this->cancelledOrder()));
     }
 
     /**
-     * Orders paid with another method are left alone.
+     * Orders paid with another method are left alone, without reading their previous status.
      *
      * @return void
      */
     public function testIgnoresOtherPaymentMethods(): void
     {
+        $observer = $this->observer(Order::STATE_PENDING_PAYMENT);
+
+        $this->connection->expects($this->never())->method('fetchOne');
         $this->orderService->expects($this->never())->method('updateOrder');
 
-        $this->observer(Order::STATE_PENDING_PAYMENT)
-            ->execute($this->event($this->cancelledOrder('checkmo')));
+        $observer->execute($this->event($this->cancelledOrder('checkmo')));
+    }
+
+    /**
+     * A cancellation that comes from a SeQura webhook is not sent back to SeQura.
+     *
+     * @return void
+     */
+    public function testSendsNothingWhileProcessingAWebhook(): void
+    {
+        $observer = $this->observer(Order::STATE_PENDING_PAYMENT);
+        $this->setStatic(WebhookController::class, 'isWebhookProcessing', true);
+
+        $this->connection->expects($this->never())->method('fetchOne');
+        $this->orderService->expects($this->never())->method('updateOrder');
+
+        $observer->execute($this->event($this->cancelledOrder()));
+    }
+
+    /**
+     * When SeQura cannot be reached the error is logged and the cancellation goes on in Magento.
+     *
+     * @return void
+     */
+    public function testLogsAndKeepsTheCancellationWhenSequraFails(): void
+    {
+        $observer = $this->observer(Order::STATE_PENDING_PAYMENT);
+
+        $this->orderService->method('updateOrder')->willThrowException(new Exception('timeout'));
+
+        $observer->execute($this->event($this->cancelledOrder()));
+
+        $this->assertSame(['Order synchronization for cancellation failed. timeout'], $this->loggedMessages);
     }
 
     /**
@@ -131,12 +186,12 @@ class OrderCancellationObserverTest extends TestCase
         $select->method('from')->willReturnSelf();
         $select->method('where')->willReturnSelf();
 
-        $connection = $this->createMock(AdapterInterface::class);
-        $connection->method('select')->willReturn($select);
-        $connection->method('fetchOne')->willReturn($previousStatus);
+        $this->connection = $this->createMock(AdapterInterface::class);
+        $this->connection->method('select')->willReturn($select);
+        $this->connection->method('fetchOne')->willReturn($previousStatus);
 
         $resource = $this->createMock(OrderResource::class);
-        $resource->method('getConnection')->willReturn($connection);
+        $resource->method('getConnection')->willReturn($this->connection);
         $resource->method('getMainTable')->willReturn('sales_order');
         $resource->method('getIdFieldName')->willReturn('entity_id');
 
@@ -181,24 +236,56 @@ class OrderCancellationObserverTest extends TestCase
     }
 
     /**
-     * Replaces the integration-core logger, which needs the shop logger and configuration services.
+     * Replaces the integration-core logger, which needs the shop logger and configuration services,
+     * with one that keeps the messages for the assertions.
      *
      * @return void
      */
-    private function silenceLogger(): void
+    private function replaceLogger(): void
     {
-        $logger = new class extends Logger {
-            public function __construct()
+        $messages = &$this->loggedMessages;
+        $logger = new class ($messages) extends Logger {
+            /**
+             * @var string[]
+             */
+            private $messages;
+
+            /**
+             * @param string[] $messages
+             */
+            public function __construct(array &$messages)
             {
+                $this->messages = &$messages;
             }
 
+            /**
+             * @param int $level
+             * @param string $message
+             * @param string $component
+             * @param mixed[] $context
+             *
+             * @return void
+             */
             protected function logMessage(int $level, string $message, string $component, array $context = []): void
             {
+                $this->messages[] = $message;
             }
         };
 
-        $instance = new ReflectionProperty(Logger::class, 'instance');
-        $instance->setAccessible(true);
-        $instance->setValue(null, $logger);
+        $this->setStatic(Logger::class, 'instance', $logger);
+    }
+
+    /**
+     * @param string $class
+     * @param string $property
+     * @param mixed $value
+     *
+     * @return void
+     */
+    private function setStatic(string $class, string $property, $value): void
+    {
+        $reflection = new ReflectionProperty($class, $property);
+        $reflection->setAccessible(true);
+        $reflection->setValue(null, $value);
     }
 }

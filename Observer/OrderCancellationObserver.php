@@ -50,14 +50,18 @@ class OrderCancellationObserver implements ObserverInterface
         $orderData = $observer->getData('order');
         if (WebhookController::isWebhookProcessing() || ! $orderData instanceof Order ||
             $orderData->getStatus() !== Order::STATE_CANCELED ||
-            $this->getPreviousStatus($orderData) === Order::STATE_CANCELED ||
             !$orderData->getPayment() ||
             $orderData->getPayment()->getMethod() !== ConfigProvider::CODE) {
             return;
         }
 
+        $previousStatus = $this->getPreviousStatus($orderData);
+        if ($previousStatus === Order::STATE_CANCELED) {
+            return;
+        }
+
         try {
-            $this->handleCancellation($orderData);
+            $this->handleCancellation($orderData, $previousStatus);
         } catch (Exception $e) {
             $this->handleCancellationError($e);
         }
@@ -67,14 +71,15 @@ class OrderCancellationObserver implements ObserverInterface
      * Handles order cancellation.
      *
      * @param Order $orderData
+     * @param string|null $previousStatus Status stored for the order before this save.
      *
      * @return void
      *
      * @throws Exception
      */
-    private function handleCancellation(Order $orderData): void
+    private function handleCancellation(Order $orderData, ?string $previousStatus): void
     {
-        if ($this->getPreviousStatus($orderData) === Order::STATE_PAYMENT_REVIEW) {
+        if ($previousStatus === Order::STATE_PAYMENT_REVIEW) {
             throw new LocalizedException($this->translationProvider->translate('sequra.error.cannotCancel'));
         }
 
