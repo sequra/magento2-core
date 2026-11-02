@@ -7,6 +7,7 @@ use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Sales\Model\Order;
+use Magento\Sales\Model\ResourceModel\Order as OrderResource;
 use Sequra\Core\Controller\Webhook\Index as WebhookController;
 use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
 use SeQura\Core\BusinessLogic\Domain\Order\Models\OrderRequest\Cart as SeQuraCart;
@@ -25,11 +26,18 @@ class OrderCancellationObserver implements ObserverInterface
     private $translationProvider;
 
     /**
-     * @param SeQuraTranslationProvider $translationProvider
+     * @var OrderResource
      */
-    public function __construct(SeQuraTranslationProvider $translationProvider)
+    private $orderResource;
+
+    /**
+     * @param SeQuraTranslationProvider $translationProvider
+     * @param OrderResource $orderResource
+     */
+    public function __construct(SeQuraTranslationProvider $translationProvider, OrderResource $orderResource)
     {
         $this->translationProvider = $translationProvider;
+        $this->orderResource = $orderResource;
     }
 
     /**
@@ -100,19 +108,23 @@ class OrderCancellationObserver implements ObserverInterface
      */
     private function getPreviousStatus(Order $orderData): ?string
     {
-        if (!$orderData->getId()) {
+        $orderId = $orderData->getId();
+        if (!is_numeric($orderId)) {
             return null;
         }
 
-        $resource = $orderData->getResource();
-        $connection = $resource->getConnection();
+        $connection = $this->orderResource->getConnection();
+        if (!$connection) {
+            return null;
+        }
+
         $status = $connection->fetchOne(
             $connection->select()
-                ->from($resource->getMainTable(), ['status'])
-                ->where($resource->getIdFieldName() . ' = ?', $orderData->getId())
+                ->from($this->orderResource->getMainTable(), ['status'])
+                ->where($this->orderResource->getIdFieldName() . ' = ?', (int)$orderId)
         );
 
-        return $status === false ? null : (string)$status;
+        return is_string($status) ? $status : null;
     }
 
     /**
