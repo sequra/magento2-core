@@ -488,10 +488,10 @@ class CartSummaryFormDecorator
         // answered with — 400/422 the shopper's change was refused, 429/500 the store could not
         // deal with it right now — or 0 when there was no answer at all. Never the server's
         // message: the form owns what the shopper reads.
-        function sendFailure(status) {
+        function sendFailure(status, cartUpdateId) {
             var el = formIframe();
             if (el) {
-                send(el, { type: 'cartUpdateFailed', status: status });
+                send(el, { type: 'cartUpdateFailed', status: status, cartUpdateId: cartUpdateId });
             }
         }
 
@@ -552,6 +552,7 @@ class CartSummaryFormDecorator
             return;
         }
         window.SequraCartUpdateBound = true;
+        var cartUpdateQueue = Promise.resolve();
 
         window.addEventListener('message', function (event) {
             var el = formIframe();
@@ -594,10 +595,29 @@ class CartSummaryFormDecorator
                 email: message.email
             }));
 
-            fetch(updateUrl, { method: 'POST', body: body, credentials: 'same-origin' })
+            cartUpdateQueue = cartUpdateQueue
+                .then(function () {
+                    var controller = typeof AbortController === 'function' ? new AbortController() : null;
+                    var timer = controller ? setTimeout(function () { controller.abort(); }, 30000) : null;
+
+                    return fetch(updateUrl, {
+                        method: 'POST',
+                        body: body,
+                        credentials: 'same-origin',
+                        signal: controller ? controller.signal : undefined
+                    }).then(function (response) {
+                        clearTimeout(timer);
+
+                        return response;
+                    }, function (error) {
+                        clearTimeout(timer);
+
+                        throw error;
+                    });
+                })
                 .then(function (response) {
                     if (!response.ok) {
-                        sendFailure(response.status);
+                        sendFailure(response.status, message.cartUpdateId);
 
                         return null;
                     }
@@ -652,13 +672,14 @@ class CartSummaryFormDecorator
                             target.src = reloadUrl;
                         }
                     } else {
+                        data.cartUpdateId = message.cartUpdateId;
                         send(target, data);
                     }
                 })
                 .catch(function () {
                     // No usable answer: the request never completed, or a 200 whose body did not
                     // parse. Either way the form has been left waiting, so tell it so.
-                    sendFailure(0);
+                    sendFailure(0, message.cartUpdateId);
                 });
         });
     })();
