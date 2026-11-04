@@ -9,6 +9,9 @@ use Magento\Sales\Api\OrderPaymentRepositoryInterface;
 use Magento\Sales\Api\OrderRepositoryInterface;
 use Magento\Sales\Model\Order;
 use Magento\Sales\Model\Order\Payment;
+use Magento\Sales\Model\Order\Shipment;
+use Magento\Sales\Model\Order\Shipment\Track;
+use Magento\Framework\Model\ResourceModel\Db\AbstractDb;
 use PHPUnit\Framework\MockObject\Exception;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\MockObject\Stub;
@@ -58,6 +61,13 @@ class TrackingSynchronizerTest extends TestCase
      * @var string|null
      */
     private $paymentMethod = ConfigProvider::CODE;
+
+    /**
+     * Error the payment repository raises when the payment is looked up, null when the lookup succeeds.
+     *
+     * @var \RuntimeException|null
+     */
+    private $paymentLookupError;
 
     /**
      * @return void
@@ -174,7 +184,7 @@ class TrackingSynchronizerTest extends TestCase
     {
         $this->trackingBuilder->method('build')->willReturn([]);
         $this->orderUpdater->method('update')->willThrowException(
-            new OrderUpdateFailedException('Order not found.', 'general.errors.order.notFound', 404)
+            new OrderUpdateFailedException('Order not found.', 'general.errors.order.notFound')
         );
 
         $shopLogger = $this->createMock(ShopLoggerAdapter::class);
@@ -185,11 +195,143 @@ class TrackingSynchronizerTest extends TestCase
     }
 
     /**
+     * An order that fails to load is logged instead of raised, so the commit callbacks after this one still run.
+     *
+     * @return void
+     */
+    public function testLogsAFailedOrderLoadInsteadOfRaisingIt(): void
+    {
+        $this->orderRepository = $this->createStub(OrderRepositoryInterface::class);
+        $this->orderRepository->method('get')->willThrowException(new \RuntimeException('Deadlock found.'));
+        $this->orderUpdater = $this->createMock(OrderUpdater::class);
+        $this->orderUpdater->expects($this->never())->method('update');
+
+        $shopLogger = $this->createMock(ShopLoggerAdapter::class);
+        $shopLogger->expects($this->once())->method('logMessage');
+        $this->registerLogger($shopLogger);
+
+        $this->synchronizer()->synchronize(42);
+    }
+
+    /**
+     * A payment lookup that fails is logged instead of raised, so the commit callbacks after this one still run.
+     *
+     * @return void
+     */
+    public function testLogsAFailedPaymentLookupInsteadOfRaisingIt(): void
+    {
+        $this->paymentLookupError = new \RuntimeException('MySQL server has gone away.');
+        $this->orderUpdater = $this->createMock(OrderUpdater::class);
+        $this->orderUpdater->expects($this->never())->method('update');
+
+        $shopLogger = $this->createMock(ShopLoggerAdapter::class);
+        $shopLogger->expects($this->once())->method('logMessage');
+        $this->registerLogger($shopLogger);
+
+        $this->synchronizer()->synchronize(42);
+    }
+
+    /**
+     * A shipment saved with its tracking records registers one callback per record, and only one of them syncs.
+     *
+     * @return void
+     */
+    public function testSynchronizesOnceForEverythingSavedInOneTransaction(): void
+    {
+        $this->trackingBuilder->method('build')->willReturn([]);
+        $this->orderUpdater = $this->createMock(OrderUpdater::class);
+        $this->orderUpdater->expects($this->once())->method('update')
+            ->willReturn($this->createStub(SeQuraOrder::class));
+
+        $synchronizer = $this->synchronizer();
+        $callbacks = [];
+        $synchronizer->synchronizeAfterCommit($this->savedObject(Track::class, $callbacks), 42);
+        $synchronizer->synchronizeAfterCommit($this->savedObject(Track::class, $callbacks), 42);
+        $synchronizer->synchronizeAfterCommit($this->savedObject(Shipment::class, $callbacks), 42);
+
+        self::assertCount(3, $callbacks);
+        foreach ($callbacks as $callback) {
+            $callback();
+        }
+    }
+
+    /**
+     * A later transaction synchronizes again, so a tracking record added after the shipment is sent too.
+     *
+     * @return void
+     */
+    public function testSynchronizesAgainInTheNextTransaction(): void
+    {
+        $this->trackingBuilder->method('build')->willReturn([]);
+        $this->orderUpdater = $this->createMock(OrderUpdater::class);
+        $this->orderUpdater->expects($this->exactly(2))->method('update')
+            ->willReturn($this->createStub(SeQuraOrder::class));
+
+        $synchronizer = $this->synchronizer(2);
+        foreach ([1, 2] as $transaction) {
+            $callbacks = [];
+            $synchronizer->synchronizeAfterCommit($this->savedObject(Track::class, $callbacks), 42);
+            foreach ($callbacks as $callback) {
+                $callback();
+            }
+        }
+    }
+
+    /**
+     * The order of a saved shipment is taken from the shipment instead of being loaded again.
+     *
+     * @return void
+     */
+    public function testTakesTheOrderFromTheSavedShipment(): void
+    {
+        $this->trackingBuilder->method('build')->willReturn([]);
+        $this->orderRepository = $this->createMock(OrderRepositoryInterface::class);
+        $this->orderRepository->expects($this->never())->method('get');
+        $this->orderUpdater = $this->createMock(OrderUpdater::class);
+        $this->orderUpdater->expects($this->once())->method('update')->with('3')
+            ->willReturn($this->createStub(SeQuraOrder::class));
+
+        $shipment = $this->createStub(Shipment::class);
+        $shipment->method('getOrder')->willReturn($this->order());
+
+        $this->synchronizer()->synchronize(42, $shipment);
+    }
+
+    /**
+     * Returns a saved shipment or tracking record whose resource collects the commit callbacks.
+     *
+     * @param class-string<Shipment|Track> $class
+     * @param callable[] $callbacks
+     *
+     * @return Shipment|Track
+     */
+    private function savedObject(string $class, array &$callbacks)
+    {
+        $resource = $this->createStub(AbstractDb::class);
+        $resource->method('addCommitCallback')->willReturnCallback(
+            function (callable $callback) use (&$callbacks, $resource) {
+                $callbacks[] = $callback;
+
+                return $resource;
+            }
+        );
+        $object = $this->createStub($class);
+        $object->method('getResource')->willReturn($resource);
+        if ($object instanceof Shipment) {
+            $object->method('getOrder')->willReturn($this->order());
+        }
+
+        return $object;
+    }
+
+    /**
      * Builds the synchronizer over the mocked builder, updater and repositories.
+     *
+     * @param int $paymentLookups How many times the payment of order 42 is looked up.
      *
      * @return TrackingSynchronizer
      */
-    private function synchronizer(): TrackingSynchronizer
+    private function synchronizer(int $paymentLookups = 1): TrackingSynchronizer
     {
         $payments = [];
         if ($this->paymentMethod !== null) {
@@ -201,10 +343,16 @@ class TrackingSynchronizerTest extends TestCase
         $searchResult = $this->createStub(OrderPaymentSearchResultInterface::class);
         $searchResult->method('getItems')->willReturn($payments);
         $paymentRepository = $this->createStub(OrderPaymentRepositoryInterface::class);
-        $paymentRepository->method('getList')->willReturn($searchResult);
+        if ($this->paymentLookupError !== null) {
+            $paymentRepository->method('getList')->willThrowException($this->paymentLookupError);
+        } else {
+            $paymentRepository->method('getList')->willReturn($searchResult);
+        }
 
         $searchCriteriaBuilder = $this->createMock(SearchCriteriaBuilder::class);
-        $searchCriteriaBuilder->expects($this->once())->method('addFilter')->with('parent_id', 42)->willReturnSelf();
+        $searchCriteriaBuilder->expects($this->exactly($paymentLookups))->method('addFilter')
+            ->with('parent_id', 42)
+            ->willReturnSelf();
         $searchCriteriaBuilder->method('create')->willReturn($this->createStub(SearchCriteria::class));
 
         return new TrackingSynchronizer(

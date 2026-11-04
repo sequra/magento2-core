@@ -4,10 +4,12 @@ namespace Sequra\Core\Model\Api;
 
 use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\Model\AbstractModel;
 use Magento\Sales\Api\Data\OrderPaymentInterface;
 use Magento\Sales\Api\OrderPaymentRepositoryInterface;
 use Magento\Sales\Api\OrderRepositoryInterface;
 use Magento\Sales\Model\Order;
+use Magento\Sales\Model\Order\Shipment;
 use SeQura\Core\BusinessLogic\AdminAPI\OrderManagement\Requests\OrderUpdateRequest;
 use SeQura\Core\Infrastructure\Logger\Logger;
 use Sequra\Core\Model\Api\Builders\TrackingBuilder;
@@ -45,6 +47,13 @@ class TrackingSynchronizer
     private $searchCriteriaBuilder;
 
     /**
+     * Orders whose synchronization waits for the transaction to commit, each with the shipment that was saved, if any.
+     *
+     * @var array<int, Shipment|null>
+     */
+    private $pendingOrders = [];
+
+    /**
      * @param TrackingBuilder $trackingBuilder
      * @param OrderUpdater $orderUpdater
      * @param OrderRepositoryInterface $orderRepository
@@ -66,6 +75,34 @@ class TrackingSynchronizer
     }
 
     /**
+     * Synchronizes the order once the transaction that saved or deleted the shipment or tracking record commits.
+     *
+     * A shipment saved with its tracking records fires one event per record. They all register a callback, and the
+     * first one to run synchronizes the order for all of them, so the order is synchronized once per transaction.
+     *
+     * @param AbstractModel $object The shipment or tracking record that was saved or deleted.
+     * @param int $orderId
+     *
+     * @return void
+     */
+    public function synchronizeAfterCommit(AbstractModel $object, int $orderId): void
+    {
+        if (!array_key_exists($orderId, $this->pendingOrders) || $object instanceof Shipment) {
+            $this->pendingOrders[$orderId] = $object instanceof Shipment ? $object : null;
+        }
+
+        $object->getResource()->addCommitCallback(function () use ($orderId): void {
+            if (!array_key_exists($orderId, $this->pendingOrders)) {
+                return;
+            }
+
+            $shipment = $this->pendingOrders[$orderId];
+            unset($this->pendingOrders[$orderId]);
+            $this->synchronize($orderId, $shipment);
+        });
+    }
+
+    /**
      * Sends the current tracking list of the order, or nothing when the order was not paid with seQura.
      *
      * The payment is checked before the order is loaded, so shipments and tracking records of other orders cost
@@ -73,26 +110,22 @@ class TrackingSynchronizer
      * seQura when it matches what seQura was last told. A failure is logged and never stops the shipment from saving.
      *
      * @param int $orderId
+     * @param Shipment|null $shipment The saved shipment, whose order is used instead of loading it again.
      *
      * @return void
      */
-    public function synchronize(int $orderId): void
+    public function synchronize(int $orderId, ?Shipment $shipment = null): void
     {
-        if (!$this->isPaidWithSeQura($orderId)) {
-            return;
-        }
-
         try {
-            $order = $this->orderRepository->get($orderId);
-        } catch (NoSuchEntityException $e) {
-            return;
-        }
+            if (!$this->isPaidWithSeQura($orderId)) {
+                return;
+            }
 
-        if (!$order instanceof Order) {
-            return;
-        }
+            $order = $shipment !== null ? $shipment->getOrder() : $this->findOrder($orderId);
+            if ($order === null) {
+                return;
+            }
 
-        try {
             $this->orderUpdater->update(
                 (string)$order->getStoreId(),
                 new OrderUpdateRequest(
@@ -107,6 +140,24 @@ class TrackingSynchronizer
         } catch (Throwable $e) {
             Logger::logError('Order synchronization for shipment tracking failed. ' . $e->getMessage(), 'Integration');
         }
+    }
+
+    /**
+     * Loads the order, or returns null when it no longer exists.
+     *
+     * @param int $orderId
+     *
+     * @return Order|null
+     */
+    private function findOrder(int $orderId): ?Order
+    {
+        try {
+            $order = $this->orderRepository->get($orderId);
+        } catch (NoSuchEntityException $e) {
+            return null;
+        }
+
+        return $order instanceof Order ? $order : null;
     }
 
     /**

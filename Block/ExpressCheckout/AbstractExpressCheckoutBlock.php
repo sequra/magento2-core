@@ -160,7 +160,7 @@ abstract class AbstractExpressCheckoutBlock extends Template
                 return $this->state;
             }
 
-            // SeQura is unavailable when the cart contains a virtual product. Render nothing.
+            // Express checkout needs a shippable cart. Render nothing when it contains a virtual product.
             if ($this->hasVirtualItem($quote)) {
                 return $this->state;
             }
@@ -195,8 +195,8 @@ abstract class AbstractExpressCheckoutBlock extends Template
     /**
      * Whether the cart contains at least one virtual product.
      *
-     * SeQura is not offered for virtual items (parity with the regular checkout availability
-     * check), so the button must not render.
+     * Express checkout takes the shipping from seQura and the temporary cart refuses a virtual
+     * item, so the button must not render.
      *
      * @param Quote $quote
      *

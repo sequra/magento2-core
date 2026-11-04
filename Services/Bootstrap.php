@@ -68,7 +68,6 @@ use Sequra\Core\Services\BusinessLogic\Order\MerchantDataProvider;
 use Sequra\Core\Services\BusinessLogic\OrderReportService;
 use Sequra\Core\Services\BusinessLogic\OrderServiceFactory;
 use Sequra\Core\Services\BusinessLogic\Order\OrderCreationFactory;
-use Sequra\Core\Services\BusinessLogic\PaymentMethodsService;
 use Sequra\Core\Services\BusinessLogic\ProductService;
 use Sequra\Core\Services\BusinessLogic\PromotionalWidget\MiniWidgetMessagesProvider;
 use Sequra\Core\Services\BusinessLogic\PromotionalWidget\WidgetConfigurator;
@@ -394,13 +393,6 @@ class Bootstrap extends BootstrapComponent
             OrderCreationInterface::class,
             static function () {
                 return static::$instance->orderCreationFactory->create();
-            }
-        );
-
-        ServiceRegister::registerService(
-            PaymentMethodsService::class,
-            static function () {
-                return new PaymentMethodsService();
             }
         );
 

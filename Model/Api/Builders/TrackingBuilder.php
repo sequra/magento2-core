@@ -8,6 +8,7 @@ use Magento\Framework\Api\SortOrderBuilder;
 use Magento\Sales\Api\Data\ShipmentTrackInterface;
 use Magento\Sales\Api\ShipmentTrackRepositoryInterface;
 use Magento\Sales\Model\Order;
+use Magento\Sales\Model\Order\Shipment;
 use Magento\Sales\Model\Order\Shipment\Track;
 use Magento\Shipping\Helper\Data as ShippingHelper;
 use SeQura\Core\BusinessLogic\Domain\Order\Models\OrderRequest\Tracking\TrackingPostal;
@@ -78,8 +79,11 @@ class TrackingBuilder
             )
             ->create();
 
+        $tracks = $this->trackRepository->getList($searchCriteria)->getItems();
+        $this->attachShipments($order, $tracks);
+
         $trackings = [];
-        foreach ($this->trackRepository->getList($searchCriteria)->getItems() as $track) {
+        foreach ($tracks as $track) {
             $trackings[] = new TrackingPostal(
                 (string)$track->getEntityId(),
                 $this->getCarrier($track),
@@ -122,6 +126,29 @@ class TrackingBuilder
         $trackNumber = $track->getTrackNumber();
 
         return is_string($trackNumber) && trim($trackNumber) !== '' ? trim($trackNumber) : null;
+    }
+
+    /**
+     * Attaches the order's shipments to the tracking records, so the tracking URL of each does not load it again.
+     *
+     * @param Order $order
+     * @param ShipmentTrackInterface[] $tracks
+     *
+     * @return void
+     */
+    private function attachShipments(Order $order, array $tracks): void
+    {
+        $shipments = $tracks ? $order->getShipmentsCollection() : false;
+        if (!$shipments) {
+            return;
+        }
+
+        foreach ($tracks as $track) {
+            $shipment = $shipments->getItemById($track->getParentId());
+            if ($track instanceof Track && $shipment instanceof Shipment) {
+                $track->setShipment($shipment);
+            }
+        }
     }
 
     /**
