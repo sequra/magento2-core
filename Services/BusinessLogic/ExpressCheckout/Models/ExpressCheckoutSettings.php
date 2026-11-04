@@ -35,18 +35,26 @@ class ExpressCheckoutSettings extends CoreExpressCheckoutSettings
     ) {
         parent::__construct($expressCheckoutConfigs, $buttonStyle);
 
-        if ($termsAndConditionsUrl === null || $termsAndConditionsUrl === '') {
+        if ($termsAndConditionsUrl === null) {
             return;
         }
 
-        if (!is_string($termsAndConditionsUrl)
-            || filter_var($termsAndConditionsUrl, FILTER_VALIDATE_URL) === false
-            || !preg_match('#^https?://#i', $termsAndConditionsUrl)
+        if (!is_string($termsAndConditionsUrl)) {
+            throw new InvalidTermsAndConditionsUrlException();
+        }
+
+        $url = trim($termsAndConditionsUrl);
+        if ($url === '') {
+            return;
+        }
+
+        if (preg_match('/[\s\x00-\x1F\x7F]/u', $url) !== 0
+            || preg_match('#^https?://(?:[^/?\#@]*@)?[^/?\#@:]+(?::\d*)?(?:[/?\#]|$)#iu', $url) !== 1
         ) {
             throw new InvalidTermsAndConditionsUrlException();
         }
 
-        $this->termsAndConditionsUrl = $termsAndConditionsUrl;
+        $this->termsAndConditionsUrl = $url;
     }
 
     /**

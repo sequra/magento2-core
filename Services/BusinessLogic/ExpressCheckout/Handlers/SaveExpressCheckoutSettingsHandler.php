@@ -3,13 +3,13 @@
 namespace Sequra\Core\Services\BusinessLogic\ExpressCheckout\Handlers;
 
 use SeQura\Core\BusinessLogic\AdminAPI\Response\Response;
-use SeQura\Core\BusinessLogic\ConfigurationWebhookAPI\Handlers\ExpressCheckout\SaveExpressCheckoutSettingsHandler as Core;
+use SeQura\Core\BusinessLogic\ConfigurationWebhookAPI\Handlers\ExpressCheckout as CoreHandlers;
 use SeQura\Core\BusinessLogic\ConfigurationWebhookAPI\Requests\ExpressCheckout\SaveExpressCheckoutSettingsRequest;
 use SeQura\Core\BusinessLogic\ConfigurationWebhookAPI\Responses\ExpressCheckout\SaveExpressCheckoutSettingsResponse;
 use Sequra\Core\Services\BusinessLogic\ExpressCheckout\Exceptions\InvalidTermsAndConditionsUrlException;
 use Sequra\Core\Services\BusinessLogic\ExpressCheckout\Models\ExpressCheckoutSettings as Settings;
 
-class SaveExpressCheckoutSettingsHandler extends Core
+class SaveExpressCheckoutSettingsHandler extends CoreHandlers\SaveExpressCheckoutSettingsHandler
 {
     /**
      * @inheritDoc

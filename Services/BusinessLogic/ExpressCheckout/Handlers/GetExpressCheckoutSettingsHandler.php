@@ -3,10 +3,10 @@
 namespace Sequra\Core\Services\BusinessLogic\ExpressCheckout\Handlers;
 
 use SeQura\Core\BusinessLogic\AdminAPI\Response\Response;
-use SeQura\Core\BusinessLogic\ConfigurationWebhookAPI\Handlers\ExpressCheckout\GetExpressCheckoutSettingsHandler as Core;
+use SeQura\Core\BusinessLogic\ConfigurationWebhookAPI\Handlers\ExpressCheckout as CoreHandlers;
 use Sequra\Core\Services\BusinessLogic\ExpressCheckout\Responses\GetExpressCheckoutSettingsResponse;
 
-class GetExpressCheckoutSettingsHandler extends Core
+class GetExpressCheckoutSettingsHandler extends CoreHandlers\GetExpressCheckoutSettingsHandler
 {
     /**
      * @inheritDoc

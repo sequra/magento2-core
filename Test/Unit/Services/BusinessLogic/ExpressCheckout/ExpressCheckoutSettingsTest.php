@@ -17,7 +17,16 @@ class ExpressCheckoutSettingsTest extends TestCase
      */
     public function testKeepsAnAbsoluteHttpUrl(): void
     {
-        foreach (['https://shop.example.com/terms', 'http://shop.example.com/terms?lang=es#top'] as $url) {
+        $valid = [
+            'https://shop.example.com/terms',
+            'http://shop.example.com/terms?lang=es#top',
+            'HTTPS://shop.example.com/terms',
+            'https://tienda.es/términos-y-condiciones',
+            'https://españa-shop.es/terms',
+            'https://shop.example.com:8443/terms',
+        ];
+
+        foreach ($valid as $url) {
             $settings = new ExpressCheckoutSettings([], null, $url);
 
             $this->assertSame($url, $settings->toArray()['termsAndConditionsUrl']);
@@ -35,6 +44,14 @@ class ExpressCheckoutSettingsTest extends TestCase
             'ftp://shop.example.com/terms',
             '/terms',
             'https://',
+            'https:///terms',
+            'https://:443/terms',
+            'https://user@/terms',
+            'javascript://shop.example.com/%0Aalert(1)',
+            '//shop.example.com/terms',
+            'https://shop.example.com/my terms',
+            "https://shop.example.com/te\nrms",
+            "https://shop.example.com/\0terms",
             42,
             ['https://shop.example.com/terms'],
         ];
@@ -52,8 +69,19 @@ class ExpressCheckoutSettingsTest extends TestCase
     /**
      * @return void
      */
+    public function testStoresTheUrlTrimmed(): void
+    {
+        $settings = new ExpressCheckoutSettings([], null, "  https://shop.example.com/terms \t");
+
+        $this->assertSame('https://shop.example.com/terms', $settings->toArray()['termsAndConditionsUrl']);
+    }
+
+    /**
+     * @return void
+     */
     public function testTreatsAnEmptyUrlAsUnset(): void
     {
+        $this->assertNull((new ExpressCheckoutSettings([], null, "  \t"))->toArray()['termsAndConditionsUrl']);
         $this->assertNull((new ExpressCheckoutSettings([], null, ''))->toArray()['termsAndConditionsUrl']);
         $this->assertNull((new ExpressCheckoutSettings())->toArray()['termsAndConditionsUrl']);
     }

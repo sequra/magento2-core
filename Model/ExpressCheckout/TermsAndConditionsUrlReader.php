@@ -2,12 +2,12 @@
 
 namespace Sequra\Core\Model\ExpressCheckout;
 
-use Exception;
 use SeQura\Core\BusinessLogic\Domain\ExpressCheckout\Services\ExpressCheckoutService;
 use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
 use SeQura\Core\Infrastructure\Logger\Logger;
 use SeQura\Core\Infrastructure\ServiceRegister;
 use Sequra\Core\Services\BusinessLogic\ExpressCheckout\Models\ExpressCheckoutSettings as Settings;
+use Throwable;
 
 class TermsAndConditionsUrlReader
 {
@@ -27,7 +27,7 @@ class TermsAndConditionsUrlReader
 
                 return $service->getExpressCheckoutSettings();
             });
-        } catch (Exception $exception) {
+        } catch (Throwable $exception) {
             Logger::logWarning(
                 'Express Checkout terms and conditions URL could not be read: ' . $exception->getMessage()
             );
