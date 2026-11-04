@@ -77,6 +77,10 @@ class CartSummaryFormDecorator
      * @var DirectoryHelper
      */
     private DirectoryHelper $directoryHelper;
+    /**
+     * @var TermsAndConditionsUrlReader
+     */
+    private TermsAndConditionsUrlReader $termsAndConditionsUrlReader;
 
     /**
      * CartSummaryFormDecorator constructor.
@@ -88,6 +92,7 @@ class CartSummaryFormDecorator
      * @param FormKey $formKey
      * @param QuoteEmailResolver $emailResolver
      * @param DirectoryHelper $directoryHelper
+     * @param TermsAndConditionsUrlReader $termsAndConditionsUrlReader
      */
     public function __construct(
         ImageHelper $imageHelper,
@@ -96,7 +101,8 @@ class CartSummaryFormDecorator
         LogoPathResolver $logoPathResolver,
         FormKey $formKey,
         QuoteEmailResolver $emailResolver,
-        DirectoryHelper $directoryHelper
+        DirectoryHelper $directoryHelper,
+        TermsAndConditionsUrlReader $termsAndConditionsUrlReader
     ) {
         $this->imageHelper = $imageHelper;
         $this->itemResolver = $itemResolver;
@@ -105,6 +111,7 @@ class CartSummaryFormDecorator
         $this->formKey = $formKey;
         $this->emailResolver = $emailResolver;
         $this->directoryHelper = $directoryHelper;
+        $this->termsAndConditionsUrlReader = $termsAndConditionsUrlReader;
     }
 
     /**
@@ -380,6 +387,12 @@ class CartSummaryFormDecorator
         $storeLogoUrl = $this->buildStoreLogoUrl($quote);
         if ($storeLogoUrl !== null) {
             $data['storeLogoUrl'] = $storeLogoUrl;
+        }
+
+        $storeId = $quote->getStore()->getId();
+        $termsAndConditionsUrl = $this->termsAndConditionsUrlReader->read(is_scalar($storeId) ? (string)$storeId : '');
+        if ($termsAndConditionsUrl !== null) {
+            $data['termsAndConditionsUrl'] = $termsAndConditionsUrl;
         }
 
         return $data;

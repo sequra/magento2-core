@@ -13,6 +13,7 @@ use Magento\Store\Model\Store;
 use Magento\Theme\ViewModel\Block\Html\Header\LogoPathResolver;
 use PHPUnit\Framework\TestCase;
 use Sequra\Core\Model\ExpressCheckout\CartSummaryFormDecorator;
+use Sequra\Core\Model\ExpressCheckout\TermsAndConditionsUrlReader;
 use Sequra\Core\Model\QuoteEmailResolver;
 
 /**
@@ -158,7 +159,8 @@ class CartSummaryAddressTest extends TestCase
             $logoPathResolver,
             $formKey,
             $emailResolver,
-            $directoryHelper
+            $directoryHelper,
+            $this->createStub(TermsAndConditionsUrlReader::class)
         );
     }
 }
