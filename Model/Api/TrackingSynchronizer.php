@@ -9,18 +9,29 @@ use Magento\Sales\Api\Data\OrderPaymentInterface;
 use Magento\Sales\Api\OrderPaymentRepositoryInterface;
 use Magento\Sales\Api\OrderRepositoryInterface;
 use Magento\Sales\Model\Order;
-use Magento\Sales\Model\Order\Shipment;
 use SeQura\Core\BusinessLogic\AdminAPI\OrderManagement\Requests\OrderUpdateRequest;
 use SeQura\Core\Infrastructure\Logger\Logger;
+use SeQura\Core\Infrastructure\ServiceRegister;
+use SeQura\Core\Infrastructure\TaskExecution\QueueService;
 use Sequra\Core\Model\Api\Builders\TrackingBuilder;
+use Sequra\Core\Model\Api\Exception\OrderUpdateFailedException;
+use Sequra\Core\Model\Api\Tasks\TrackingSynchronizationTask;
 use Sequra\Core\Model\Ui\ConfigProvider;
 use Throwable;
 
 /**
  * Sends the tracking records of a seQura order's shipments to seQura.
+ *
+ * The update goes through the integration-core task queue, one queue per order, so saving a shipment never waits
+ * for seQura, a failed update is retried, and the updates of one order are sent in the order they were made.
  */
 class TrackingSynchronizer
 {
+    /**
+     * Prefix of the queue the order's synchronization tasks run in, followed by the order ID.
+     */
+    public const QUEUE_NAME_PREFIX = 'shipment-tracking-';
+
     /**
      * @var TrackingBuilder
      */
@@ -47,9 +58,9 @@ class TrackingSynchronizer
     private $searchCriteriaBuilder;
 
     /**
-     * Orders whose synchronization waits for the transaction to commit, each with the shipment that was saved, if any.
+     * Orders whose synchronization waits for the transaction to commit.
      *
-     * @var array<int, Shipment|null>
+     * @var array<int, true>
      */
     private $pendingOrders = [];
 
@@ -75,10 +86,11 @@ class TrackingSynchronizer
     }
 
     /**
-     * Synchronizes the order once the transaction that saved or deleted the shipment or tracking record commits.
+     * Queues the order's synchronization once the transaction that saved or deleted the record commits.
      *
-     * A shipment saved with its tracking records fires one event per record. They all register a callback, and the
-     * first one to run synchronizes the order for all of them, so the order is synchronized once per transaction.
+     * The record is a shipment or a tracking record. A shipment saved with its tracking records fires one event per
+     * record. They all register a callback, and the first one to run queues the order for all of them, so the order
+     * is queued once per transaction.
      *
      * @param AbstractModel $object The shipment or tracking record that was saved or deleted.
      * @param int $orderId
@@ -87,59 +99,77 @@ class TrackingSynchronizer
      */
     public function synchronizeAfterCommit(AbstractModel $object, int $orderId): void
     {
-        if (!array_key_exists($orderId, $this->pendingOrders) || $object instanceof Shipment) {
-            $this->pendingOrders[$orderId] = $object instanceof Shipment ? $object : null;
-        }
+        $this->pendingOrders[$orderId] = true;
 
         $object->getResource()->addCommitCallback(function () use ($orderId): void {
-            if (!array_key_exists($orderId, $this->pendingOrders)) {
+            if (!isset($this->pendingOrders[$orderId])) {
                 return;
             }
 
-            $shipment = $this->pendingOrders[$orderId];
             unset($this->pendingOrders[$orderId]);
-            $this->synchronize($orderId, $shipment);
+            $this->enqueue($orderId);
         });
     }
 
     /**
-     * Sends the current tracking list of the order, or nothing when the order was not paid with seQura.
+     * Queues the synchronization of the order, or nothing when the order was not paid with seQura.
      *
-     * The payment is checked before the order is loaded, so shipments and tracking records of other orders cost
-     * one query. The whole list is sent every time, an empty one included, and integration-core skips the call to
-     * seQura when it matches what seQura was last told. A failure is logged and never stops the shipment from saving.
+     * The payment is checked before anything else, so shipments and tracking records of other orders cost one
+     * query. A failure is logged and never stops the shipment from saving.
      *
      * @param int $orderId
-     * @param Shipment|null $shipment The saved shipment, whose order is used instead of loading it again.
      *
      * @return void
      */
-    public function synchronize(int $orderId, ?Shipment $shipment = null): void
+    public function enqueue(int $orderId): void
     {
         try {
             if (!$this->isPaidWithSeQura($orderId)) {
                 return;
             }
 
-            $order = $shipment !== null ? $shipment->getOrder() : $this->findOrder($orderId);
-            if ($order === null) {
-                return;
-            }
-
-            $this->orderUpdater->update(
-                (string)$order->getStoreId(),
-                new OrderUpdateRequest(
-                    (string)$order->getIncrementId(),
-                    null,
-                    null,
-                    null,
-                    null,
-                    $this->trackingBuilder->build($order)
-                )
+            $this->getQueueService()->enqueue(
+                self::QUEUE_NAME_PREFIX . $orderId,
+                new TrackingSynchronizationTask($orderId)
             );
         } catch (Throwable $e) {
-            Logger::logError('Order synchronization for shipment tracking failed. ' . $e->getMessage(), 'Integration');
+            Logger::logError(
+                'Queueing the order synchronization for shipment tracking failed. ' . $e->getMessage(),
+                'Integration'
+            );
         }
+    }
+
+    /**
+     * Sends the current tracking list of the order.
+     *
+     * The whole list is sent every time, an empty one included, and integration-core skips the call to seQura when
+     * it matches what seQura was last told. Runs from the task queue, which retries it when it fails.
+     *
+     * @param int $orderId
+     *
+     * @return void
+     *
+     * @throws OrderUpdateFailedException|\Exception When seQura or integration-core did not accept the update.
+     */
+    public function synchronize(int $orderId): void
+    {
+        $order = $this->findOrder($orderId);
+        if ($order === null) {
+            return;
+        }
+
+        $this->orderUpdater->update(
+            (string)$order->getStoreId(),
+            new OrderUpdateRequest(
+                (string)$order->getIncrementId(),
+                null,
+                null,
+                null,
+                null,
+                $this->trackingBuilder->build($order)
+            )
+        );
     }
 
     /**
@@ -180,5 +210,18 @@ class TrackingSynchronizer
         }
 
         return false;
+    }
+
+    /**
+     * Returns the integration-core queue service.
+     *
+     * @return QueueService
+     */
+    private function getQueueService(): QueueService
+    {
+        /** @var QueueService $queueService */
+        $queueService = ServiceRegister::getService(QueueService::CLASS_NAME);
+
+        return $queueService;
     }
 }

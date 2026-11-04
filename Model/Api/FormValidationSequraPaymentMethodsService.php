@@ -50,7 +50,7 @@ class FormValidationSequraPaymentMethodsService
      * @param string $cartId Cart identifier
      * @param string $formKey Form key for CSRF protection
      *
-     * @return array<array<string, string>> Available payment methods
+     * @return array<array<string, mixed>> Available payment methods
      */
     public function getAvailablePaymentMethods(string $cartId, string $formKey): array
     {

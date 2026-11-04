@@ -73,7 +73,7 @@ class BaseSequraPaymentMethodsService
      *
      * @param string $cartId Cart ID to get payment methods for
      *
-     * @return array<array<string, string>> Available payment methods
+     * @return array<array<string, mixed>> Available payment methods
      */
     public function getAvailablePaymentMethods(string $cartId): array
     {
@@ -91,7 +91,7 @@ class BaseSequraPaymentMethodsService
             return [];
         }
 
-        /** @var array<array<string, string>> $paymentMethods */
+        /** @var array<array<string, mixed>> $paymentMethods */
         $paymentMethods = $response->toArray()['availablePaymentMethods'];
 
         return $paymentMethods;

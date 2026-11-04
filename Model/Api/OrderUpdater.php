@@ -23,7 +23,7 @@ class OrderUpdater
      *
      * @return SeQuraOrder
      *
-     * @throws OrderUpdateFailedException When seQura or integration-core did not accept the update.
+     * @throws OrderUpdateFailedException|\Exception When seQura or integration-core did not accept the update.
      */
     public function update(string $storeId, OrderUpdateRequest $request): SeQuraOrder
     {
@@ -36,7 +36,8 @@ class OrderUpdater
 
             throw new OrderUpdateFailedException(
                 is_string($message) && $message !== '' ? $message : 'The order update was not accepted.',
-                (is_string($code) || is_int($code)) && $code !== 0 ? (string)$code : ''
+                (is_string($code) || is_int($code)) && $code !== 0 ? (string)$code : '',
+                $error
             );
         }
 
