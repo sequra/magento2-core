@@ -9,6 +9,9 @@ use SeQura\Core\Infrastructure\ServiceRegister;
 use Sequra\Core\Services\BusinessLogic\ExpressCheckout\Models\ExpressCheckoutSettings as Settings;
 use Throwable;
 
+/**
+ * Reads the merchant terms URL that a store sends in the express cart summary data.
+ */
 class TermsAndConditionsUrlReader
 {
     /**

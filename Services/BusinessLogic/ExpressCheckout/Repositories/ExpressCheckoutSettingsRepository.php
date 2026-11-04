@@ -8,6 +8,9 @@ use SeQura\Core\Infrastructure\ORM\Exceptions\QueryFilterInvalidParamException;
 use Sequra\Core\Services\BusinessLogic\ExpressCheckout\Entities\ExpressCheckoutSettings as SettingsEntity;
 use Sequra\Core\Services\BusinessLogic\ExpressCheckout\Models\ExpressCheckoutSettings as Settings;
 
+/**
+ * Saves express checkout settings without losing the stored merchant terms URL.
+ */
 class ExpressCheckoutSettingsRepository extends Core
 {
     /**

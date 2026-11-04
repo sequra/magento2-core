@@ -9,6 +9,9 @@ use SeQura\Core\BusinessLogic\Domain\ExpressCheckout\Models\ExpressCheckoutPageC
 use SeQura\Core\BusinessLogic\Domain\ExpressCheckout\Models\ExpressCheckoutSettings as CoreExpressCheckoutSettings;
 use Sequra\Core\Services\BusinessLogic\ExpressCheckout\Exceptions\InvalidTermsAndConditionsUrlException;
 
+/**
+ * Express checkout settings with the merchant terms and conditions URL.
+ */
 class ExpressCheckoutSettings extends CoreExpressCheckoutSettings
 {
     public const TERMS_AND_CONDITIONS_URL = 'termsAndConditionsUrl';

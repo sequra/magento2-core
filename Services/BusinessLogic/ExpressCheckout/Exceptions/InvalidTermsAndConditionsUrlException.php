@@ -6,6 +6,9 @@ use SeQura\Core\BusinessLogic\Domain\Translations\Model\BaseTranslatableExceptio
 use SeQura\Core\BusinessLogic\Domain\Translations\Model\TranslatableLabel;
 use Throwable;
 
+/**
+ * Thrown when the merchant terms URL is not an absolute http or https URL.
+ */
 class InvalidTermsAndConditionsUrlException extends BaseTranslatableException
 {
     /**

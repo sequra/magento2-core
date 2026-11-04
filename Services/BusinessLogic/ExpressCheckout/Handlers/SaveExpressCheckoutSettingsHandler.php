@@ -9,6 +9,9 @@ use SeQura\Core\BusinessLogic\ConfigurationWebhookAPI\Responses\ExpressCheckout\
 use Sequra\Core\Services\BusinessLogic\ExpressCheckout\Exceptions\InvalidTermsAndConditionsUrlException;
 use Sequra\Core\Services\BusinessLogic\ExpressCheckout\Models\ExpressCheckoutSettings as Settings;
 
+/**
+ * Saves the express checkout settings sent by the portal, merchant terms URL included.
+ */
 class SaveExpressCheckoutSettingsHandler extends CoreHandlers\SaveExpressCheckoutSettingsHandler
 {
     /**

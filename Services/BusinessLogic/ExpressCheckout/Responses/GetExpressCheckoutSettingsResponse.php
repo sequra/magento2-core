@@ -5,6 +5,9 @@ namespace Sequra\Core\Services\BusinessLogic\ExpressCheckout\Responses;
 use SeQura\Core\BusinessLogic\ConfigurationWebhookAPI\Responses\ExpressCheckout as CoreResponses;
 use Sequra\Core\Services\BusinessLogic\ExpressCheckout\Models\ExpressCheckoutSettings as Settings;
 
+/**
+ * Express checkout settings response with the merchant terms URL.
+ */
 class GetExpressCheckoutSettingsResponse extends CoreResponses\GetExpressCheckoutSettingsResponse
 {
     /**

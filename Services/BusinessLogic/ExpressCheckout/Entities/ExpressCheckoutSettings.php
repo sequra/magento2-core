@@ -6,6 +6,9 @@ use SeQura\Core\BusinessLogic\DataAccess\ExpressCheckout\Entities\ExpressCheckou
 use Sequra\Core\Services\BusinessLogic\ExpressCheckout\Exceptions\InvalidTermsAndConditionsUrlException;
 use Sequra\Core\Services\BusinessLogic\ExpressCheckout\Models\ExpressCheckoutSettings as Settings;
 
+/**
+ * Stores the express checkout settings together with the merchant terms URL.
+ */
 class ExpressCheckoutSettings extends CoreEntity
 {
     public const CLASS_NAME = __CLASS__;
