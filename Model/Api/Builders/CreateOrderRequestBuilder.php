@@ -143,17 +143,31 @@ class CreateOrderRequestBuilder implements CoreCreateOrderRequestBuilder
      */
     public function build(): CreateOrderRequest
     {
-        try {
-            // TODO: Property $quote (Magento\Quote\Model\Quote) does not accept Magento\Quote\Api\Data\CartInterface.
-            // @phpstan-ignore-next-line
-            $this->quote = $this->quoteRepository->getActive((int)$this->cartId);
-        } catch (NoSuchEntityException $e) {
-            // TODO: Property $quote (Magento\Quote\Model\Quote) does not accept Magento\Quote\Api\Data\CartInterface.
-            // @phpstan-ignore-next-line
-            $this->quote = $this->quoteRepository->get((int)$this->cartId);
-        }
+        $this->quote = $this->loadQuote();
 
         return $this->generateCreateOrderRequest();
+    }
+
+    /**
+     * Loads the quote of the cart, the active one first.
+     *
+     * @return QuoteEntity
+     *
+     * @throws NoSuchEntityException If the quote cannot be found
+     */
+    private function loadQuote(): QuoteEntity
+    {
+        try {
+            $quote = $this->quoteRepository->getActive((int)$this->cartId);
+        } catch (NoSuchEntityException $e) {
+            $quote = $this->quoteRepository->get((int)$this->cartId);
+        }
+
+        if (!$quote instanceof QuoteEntity) {
+            throw NoSuchEntityException::singleField('cartId', $this->cartId);
+        }
+
+        return $quote;
     }
 
     /**
@@ -368,9 +382,7 @@ class CreateOrderRequestBuilder implements CoreCreateOrderRequestBuilder
             'logged_in' => !$this->quote->getCustomerIsGuest(),
             'language_code' => $this->quote->getStore()->getConfig('general/locale/code'),
             'ip_number' => $this->getCustomerIpAddress(),
-            // TODO: Direct use of $_SERVER Superglobal detected.
-            // phpcs:ignore Magento2.Security.Superglobal.SuperglobalUsageWarning
-            'user_agent' => $_SERVER["HTTP_USER_AGENT"],
+            'user_agent' => $this->getUserAgent(),
             'date_of_birth' => $this->quote->getCustomer()->getDob(),
             'company' => $billingAddress->getCompany(),
             'vat_number' => $billingAddress->getVatId(),
@@ -527,5 +539,17 @@ class CreateOrderRequestBuilder implements CoreCreateOrderRequestBuilder
     private function getCustomerIpAddress(): string
     {
         return $this->request->getClientIp();
+    }
+
+    /**
+     * Gets the shopper's user agent, or an empty string when the request carries none.
+     *
+     * @return string
+     */
+    private function getUserAgent(): string
+    {
+        $userAgent = $this->request->getServer('HTTP_USER_AGENT', '');
+
+        return is_string($userAgent) ? $userAgent : '';
     }
 }

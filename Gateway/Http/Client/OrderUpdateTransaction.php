@@ -98,7 +98,6 @@ class OrderUpdateTransaction implements ClientInterface
                 'Integration',
                 [
                     new LogContextData('ExceptionMessage', $exception->getMessage()),
-                    new LogContextData('ExceptionTrace', $exception->getTraceAsString()),
                 ]
             );
 
