@@ -3,6 +3,7 @@
 namespace Sequra\Core\Services;
 
 use SeQura\Core\BusinessLogic\BootstrapComponent;
+use SeQura\Core\BusinessLogic\ConfigurationWebhookAPI\Handlers\ExpressCheckout as CoreExpressCheckoutHandlers;
 use SeQura\Core\BusinessLogic\DataAccess\AdvancedSettings\Entities\AdvancedSettings;
 use SeQura\Core\BusinessLogic\DataAccess\Affiliate\Entities\AffiliateSettings;
 use SeQura\Core\BusinessLogic\DataAccess\BannerSettings\Entities\BannerSettings;
@@ -19,6 +20,7 @@ use SeQura\Core\BusinessLogic\DataAccess\SendReport\Entities\SendReport;
 use SeQura\Core\BusinessLogic\DataAccess\StatisticalData\Entities\StatisticalData;
 use SeQura\Core\BusinessLogic\DataAccess\TransactionLog\Entities\TransactionLog;
 use SeQura\Core\BusinessLogic\Domain\ExpressCheckout\RepositoryContracts\ExpressCheckoutSettingsRepositoryInterface;
+use SeQura\Core\BusinessLogic\Domain\ExpressCheckout\Services\ExpressCheckoutService;
 use SeQura\Core\BusinessLogic\Domain\Integration\Banner\BannerServiceInterface;
 use SeQura\Core\BusinessLogic\Domain\Integration\Category\CategoryServiceInterface;
 use SeQura\Core\BusinessLogic\Domain\Integration\Disconnect\DisconnectServiceInterface;
@@ -64,6 +66,8 @@ use Sequra\Core\Services\BusinessLogic\BannerService;
 use Sequra\Core\Services\BusinessLogic\CategoryService;
 use Sequra\Core\Services\BusinessLogic\ConfigurationService;
 use Sequra\Core\Services\BusinessLogic\DisconnectService;
+use Sequra\Core\Services\BusinessLogic\ExpressCheckout\Handlers\GetExpressCheckoutSettingsHandler;
+use Sequra\Core\Services\BusinessLogic\ExpressCheckout\Handlers\SaveExpressCheckoutSettingsHandler;
 use Sequra\Core\Services\BusinessLogic\ExpressCheckout\Repositories\ExpressCheckoutSettingsRepository;
 use Sequra\Core\Services\BusinessLogic\ExpressCheckoutIntegrationService;
 use Sequra\Core\Services\BusinessLogic\LogService;
@@ -497,6 +501,33 @@ class Bootstrap extends BootstrapComponent
                 return new ExpressCheckoutSettingsRepository(
                     RepositoryRegistry::getRepository(ExpressCheckoutSettings::getClassName()),
                     ServiceRegister::getService(StoreContext::class)
+                );
+            }
+        );
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected static function initTopicHandlers(): void
+    {
+        parent::initTopicHandlers();
+
+        ServiceRegister::registerService(
+            CoreExpressCheckoutHandlers\GetExpressCheckoutSettingsHandler::class,
+            static function () {
+                return new GetExpressCheckoutSettingsHandler(
+                    ServiceRegister::getService(ExpressCheckoutService::class),
+                    ServiceRegister::getService(ExpressCheckoutIntegrationInterface::class)
+                );
+            }
+        );
+
+        ServiceRegister::registerService(
+            CoreExpressCheckoutHandlers\SaveExpressCheckoutSettingsHandler::class,
+            static function () {
+                return new SaveExpressCheckoutSettingsHandler(
+                    ServiceRegister::getService(ExpressCheckoutService::class)
                 );
             }
         );
