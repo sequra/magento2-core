@@ -24,6 +24,13 @@ class ExpressCheckoutSettingsTest extends TestCase
             'https://tienda.es/términos-y-condiciones',
             'https://españa-shop.es/terms',
             'https://shop.example.com:8443/terms',
+            'https://shop.example.com:65535/terms',
+            'https://shop.example.com:/terms',
+            'https://[2001:db8::1]/terms',
+            'https://[2001:DB8::1]:8443/terms',
+            'https://192.168.1.10/terms',
+            'https://tienda-ñ.es/términos',
+            'https://user:pass@shop.example.com/terms',
         ];
 
         foreach ($valid as $url) {
@@ -52,6 +59,17 @@ class ExpressCheckoutSettingsTest extends TestCase
             'https://shop.example.com/my terms',
             "https://shop.example.com/te\nrms",
             "https://shop.example.com/\0terms",
+            'https://%/terms',
+            'https://shop_example.com/terms',
+            'https://shop.example.com:65536/terms',
+            'https://shop.example.com:123456/terms',
+            'https://a..b/x',
+            'https://-a.com/terms',
+            'https://a-.com/terms',
+            'https://shop.example.com./terms',
+            'https://[shop.example.com]/terms',
+            "https://shop.example.com/my\u{00A0}terms",
+            "https://shop\u{00A0}example.com/terms",
             42,
             ['https://shop.example.com/terms'],
         ];

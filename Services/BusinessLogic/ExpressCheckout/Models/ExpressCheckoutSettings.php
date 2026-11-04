@@ -51,8 +51,12 @@ class ExpressCheckoutSettings extends CoreExpressCheckoutSettings
             return;
         }
 
+        $label = '[\p{L}\p{N}](?:[\p{L}\p{N}-]*[\p{L}\p{N}])?';
+        $pattern = '#^https?://(?:[^/?\#@\s]*@)?(?:\[[0-9a-f:.]+\]|' . $label . '(?:\.' . $label . ')*)'
+            . '(?::(\d{0,5}))?(?:[/?\#]|$)#iu';
         if (preg_match('/[\s\x00-\x1F\x7F]/u', $url) !== 0
-            || preg_match('#^https?://(?:[^/?\#@]*@)?[^/?\#@:]+(?::\d*)?(?:[/?\#]|$)#iu', $url) !== 1
+            || preg_match($pattern, $url, $matches) !== 1
+            || (int) ($matches[1] ?? 0) > 65535
         ) {
             throw new InvalidTermsAndConditionsUrlException();
         }
