@@ -1,0 +1,62 @@
+<?php
+
+namespace Sequra\Core\Services\BusinessLogic\ExpressCheckout\Models;
+
+use SeQura\Core\BusinessLogic\Domain\ExpressCheckout\Exceptions\DuplicatedExpressCheckoutPageException;
+use SeQura\Core\BusinessLogic\Domain\ExpressCheckout\Exceptions\InvalidExpressCheckoutButtonStyleException;
+use SeQura\Core\BusinessLogic\Domain\ExpressCheckout\Exceptions\InvalidExpressCheckoutPageConfigException;
+use SeQura\Core\BusinessLogic\Domain\ExpressCheckout\Models\ExpressCheckoutPageConfig;
+use SeQura\Core\BusinessLogic\Domain\ExpressCheckout\Models\ExpressCheckoutSettings as CoreExpressCheckoutSettings;
+use Sequra\Core\Services\BusinessLogic\ExpressCheckout\Exceptions\InvalidTermsAndConditionsUrlException;
+
+class ExpressCheckoutSettings extends CoreExpressCheckoutSettings
+{
+    public const TERMS_AND_CONDITIONS_URL = 'termsAndConditionsUrl';
+
+    /**
+     * @var string|null
+     */
+    protected $termsAndConditionsUrl;
+
+    /**
+     * @param ExpressCheckoutPageConfig[] $expressCheckoutConfigs
+     * @param string|null $buttonStyle
+     * @param mixed $termsAndConditionsUrl
+     *
+     * @throws InvalidExpressCheckoutPageConfigException
+     * @throws DuplicatedExpressCheckoutPageException
+     * @throws InvalidExpressCheckoutButtonStyleException
+     * @throws InvalidTermsAndConditionsUrlException
+     */
+    public function __construct(
+        array $expressCheckoutConfigs = [],
+        ?string $buttonStyle = null,
+        $termsAndConditionsUrl = null
+    ) {
+        parent::__construct($expressCheckoutConfigs, $buttonStyle);
+
+        if ($termsAndConditionsUrl === null || $termsAndConditionsUrl === '') {
+            return;
+        }
+
+        if (!is_string($termsAndConditionsUrl)
+            || filter_var($termsAndConditionsUrl, FILTER_VALIDATE_URL) === false
+            || !preg_match('#^https?://#i', $termsAndConditionsUrl)
+        ) {
+            throw new InvalidTermsAndConditionsUrlException();
+        }
+
+        $this->termsAndConditionsUrl = $termsAndConditionsUrl;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function toArray(): array
+    {
+        $data = parent::toArray();
+        $data[self::TERMS_AND_CONDITIONS_URL] = $this->termsAndConditionsUrl;
+
+        return $data;
+    }
+}

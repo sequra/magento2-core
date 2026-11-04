@@ -18,6 +18,7 @@ use SeQura\Core\BusinessLogic\DataAccess\PromotionalWidgets\Entities\WidgetSetti
 use SeQura\Core\BusinessLogic\DataAccess\SendReport\Entities\SendReport;
 use SeQura\Core\BusinessLogic\DataAccess\StatisticalData\Entities\StatisticalData;
 use SeQura\Core\BusinessLogic\DataAccess\TransactionLog\Entities\TransactionLog;
+use SeQura\Core\BusinessLogic\Domain\ExpressCheckout\RepositoryContracts\ExpressCheckoutSettingsRepositoryInterface;
 use SeQura\Core\BusinessLogic\Domain\Integration\Banner\BannerServiceInterface;
 use SeQura\Core\BusinessLogic\Domain\Integration\Category\CategoryServiceInterface;
 use SeQura\Core\BusinessLogic\Domain\Integration\Disconnect\DisconnectServiceInterface;
@@ -35,6 +36,7 @@ use SeQura\Core\BusinessLogic\Domain\Integration\Store\StoreServiceInterface;
 use SeQura\Core\BusinessLogic\Domain\Integration\StoreInfo\StoreInfoServiceInterface;
 use SeQura\Core\BusinessLogic\Domain\Integration\StoreIntegration\StoreIntegrationServiceInterface;
 use SeQura\Core\BusinessLogic\Domain\Integration\Version\VersionServiceInterface;
+use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
 use SeQura\Core\BusinessLogic\Domain\Order\Models\SeQuraOrder;
 use SeQura\Core\BusinessLogic\Domain\Order\RepositoryContracts\SeQuraOrderRepositoryInterface;
 use SeQura\Core\BusinessLogic\Domain\Order\Service\OrderService;
@@ -62,6 +64,7 @@ use Sequra\Core\Services\BusinessLogic\BannerService;
 use Sequra\Core\Services\BusinessLogic\CategoryService;
 use Sequra\Core\Services\BusinessLogic\ConfigurationService;
 use Sequra\Core\Services\BusinessLogic\DisconnectService;
+use Sequra\Core\Services\BusinessLogic\ExpressCheckout\Repositories\ExpressCheckoutSettingsRepository;
 use Sequra\Core\Services\BusinessLogic\ExpressCheckoutIntegrationService;
 use Sequra\Core\Services\BusinessLogic\LogService;
 use Sequra\Core\Services\BusinessLogic\Order\MerchantDataProvider;
@@ -485,6 +488,16 @@ class Bootstrap extends BootstrapComponent
             OrderStatusSettingsRepositoryInterface::class,
             static function () {
                 return new OrderStatusMappingRepositoryOverride();
+            }
+        );
+
+        ServiceRegister::registerService(
+            ExpressCheckoutSettingsRepositoryInterface::class,
+            static function () {
+                return new ExpressCheckoutSettingsRepository(
+                    RepositoryRegistry::getRepository(ExpressCheckoutSettings::getClassName()),
+                    ServiceRegister::getService(StoreContext::class)
+                );
             }
         );
     }
