@@ -16,15 +16,14 @@ class OrderUpdater
      * Submits the order update for the store and returns the order as seQura knows it afterwards.
      *
      * The Admin API answers a failure with an unsuccessful response instead of throwing, so it is turned back
-     * into an exception here for the callers that block or log on a failed update, carrying the error code and
-     * status of the response. The original exception is logged by integration-core.
+     * into an exception here, carrying the error message and code of the response.
      *
      * @param string $storeId
      * @param OrderUpdateRequest $request
      *
      * @return SeQuraOrder
      *
-     * @throws OrderUpdateFailedException When seQura or integration-core did not accept the update.
+     * @throws OrderUpdateFailedException|\Exception When seQura or integration-core did not accept the update.
      */
     public function update(string $storeId, OrderUpdateRequest $request): SeQuraOrder
     {
@@ -32,13 +31,13 @@ class OrderUpdater
 
         if (!$response->isSuccessful()) {
             $error = $response->toArray();
+            $message = $error['errorMessage'] ?? '';
+            $code = $error['errorCode'] ?? '';
 
             throw new OrderUpdateFailedException(
-                isset($error['errorMessage']) && is_string($error['errorMessage'])
-                    ? $error['errorMessage']
-                    : 'The order update was not accepted.',
-                isset($error['errorCode']) && is_string($error['errorCode']) ? $error['errorCode'] : '',
-                isset($error['statusCode']) && is_int($error['statusCode']) ? $error['statusCode'] : 0
+                is_string($message) && $message !== '' ? $message : 'The order update was not accepted.',
+                (is_string($code) || is_int($code)) && $code !== 0 ? (string)$code : '',
+                $error
             );
         }
 

@@ -2,6 +2,7 @@
 
 namespace Sequra\Core\Model\Api\Checkout;
 
+use Magento\Framework\Exception\LocalizedException;
 use Sequra\Core\Api\Checkout\SequraPaymentMethodsInterface;
 
 class SequraPaymentMethodsService implements SequraPaymentMethodsInterface
@@ -25,7 +26,7 @@ class SequraPaymentMethodsService implements SequraPaymentMethodsInterface
      *
      * @param string $cartId Cart ID
      *
-     * @return array<array<string, string>> Available payment methods
+     * @return array<array<string, mixed>> Available payment methods
      */
     public function getAvailablePaymentMethods(string $cartId): array
     {
@@ -38,6 +39,8 @@ class SequraPaymentMethodsService implements SequraPaymentMethodsInterface
      * @param string $cartId Cart ID
      *
      * @return string Payment form HTML
+     *
+     * @throws LocalizedException
      */
     public function getForm(string $cartId): string
     {

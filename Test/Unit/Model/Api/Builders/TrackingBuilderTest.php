@@ -9,7 +9,9 @@ use Magento\Framework\Api\SortOrderBuilder;
 use Magento\Sales\Api\Data\ShipmentTrackSearchResultInterface;
 use Magento\Sales\Api\ShipmentTrackRepositoryInterface;
 use Magento\Sales\Model\Order;
+use Magento\Sales\Model\Order\Shipment;
 use Magento\Sales\Model\Order\Shipment\Track;
+use Magento\Sales\Model\ResourceModel\Order\Shipment\Collection as ShipmentCollection;
 use Magento\Shipping\Helper\Data as ShippingHelper;
 use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
@@ -52,6 +54,32 @@ class TrackingBuilderTest extends TestCase
         self::assertSame('postal', $trackings[0]->getType());
         self::assertNull($trackings[0]->getDeliveredAt());
         self::assertSame('16', $trackings[1]->getReference());
+    }
+
+    /**
+     * Each record gets its shipment from the order's shipments, loaded once, instead of loading it again.
+     *
+     * @return void
+     */
+    public function testAttachesTheOrderShipmentsToTheRecords(): void
+    {
+        $shipment = $this->createStub(Shipment::class);
+        $shipments = $this->createMock(ShipmentCollection::class);
+        $shipments->expects($this->exactly(2))->method('getItemById')->with(7)->willReturn($shipment);
+        $order = $this->createMock(Order::class);
+        $order->method('getEntityId')->willReturn(42);
+        $order->expects($this->once())->method('getShipmentsCollection')->willReturn($shipments);
+
+        $tracks = [];
+        foreach ([15, 16] as $entityId) {
+            $track = $this->createMock(Track::class);
+            $track->method('getEntityId')->willReturn($entityId);
+            $track->method('getParentId')->willReturn(7);
+            $track->expects($this->once())->method('setShipment')->with($shipment);
+            $tracks[] = $track;
+        }
+
+        self::assertCount(2, $this->builder($tracks)->build($order));
     }
 
     /**
