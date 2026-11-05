@@ -25,6 +25,7 @@ use SeQura\Core\BusinessLogic\CheckoutAPI\PromotionalWidgets\Requests\Promotiona
 use SeQura\Core\BusinessLogic\CheckoutAPI\PromotionalWidgets\Responses\PromotionalWidgetsCheckoutResponse;
 use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
 use SeQura\Core\Infrastructure\Logger\Logger;
+use Sequra\Core\Model\Config\PaymentMethodStatus;
 
 class WidgetInitializer extends Template
 {
@@ -69,6 +70,11 @@ class WidgetInitializer extends Template
     private StoreManagerInterface $storeManager;
 
     /**
+     * @var PaymentMethodStatus $paymentMethodStatus
+     */
+    private PaymentMethodStatus $paymentMethodStatus;
+
+    /**
      * Constructor
      *
      * @param Context $context
@@ -80,6 +86,7 @@ class WidgetInitializer extends Template
      * @param Data $catalogHelper
      * @param ScopeConfigInterface $scopeConfig
      * @param StoreManagerInterface $storeManager
+     * @param PaymentMethodStatus $paymentMethodStatus
      * @param mixed[] $data
      */
     public function __construct(
@@ -92,6 +99,7 @@ class WidgetInitializer extends Template
         Data $catalogHelper,
         ScopeConfigInterface $scopeConfig,
         StoreManagerInterface $storeManager,
+        PaymentMethodStatus $paymentMethodStatus,
         array $data = []
     ) {
         parent::__construct($context, $data);
@@ -103,6 +111,7 @@ class WidgetInitializer extends Template
         $this->catalogHelper = $catalogHelper;
         $this->scopeConfig = $scopeConfig;
         $this->storeManager = $storeManager;
+        $this->paymentMethodStatus = $paymentMethodStatus;
     }
 
     /**
@@ -118,6 +127,10 @@ class WidgetInitializer extends Template
      */
     public function getInitializationData(): array
     {
+        if (!$this->paymentMethodStatus->isActive()) {
+            return [];
+        }
+
         try {
             $quote = $this->session->getQuote();
             $shippingCountry = $quote->getShippingAddress()->getCountryId() ?? '';
@@ -147,6 +160,10 @@ class WidgetInitializer extends Template
      */
     public function getWidgetInitializeData(): array
     {
+        if (!$this->paymentMethodStatus->isActive()) {
+            return [];
+        }
+
         try {
             $quote = $this->session->getQuote();
             $shippingCountry = $quote->getShippingAddress()->getCountryId() ?? '';
