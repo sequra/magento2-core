@@ -25,7 +25,7 @@ use Sequra\Core\Model\Config\PaymentMethodStatus;
  * Class WidgetsSkipWhenPaymentInactiveTest
  *
  * That the widget blocks return no data, and read neither the store nor the quote,
- * while the payment method is disabled.
+ * while the payment method is inactive.
  */
 class WidgetsSkipWhenPaymentInactiveTest extends TestCase
 {
@@ -58,11 +58,11 @@ class WidgetsSkipWhenPaymentInactiveTest extends TestCase
     }
 
     /**
-     * The cart widget has nothing to show.
+     * With the payment method inactive, the cart widget has nothing to show.
      *
      * @return void
      */
-    public function testCartWidgetIsEmpty(): void
+    public function testCartWidgetIsEmptyWhenThePaymentMethodIsInactive(): void
     {
         $block = new Cart(
             $this->createStub(ScopeResolverInterface::class),
@@ -77,11 +77,11 @@ class WidgetsSkipWhenPaymentInactiveTest extends TestCase
     }
 
     /**
-     * The product page widget has nothing to show.
+     * With the payment method inactive, the product page widget has nothing to show.
      *
      * @return void
      */
-    public function testProductWidgetIsEmpty(): void
+    public function testProductWidgetIsEmptyWhenThePaymentMethodIsInactive(): void
     {
         $block = new Product(
             $this->createStub(ScopeResolverInterface::class),
@@ -97,11 +97,11 @@ class WidgetsSkipWhenPaymentInactiveTest extends TestCase
     }
 
     /**
-     * Neither the library bootstrap nor the widget configuration is built.
+     * With the payment method inactive, both initializer methods return no data.
      *
      * @return void
      */
-    public function testWidgetInitializerHasNoData(): void
+    public function testWidgetInitializerIsEmptyWhenThePaymentMethodIsInactive(): void
     {
         $block = new WidgetInitializer(
             $this->context(),

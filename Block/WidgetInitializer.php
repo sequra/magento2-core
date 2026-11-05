@@ -118,10 +118,10 @@ class WidgetInitializer extends Template
      * Returns the seQura checkout-library bootstrap config used to load sequra-checkout.min.js.
      *
      * Includes the script URL, merchant identity, locale formatting and supported products.
-     * Feature-neutral: it resolves whenever seQura has credentials for the shopper's country,
-     * independent of whether promotional widgets are enabled. This is what the storefront uses
-     * to inject the library, so every seQura frontend feature (widgets, educational popup,
-     * Express Checkout) can rely on it being loaded.
+     * Feature-neutral: it resolves whenever the payment method is enabled and seQura has credentials
+     * for the shopper's country, independent of whether promotional widgets are enabled. This is what
+     * the storefront uses to inject the library, so every seQura frontend feature (widgets,
+     * educational popup, Express Checkout) can rely on it being loaded.
      *
      * @return mixed[]
      */

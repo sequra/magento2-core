@@ -31,7 +31,7 @@ class PaymentMethodStatusTest extends TestCase
     }
 
     /**
-     * A disabled method reads as inactive.
+     * A method whose flag is off reads as inactive.
      *
      * @return void
      */

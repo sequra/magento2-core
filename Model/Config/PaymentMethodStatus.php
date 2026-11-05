@@ -7,7 +7,9 @@ use Magento\Store\Model\ScopeInterface;
 use Sequra\Core\Model\Ui\ConfigProvider;
 
 /**
- * Tells whether the SeQura payment method is enabled in a store.
+ * Class PaymentMethodStatus
+ *
+ * Tells whether the SeQura payment method is active in a store.
  */
 class PaymentMethodStatus
 {
@@ -27,7 +29,7 @@ class PaymentMethodStatus
     }
 
     /**
-     * Whether the payment method is enabled in the given store, or the current one when none is given.
+     * Whether the payment method is active in the given store, or the current one when none is given.
      *
      * @param int|string|null $storeId
      *

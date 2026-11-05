@@ -16,12 +16,12 @@ use Sequra\Core\Plugin\MiniWidgets;
 /**
  * Class MiniWidgetsTest
  *
- * That the listing mini widget does not look anything up while the payment method is disabled.
+ * That the listing mini widget reads neither the store nor the price while the payment method is inactive.
  */
 class MiniWidgetsTest extends TestCase
 {
     /**
-     * With the method disabled the price HTML comes back untouched and no store or price is read.
+     * With the payment method inactive, the price HTML comes back untouched without reading the store or the price.
      *
      * @return void
      */
