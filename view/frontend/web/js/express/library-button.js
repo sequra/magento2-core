@@ -12,9 +12,9 @@
  *
  * Dependency: the library itself is injected by the global `sequra.widget.initializer` block
  * (Sequra_Core/js/widget-initializer, present on every storefront page via default.xml). That
- * loader is feature-neutral — it loads whenever the payment method is enabled and seQura is active,
+ * loader is feature-neutral — it loads whenever the payment method is active and seQura is enabled,
  * so the Express button no longer depends on promotional widgets being configured. With the payment
- * method disabled the Express blocks render nothing either (AvailabilityEvaluator). If the library
+ * method inactive the Express blocks render nothing either (AvailabilityEvaluator). If the library
  * is absent these helpers no-op (they guard on `window.Sequra` / `window.SequraWidgetFacade`),
  * leaving an inert mount.
  */
