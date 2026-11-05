@@ -14,6 +14,7 @@ use Magento\Theme\ViewModel\Block\Html\Header\LogoPathResolver;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Sequra\Core\Model\ExpressCheckout\CartSummaryFormDecorator;
+use Sequra\Core\Model\ExpressCheckout\TermsAndConditionsUrlReader;
 use Sequra\Core\Model\QuoteEmailResolver;
 
 /**
@@ -117,6 +118,27 @@ class CartSummaryAmountsTest extends TestCase
     }
 
     /**
+     * @return void
+     */
+    public function testSendsTheTermsAndConditionsUrlOfTheQuoteStore(): void
+    {
+        $data = $this->decorator('https://shop.example.com/terms')
+            ->buildCartData(self::FORM, $this->quoteWith(43.0, 5.0, 'flatrate_flatrate'));
+
+        $this->assertSame('https://shop.example.com/terms', $data['termsAndConditionsUrl']);
+    }
+
+    /**
+     * @return void
+     */
+    public function testOmitsTheTermsAndConditionsUrlWhenNoneIsSet(): void
+    {
+        $data = $this->decorator()->buildCartData(self::FORM, $this->quoteWith(43.0, 5.0, 'flatrate_flatrate'));
+
+        $this->assertArrayNotHasKey('termsAndConditionsUrl', $data);
+    }
+
+    /**
      * Builds a quote carrying the given money, with everything else the payload reads stubbed
      * away: no items, no rates, no regions.
      *
@@ -146,6 +168,7 @@ class CartSummaryAmountsTest extends TestCase
 
         $store = $this->createMock(Store::class);
         $store->method('getFrontendName')->willReturn('Tienda');
+        $store->method('getId')->willReturn(3);
         $store->method('getBaseUrl')->willReturn('https://shop.example.com/media/');
         $store->method('getUrl')->willReturn('https://shop.example.com/sequra/expresscheckout/cartupdate');
 
@@ -166,10 +189,16 @@ class CartSummaryAmountsTest extends TestCase
      * Builds the decorator with every collaborator stubbed to the quiet answer, so only the money
      * the quote carries reaches the payload.
      *
+     * @param string|null $termsAndConditionsUrl
+     *
      * @return CartSummaryFormDecorator
      */
-    private function decorator(): CartSummaryFormDecorator
+    private function decorator(?string $termsAndConditionsUrl = null): CartSummaryFormDecorator
     {
+        $termsAndConditionsUrlReader = $this->createMock(TermsAndConditionsUrlReader::class);
+        $termsAndConditionsUrlReader->expects($this->once())->method('read')->with('3')
+            ->willReturn($termsAndConditionsUrl);
+
         $emailResolver = $this->createMock(QuoteEmailResolver::class);
         $emailResolver->method('resolve')->willReturn('marina@example.com');
 
@@ -189,7 +218,8 @@ class CartSummaryAmountsTest extends TestCase
             $logoPathResolver,
             $formKey,
             $emailResolver,
-            $directoryHelper
+            $directoryHelper,
+            $termsAndConditionsUrlReader
         );
     }
 }
