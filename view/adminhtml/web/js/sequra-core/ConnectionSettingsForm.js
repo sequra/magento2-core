@@ -290,7 +290,7 @@ if (!window.SequraFE) {
                 generator.createButtonLink({
                     className: 'sq-link-button',
                     text: 'connection.description.endLink',
-                    href: SequraFE.translationService.translate('storesLink.link'),
+                    href: SequraFE.translationService.translate('signupLink.link'),
                     openInNewTab: true
                 })
             );
