@@ -121,6 +121,32 @@ class WidgetsSkipWhenPaymentInactiveTest extends TestCase
     }
 
     /**
+     * With the payment method inactive, the Hyvä widget config is the same empty JSON as for unsupported pages.
+     *
+     * @return void
+     */
+    public function testWidgetConfigIsEmptyWhenThePaymentMethodIsInactive(): void
+    {
+        $request = $this->createMock(Http::class);
+        $request->expects($this->never())->method('getFullActionName');
+
+        $block = new WidgetInitializer(
+            $this->context(),
+            $this->createStub(ResolverInterface::class),
+            $this->session,
+            $request,
+            $this->createStub(ProductRepository::class),
+            $this->createStub(CartBlock::class),
+            $this->createStub(Data::class),
+            $this->createStub(ScopeConfigInterface::class),
+            $this->storeManager,
+            $this->inactive
+        );
+
+        $this->assertSame('[]', $block->getWidgetConfig());
+    }
+
+    /**
      * A block context whose store manager must not be used.
      *
      * @return Stub&Context
