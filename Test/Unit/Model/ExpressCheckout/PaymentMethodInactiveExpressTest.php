@@ -16,22 +16,24 @@ use Sequra\Core\Block\ExpressCheckout\MiniCart;
 use Sequra\Core\Model\Api\Builders\CreateOrderRequestBuilderFactory;
 use Sequra\Core\Model\Api\CartProvider\CartProvider;
 use Sequra\Core\Model\Api\ExpressCheckout\BaseSolicitService;
+use Sequra\Core\Model\Api\ExpressCheckout\ProductSolicitService;
 use Sequra\Core\Model\Config\PaymentMethodStatus;
 use Sequra\Core\Model\ExpressCheckout\AvailabilityEvaluator;
 use Sequra\Core\Model\ExpressCheckout\CartSummaryFormDecorator;
 use Sequra\Core\Model\ExpressCheckout\ExpressCheckoutFlow;
 use Sequra\Core\Model\ExpressCheckout\QuoteShippingResolver;
 use Sequra\Core\Model\ExpressCheckout\SolicitedQuoteRegistry;
+use Sequra\Core\Model\ExpressCheckout\TemporaryCartBuilder;
 
 /**
  * Class PaymentMethodInactiveExpressTest
  *
- * That Express Checkout neither solicits nor loads the cart while the payment method is inactive.
+ * That Express Checkout neither solicits nor loads the quote while the payment method is inactive.
  */
 class PaymentMethodInactiveExpressTest extends TestCase
 {
     /**
-     * With the payment method inactive, a solicit is refused before the cart is read.
+     * With the payment method inactive, a solicit is refused before the quote is read.
      *
      * @return void
      */
@@ -43,6 +45,24 @@ class PaymentMethodInactiveExpressTest extends TestCase
         $this->expectException(WebapiException::class);
 
         $this->service($cartProvider, $this->createStub(CartRepositoryInterface::class))->solicit('42');
+    }
+
+    /**
+     * With the payment method inactive, a product solicit is refused before the temporary cart is built.
+     *
+     * @return void
+     */
+    public function testProductSolicitIsRefusedBeforeBuildingTheTemporaryCart(): void
+    {
+        $builder = $this->createMock(TemporaryCartBuilder::class);
+        $builder->expects($this->never())->method($this->anything());
+
+        $this->expectException(WebapiException::class);
+
+        (new ProductSolicitService(
+            $builder,
+            $this->service($this->createStub(CartProvider::class), $this->createStub(CartRepositoryInterface::class))
+        ))->solicit(['product' => '1', 'qty' => '1']);
     }
 
     /**
@@ -84,7 +104,7 @@ class PaymentMethodInactiveExpressTest extends TestCase
             $session,
             $this->createStub(Request::class),
             $this->createStub(QuoteShippingResolver::class),
-            new AvailabilityEvaluator($this->inactive())
+            new AvailabilityEvaluator($this->inactivePaymentMethod())
         );
 
         $this->assertFalse($block->isAvailable());
@@ -108,7 +128,7 @@ class PaymentMethodInactiveExpressTest extends TestCase
             $quoteRepository,
             $this->createStub(SolicitedQuoteRegistry::class),
             new ExpressCheckoutFlow(),
-            $this->inactive()
+            $this->inactivePaymentMethod()
         );
     }
 
@@ -117,7 +137,7 @@ class PaymentMethodInactiveExpressTest extends TestCase
      *
      * @return PaymentMethodStatus
      */
-    private function inactive(): PaymentMethodStatus
+    private function inactivePaymentMethod(): PaymentMethodStatus
     {
         $status = $this->createStub(PaymentMethodStatus::class);
         $status->method('isActive')->willReturn(false);

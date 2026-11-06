@@ -105,6 +105,22 @@ class BaseSolicitService
     }
 
     /**
+     * Refuses the request as not eligible when the payment method is inactive in the store.
+     *
+     * Callers that build a temporary cart call it first, so nothing is written for a disabled method.
+     *
+     * @return void
+     *
+     * @throws WebapiException If the payment method is inactive (HTTP 422)
+     */
+    public function assertPaymentMethodActive(): void
+    {
+        if (!$this->paymentMethodStatus->isActive()) {
+            throw $this->notEligible();
+        }
+    }
+
+    /**
      * Solicits the Express Checkout order and returns the identification form HTML.
      *
      * @param string $cartId Cart ID to solicit the Express Checkout order for
@@ -116,9 +132,7 @@ class BaseSolicitService
      */
     public function solicit(string $cartId): string
     {
-        if (!$this->paymentMethodStatus->isActive()) {
-            throw $this->notEligible();
-        }
+        $this->assertPaymentMethodActive();
 
         $quote = $this->cartProvider->getQuote($cartId);
 
@@ -158,9 +172,7 @@ class BaseSolicitService
      */
     public function update(string $flowToken, array $change): array
     {
-        if (!$this->paymentMethodStatus->isActive()) {
-            throw $this->notEligible();
-        }
+        $this->assertPaymentMethodActive();
 
         $quote = $this->getSolicitedQuote($flowToken);
 

@@ -61,7 +61,7 @@ class AvailabilityEvaluator
     }
 
     /**
-     * Whether the payment method is active in the store, so the caller can skip its own lookups.
+     * Whether the payment method is active in the given store.
      *
      * @param string $storeId
      *

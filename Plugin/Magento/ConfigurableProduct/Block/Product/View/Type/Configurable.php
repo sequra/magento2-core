@@ -47,17 +47,16 @@ class Configurable
      */
     public function afterGetJsonConfig(ConfigurableProduct $subject, $result): string
     {
-        if (!$this->paymentMethodStatus->isActive()) {
-            return $result;
+        $generalSettings = null;
+        if ($this->paymentMethodStatus->isActive()) {
+            $store = $this->storeManager->getStore();
+            /**
+             * @var GeneralSettings|null $generalSettings
+             */
+            $generalSettings = StoreContext::doWithStore((string) $store->getId(), function () {
+                return $this->getGeneralSettings();
+            });
         }
-
-        $store = $this->storeManager->getStore();
-        /**
-         * @var GeneralSettings|null $generalSettings
-         */
-        $generalSettings = StoreContext::doWithStore((string) $store->getId(), function () {
-            return $this->getGeneralSettings();
-        });
 
         $jsonResult = json_decode($result, true);
         if (!is_array($jsonResult)) {
