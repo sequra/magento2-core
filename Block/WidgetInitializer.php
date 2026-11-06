@@ -19,8 +19,10 @@ use Magento\Framework\Locale\ResolverInterface;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
 use SeQura\Core\BusinessLogic\CheckoutAPI\CheckoutAPI;
+use SeQura\Core\BusinessLogic\CheckoutAPI\Checkout\Controller\CheckoutController;
 use SeQura\Core\BusinessLogic\CheckoutAPI\Checkout\Requests\CheckoutInitializationRequest;
 use SeQura\Core\BusinessLogic\CheckoutAPI\Checkout\Responses\CheckoutInitializationResponse;
+use SeQura\Core\BusinessLogic\CheckoutAPI\PromotionalWidgets\PromotionalWidgetsCheckoutController;
 use SeQura\Core\BusinessLogic\CheckoutAPI\PromotionalWidgets\Requests\PromotionalWidgetsCheckoutRequest;
 use SeQura\Core\BusinessLogic\CheckoutAPI\PromotionalWidgets\Responses\PromotionalWidgetsCheckoutResponse;
 use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
@@ -124,9 +126,10 @@ class WidgetInitializer extends Template
             $storeId = (string)$this->_storeManager->getStore()->getId();
             $currentCountry = $this->getCurrentCountry();
 
+            /** @var CheckoutController $checkoutController */
+            $checkoutController = CheckoutAPI::get()->checkout($storeId);
             /** @var CheckoutInitializationResponse $initializationData */
-            $initializationData = CheckoutAPI::get()
-                ->checkout($storeId)
+            $initializationData = $checkoutController
                 ->getInitializationData(
                     new CheckoutInitializationRequest($shippingCountry, $currentCountry)
                 );
@@ -153,9 +156,10 @@ class WidgetInitializer extends Template
             $storeId = (string)$this->_storeManager->getStore()->getId();
             $currentCountry = $this->getCurrentCountry();
 
+            /** @var PromotionalWidgetsCheckoutController $widgetsController */
+            $widgetsController = CheckoutAPI::get()->promotionalWidgets($storeId);
             /** @var PromotionalWidgetsCheckoutResponse $widgetInitializeData */
-            $widgetInitializeData = CheckoutAPI::get()
-                ->promotionalWidgets($storeId)
+            $widgetInitializeData = $widgetsController
                 ->getPromotionalWidgetInitializeData(
                     new PromotionalWidgetsCheckoutRequest($shippingCountry, $currentCountry)
                 );

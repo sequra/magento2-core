@@ -160,12 +160,6 @@ abstract class AbstractExpressCheckoutBlock extends Template
                 return $this->state;
             }
 
-            // SeQura is unavailable when the cart contains a virtual product, mirroring the
-            // regular checkout guard (CreateOrderRequestBuilder::isAllowedFor). Render nothing.
-            if ($this->hasVirtualItem($quote)) {
-                return $this->state;
-            }
-
             // The cart surfaces are rendered per session, so the resolver may name the delivery
             // country from the customer's default address or the cart's own shipping estimate —
             // the same country the solicit will use, so the button cannot appear where it would
@@ -191,27 +185,6 @@ abstract class AbstractExpressCheckoutBlock extends Template
 
             return $this->state;
         }
-    }
-
-    /**
-     * Whether the cart contains at least one virtual product.
-     *
-     * SeQura is not offered for virtual items (parity with the regular checkout availability
-     * check), so the button must not render.
-     *
-     * @param Quote $quote
-     *
-     * @return bool
-     */
-    private function hasVirtualItem(Quote $quote): bool
-    {
-        foreach ($quote->getAllVisibleItems() as $item) {
-            if ($item->getIsVirtual()) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     /**

@@ -11,6 +11,7 @@ use Magento\Framework\Locale\ResolverInterface;
 use Magento\Framework\HTTP\PhpEnvironment\Request;
 use Magento\Framework\App\Request\Http;
 use SeQura\Core\BusinessLogic\CheckoutAPI\CheckoutAPI;
+use SeQura\Core\BusinessLogic\CheckoutAPI\PromotionalWidgets\PromotionalWidgetsCheckoutController;
 use SeQura\Core\BusinessLogic\CheckoutAPI\PromotionalWidgets\Requests\PromotionalWidgetsCheckoutRequest;
 use SeQura\Core\BusinessLogic\CheckoutAPI\PromotionalWidgets\Responses\GetWidgetsCheckoutResponse;
 use SeQura\Core\Infrastructure\Logger\Logger;
@@ -68,8 +69,10 @@ class Product extends Template
 
             $storeId = (string)$this->_storeManager->getStore()->getId();
 
+            /** @var PromotionalWidgetsCheckoutController $widgetsController */
+            $widgetsController = CheckoutAPI::get()->promotionalWidgets($storeId);
             /** @var GetWidgetsCheckoutResponse $widgets */
-            $widgets = CheckoutAPI::get()->promotionalWidgets($storeId)
+            $widgets = $widgetsController
                 ->getAvailableWidgetsForProductPage(new PromotionalWidgetsCheckoutRequest(
                     $this->getShippingAddressCountry(),
                     $this->getCurrentCountry(),

@@ -7,6 +7,7 @@ use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\View\Element\Template;
 use Magento\Framework\View\Element\Template\Context;
 use Magento\Store\Model\StoreManagerInterface;
+use SeQura\Core\BusinessLogic\CheckoutAPI\Banners\BannerCheckoutController;
 use SeQura\Core\BusinessLogic\CheckoutAPI\Banners\Requests\GetBannerForLocationRequest;
 use SeQura\Core\BusinessLogic\CheckoutAPI\Banners\Responses\GetBannerForLocationResponse;
 use SeQura\Core\BusinessLogic\CheckoutAPI\CheckoutAPI;
@@ -88,8 +89,10 @@ class Banner extends Template implements IdentityInterface
 
             $storeId = (string)$this->storeManager->getStore()->getId();
 
+            /** @var BannerCheckoutController $bannerController */
+            $bannerController = CheckoutAPI::get()->banners($storeId);
             /** @var GetBannerForLocationResponse $response */
-            $response = CheckoutAPI::get()->banners($storeId)
+            $response = $bannerController
                 ->getBannerForLocation(new GetBannerForLocationRequest($country, $displayLocation));
 
             return $response->isSuccessful() ? $response->toArray() : [];

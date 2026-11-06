@@ -16,6 +16,7 @@
 "sequra.orderRefSent", "Ref. de pedido enviada a SeQura: %1"
 "sequra.error.serverError", "Se ha producido un error en el servidor. Por favor, inténtalo de nuevo al hacer el pedido."
 "sequra.error.somethingWentWrong", "Algo ha ido mal. Por favor, inténtalo de nuevo al hacer el pedido."
+"sequra.error.notAvailable", "seQura no está disponible para esta cesta. Por favor, elige otro método de pago."
 "sequra.error.cannotCancel", "No se puede cancelar un pedido con estado de revisión de pago."
 "sequra.error.cannotRefund", "No se puede reembolsar un pedido con estado de revisión de pago."
 "sequra.error.cannotUpdate", "No se puede actualizar un pedido con estado de revisión de pago."

@@ -63,6 +63,31 @@ class Task
     }
 
     /**
+     * Returns the stored data of the seQura order the shop order is known by, or responds with a 404.
+     *
+     * @param string $shopOrderReference Shop order increment id
+     *
+     * @return mixed[]
+     *
+     * @throws Exception If the order is not found
+     */
+    protected function getSeQuraOrderData(string $shopOrderReference): array
+    {
+        $connection = $this->conn->getConnection();
+        $select = $connection->select()
+            ->from(DatabaseHandler::SEQURA_ORDER_TABLE, ['data'])
+            ->where('index_3 = ?', $shopOrderReference)
+            ->limit(1);
+        $result = $connection->fetchOne($select);
+        $data = is_string($result) ? json_decode($result, true) : null;
+        if (!is_array($data)) {
+            $this->httpErrorResponse('Order not found', 404);
+        }
+
+        return $data;
+    }
+
+    /**
      * Time to string
      *
      * @param int $timestamp Timestamp to convert
@@ -86,6 +111,7 @@ class Task
      * @throws Exception
      *
      * @return void
+     * @phpstan-return never
      */
     public function httpErrorResponse(string $message, int $error_code)
     {

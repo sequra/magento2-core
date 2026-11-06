@@ -2,14 +2,11 @@
 
 namespace Sequra\Core\Plugin\Magento\ConfigurableProduct\Block\Product\View\Type;
 
-use Exception;
 use Magento\ConfigurableProduct\Block\Product\View\Type\Configurable as ConfigurableProduct;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Store\Model\StoreManagerInterface;
-use SeQura\Core\BusinessLogic\Domain\GeneralSettings\Models\GeneralSettings;
-use SeQura\Core\BusinessLogic\Domain\GeneralSettings\Services\GeneralSettingsService;
-use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
-use SeQura\Core\Infrastructure\ServiceRegister;
+use SeQura\Core\BusinessLogic\AdminAPI\AdminAPI;
+use SeQura\Core\BusinessLogic\AdminAPI\GeneralSettings\GeneralSettingsController;
 
 class Configurable
 {
@@ -35,28 +32,15 @@ class Configurable
      * @return string
      *
      * @throws NoSuchEntityException
-     * @throws Exception
      */
     public function afterGetJsonConfig(ConfigurableProduct $subject, $result): string
     {
-        $store = $this->storeManager->getStore();
-        /**
-         * @var GeneralSettings|null $generalSettings
-         */
-        $generalSettings = StoreContext::doWithStore((string) $store->getId(), function () {
-            return $this->getGeneralSettings();
-        });
-
         $jsonResult = json_decode($result, true);
         if (!is_array($jsonResult)) {
             $jsonResult = [];
         }
         $jsonResult['skus'] = [];
-        $jsonResult['excludedProducts'] = [];
-
-        if ($generalSettings) {
-            $jsonResult['excludedProducts'] = $generalSettings->getExcludedProducts();
-        }
+        $jsonResult['excludedProducts'] = $this->getExcludedProducts((string) $this->storeManager->getStore()->getId());
 
         foreach ($subject->getAllowProducts() as $simpleProduct) {
             $jsonResult['skus'][$simpleProduct->getId()] = $simpleProduct->getSku();
@@ -66,15 +50,23 @@ class Configurable
     }
 
     /**
-     * Get the general settings
+     * Returns the SKUs excluded from seQura in the store, or none when the settings cannot be read.
      *
-     * @return GeneralSettings|null
+     * @param string $storeId
+     *
+     * @return mixed[]
      */
-    private function getGeneralSettings(): ?GeneralSettings
+    private function getExcludedProducts(string $storeId): array
     {
-        /** @var GeneralSettingsService $service */
-        $service = ServiceRegister::getService(GeneralSettingsService::class);
+        /** @var GeneralSettingsController $controller */
+        $controller = AdminAPI::get()->generalSettings($storeId);
+        $response = $controller->getGeneralSettings();
+        if (!$response->isSuccessful()) {
+            return [];
+        }
 
-        return $service->getGeneralSettings();
+        $excludedProducts = $response->toArray()['excludedProducts'] ?? [];
+
+        return is_array($excludedProducts) ? $excludedProducts : [];
     }
 }

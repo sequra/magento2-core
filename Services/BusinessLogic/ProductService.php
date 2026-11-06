@@ -30,6 +30,15 @@ class ProductService implements ProductServiceInterface
      * @var array<int, Product>
      */
     private static $products = [];
+
+    /**
+     * Products loaded by preloadProducts(), read only by the checks integration-core runs.
+     *
+     * They come from a collection without attributes, so getProductById() never serves them.
+     *
+     * @var array<int, Product>
+     */
+    private $preloadedProducts = [];
     /**
      * @var SearchCriteriaBuilder
      */
@@ -68,7 +77,7 @@ class ProductService implements ProductServiceInterface
      */
     public function getProductsSkuByProductId(string $productId): ?string
     {
-        $product = $this->getProductById($productId);
+        $product = $this->findProduct($productId);
 
         if (!$product) {
             return null;
@@ -84,7 +93,7 @@ class ProductService implements ProductServiceInterface
      */
     public function isProductVirtual(string $productId): bool
     {
-        $product = $this->getProductById($productId);
+        $product = $this->findProduct($productId);
 
         if (!$product) {
             return false;
@@ -104,7 +113,7 @@ class ProductService implements ProductServiceInterface
      */
     public function getProductCategoriesByProductId(string $productId): array
     {
-        $product = $this->getProductById($productId);
+        $product = $this->findProduct($productId);
 
         if (!$product) {
             return [];
@@ -145,6 +154,53 @@ class ProductService implements ProductServiceInterface
     }
 
     /**
+     * Loads the given products with one query.
+     *
+     * The checks integration-core runs on each of them then do not load them one by one. Grouped products are left
+     * out, as getProductById() never returns them.
+     *
+     * @param string[] $productIds
+     *
+     * @return void
+     */
+    public function preloadProducts(array $productIds): void
+    {
+        $missing = array_diff(
+            array_map('intval', $productIds),
+            array_keys(self::$products),
+            array_keys($this->preloadedProducts)
+        );
+        if (!$missing) {
+            return;
+        }
+
+        /** @var Product $product */
+        foreach ($this->productCollectionFactory->create()->addIdFilter($missing) as $product) {
+            if ($product->getTypeId() !== 'grouped') {
+                $this->preloadedProducts[(int) $product->getId()] = $product;
+            }
+        }
+    }
+
+    /**
+     * Returns the product for the checks integration-core runs, the preloaded one when there is one.
+     *
+     * @param string $id
+     *
+     * @return Product|null
+     *
+     * @throws NoSuchEntityException
+     */
+    private function findProduct(string $id): ?Product
+    {
+        if (is_numeric($id) && isset($this->preloadedProducts[(int) $id])) {
+            return $this->preloadedProducts[(int) $id];
+        }
+
+        return $this->getProductById($id);
+    }
+
+    /**
      * Get all product categories
      *
      * @param array<string> $categoryIds
@@ -153,7 +209,7 @@ class ProductService implements ProductServiceInterface
      *
      * @throws NoSuchEntityException
      */
-    public function getAllProductCategoryIds(array $categoryIds): array
+    private function getAllProductCategoryIds(array $categoryIds): array
     {
         if (!$categoryIds) {
             return [];
