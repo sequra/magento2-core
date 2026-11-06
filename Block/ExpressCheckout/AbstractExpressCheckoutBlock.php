@@ -160,11 +160,6 @@ abstract class AbstractExpressCheckoutBlock extends Template
                 return $this->state;
             }
 
-            // Express checkout needs a shippable cart. Render nothing when it contains a virtual product.
-            if ($this->hasVirtualItem($quote)) {
-                return $this->state;
-            }
-
             // The cart surfaces are rendered per session, so the resolver may name the delivery
             // country from the customer's default address or the cart's own shipping estimate —
             // the same country the solicit will use, so the button cannot appear where it would
@@ -190,27 +185,6 @@ abstract class AbstractExpressCheckoutBlock extends Template
 
             return $this->state;
         }
-    }
-
-    /**
-     * Whether the cart contains at least one virtual product.
-     *
-     * Express checkout takes the shipping from seQura and the temporary cart refuses a virtual
-     * item, so the button must not render.
-     *
-     * @param Quote $quote
-     *
-     * @return bool
-     */
-    private function hasVirtualItem(Quote $quote): bool
-    {
-        foreach ($quote->getAllVisibleItems() as $item) {
-            if ($item->getIsVirtual()) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     /**
