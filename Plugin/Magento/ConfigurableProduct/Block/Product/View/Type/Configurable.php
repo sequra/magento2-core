@@ -10,6 +10,7 @@ use SeQura\Core\BusinessLogic\Domain\GeneralSettings\Models\GeneralSettings;
 use SeQura\Core\BusinessLogic\Domain\GeneralSettings\Services\GeneralSettingsService;
 use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
 use SeQura\Core\Infrastructure\ServiceRegister;
+use Sequra\Core\Model\Config\PaymentMethodStatus;
 
 class Configurable
 {
@@ -19,11 +20,18 @@ class Configurable
     private $storeManager;
 
     /**
-     * @param StoreManagerInterface $storeManager
+     * @var PaymentMethodStatus
      */
-    public function __construct(StoreManagerInterface $storeManager)
+    private PaymentMethodStatus $paymentMethodStatus;
+
+    /**
+     * @param StoreManagerInterface $storeManager
+     * @param PaymentMethodStatus $paymentMethodStatus
+     */
+    public function __construct(StoreManagerInterface $storeManager, PaymentMethodStatus $paymentMethodStatus)
     {
         $this->storeManager = $storeManager;
+        $this->paymentMethodStatus = $paymentMethodStatus;
     }
 
     /**
@@ -39,13 +47,16 @@ class Configurable
      */
     public function afterGetJsonConfig(ConfigurableProduct $subject, $result): string
     {
-        $store = $this->storeManager->getStore();
-        /**
-         * @var GeneralSettings|null $generalSettings
-         */
-        $generalSettings = StoreContext::doWithStore((string) $store->getId(), function () {
-            return $this->getGeneralSettings();
-        });
+        $generalSettings = null;
+        if ($this->paymentMethodStatus->isActive()) {
+            $store = $this->storeManager->getStore();
+            /**
+             * @var GeneralSettings|null $generalSettings
+             */
+            $generalSettings = StoreContext::doWithStore((string) $store->getId(), function () {
+                return $this->getGeneralSettings();
+            });
+        }
 
         $jsonResult = json_decode($result, true);
         if (!is_array($jsonResult)) {

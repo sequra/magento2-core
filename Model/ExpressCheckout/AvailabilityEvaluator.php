@@ -9,6 +9,7 @@ use SeQura\Core\BusinessLogic\CheckoutAPI\ExpressCheckout\Requests\GuestExpressC
 use SeQura\Core\BusinessLogic\CheckoutAPI\ExpressCheckout\Responses\ExpressCheckoutAvailabilityResponse;
 use SeQura\Core\BusinessLogic\CheckoutAPI\ExpressCheckout\Responses\GuestExpressCheckoutAvailabilityResponse;
 use SeQura\Core\Infrastructure\Logger\Logger;
+use Sequra\Core\Model\Config\PaymentMethodStatus;
 
 /**
  * Class AvailabilityEvaluator
@@ -47,6 +48,31 @@ class AvailabilityEvaluator
     public const STATE_HIDDEN = 'hidden';
 
     /**
+     * @var PaymentMethodStatus
+     */
+    private PaymentMethodStatus $paymentMethodStatus;
+
+    /**
+     * @param PaymentMethodStatus $paymentMethodStatus
+     */
+    public function __construct(PaymentMethodStatus $paymentMethodStatus)
+    {
+        $this->paymentMethodStatus = $paymentMethodStatus;
+    }
+
+    /**
+     * Whether the payment method is active in the given store.
+     *
+     * @param string $storeId
+     *
+     * @return bool
+     */
+    public function isPaymentMethodActive(string $storeId): bool
+    {
+        return $this->paymentMethodStatus->isActive($storeId);
+    }
+
+    /**
      * Evaluates the render state for the given storefront context.
      *
      * @param string $storeId
@@ -69,6 +95,13 @@ class AvailabilityEvaluator
         array $productIds,
         array $categoryIds
     ): array {
+        if (!$this->paymentMethodStatus->isActive($storeId)) {
+            return [
+                'state' => self::STATE_HIDDEN,
+                'buttonStyle' => null,
+            ];
+        }
+
         try {
             if ($country !== '') {
                 /** @var ExpressCheckoutAvailabilityResponse $response */

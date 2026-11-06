@@ -13,6 +13,7 @@ use SeQura\Core\BusinessLogic\CheckoutAPI\CheckoutAPI;
 use SeQura\Core\BusinessLogic\CheckoutAPI\PromotionalWidgets\Requests\PromotionalWidgetsCheckoutRequest;
 use SeQura\Core\BusinessLogic\CheckoutAPI\PromotionalWidgets\Responses\GetWidgetsCheckoutResponse;
 use SeQura\Core\Infrastructure\Logger\Logger;
+use Sequra\Core\Model\Config\PaymentMethodStatus;
 
 /**
  * Class Cart
@@ -24,24 +25,32 @@ class Cart extends Template
     use WidgetTrait;
 
     /**
+     * @var PaymentMethodStatus
+     */
+    private PaymentMethodStatus $paymentMethodStatus;
+
+    /**
      * @param ScopeResolverInterface $scopeResolver
      * @param ResolverInterface $localeResolver
      * @param Context $context
      * @param Session $checkoutSession
      * @param Request $request
+     * @param PaymentMethodStatus $paymentMethodStatus
      */
     public function __construct(
         ScopeResolverInterface $scopeResolver,
         ResolverInterface $localeResolver,
         Context $context,
         Session $checkoutSession,
-        Request $request
+        Request $request,
+        PaymentMethodStatus $paymentMethodStatus
     ) {
         parent::__construct($context);
         $this->scopeResolver = $scopeResolver;
         $this->localeResolver = $localeResolver;
         $this->checkoutSession = $checkoutSession;
         $this->request = $request;
+        $this->paymentMethodStatus = $paymentMethodStatus;
     }
 
     /**
@@ -51,6 +60,10 @@ class Cart extends Template
      */
     public function getAvailableWidgets(): array
     {
+        if (!$this->paymentMethodStatus->isActive()) {
+            return [];
+        }
+
         try {
             $storeId = (string)$this->_storeManager->getStore()->getId();
             /** @var GetWidgetsCheckoutResponse $widget */

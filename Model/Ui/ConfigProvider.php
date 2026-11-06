@@ -9,6 +9,7 @@ use Magento\Framework\UrlInterface;
 use Magento\Store\Model\StoreManagerInterface;
 use SeQura\Core\BusinessLogic\AdminAPI\AdminAPI;
 use SeQura\Core\BusinessLogic\AdminAPI\GeneralSettings\Responses\GeneralSettingsResponse;
+use Sequra\Core\Model\Config\PaymentMethodStatus;
 
 class ConfigProvider implements ConfigProviderInterface
 {
@@ -22,19 +23,26 @@ class ConfigProvider implements ConfigProviderInterface
      * @var UrlInterface
      */
     private $urlBuilder;
+    /**
+     * @var PaymentMethodStatus
+     */
+    private PaymentMethodStatus $paymentMethodStatus;
 
     /**
      * ConfigProvider constructor.
      *
      * @param StoreManagerInterface $storeManager
      * @param UrlInterface $urlBuilder
+     * @param PaymentMethodStatus $paymentMethodStatus
      */
     public function __construct(
         StoreManagerInterface                         $storeManager,
-        UrlInterface $urlBuilder
+        UrlInterface $urlBuilder,
+        PaymentMethodStatus $paymentMethodStatus
     ) {
         $this->storeManager = $storeManager;
         $this->urlBuilder = $urlBuilder;
+        $this->paymentMethodStatus = $paymentMethodStatus;
     }
 
     /**
@@ -48,6 +56,10 @@ class ConfigProvider implements ConfigProviderInterface
      */
     public function getConfig()
     {
+        if (!$this->paymentMethodStatus->isActive()) {
+            return [];
+        }
+
         $currentStore = $this->storeManager->getStore();
         $storeId = (string) $currentStore->getId();
         /** @var GeneralSettingsResponse $generalSettingsResponse */
