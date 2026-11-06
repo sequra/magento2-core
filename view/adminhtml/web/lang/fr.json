@@ -14,7 +14,7 @@
     "downloadNewVersion": "Télécharger la nouvelle version",
     "merchant": "Commerçant :",
     "settings": "Paramètres",
-    "changesSaved": "Modifications enregistrées avec succès.",
+    "changesSaved": "Modifications enregistrées.",
     "noItemsAvailable": "Aucun élément disponible",
     "and": " et ",
     "mode": {
@@ -22,77 +22,77 @@
       "live": "Mode Live"
     },
     "errors": {
-      "InvalidOperationException": "Une erreur s'est produite côté serveur. Veuillez vérifier les données et réessayer.",
-      "unknown": "Une erreur inconnue s'est produite. Veuillez réessayer plus tard.",
-      "backgroundDataFetchFailure": "Une erreur s'est produite lors de l'actualisation des données en arrière-plan. Veuillez recharger la page pour voir les dernières données.",
-      "empty": "Le paramètre ne peut pas être vide.",
-      "saveEntityFailed": "Échec de l'enregistrement de l'entité car %s",
-      "getEntityFailed": "Échec de la récupération de l'entité car %s",
-      "failedToRetrieveStores": "Échec de la récupération des magasins.",
+      "InvalidOperationException": "Un problème est survenu sur notre serveur. Vérifiez les données et réessayez.",
+      "unknown": "Un problème est survenu. Réessayez dans quelques minutes.",
+      "backgroundDataFetchFailure": "Nous n'avons pas pu actualiser les données. Rechargez la page pour voir la dernière version.",
+      "empty": "Cette valeur ne peut pas être vide.",
+      "saveEntityFailed": "Nous n'avons pas pu enregistrer les données car %s",
+      "getEntityFailed": "Nous n'avons pas pu charger les données car %s",
+      "failedToRetrieveStores": "Nous n'avons pas pu charger vos magasins.",
       "stores": {
-        "failed": "Échec de la récupération des magasins.",
-        "invalidIdAndStatus": "L'ID et le nom du statut sont invalides."
+        "failed": "Nous n'avons pas pu charger vos magasins.",
+        "invalidIdAndStatus": "L'ID et le nom du statut ne sont pas valides."
       },
       "version": {
-        "failed": "Échec de la récupération de la version."
+        "failed": "Nous n'avons pas pu vérifier la version."
       },
       "connection": {
-        "invalidUsernameOrPassword": "Nom d'utilisateur ou mot de passe invalide. Vérifiez vos identifiants de connexion.",
-        "invalidUsernameOrPasswordForDeployment": "Nom d'utilisateur ou mot de passe invalide. Vérifiez vos identifiants de connexion pour %s.",
-        "invalidMerchantId": "ID commerçant invalide.",
-        "invalidEnvironment": "Environnement invalide.",
-        "emptyStoreId": "ID de magasin vide.",
-        "invalidMode": "Mode invalide.",
-        "emptyData": "Données de connexion vides.",
-        "settingsNotFound": "Paramètres de connexion introuvables.",
-        "invalidRoles": "L'utilisateur n'a pas tous les rôles nécessaires.",
+        "invalidUsernameOrPassword": "Nom d'utilisateur ou mot de passe incorrect. Vérifiez vos identifiants.",
+        "invalidUsernameOrPasswordForDeployment": "Nom d'utilisateur ou mot de passe incorrect pour %s. Vérifiez vos identifiants.",
+        "invalidMerchantId": "L'ID commerçant n'est pas valide.",
+        "invalidEnvironment": "L'environnement n'est pas valide.",
+        "emptyStoreId": "L'ID du magasin est manquant.",
+        "invalidMode": "Le mode n'est pas valide.",
+        "emptyData": "Les données de connexion sont manquantes.",
+        "settingsNotFound": "Nous n'avons pas trouvé les paramètres de connexion.",
+        "invalidRoles": "Il manque des rôles nécessaires à cet utilisateur.",
         "invalidSettings": "Les paramètres de connexion ne sont pas valides.",
-        "credentialsDoNotExist": "Les détails des identifiants API n'existent pas.",
-        "testKeyChanged": "La clé API de test a été modifiée.",
-        "liveKeyChanged": "La clé API live a été modifiée.",
-        "testMerchantIdChanged": "L'ID commerçant de test a été modifiée.",
-        "liveMerchantIdChanged": "L'ID commerçant live a été modifiée.",
-        "companyLevelKey": "La clé API n'est pas au niveau commerçant.",
+        "credentialsDoNotExist": "Nous n'avons pas trouvé les identifiants API.",
+        "testKeyChanged": "La clé API sandbox a changé.",
+        "liveKeyChanged": "La clé API live a changé.",
+        "testMerchantIdChanged": "L'ID commerçant sandbox a changé.",
+        "liveMerchantIdChanged": "L'ID commerçant live a changé.",
+        "companyLevelKey": "Cette clé API n'est pas une clé de niveau commerçant.",
         "invalidKey": "La clé API n'est pas valide.",
-        "originFailed": "Échec de l'ajout de l'origine autorisée",
-        "clientKeyGenerationFailed": "Échec de la génération de la clé client."
+        "originFailed": "Nous n'avons pas pu ajouter l'origine autorisée.",
+        "clientKeyGenerationFailed": "Nous n'avons pas pu générer la clé client."
       },
       "countries": {
-        "noCountries": "Votre magasin n'a actuellement aucun des pays de vente pris en charge par SeQura actifs. Pour traiter les paiements avec les méthodes de paiement SeQura, veuillez vous assurer d'avoir au moins un pays pris en charge dans votre magasin. Pour plus d'informations, veuillez contacter le support SeQura.",
-        "empty": "Le paramètre de configuration du pays ne peut pas être une chaîne vide.",
-        "countryCode": "Code pays invalide dans la configuration du pays.",
-        "sellingCountries": "Échec de la récupération des pays de vente."
+        "noCountries": "Aucun des pays où seQura opère n'est actif dans votre magasin. Activez-en au moins un pour accepter les paiements avec seQura. Besoin d'aide ? Contactez le support seQura.",
+        "empty": "Le paramètre du pays ne peut pas être vide.",
+        "countryCode": "Le code pays de la configuration n'est pas valide.",
+        "sellingCountries": "Nous n'avons pas pu charger les pays de vente."
       },
       "webhooks": {
-        "merchantError": "Commerçant avec l'ID %s introuvable.",
-        "failedToRegisterWebhook": "Échec de l'enregistrement du webhook.",
-        "hmacError": "Erreur lors de la génération du HMAC."
+        "merchantError": "Nous n'avons pas trouvé le commerçant avec l'ID %s.",
+        "failedToRegisterWebhook": "Nous n'avons pas pu enregistrer le webhook.",
+        "hmacError": "Nous n'avons pas pu générer le HMAC."
       }
     }
   },
   "sidebar": {
     "connectionSettings": "Paramètres de connexion",
     "stepOneLabel": "Installer l'intégration e-commerce",
-    "stepOneDescription": "Votre intégration est prête pour la connexion.",
+    "stepOneDescription": "Votre intégration est prête à être connectée.",
     "stepTwoLabel": "Connecter l'intégration",
     "stepDeployments": "Sélectionner les cibles de déploiement"
   },
   "validation": {
     "requiredField": "Ce champ est obligatoire.",
     "invalidField": "Ce champ n'est pas valide.",
-    "invalidJSON": "Ce champ doit être un JSON valide.",
-    "invalidEmail": "Ce champ doit être un e-mail valide.",
-    "maxLength": "Le champ ne peut pas comporter plus de %s caractères.",
-    "numeric": "La valeur doit être un nombre valide avec un maximum de deux décimales.",
-    "greaterThanZero": "La valeur doit être supérieure à 0.",
-    "nonNegative": "Le champ ne peut pas avoir une valeur négative.",
-    "numberOfDecimalPlaces": "Le champ doit comporter 2 décimales.",
-    "integer": "Le champ doit être un entier.",
-    "invalidUrl": "Le champ doit être une URL valide.",
-    "invalidFieldValue": "Le champ doit être défini sur \"%s\".",
-    "invalidMaxValue": "La valeur maximale autorisée est %s.",
-    "invalidImageType": "Veuillez fournir un fichier dans l'un des types d'image pris en charge (PNG, JPG, SVG).",
-    "invalidImageSize": "Le fichier sélectionné dépasse la limite de 10 Mo."
+    "invalidJSON": "Saisissez un JSON valide.",
+    "invalidEmail": "Saisissez un e-mail valide.",
+    "maxLength": "Utilisez %s caractères maximum.",
+    "numeric": "Saisissez un nombre valide avec 2 décimales maximum.",
+    "greaterThanZero": "Saisissez une valeur supérieure à 0.",
+    "nonNegative": "Saisissez une valeur égale ou supérieure à 0.",
+    "numberOfDecimalPlaces": "Utilisez 2 décimales.",
+    "integer": "Saisissez un nombre entier.",
+    "invalidUrl": "Saisissez une URL valide.",
+    "invalidFieldValue": "Ce champ doit valoir \"%s\".",
+    "invalidMaxValue": "La valeur maximale est %s.",
+    "invalidImageType": "Importez une image PNG, JPG ou SVG.",
+    "invalidImageSize": "Le fichier dépasse 10 Mo. Choisissez-en un plus petit."
   },
   "connection": {
     "title": {
@@ -100,8 +100,8 @@
       "settings": "Paramètres de connexion"
     },
     "description": {
-      "onboarding": "Assurez-vous d'être connecté au portail commerçant car vous devrez copier plusieurs paramètres depuis celui-ci pour remplir les informations suivantes. Si vous n'avez pas de compte, contactez-nous ",
-      "settings": "Configurez votre compte SeQura et choisissez l'environnement pour commencer à traiter les paiements. Si vous n'avez pas de compte, contactez-nous ",
+      "onboarding": "Connectez-vous d'abord au Merchant Portal. Vous y copierez quelques paramètres pour remplir les champs ci-dessous. Pas encore de compte ? Créez-en un ",
+      "settings": "Configurez votre compte seQura et choisissez l'environnement pour commencer à traiter les paiements. Pas encore de compte ? Créez-en un ",
       "endLink": "ici"
     },
     "environment": {
@@ -116,67 +116,67 @@
     },
     "username": {
       "label": "Nom d'utilisateur",
-      "description": "Vous pouvez trouver votre nom d'utilisateur dans l'e-mail envoyé par SeQura."
+      "description": "Vous trouverez votre nom d'utilisateur dans l'e-mail que nous vous avons envoyé."
     },
     "password": {
       "label": "Mot de passe",
-      "description": "Vous pouvez trouver votre mot de passe dans l'e-mail envoyé par SeQura."
+      "description": "Vous trouverez votre mot de passe dans l'e-mail que nous vous avons envoyé."
     },
     "modal": {
       "title": "Changer d'environnement ?",
-      "message": "Êtes-vous sûr de vouloir changer d'environnement ? Cela supprimera tous les paramètres configurés sur l'environnement actuel et vous reconnectera au nouvel environnement sélectionné."
+      "message": "Changer d'environnement supprime les paramètres de l'environnement actuel et vous connecte au nouveau."
     },
     "disconnect": {
       "title": "Déconnecter",
-      "message": "Êtes-vous sûr de vouloir vous déconnecter ?"
+      "message": "Voulez-vous vous déconnecter ?"
     },
-    "successMessage": "Connexion établie avec succès.",
-    "successMessageForDeployment": "Connexion à %s établie avec succès.",
+    "successMessage": "Connexion établie.",
+    "successMessageForDeployment": "Connexion à %s établie.",
     "webhookReRegistration": {
-      "title": "Re-enregistrer les webhooks",
-      "successMessage": "Les webhooks ont été réenregistrés avec succès.",
-      "errorMessage": "Les webhooks n’ont pas pu être réenregistrés avec succès."
+      "title": "Réenregistrer les webhooks",
+      "successMessage": "Webhooks réenregistrés.",
+      "errorMessage": "Nous n'avons pas pu réenregistrer les webhooks. Réessayez."
     }
   },
   "deployments": {
     "title": "Sélectionner les cibles de déploiement",
-    "description": "Veuillez sélectionner les cibles de déploiement pour lesquelles vous souhaitez proposer les méthodes de paiement SeQura",
+    "description": "Sélectionnez les cibles de déploiement où vous souhaitez proposer les méthodes de paiement seQura.",
     "selector": {
-      "label": "Dans quelles cibles de déploiement souhaitez-vous proposer les méthodes de paiement SeQura ?",
-      "description": "Chaque cible de déploiement dessert un groupe de pays différent."
+      "label": "Où souhaitez-vous proposer les méthodes de paiement seQura ?",
+      "description": "Chaque cible de déploiement couvre un groupe de pays différent."
     }
   },
   "countries": {
     "ES": {
       "label": "Espagne",
-      "description": "Veuillez saisir l'ID commerçant SeQura à utiliser pour les clients espagnols."
+      "description": "Saisissez l'ID commerçant seQura pour les clients en Espagne."
     },
     "FR": {
       "label": "France",
-      "description": "Veuillez saisir l'ID commerçant SeQura à utiliser pour les clients français."
+      "description": "Saisissez l'ID commerçant seQura pour les clients en France."
     },
     "CO": {
       "label": "Colombie",
-      "description": "Veuillez saisir l'ID commerçant SeQura à utiliser pour les clients colombiens."
+      "description": "Saisissez l'ID commerçant seQura pour les clients en Colombie."
     },
     "IT": {
       "label": "Italie",
-      "description": "Veuillez saisir l'ID commerçant SeQura à utiliser pour les clients italiens."
+      "description": "Saisissez l'ID commerçant seQura pour les clients en Italie."
     },
     "PT": {
       "label": "Portugal",
-      "description": "Veuillez saisir l'ID commerçant SeQura à utiliser pour les clients portugais."
+      "description": "Saisissez l'ID commerçant seQura pour les clients au Portugal."
     },
     "PE": {
       "label": "Pérou",
-      "description": "Veuillez saisir l'ID commerçant SeQura à utiliser pour les clients péruviens."
+      "description": "Saisissez l'ID commerçant seQura pour les clients au Pérou."
     }
   },
   "supportLink": {
     "label": "Besoin d'aide ?",
     "link": "https://www.sequra.com/fr/shoppers/contactez-nous"
   },
-  "storesLink": {
-    "link": "https://www.sequra.com/fr/boutiques"
+  "signupLink": {
+    "link": "https://portal.sequra.com/signup"
   }
 }
