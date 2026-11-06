@@ -11,7 +11,7 @@ use Sequra\Core\Model\Ui\ConfigProvider;
 /**
  * Class ConfigProviderPaymentMethodTest
  *
- * That the checkout config is empty, without reading SeQura's settings, while the payment method is inactive.
+ * That the checkout config is empty, without reading the store, while the payment method is inactive.
  */
 class ConfigProviderPaymentMethodTest extends TestCase
 {

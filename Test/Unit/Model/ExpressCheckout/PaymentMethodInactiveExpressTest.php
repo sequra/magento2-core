@@ -115,13 +115,15 @@ class PaymentMethodInactiveExpressTest extends TestCase
     {
         $productRepository = $this->createMock(ProductRepositoryInterface::class);
         $productRepository->expects($this->never())->method($this->anything());
+        $http = $this->createStub(Http::class);
+        $http->method('getParam')->willReturn('5');
 
         $block = new ProductPage(
             $this->createStub(ScopeResolverInterface::class),
             $this->createStub(ResolverInterface::class),
             $this->contextForStore(),
             $this->createStub(Request::class),
-            $this->createStub(Http::class),
+            $http,
             $productRepository,
             new AvailabilityEvaluator($this->inactivePaymentMethod())
         );
