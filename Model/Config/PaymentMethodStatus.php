@@ -2,9 +2,7 @@
 
 namespace Sequra\Core\Model\Config;
 
-use Magento\Framework\App\Config\ScopeConfigInterface;
-use Magento\Store\Model\ScopeInterface;
-use Sequra\Core\Model\Ui\ConfigProvider;
+use Magento\Payment\Gateway\ConfigInterface;
 
 /**
  * Class PaymentMethodStatus
@@ -13,19 +11,17 @@ use Sequra\Core\Model\Ui\ConfigProvider;
  */
 class PaymentMethodStatus
 {
-    private const XML_PATH_ACTIVE = 'payment/' . ConfigProvider::CODE . '/active';
+    /**
+     * @var ConfigInterface
+     */
+    private ConfigInterface $gatewayConfig;
 
     /**
-     * @var ScopeConfigInterface
+     * @param ConfigInterface $gatewayConfig
      */
-    private ScopeConfigInterface $scopeConfig;
-
-    /**
-     * @param ScopeConfigInterface $scopeConfig
-     */
-    public function __construct(ScopeConfigInterface $scopeConfig)
+    public function __construct(ConfigInterface $gatewayConfig)
     {
-        $this->scopeConfig = $scopeConfig;
+        $this->gatewayConfig = $gatewayConfig;
     }
 
     /**
@@ -37,6 +33,6 @@ class PaymentMethodStatus
      */
     public function isActive($storeId = null): bool
     {
-        return $this->scopeConfig->isSetFlag(self::XML_PATH_ACTIVE, ScopeInterface::SCOPE_STORE, $storeId);
+        return (bool)$this->gatewayConfig->getValue('active', $storeId === null ? null : (int)$storeId);
     }
 }

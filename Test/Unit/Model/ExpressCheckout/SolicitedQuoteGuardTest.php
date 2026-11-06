@@ -14,6 +14,7 @@ use Sequra\Core\Model\ExpressCheckout\CartSummaryFormDecorator;
 use Sequra\Core\Model\ExpressCheckout\ExpressCheckoutFlow;
 use Sequra\Core\Model\ExpressCheckout\QuoteShippingResolver;
 use Sequra\Core\Model\ExpressCheckout\SolicitedQuoteRegistry;
+use Sequra\Core\Model\Config\PaymentMethodStatus;
 
 /**
  * Class SolicitedQuoteGuardTest
@@ -99,8 +100,22 @@ class SolicitedQuoteGuardTest extends TestCase
             $this->createMock(CartSummaryFormDecorator::class),
             $quoteRepository,
             $registry,
-            new ExpressCheckoutFlow()
+            new ExpressCheckoutFlow(),
+            $this->activePaymentMethod()
         );
+    }
+
+    /**
+     * A payment method status that reads as active, so the guard under test is the one reached.
+     *
+     * @return PaymentMethodStatus
+     */
+    private function activePaymentMethod(): PaymentMethodStatus
+    {
+        $status = $this->createStub(PaymentMethodStatus::class);
+        $status->method('isActive')->willReturn(true);
+
+        return $status;
     }
 
     /**

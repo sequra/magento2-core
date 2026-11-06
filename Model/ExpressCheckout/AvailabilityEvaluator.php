@@ -61,6 +61,18 @@ class AvailabilityEvaluator
     }
 
     /**
+     * Whether the payment method is active in the store, so the caller can skip its own lookups.
+     *
+     * @param string $storeId
+     *
+     * @return bool
+     */
+    public function isPaymentMethodActive(string $storeId): bool
+    {
+        return $this->paymentMethodStatus->isActive($storeId);
+    }
+
+    /**
      * Evaluates the render state for the given storefront context.
      *
      * @param string $storeId

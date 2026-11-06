@@ -59,6 +59,11 @@
             <argument name="methodCode" xsi:type="const">Sequra\Core\Model\Ui\ConfigProvider::CODE</argument>
         </arguments>
     </virtualType>
+    <type name="Sequra\Core\Model\Config\PaymentMethodStatus">
+        <arguments>
+            <argument name="gatewayConfig" xsi:type="object">SequraPaymentGatewayConfig</argument>
+        </arguments>
+    </type>
 
 
     <virtualType name="SequraCustomerPaymentService"

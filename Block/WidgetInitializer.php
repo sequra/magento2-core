@@ -195,6 +195,10 @@ class WidgetInitializer extends Template
      */
     public function getWidgetConfig(): string
     {
+        if (!$this->paymentMethodStatus->isActive()) {
+            return json_encode([], JSON_THROW_ON_ERROR);
+        }
+
         $actionName = $this->request->getFullActionName();
 
         if (!in_array(

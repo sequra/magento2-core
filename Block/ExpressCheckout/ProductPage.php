@@ -179,6 +179,12 @@ class ProductPage extends Template
         $this->state = AvailabilityEvaluator::STATE_HIDDEN;
 
         try {
+            if (!$this->availabilityEvaluator->isPaymentMethodActive(
+                (string)$this->_storeManager->getStore()->getId()
+            )) {
+                return $this->state;
+            }
+
             $product = $this->getCurrentProduct();
             if (!$product) {
                 return $this->state;

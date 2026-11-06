@@ -2,32 +2,31 @@
 
 namespace Sequra\Core\Test\Unit\Model\Config;
 
-use Magento\Framework\App\Config\ScopeConfigInterface;
-use Magento\Store\Model\ScopeInterface;
+use Magento\Payment\Gateway\ConfigInterface;
 use PHPUnit\Framework\TestCase;
 use Sequra\Core\Model\Config\PaymentMethodStatus;
 
 /**
  * Class PaymentMethodStatusTest
  *
- * That the status is the store-scoped active flag of the payment method.
+ * That the status is the active flag of the payment method's gateway config.
  */
 class PaymentMethodStatusTest extends TestCase
 {
     /**
-     * The flag of the given store is read.
+     * The flag of the given store is read from the gateway config.
      *
      * @return void
      */
-    public function testReadsTheStoreScopedActiveFlag(): void
+    public function testReadsTheActiveFlagOfTheGivenStore(): void
     {
-        $scopeConfig = $this->createMock(ScopeConfigInterface::class);
-        $scopeConfig->expects($this->once())
-            ->method('isSetFlag')
-            ->with('payment/sequra_payment/active', ScopeInterface::SCOPE_STORE, '3')
-            ->willReturn(true);
+        $gatewayConfig = $this->createMock(ConfigInterface::class);
+        $gatewayConfig->expects($this->once())
+            ->method('getValue')
+            ->with('active', 3)
+            ->willReturn('1');
 
-        $this->assertTrue((new PaymentMethodStatus($scopeConfig))->isActive('3'));
+        $this->assertTrue((new PaymentMethodStatus($gatewayConfig))->isActive('3'));
     }
 
     /**
@@ -37,9 +36,9 @@ class PaymentMethodStatusTest extends TestCase
      */
     public function testIsInactiveWhenTheFlagIsOff(): void
     {
-        $scopeConfig = $this->createStub(ScopeConfigInterface::class);
-        $scopeConfig->method('isSetFlag')->willReturn(false);
+        $gatewayConfig = $this->createStub(ConfigInterface::class);
+        $gatewayConfig->method('getValue')->willReturn('0');
 
-        $this->assertFalse((new PaymentMethodStatus($scopeConfig))->isActive());
+        $this->assertFalse((new PaymentMethodStatus($gatewayConfig))->isActive());
     }
 }

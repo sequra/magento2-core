@@ -15,6 +15,7 @@ use Sequra\Core\Model\ExpressCheckout\CartSummaryFormDecorator;
 use Sequra\Core\Model\ExpressCheckout\ExpressCheckoutFlow;
 use Sequra\Core\Model\ExpressCheckout\QuoteShippingResolver;
 use Sequra\Core\Model\ExpressCheckout\SolicitedQuoteRegistry;
+use Sequra\Core\Model\Config\PaymentMethodStatus;
 
 /**
  * Class BaseSolicitService
@@ -66,6 +67,10 @@ class BaseSolicitService
      * @var ExpressCheckoutFlow
      */
     private ExpressCheckoutFlow $expressFlow;
+    /**
+     * @var PaymentMethodStatus
+     */
+    private PaymentMethodStatus $paymentMethodStatus;
 
     /**
      * BaseSolicitService constructor.
@@ -77,6 +82,7 @@ class BaseSolicitService
      * @param CartRepositoryInterface $quoteRepository
      * @param SolicitedQuoteRegistry $solicitedQuotes
      * @param ExpressCheckoutFlow $expressFlow
+     * @param PaymentMethodStatus $paymentMethodStatus
      */
     public function __construct(
         CartProvider $cartProvider,
@@ -85,7 +91,8 @@ class BaseSolicitService
         CartSummaryFormDecorator $cartSummaryFormDecorator,
         CartRepositoryInterface $quoteRepository,
         SolicitedQuoteRegistry $solicitedQuotes,
-        ExpressCheckoutFlow $expressFlow
+        ExpressCheckoutFlow $expressFlow,
+        PaymentMethodStatus $paymentMethodStatus
     ) {
         $this->cartProvider = $cartProvider;
         $this->createOrderRequestBuilderFactory = $createOrderRequestBuilderFactory;
@@ -94,6 +101,7 @@ class BaseSolicitService
         $this->quoteRepository = $quoteRepository;
         $this->solicitedQuotes = $solicitedQuotes;
         $this->expressFlow = $expressFlow;
+        $this->paymentMethodStatus = $paymentMethodStatus;
     }
 
     /**
@@ -108,6 +116,10 @@ class BaseSolicitService
      */
     public function solicit(string $cartId): string
     {
+        if (!$this->paymentMethodStatus->isActive()) {
+            throw $this->notEligible();
+        }
+
         $quote = $this->cartProvider->getQuote($cartId);
 
         if (!$this->shippingResolver->resolve($quote)) {
@@ -146,6 +158,10 @@ class BaseSolicitService
      */
     public function update(string $flowToken, array $change): array
     {
+        if (!$this->paymentMethodStatus->isActive()) {
+            throw $this->notEligible();
+        }
+
         $quote = $this->getSolicitedQuote($flowToken);
 
         if (!$this->shippingResolver->applyChange($quote, $change)) {
