@@ -155,6 +155,12 @@ abstract class AbstractExpressCheckoutBlock extends Template
         $this->state = AvailabilityEvaluator::STATE_HIDDEN;
 
         try {
+            if (!$this->availabilityEvaluator->isPaymentMethodActive(
+                (string)$this->_storeManager->getStore()->getId()
+            )) {
+                return $this->state;
+            }
+
             $quote = $this->checkoutSession->getQuote();
             if (!$quote || (int)$quote->getItemsCount() < 1) {
                 return $this->state;
