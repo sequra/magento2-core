@@ -90,6 +90,8 @@ jobs:
         run: |
           mkdir -p diagnostics
           docker compose logs --no-color magento > diagnostics/magento.log 2>&1 || true
+          set -a; source .env; set +a
+          docker logs "${CLOUDFLARED_CONTAINER_NAME:-magento-cloudflared}" > diagnostics/cloudflared.log 2>&1 || true
           docker compose exec -T magento sh -c 'tail -n 500 var/log/*.log' > diagnostics/magento-var-log.txt 2>&1 || true
 
       - name: Upload the test results and diagnostics
