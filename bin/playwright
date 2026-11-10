@@ -39,7 +39,7 @@ else
         tty_flags=(-it)
     fi
     env_flags=()
-    while IFS='=' read -r key _; do
+    while IFS='=' read -r key _ || [ -n "$key" ]; do
         if [[ "$key" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]]; then
             env_flags+=(-e "$key")
         fi
