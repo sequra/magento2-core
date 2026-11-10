@@ -15,6 +15,7 @@ use SeQura\Core\Infrastructure\ORM\RepositoryRegistry;
 use SeQura\Core\Tests\Infrastructure\Common\TestComponents\ORM\Entity\StudentEntity;
 use SeQura\Core\Tests\Infrastructure\ORM\AbstractGenericStudentRepositoryTest;
 use Sequra\Core\Setup\DatabaseHandler;
+use Sequra\Core\Test\Unit\Repository\StaleSelectRepository;
 use Sequra\Core\Test\Unit\Repository\TestRepository;
 
 class MagentoGenericBaseRepositoryTest extends AbstractGenericStudentRepositoryTest
@@ -107,6 +108,49 @@ class MagentoGenericBaseRepositoryTest extends AbstractGenericStudentRepositoryT
         $repository = $this->repository();
 
         $repository->deleteWhere((new QueryFilter())->orderBy('id')->setLimit(2));
+
+        $this->assertSame(['eve'], $this->remainingUsernames());
+    }
+
+    /**
+     * A limited delete only removes rows that still match the filter conditions, even when its select returned more.
+     *
+     * @return void
+     *
+     * @throws QueryFilterInvalidParamException
+     * @throws RepositoryNotRegisteredException
+     */
+    public function testDeleteWhereWithLimitKeepsTheFilterConditions()
+    {
+        $this->saveStudent('ana', 'ana@example.com');
+        $this->saveStudent('bob', 'bob@example.com');
+        RepositoryRegistry::registerRepository(StudentEntity::CLASS_NAME, StaleSelectRepository::getClassName());
+
+        $this->repository()->deleteWhere(
+            (new QueryFilter())->where('email', Operators::EQUALS, 'ana@example.com')->setLimit(10)
+        );
+
+        $this->assertSame(['bob'], $this->remainingUsernames());
+    }
+
+    /**
+     * Quotes in a filter value are matched literally and cannot widen the delete.
+     *
+     * @return void
+     *
+     * @throws QueryFilterInvalidParamException
+     * @throws RepositoryNotRegisteredException
+     */
+    public function testDeleteWhereQuotesTheFilterValues()
+    {
+        $this->saveStudent('ana', "o'connor@example.com");
+        $this->saveStudent('bob', "d'arcy@example.com");
+        $this->saveStudent('eve', 'eve@example.com');
+        $repository = $this->repository();
+
+        $repository->deleteWhere((new QueryFilter())->where('email', Operators::EQUALS, "x' OR '1'='1"));
+        $repository->deleteWhere((new QueryFilter())->where('email', Operators::EQUALS, "o'connor@example.com"));
+        $repository->deleteWhere((new QueryFilter())->where('email', Operators::IN, ["d'arcy@example.com"]));
 
         $this->assertSame(['eve'], $this->remainingUsernames());
     }
