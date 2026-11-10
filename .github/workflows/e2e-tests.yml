@@ -13,6 +13,7 @@ concurrency:
 
 jobs:
   tunnel:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     outputs:
       configured: ${{ steps.secrets.outputs.configured }}
@@ -32,7 +33,7 @@ jobs:
 
   e2e-tests:
     needs: tunnel
-    if: needs.tunnel.outputs.configured == 'true' && (github.event_name == 'workflow_dispatch' || github.event.pull_request.draft == false)
+    if: needs.tunnel.outputs.configured == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 90
 
@@ -53,9 +54,6 @@ jobs:
           git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
           npm ci --no-audit --no-fund --no-progress
 
-      - name: Install the Playwright browser
-        run: npx playwright install chromium --with-deps
-
       - name: Set up the environment
         env:
           M2_COMPOSER_REPO_KEY: ${{ secrets.M2_COMPOSER_REPO_KEY }}
@@ -64,28 +62,14 @@ jobs:
           CLOUDFLARED_TUNNEL_URL: ${{ secrets.CLOUDFLARED_TUNNEL_URL }}
         run: |
           cp .env.sample .env
-          sed -i "s|^M2_COMPOSER_REPO_KEY=.*|M2_COMPOSER_REPO_KEY=$M2_COMPOSER_REPO_KEY|" .env
-          sed -i "s|^M2_COMPOSER_REPO_SECRET=.*|M2_COMPOSER_REPO_SECRET=$M2_COMPOSER_REPO_SECRET|" .env
-          sed -i "s|^CLOUDFLARED_TUNNEL_TOKEN=.*|CLOUDFLARED_TUNNEL_TOKEN=$CLOUDFLARED_TUNNEL_TOKEN|" .env
-          sed -i "s|^CLOUDFLARED_TUNNEL_URL=.*|CLOUDFLARED_TUNNEL_URL=$CLOUDFLARED_TUNNEL_URL|" .env
+          for key in M2_COMPOSER_REPO_KEY M2_COMPOSER_REPO_SECRET CLOUDFLARED_TUNNEL_TOKEN CLOUDFLARED_TUNNEL_URL; do
+            sed -i "s|^$key=.*|$key=${!key}|" .env
+          done
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u sequra --password-stdin || (echo "❌ Can't log in to the GitHub Container Registry" && exit 1)
           ./setup.sh --cloudflared
 
       - name: Run the E2E tests
-        run: |
-          set -a
-          source .env
-          set +a
-          npx playwright test
-
-      - name: Upload the test results
-        uses: actions/upload-artifact@v5
-        if: failure()
-        with:
-          name: e2e-test-results
-          path: test-results
-          retention-days: 7
-          if-no-files-found: ignore
+        run: ./bin/playwright
 
       - name: Collect diagnostics
         if: failure()
@@ -94,12 +78,14 @@ jobs:
           docker compose logs --no-color magento > diagnostics/magento.log 2>&1 || true
           docker compose exec -T magento sh -c 'tail -n 500 var/log/*.log' > diagnostics/magento-var-log.txt 2>&1 || true
 
-      - name: Upload diagnostics
+      - name: Upload the test results and diagnostics
         uses: actions/upload-artifact@v5
         if: failure()
         with:
-          name: e2e-diagnostics
-          path: diagnostics
+          name: e2e-failure
+          path: |
+            test-results
+            diagnostics
           retention-days: 7
           if-no-files-found: ignore
 
