@@ -6,6 +6,16 @@ on:
     branches:
       - master
     types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - '**'
+      - '!**.md'
+      - '!.claude/**'
+      - '!.githooks/**'
+      - '!.github/**'
+      - '.github/workflows/e2e-tests.yml'
+      - '!Test/**'
+      - '!phpstan.neon'
+      - '!.phpcs.xml.dist'
 
 concurrency:
   group: e2e-tests-${{ github.ref }}
@@ -61,12 +71,16 @@ jobs:
           CLOUDFLARED_TUNNEL_TOKEN: ${{ secrets.CLOUDFLARED_TUNNEL_TOKEN }}
           CLOUDFLARED_TUNNEL_URL: ${{ secrets.CLOUDFLARED_TUNNEL_URL }}
         run: |
+          playwright_image=$(grep -o 'mcr.microsoft.com/playwright:[^ ]*' bin/playwright)
+          docker pull --quiet "$playwright_image" > /dev/null &
+          playwright_pull=$!
           cp .env.sample .env
           for key in M2_COMPOSER_REPO_KEY M2_COMPOSER_REPO_SECRET CLOUDFLARED_TUNNEL_TOKEN CLOUDFLARED_TUNNEL_URL; do
             sed -i "s|^$key=.*|$key=${!key}|" .env
           done
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u sequra --password-stdin || (echo "❌ Can't log in to the GitHub Container Registry" && exit 1)
           ./setup.sh --cloudflared
+          wait "$playwright_pull"
 
       - name: Run the E2E tests
         run: ./bin/playwright
