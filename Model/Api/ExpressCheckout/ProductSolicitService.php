@@ -63,6 +63,8 @@ class ProductSolicitService implements ProductSolicitInterface
      */
     public function solicit(array $payload): string
     {
+        $this->solicitService->assertPaymentMethodActive();
+
         $productId = (isset($payload['product']) && is_scalar($payload['product'])) ? (string)$payload['product'] : '';
         if ($productId === '') {
             throw new WebapiException(__('Invalid Express Checkout request.'), 0, WebapiException::HTTP_BAD_REQUEST);
