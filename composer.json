@@ -16,11 +16,11 @@
             "email": "dev@sequra.es"
         }
     ],
-    "minimum-stability": "dev",
+    "minimum-stability": "stable",
     "prefer-stable": true,
     "require": {
         "php": ">=7.4 <8.6",
-        "sequra/integration-core": "dev-LIS-83",
+        "sequra/integration-core": "v6.1.0",
         "ext-json": "*"
     },
     "autoload": {
