@@ -101,7 +101,9 @@ class Index extends Template
         $currentLocale = strtolower($user ? substr($user->getInterfaceLocale(), 0, 2) : 'en');
         $langDir = $this->moduleDirReader->getModuleDir(Dir::MODULE_VIEW_DIR, 'Sequra_Core') . '/adminhtml/web/lang/';
         $default = $this->readJson($langDir . 'en.json');
-        $current = $this->readJson($langDir . $currentLocale . '.json') ?? [];
+        $current = $currentLocale === 'en'
+            ? ($default ?? [])
+            : ($this->readJson($langDir . $currentLocale . '.json') ?? []);
 
         return [
             'default' => str_replace("'", "\\'", (string) json_encode($default)),

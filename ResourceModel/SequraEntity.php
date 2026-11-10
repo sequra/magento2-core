@@ -78,27 +78,31 @@ class SequraEntity extends AbstractDb
             return [];
         }
 
-        $select = $connection->select()
-            ->from($this->getMainTable())
-            ->where('type = ?', $entity->getConfig()->getType());
-
-        if ($filter !== null) {
-            $fieldIndexMap = IndexHelper::mapFieldsToIndexes($entity);
-
-            if (!empty($filter->getConditions())) {
-                $select->where($this->buildWhereCondition($connection, $filter, $fieldIndexMap));
-            }
-
-            if ($filter->getLimit()) {
-                $select->limit($filter->getLimit(), $filter->getOffset());
-            }
-
-            $select = $this->buildOrderBy($select, $filter, $fieldIndexMap);
-        }
-
-        $result = $connection->fetchAll($select);
+        $result = $connection->fetchAll($this->buildSelect($connection, $filter, $entity, '*'));
 
         return !empty($result) ? $result : [];
+    }
+
+    /**
+     * Selects the IDs of the records of a specific type of entity that match the given Sequra query filter.
+     *
+     * @param QueryFilter|null $filter Sequra query filter.
+     * @param Entity $entity Sequra entity.
+     *
+     * @return array IDs of the selected records.
+     * @phpstan-return array<int, int|string>
+     *
+     * @throws QueryFilterInvalidParamException
+     * @throws \Magento\Framework\Exception\LocalizedException
+     */
+    protected function selectIds(?QueryFilter $filter, Entity $entity): array
+    {
+        $connection = $this->getConnection();
+        if (!$connection) {
+            return [];
+        }
+
+        return $connection->fetchCol($this->buildSelect($connection, $filter, $entity, ['id']));
     }
 
     /**
@@ -200,7 +204,7 @@ class SequraEntity extends AbstractDb
 
         $where = [$connection->quoteInto('type = ?', $entity->getConfig()->getType())];
         if ($filter !== null && $filter->getLimit()) {
-            $ids = array_column($this->selectEntities($filter, $entity), 'id');
+            $ids = $this->selectIds($filter, $entity);
             if (empty($ids)) {
                 return 0;
             }
@@ -257,6 +261,41 @@ class SequraEntity extends AbstractDb
         }
 
         return null;
+    }
+
+    /**
+     * Builds a SELECT over a specific type of entity with given Sequra query filter.
+     *
+     * @param AdapterInterface $connection Database connection.
+     * @param QueryFilter|null $filter Sequra query filter.
+     * @param Entity $entity Sequra entity.
+     * @param string|string[] $columns Columns to select.
+     *
+     * @return Select
+     *
+     * @throws QueryFilterInvalidParamException
+     */
+    private function buildSelect(AdapterInterface $connection, ?QueryFilter $filter, Entity $entity, $columns): Select
+    {
+        $select = $connection->select()
+            ->from($this->getMainTable(), $columns)
+            ->where('type = ?', $entity->getConfig()->getType());
+
+        if ($filter !== null) {
+            $fieldIndexMap = IndexHelper::mapFieldsToIndexes($entity);
+
+            if (!empty($filter->getConditions())) {
+                $select->where($this->buildWhereCondition($connection, $filter, $fieldIndexMap));
+            }
+
+            if ($filter->getLimit()) {
+                $select->limit($filter->getLimit(), $filter->getOffset());
+            }
+
+            $select = $this->buildOrderBy($select, $filter, $fieldIndexMap);
+        }
+
+        return $select;
     }
 
     /**

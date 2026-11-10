@@ -61,9 +61,10 @@ class TrackingSynchronizationTask extends Task
     // phpcs:ignore Magento2.Functions.StaticFunction.StaticFunction -- integration-core restores tasks statically.
     public static function fromArray(array $array): Serializable
     {
-        $orderId = $array['orderId'] ?? 0;
+        $task = new self(0);
+        $task->__unserialize($array);
 
-        return new self(is_numeric($orderId) ? (int)$orderId : 0);
+        return $task;
     }
 
     /**
