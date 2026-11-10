@@ -39,7 +39,10 @@ test.describe('Express checkout', () => {
     // initial about:blank, and logs this warning for each one.
     const refusedPosts = [];
     page.on('console', message => {
-      if (message.text().includes('The target origin provided')) refusedPosts.push(message.text());
+      if (message.text().includes('The target origin provided')) {
+        const { url, lineNumber, columnNumber } = message.location();
+        refusedPosts.push(`${message.text()} [from ${url}:${lineNumber}:${columnNumber}]`);
+      }
     });
 
     await productPage.addToCart({ slug: 'push-it-messenger-bag', quantity: 1 });
