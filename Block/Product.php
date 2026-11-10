@@ -15,6 +15,7 @@ use SeQura\Core\BusinessLogic\CheckoutAPI\PromotionalWidgets\PromotionalWidgetsC
 use SeQura\Core\BusinessLogic\CheckoutAPI\PromotionalWidgets\Requests\PromotionalWidgetsCheckoutRequest;
 use SeQura\Core\BusinessLogic\CheckoutAPI\PromotionalWidgets\Responses\GetWidgetsCheckoutResponse;
 use SeQura\Core\Infrastructure\Logger\Logger;
+use Sequra\Core\Model\Config\PaymentMethodStatus;
 
 /**
  * Class Product
@@ -31,12 +32,18 @@ class Product extends Template
     protected $http;
 
     /**
+     * @var PaymentMethodStatus
+     */
+    private PaymentMethodStatus $paymentMethodStatus;
+
+    /**
      * @param ScopeResolverInterface $scopeResolver
      * @param ResolverInterface $localeResolver
      * @param Context $context
      * @param Session $checkoutSession
      * @param Request $request
      * @param Http $http
+     * @param PaymentMethodStatus $paymentMethodStatus
      */
     public function __construct(
         ScopeResolverInterface $scopeResolver,
@@ -44,7 +51,8 @@ class Product extends Template
         Context $context,
         Session $checkoutSession,
         Request $request,
-        Http $http
+        Http $http,
+        PaymentMethodStatus $paymentMethodStatus
     ) {
         parent::__construct($context);
         $this->scopeResolver = $scopeResolver;
@@ -52,6 +60,7 @@ class Product extends Template
         $this->checkoutSession = $checkoutSession;
         $this->request = $request;
         $this->http = $http;
+        $this->paymentMethodStatus = $paymentMethodStatus;
     }
 
     /**
@@ -61,6 +70,10 @@ class Product extends Template
      */
     public function getAvailableWidgets(): array
     {
+        if (!$this->paymentMethodStatus->isActive()) {
+            return [];
+        }
+
         try {
             $productId = $this->http->getParam('id');
             if (!is_string($productId) && !is_int($productId)) {

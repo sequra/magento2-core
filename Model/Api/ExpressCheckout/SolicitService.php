@@ -85,6 +85,8 @@ class SolicitService implements SolicitInterface
      */
     public function solicit(string $cartId): string
     {
+        $this->solicitService->assertPaymentMethodActive();
+
         /** @var Quote $source */
         $source = $this->quoteRepository->getActive((int)$cartId);
 

@@ -16,6 +16,7 @@ use SeQura\Core\BusinessLogic\CheckoutAPI\PromotionalWidgets\Requests\Promotiona
 use SeQura\Core\BusinessLogic\CheckoutAPI\PromotionalWidgets\Responses\GetWidgetsCheckoutResponse;
 use SeQura\Core\Infrastructure\Logger\Logger;
 use Sequra\Core\Block\WidgetTrait;
+use Sequra\Core\Model\Config\PaymentMethodStatus;
 use Magento\Framework\Locale\ResolverInterface;
 
 /**
@@ -39,12 +40,18 @@ class MiniWidgets
     private $htmlEscaper;
 
     /**
+     * @var PaymentMethodStatus
+     */
+    private PaymentMethodStatus $paymentMethodStatus;
+
+    /**
      * @param StoreManagerInterface $storeManager
      * @param ScopeResolverInterface $scopeResolver
      * @param ResolverInterface $localeResolver
      * @param Session $checkoutSession
      * @param Request $request
      * @param Escaper $htmlEscaper
+     * @param PaymentMethodStatus $paymentMethodStatus
      */
     public function __construct(
         StoreManagerInterface  $storeManager,
@@ -52,7 +59,8 @@ class MiniWidgets
         ResolverInterface      $localeResolver,
         Session                $checkoutSession,
         Request                $request,
-        Escaper                $htmlEscaper
+        Escaper                $htmlEscaper,
+        PaymentMethodStatus    $paymentMethodStatus
     ) {
         $this->storeManager = $storeManager;
         $this->scopeResolver = $scopeResolver;
@@ -60,6 +68,7 @@ class MiniWidgets
         $this->checkoutSession = $checkoutSession;
         $this->request = $request;
         $this->htmlEscaper = $htmlEscaper;
+        $this->paymentMethodStatus = $paymentMethodStatus;
     }
 
     /**
@@ -76,6 +85,10 @@ class MiniWidgets
     public function afterToHtml(Amount $amount, string $result): string
     {
         if ($amount->getData('zone') !== 'item_list' || $amount->getData('price_type') !== 'finalPrice') {
+            return $result;
+        }
+
+        if (!$this->paymentMethodStatus->isActive()) {
             return $result;
         }
 

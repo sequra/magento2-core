@@ -27,6 +27,7 @@ use SeQura\Core\BusinessLogic\CheckoutAPI\PromotionalWidgets\Requests\Promotiona
 use SeQura\Core\BusinessLogic\CheckoutAPI\PromotionalWidgets\Responses\PromotionalWidgetsCheckoutResponse;
 use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
 use SeQura\Core\Infrastructure\Logger\Logger;
+use Sequra\Core\Model\Config\PaymentMethodStatus;
 
 class WidgetInitializer extends Template
 {
@@ -71,6 +72,11 @@ class WidgetInitializer extends Template
     private StoreManagerInterface $storeManager;
 
     /**
+     * @var PaymentMethodStatus $paymentMethodStatus
+     */
+    private PaymentMethodStatus $paymentMethodStatus;
+
+    /**
      * Constructor
      *
      * @param Context $context
@@ -82,6 +88,7 @@ class WidgetInitializer extends Template
      * @param Data $catalogHelper
      * @param ScopeConfigInterface $scopeConfig
      * @param StoreManagerInterface $storeManager
+     * @param PaymentMethodStatus $paymentMethodStatus
      * @param mixed[] $data
      */
     public function __construct(
@@ -94,6 +101,7 @@ class WidgetInitializer extends Template
         Data $catalogHelper,
         ScopeConfigInterface $scopeConfig,
         StoreManagerInterface $storeManager,
+        PaymentMethodStatus $paymentMethodStatus,
         array $data = []
     ) {
         parent::__construct($context, $data);
@@ -105,21 +113,26 @@ class WidgetInitializer extends Template
         $this->catalogHelper = $catalogHelper;
         $this->scopeConfig = $scopeConfig;
         $this->storeManager = $storeManager;
+        $this->paymentMethodStatus = $paymentMethodStatus;
     }
 
     /**
      * Returns the seQura checkout-library bootstrap config used to load sequra-checkout.min.js.
      *
      * Includes the script URL, merchant identity, locale formatting and supported products.
-     * Feature-neutral: it resolves whenever seQura has credentials for the shopper's country,
-     * independent of whether promotional widgets are enabled. This is what the storefront uses
-     * to inject the library, so every seQura frontend feature (widgets, educational popup,
-     * Express Checkout) can rely on it being loaded.
+     * Feature-neutral: it resolves whenever the payment method is active and seQura has credentials
+     * for the shopper's country, independent of whether promotional widgets are enabled. This is what
+     * the storefront uses to inject the library, so every seQura frontend feature (widgets,
+     * educational popup, Express Checkout) can rely on it being loaded.
      *
      * @return mixed[]
      */
     public function getInitializationData(): array
     {
+        if (!$this->paymentMethodStatus->isActive()) {
+            return [];
+        }
+
         try {
             $quote = $this->session->getQuote();
             $shippingCountry = $quote->getShippingAddress()->getCountryId() ?? '';
@@ -150,6 +163,10 @@ class WidgetInitializer extends Template
      */
     public function getWidgetInitializeData(): array
     {
+        if (!$this->paymentMethodStatus->isActive()) {
+            return [];
+        }
+
         try {
             $quote = $this->session->getQuote();
             $shippingCountry = $quote->getShippingAddress()->getCountryId() ?? '';
@@ -182,6 +199,10 @@ class WidgetInitializer extends Template
      */
     public function getWidgetConfig(): string
     {
+        if (!$this->paymentMethodStatus->isActive()) {
+            return json_encode([], JSON_THROW_ON_ERROR);
+        }
+
         $actionName = $this->request->getFullActionName();
 
         if (!in_array(
