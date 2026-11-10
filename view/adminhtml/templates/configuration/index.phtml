@@ -16,14 +16,9 @@
 <script>
     window.SequraFE = window.SequraFE || {};
     SequraFE.regex = <?= $block->getRegexJson(); ?>;
-
-    SequraFE.flags = {
-        configurableSelectorsForMiniWidgets: false,
-        isShowCheckoutAsHostedPageFieldVisible: true
-    };
 </script>
 
-<script src="<?= $block->getViewFileUrl('Sequra_Core::js/ValidationService.js'); ?>"></script>
+<script src="<?= $block->getViewFileUrl('Sequra_Core::js/sequra-core/ValidationService.js'); ?>"></script>
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -32,41 +27,19 @@
             current: <?= $block->getTranslations()['current']; ?>
         };
 
-        SequraFE.adminLanguage = "<?= $block->getAdminLanguage(); ?>";
-
         SequraFE.utilities.showLoader();
 
-        const onboardingPageConfig = {
-            validateConnectionDataUrl: "<?= $block->getControllerUrl('Onboarding', '{storeId}', 'validateConnectionData'); ?>",
-            getConnectionDataUrl: "<?= $block->getControllerUrl('Onboarding', '{storeId}', 'getConnectionData'); ?>",
-            connectUrl: "<?= $block->getControllerUrl('Onboarding', '{storeId}', 'connect'); ?>",
-            getSellingCountriesUrl: "<?= $block->getControllerUrl('CountrySettings', '{storeId}', 'getSellingCountries'); ?>",
-            getCountrySettingsUrl: "<?= $block->getControllerUrl('CountrySettings', '{storeId}', 'getCountrySettings'); ?>",
-            saveCountrySettingsUrl: "<?= $block->getControllerUrl('CountrySettings', '{storeId}', 'setCountrySettings'); ?>",
-            getWidgetSettingsUrl: "<?= $block->getControllerUrl('WidgetSettings', '{storeId}', 'getWidgetSettings'); ?>",
-            saveWidgetSettingsUrl: "<?= $block->getControllerUrl('WidgetSettings', '{storeId}', 'setWidgetSettings'); ?>",
-            getPaymentMethodsUrl: "<?= $block->getControllerUrl('PaymentMethods', '{storeId}', 'getPaymentMethods', '{merchantId}'); ?>",
-            getDeploymentsUrl: "<?= $block->getControllerUrl('DeploymentsSettings', '{storeId}', 'getDeployments'); ?>",
-            getNotConnectedDeploymentsUrl: "<?= $block->getControllerUrl('DeploymentsSettings', '{storeId}', 'getNotConnectedDeployments'); ?>",
-            getAllAvailablePaymentMethodsUrl: "<?= $block->getControllerUrl('PaymentMethods', '{storeId}', 'getAllAvailablePaymentMethods'); ?>"
-        }
-
         const pageConfiguration = {
-            onboarding: onboardingPageConfig,
+            onboarding: {
+                getConnectionDataUrl: "<?= $block->getControllerUrl('Onboarding', '{storeId}', 'getConnectionData'); ?>",
+                connectUrl: "<?= $block->getControllerUrl('Onboarding', '{storeId}', 'connect'); ?>",
+                getDeploymentsUrl: "<?= $block->getControllerUrl('DeploymentsSettings', '{storeId}', 'getDeployments'); ?>"
+            },
             settings: {
-                ...onboardingPageConfig,
-                getShopCategoriesUrl: "<?= $block->getControllerUrl('GeneralSettings', '{storeId}', 'getShopCategories'); ?>",
-                getGeneralSettingsUrl: "<?= $block->getControllerUrl('GeneralSettings', '{storeId}', 'getGeneralSettings'); ?>",
-                saveGeneralSettingsUrl: "<?= $block->getControllerUrl('GeneralSettings', '{storeId}', 'setGeneralSettings'); ?>",
+                connectUrl: "<?= $block->getControllerUrl('Onboarding', '{storeId}', 'connect'); ?>",
+                getNotConnectedDeploymentsUrl: "<?= $block->getControllerUrl('DeploymentsSettings', '{storeId}', 'getNotConnectedDeployments'); ?>",
                 disconnectUrl: "<?= $block->getControllerUrl('Disconnect', '{storeId}', 'disconnect'); ?>",
                 reRegisterUrl: "<?= $block->getControllerUrl('Connection', '{storeId}', 'reRegisterWebhooks'); ?>"
-            },
-            payment: {
-                getPaymentMethodsUrl: "<?= $block->getControllerUrl('PaymentMethods', '{storeId}', 'getPaymentMethods', '{merchantId}'); ?>",
-                getSellingCountriesUrl: "<?= $block->getControllerUrl('CountrySettings', '{storeId}', 'getSellingCountries'); ?>",
-                getCountrySettingsUrl: "<?= $block->getControllerUrl('CountrySettings', '{storeId}', 'getCountrySettings'); ?>",
-                getConnectionDataUrl: "<?= $block->getControllerUrl('Onboarding', '{storeId}', 'getConnectionData'); ?>",
-                validateConnectionDataUrl: "<?= $block->getControllerUrl('Onboarding', '{storeId}', 'validateConnectionData'); ?>"
             }
         };
 
@@ -75,17 +48,13 @@
             currentStoreUrl: "<?= $block->getControllerUrl('Stores', '{storeId}', 'getCurrentStore'); ?>",
             stateUrl: "<?= $block->getControllerUrl('Integration', '{storeId}', 'getState'); ?>",
             versionUrl: "<?= $block->getControllerUrl('Integration', '{storeId}', 'getVersion'); ?>",
-            shopNameUrl: "<?= $block->getControllerUrl('Integration', '{storeId}', 'getShopName'); ?>",
             pageConfiguration: pageConfiguration
         });
 
         SequraFE.pages = {
-            onboarding: ['deployments','connect', 'countries', 'widgets'],
-            settings: ['general','connection','widget'],
-            payment: ['methods']
-        }
-
-        SequraFE.isPromotional = !SequraFE.pages.payment || SequraFE.pages.payment.length === 0;
+            onboarding: ['deployments', 'connect'],
+            settings: ['connection']
+        };
 
         SequraFE.state.display();
         SequraFE.utilities.hideLoader();

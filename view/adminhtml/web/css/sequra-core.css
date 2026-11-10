@@ -1,9 +1,5 @@
 @charset "UTF-8";
-/* Keep ';' URL-encoded as %3B: some CSS aggregators (e.g. Magento's
-   CssResolver::aggregateImportDirectives non-greedy `@import\s.+?;` regex)
-   terminate the @import at the first literal ';' inside the URL,
-   truncating it mid-string and breaking the merged stylesheet. */
-@import url("https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900%3B1,14..32,100..900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap");
 #sequra-page {
   margin: 0;
   padding: 0;
@@ -313,35 +309,6 @@
   max-width: 660px;
   box-shadow: none;
 }
-#sequra-page #sq-page-wrapper .sq-page-content-wrapper.sqv--payments .sq-content-inner {
-  padding: 44px 36px 36px;
-}
-#sequra-page #sq-page-wrapper .sq-page-content-wrapper.sqv--payments .sq-content-inner .sq-table-heading {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  column-gap: 36px;
-}
-@media (max-width: 1023.98px) {
-  #sequra-page #sq-page-wrapper .sq-page-content-wrapper.sqv--payments .sq-content-inner .sq-table-heading {
-    flex-direction: column;
-    align-items: flex-start;
-    row-gap: 8px;
-  }
-}
-#sequra-page #sq-page-wrapper .sq-page-content-wrapper.sqv--payments .sq-content-inner .sq-table-heading .sqp-page-heading {
-  max-width: 800px;
-  width: 100%;
-}
-#sequra-page #sq-page-wrapper .sq-page-content-wrapper.sqv--payments .sq-content-inner .sq-table-heading .sqm--table-dropdown {
-  max-width: 344px;
-}
-#sequra-page #sq-page-wrapper .sq-page-content-wrapper.sqv--payments .sq-content-inner .sq-table-heading .sqm--table-dropdown .sqp-field-title {
-  color: #00C2A3;
-}
-#sequra-page #sq-page-wrapper .sq-page-content-wrapper.sqv--payments .sq-content-inner .sq-table-heading .sqm--table-dropdown .sqp-field-subtitle {
-  color: #b1aeba;
-}
 #sequra-page #sq-page-wrapper .sq-page-content-wrapper.sqv--settings .sq-content-inner {
   max-width: 835px;
   width: 100%;
@@ -368,10 +335,6 @@
 
 .wp-admin #sequra-page #sq-page-wrapper {
   background: transparent;
-}
-
-#sequra-page .sqv--connect .sq-info-button {
-  color: #00C2A3;
 }
 
 #sequra-page .sq-link-button {
@@ -581,6 +544,20 @@
   display: flex;
   align-items: center;
   column-gap: 16px;
+}
+#sequra-page .sq-page-header .sqp-header-bottom .sqp-header-merchant .sqp-portal-link {
+  display: inline-flex;
+  align-items: center;
+  column-gap: 6px;
+  font-size: 14px;
+  color: #00C2A3;
+  text-decoration: underline;
+}
+#sequra-page .sq-page-header .sqp-header-bottom .sqp-header-merchant .sqp-portal-link:hover, #sequra-page .sq-page-header .sqp-header-bottom .sqp-header-merchant .sqp-portal-link:focus {
+  color: #119C6E;
+}
+#sequra-page .sq-page-header .sqp-header-bottom .sqp-header-merchant .sqp-portal-link .sqp-external-icon {
+  flex: none;
 }
 #sequra-page .sq-page-header .sqp-header-bottom .sqp-header-merchant .sqp-merchant {
   display: flex;
@@ -1058,10 +1035,6 @@
   color: #69778c;
 }
 
-#sequra-page .sq-text-area {
-  resize: vertical;
-}
-
 #sequra-page .sq-password {
   position: relative;
   display: flex;
@@ -1451,156 +1424,6 @@
   margin-left: auto;
 }
 
-#sequra-page .sq-table {
-  width: 100%;
-  display: grid;
-}
-#sequra-page .sq-table input {
-  margin: 0;
-}
-#sequra-page .sq-table .sq-table__row,
-#sequra-page .sq-table .sq-table__header {
-  display: flex;
-  gap: 14px;
-  align-items: center;
-  width: 100%;
-}
-#sequra-page .sq-table .sq-table__header {
-  min-height: 2.5rem;
-  box-sizing: border-box;
-  border: none;
-  position: relative;
-  padding: 0 100px 0 0;
-}
-#sequra-page .sq-table .sq-table__header .sq-table__header-item {
-  margin-bottom: 14px;
-}
-#sequra-page .sq-table .sq-table__header .sq-button {
-  position: absolute;
-  right: 0;
-  top: 0;
-}
-#sequra-page .sq-table .sq-table__footer {
-  width: 100%;
-  padding: 14px 0 0 0;
-  box-sizing: border-box;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 14px;
-}
-#sequra-page .sq-table .sq-table__row {
-  border-radius: 6px;
-  border: 1px solid #dce0e5;
-  padding: 14px;
-}
-#sequra-page .sq-table .sq-table__row summary {
-  list-style: none;
-  position: relative;
-}
-#sequra-page .sq-table .sq-table__row summary::after {
-  font-family: "sq-icons";
-  content: "\e907";
-  line-height: 1;
-  font-weight: 500;
-  font-size: 20px;
-  position: absolute;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%) rotate(90deg);
-  transition: transform 0.2s;
-  transform-origin: center;
-  cursor: pointer;
-}
-#sequra-page .sq-table .sq-table__row[open] summary::after {
-  transform: translateY(-50%) rotate(-90deg);
-}
-#sequra-page .sq-table .sq-table__row summary + .sq-table__row-content {
-  margin-top: 14px;
-}
-#sequra-page .sq-table .sq-table__row .sq-remove {
-  min-height: 30px;
-  padding: 6px 16px;
-  align-self: flex-end;
-  box-sizing: content-box;
-  color: #c00e0e;
-  background-color: #fff;
-  border-color: #fff;
-  margin-left: auto;
-  float: right;
-}
-#sequra-page .sq-table .sq-table__row .sq-remove:hover, #sequra-page .sq-table .sq-table__row .sq-remove:focus {
-  color: #fff;
-  background-color: #c00e0e;
-  border-color: #c00e0e;
-}
-#sequra-page .sq-table .sq-table__row .sq-table__row-content {
-  display: flex;
-  flex-direction: column;
-  flex-grow: 1;
-  justify-content: flex-start;
-  gap: 14px;
-  padding: 14px 0;
-}
-#sequra-page .sq-table .sq-table__row .sq-table__row-field-wrapper {
-  display: grid;
-  gap: 4px;
-  margin-bottom: 0;
-}
-#sequra-page .sq-table .sq-table__row .sq-table__row-field-wrapper--grow {
-  flex-grow: 1;
-}
-#sequra-page .sq-table .sq-table__row .sq-table__row-field-wrapper--space-between > .sqp-field-title {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 13px;
-}
-#sequra-page .sq-table .sq-table__row .sq-table__row-field-label {
-  font-size: 13px;
-  font-weight: 600;
-}
-#sequra-page .sq-table .sq-table__row select {
-  font-size: 14px;
-  min-height: 30px;
-  max-width: 450px;
-  line-height: 2;
-  -webkit-appearance: none;
-  background: #fff url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2220%22%20height%3D%2220%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M5%206l5%205%205-5%202%201-7%207-7-7%202-1z%22%20fill%3D%22%23555%22%2F%3E%3C%2Fsvg%3E") no-repeat right 5px top 55%;
-  background-size: 16px 16px;
-  cursor: pointer;
-  vertical-align: middle;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-#sequra-page .sq-table .sq-table__row .sq-table__row-field {
-  padding: 6px 16px;
-  color: #000;
-  border: 1px solid #dce0e5;
-  border-radius: 6px;
-  margin-left: 0;
-  margin-right: 0;
-  width: 90%;
-}
-#sequra-page .sq-table .sq-table__body {
-  display: grid;
-  width: 100%;
-  box-sizing: border-box;
-}
-#sequra-page .sq-table .sq-table__body .sq-table__row:not(:last-child) {
-  border-bottom-width: 0;
-  border-bottom-left-radius: 0;
-  border-bottom-right-radius: 0;
-}
-#sequra-page .sq-table .sq-table__body .sq-table__row:not(:last-child) + .sq-table__row {
-  border-top-left-radius: 0;
-  border-top-right-radius: 0;
-}
-#sequra-page .sq-table details.sq-table__row {
-  display: grid;
-  gap: 0;
-}
-
 #sequra-page .sq-alert {
   width: 100%;
   display: flex;
@@ -1871,30 +1694,9 @@
   color: #394962;
   transition: color 0.2s;
 }
-#sequra-page .sq-settings-sidebar .sq-sidebar-item .sq-sidebar-link.sqm--general:before {
-  font-family: "sq-icons";
-  content: "\e903";
-  line-height: 1;
-  font-weight: 500;
-  font-size: 20px;
-}
 #sequra-page .sq-settings-sidebar .sq-sidebar-item .sq-sidebar-link.sqm--connection:before {
   font-family: "sq-icons";
   content: "\e902";
-  line-height: 1;
-  font-weight: 500;
-  font-size: 20px;
-}
-#sequra-page .sq-settings-sidebar .sq-sidebar-item .sq-sidebar-link.sqm--order:before {
-  font-family: "sq-icons";
-  content: "\e900";
-  line-height: 1;
-  font-weight: 500;
-  font-size: 20px;
-}
-#sequra-page .sq-settings-sidebar .sq-sidebar-item .sq-sidebar-link.sqm--widget:before {
-  font-family: "sq-icons";
-  content: "\e901";
   line-height: 1;
   font-weight: 500;
   font-size: 20px;
@@ -1903,225 +1705,6 @@
 #sequra-page * + .sqp-flash-message-wrapper,
 #sequra-page .sqp-flash-message-wrapper + * {
   margin-top: 20px;
-}
-
-tr:has(.sqm--log):hover {
-  background: #f4f4f4;
-}
-
-#sequra-page .sqm--log {
-  font-family: monospace;
-  font-size: 12px;
-}
-#sequra-page .sqm--log-info {
-  color: #2196f3;
-}
-#sequra-page .sqm--log-warning {
-  color: #ff9800;
-}
-#sequra-page .sqm--log-error {
-  color: #f44336;
-}
-#sequra-page .sqm--log-debug {
-  color: #000;
-}
-#sequra-page .sqm--log-details {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-left: 6px;
-  background: #fff;
-  border-radius: 20px;
-  width: 20px;
-  height: 20px;
-  padding: 0;
-  border-color: transparent;
-}
-#sequra-page .sqm--log-details::before {
-  font-family: "sq-icons";
-  content: "\e91b";
-  line-height: 1;
-  font-weight: 500;
-  font-size: 14px;
-}
-#sequra-page .sqm--log-details > span {
-  display: none;
-}
-#sequra-page .sqm--log-details.sqm--log-details-open {
-  background: #000;
-}
-#sequra-page .sqm--log-details.sqm--log-details-open::before {
-  color: #fff;
-}
-
-#sequra-page .sq-datatable__top {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 2rem;
-  font-size: 15px;
-  align-items: center;
-}
-#sequra-page .sq-datatable__bottom {
-  margin-top: 2rem;
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  font-size: 15px;
-  align-items: center;
-}
-#sequra-page .sq-datatable__info {
-  color: #686565;
-}
-#sequra-page .sq-datatable__pagination {
-  justify-self: flex-end;
-}
-#sequra-page .sq-datatable__pagination-list {
-  display: flex;
-  margin-left: auto;
-  margin-right: 0;
-}
-#sequra-page .sq-datatable__pagination-list .datatable-pagination-list-item .datatable-pagination-list-item-link {
-  width: 2rem;
-  height: 2rem;
-  border-radius: 2rem;
-  color: #000;
-  transition: all 0.15s;
-  margin: 0 0.25rem;
-  cursor: pointer;
-}
-#sequra-page .sq-datatable__pagination-list .datatable-pagination-list-item.sq-datatable__active .datatable-pagination-list-item-link, #sequra-page .sq-datatable__pagination-list .datatable-pagination-list-item:hover:not(.datatable-disabled) .datatable-pagination-list-item-link {
-  background-color: #000;
-  color: #fff;
-}
-#sequra-page .sq-datatable__pagination-list .datatable-pagination-list-item.datatable-disabled .datatable-pagination-list-item-link {
-  color: #686565;
-  cursor: not-allowed;
-}
-#sequra-page .sq-datatable__search {
-  justify-self: flex-end;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-#sequra-page .sq-datatable__search .sq-field-wrapper {
-  margin-bottom: 0 !important;
-}
-#sequra-page .sq-datatable__search .sq-button {
-  padding: 8px 24px !important;
-}
-#sequra-page .sq-datatable__selector {
-  padding: 8px 16px !important;
-  color: #000 !important;
-  border: 1px solid #dce0e5 !important;
-  border-radius: 6px !important;
-  min-width: 80px !important;
-  outline-color: transparent !important;
-}
-#sequra-page .sq-datatable__selector:focus, #sequra-page .sq-datatable__selector:hover, #sequra-page .sq-datatable__selector:active {
-  border-color: #6fcf97 !important;
-  box-shadow: none !important;
-}
-#sequra-page .sq-datatable__input {
-  padding: 8px 16px !important;
-  color: #000 !important;
-  border: 1px solid #dce0e5 !important;
-  border-radius: 6px !important;
-  min-width: 300px !important;
-  outline-color: transparent !important;
-}
-#sequra-page .sq-datatable__input:focus, #sequra-page .sq-datatable__input:hover, #sequra-page .sq-datatable__input:active {
-  border-color: #6fcf97 !important;
-  box-shadow: none !important;
-}
-
-#sequra-page .sq-table-container {
-  overflow-x: auto;
-  width: 100%;
-  margin: 0;
-  padding: 24px;
-  border: 1px solid #dce0e5;
-  border-radius: 6px;
-  font-size: 13px;
-}
-@media (max-width: 1023.98px) {
-  #sequra-page .sq-table-container {
-    padding: 0;
-  }
-}
-#sequra-page .sq-table-container table {
-  min-width: 780px;
-}
-#sequra-page .sq-table-container table .sqm--text-left {
-  text-align: left;
-}
-#sequra-page .sq-table-container table tr .sq-button {
-  font-size: inherit;
-  display: inline-flex;
-  align-items: center;
-  column-gap: 8px;
-}
-#sequra-page .sq-table-container .sqp-payment-method-header-cell {
-  width: 50%;
-}
-#sequra-page .sq-table-container .sqp-payment-method-cell {
-  display: flex;
-  align-items: center;
-  column-gap: 8px;
-}
-#sequra-page .sq-table-container .sqp-payment-method-cell svg {
-  flex-shrink: 0;
-}
-#sequra-page .sq-table-container .sqp-payment-method-cell .sqp-payment-method-image {
-  width: 52px;
-  height: 52px;
-}
-#sequra-page .sq-table-container .sqp-payment-method-cell .sqp-payment-method-title {
-  font-weight: 700;
-  margin: 0 0 3px;
-  font-size: 13px;
-}
-#sequra-page .sq-table-container .sqp-payment-method-cell .sqp-payment-method-description {
-  font-size: 13px;
-  margin: 0;
-}
-#sequra-page .sq-table-container .sqp-details {
-  background-color: #f3f6f9;
-}
-#sequra-page .sq-table-container .sqp-details .sq-link-button {
-  color: #0075ff;
-  text-decoration: none;
-  display: flex;
-}
-#sequra-page .sq-table-container .sqp-details .sq-link-button::after {
-  font-family: "sq-icons";
-  content: "\e916";
-  line-height: 1;
-  font-weight: 500;
-  font-size: 6px;
-  padding: 5px 0 0 4px;
-}
-#sequra-page .sq-table-container .sqp-details-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  padding: 20px;
-}
-#sequra-page .sq-table-container .sqp-details-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 30px;
-}
-#sequra-page .sq-table-container .sqp-details-info {
-  display: flex;
-  gap: 5px;
-}
-#sequra-page .sq-table-container .sqp-details-message {
-  white-space: normal;
-  text-align: justify;
-}
-#sequra-page .sq-table-container .sqp-details-label {
-  font-weight: 700;
 }
 
 #sequra-page .sq-modal {
@@ -2208,4 +1791,7 @@ tr:has(.sqm--log):hover {
   padding-left: 0 !important;
   padding-right: 0 !important;
   padding-bottom: 0 !important;
+}
+#sequra-page .sq-modal .sqp-modal-content .sqv--deployments .sq-field-wrapper .items {
+  max-width: none;
 }

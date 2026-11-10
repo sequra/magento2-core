@@ -16,6 +16,7 @@
 "sequra.orderRefSent", "Order ref sent to SeQura: %1"
 "sequra.error.serverError", "An error occurred on the server. Please try to place the order again."
 "sequra.error.somethingWentWrong", "Something went wrong. Please try to place the order again."
+"sequra.error.notAvailable", "seQura is not available for this cart. Please choose another payment method."
 "sequra.error.cannotCancel", "Order with payment review status cannot be cancelled."
 "sequra.error.cannotRefund", "Order with payment review status cannot be refunded."
 "sequra.error.cannotUpdate", "Order with payment review status cannot be updated."

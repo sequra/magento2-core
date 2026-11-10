@@ -23,6 +23,29 @@ test.describe('Connection settings', () => {
     await connectionSettingsPage.disconnectAll(); // Disconnect all credentials.
   });
 
+  test('Re-register webhooks', async ({ helper, connectionSettingsPage }) => {
+    const { dummy_config, clear_config } = helper.webhooks;
+    await helper.executeWebhook({ webhook: clear_config });
+    await helper.executeWebhook({ webhook: dummy_config });
+
+    await connectionSettingsPage.goto();
+    await connectionSettingsPage.expectLoadingShowAndHide();
+    await connectionSettingsPage.reRegisterWebhooks();
+    await connectionSettingsPage.expectSuccessMessageToBeVisible();
+  });
+
+  for (const removedPage of ['settings-general', 'settings-widget', 'payment-methods', 'onboarding-countries']) {
+    test(`Opens the connection settings for the removed "${removedPage}" page`, async ({ helper, backOffice, connectionSettingsPage, sequraAdmin }) => {
+      const { dummy_config, clear_config } = helper.webhooks;
+      await helper.executeWebhook({ webhook: clear_config });
+      await helper.executeWebhook({ webhook: dummy_config });
+
+      await backOffice.gotoSeQuraSettings({ page: removedPage });
+      await connectionSettingsPage.expectLoadingShowAndHide();
+      await sequraAdmin.expectConnectionSettingsPage();
+    });
+  }
+
   test('Change', async ({ helper, page, connectionSettingsPage }) => {
     // Setup
     const { dummy_config, clear_config } = helper.webhooks;

@@ -53,3 +53,7 @@ parameters:
         - '#Call to method create\(\) on an unknown class Sequra\\Core\\Services\\BusinessLogic\\Order\\OrderCreationFactory#'
         - '#Parameter \$orderCreationFactory of method Sequra\\Core\\Services\\Bootstrap::__construct\(\) has invalid type Sequra\\Core\\Services\\BusinessLogic\\Order\\OrderCreationFactory\.#'
         - '#Property Sequra\\Core\\Services\\Bootstrap::\$orderCreationFactory has unknown class Sequra\\Core\\Services\\BusinessLogic\\Order\\OrderCreationFactory as its type.#'
+        - '#(Class|type) Sequra\\Core\\Model\\Api\\TrackingSynchronizerFactory (not found|unknown|invalid)#'
+        - '#Call to method create\(\) on an unknown class Sequra\\Core\\Model\\Api\\TrackingSynchronizerFactory#'
+        - '#Parameter \$trackingSynchronizerFactory of method Sequra\\Core\\Services\\Bootstrap::__construct\(\) has invalid type Sequra\\Core\\Model\\Api\\TrackingSynchronizerFactory\.#'
+        - '#Property Sequra\\Core\\Services\\Bootstrap::\$trackingSynchronizerFactory has unknown class Sequra\\Core\\Model\\Api\\TrackingSynchronizerFactory as its type.#'
