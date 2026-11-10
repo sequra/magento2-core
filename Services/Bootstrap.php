@@ -54,6 +54,8 @@ use SeQura\Core\Infrastructure\Serializer\Serializer;
 use SeQura\Core\Infrastructure\ServiceRegister;
 use SeQura\Core\Infrastructure\TaskExecution\Process;
 use SeQura\Core\Infrastructure\TaskExecution\QueueItem;
+use SeQura\Core\Infrastructure\TaskExecution\TaskEvents\TickEvent;
+use SeQura\Core\Infrastructure\Utility\Events\EventBus;
 use SeQura\Core\Infrastructure\Utility\TimeProvider;
 use Sequra\Core\Repository\BaseRepository;
 use Sequra\Core\Repository\QueueItemRepository;
@@ -68,6 +70,7 @@ use Sequra\Core\Services\BusinessLogic\Order\MerchantDataProvider;
 use Sequra\Core\Services\BusinessLogic\OrderReportService;
 use Sequra\Core\Services\BusinessLogic\OrderServiceFactory;
 use Sequra\Core\Services\BusinessLogic\Order\OrderCreationFactory;
+use Sequra\Core\Services\BusinessLogic\OrderCleanup\OrderCleanupScheduler;
 use Sequra\Core\Model\Api\TrackingSynchronizer;
 use Sequra\Core\Model\Api\TrackingSynchronizerFactory;
 use Sequra\Core\Services\BusinessLogic\ProductService;
@@ -167,6 +170,8 @@ class Bootstrap extends BootstrapComponent
 
     /** @var TrackingSynchronizerFactory */
     private $trackingSynchronizerFactory;
+    /** @var OrderCleanupScheduler */
+    private $orderCleanupScheduler;
     /**
      * @var LogService
      */
@@ -200,6 +205,7 @@ class Bootstrap extends BootstrapComponent
      * @param StoreInfoService $storeInfoService
      * @param OrderCreationFactory $orderCreationFactory
      * @param TrackingSynchronizerFactory $trackingSynchronizerFactory
+     * @param OrderCleanupScheduler $orderCleanupScheduler
      */
     public function __construct(
         DefaultLoggerAdapter $defaultLoggerAdapter,
@@ -222,7 +228,8 @@ class Bootstrap extends BootstrapComponent
         LogService $logService,
         StoreInfoService $storeInfoService,
         OrderCreationFactory $orderCreationFactory,
-        TrackingSynchronizerFactory $trackingSynchronizerFactory
+        TrackingSynchronizerFactory $trackingSynchronizerFactory,
+        OrderCleanupScheduler $orderCleanupScheduler
     ) {
         $this->defaultLoggerAdapter = $defaultLoggerAdapter;
         $this->shopLoggerAdapter = $shopLoggerAdapter;
@@ -245,6 +252,7 @@ class Bootstrap extends BootstrapComponent
         $this->storeInfoService = $storeInfoService;
         $this->orderCreationFactory = $orderCreationFactory;
         $this->trackingSynchronizerFactory = $trackingSynchronizerFactory;
+        $this->orderCleanupScheduler = $orderCleanupScheduler;
 
         static::$instance = $this;
     }
@@ -492,6 +500,23 @@ class Bootstrap extends BootstrapComponent
             OrderStatusSettingsRepositoryInterface::class,
             static function () {
                 return new OrderStatusMappingRepositoryOverride();
+            }
+        );
+    }
+
+    /**
+     * @inheritDoc
+     */
+    protected static function initEvents(): void
+    {
+        parent::initEvents();
+
+        /** @var EventBus $eventBus */
+        $eventBus = ServiceRegister::getService(EventBus::CLASS_NAME);
+        $eventBus->when(
+            TickEvent::class,
+            static function () {
+                static::$instance->orderCleanupScheduler->ensureScheduled();
             }
         );
     }
