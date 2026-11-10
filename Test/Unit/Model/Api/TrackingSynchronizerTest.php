@@ -21,6 +21,7 @@ use SeQura\Core\BusinessLogic\AdminAPI\OrderManagement\Requests\OrderUpdateReque
 use SeQura\Core\BusinessLogic\Domain\Order\Models\OrderRequest\Tracking\TrackingPostal;
 use SeQura\Core\BusinessLogic\Domain\Order\Models\OrderUpdateData;
 use SeQura\Core\BusinessLogic\Domain\Order\Models\SeQuraOrder;
+use SeQura\Core\BusinessLogic\Domain\Order\RepositoryContracts\SeQuraOrderRepositoryInterface;
 use SeQura\Core\Infrastructure\Configuration\Configuration;
 use SeQura\Core\Infrastructure\Logger\Interfaces\ShopLoggerAdapter;
 use SeQura\Core\Infrastructure\Logger\Logger;
@@ -84,6 +85,7 @@ class TrackingSynchronizerTest extends TestCase
         $this->trackingBuilder = $this->createStub(TrackingBuilder::class);
         $this->orderRepository = $this->createStub(OrderRepositoryInterface::class);
         $this->orderRepository->method('get')->willReturn($this->order());
+        $this->registerSeQuraOrder($this->createStub(SeQuraOrder::class));
     }
 
     /**
@@ -297,6 +299,36 @@ class TrackingSynchronizerTest extends TestCase
         $this->orderUpdater->expects($this->never())->method('update');
 
         $this->synchronizer(0)->synchronize(42);
+    }
+
+    /**
+     * An order integration-core has no seQura order for is skipped instead of failing on every retry.
+     *
+     * @return void
+     */
+    public function testSkipsAnOrderSeQuraDoesNotKnow(): void
+    {
+        $this->registerSeQuraOrder(null);
+        $this->orderUpdater = $this->createMock(OrderUpdater::class);
+        $this->orderUpdater->expects($this->never())->method('update');
+
+        $this->synchronizer(0)->synchronize(42);
+    }
+
+    /**
+     * Registers a seQura order repository that knows the order 000000123 as the given seQura order.
+     *
+     * @param SeQuraOrder|null $seQuraOrder
+     *
+     * @return void
+     */
+    private function registerSeQuraOrder(?SeQuraOrder $seQuraOrder): void
+    {
+        $repository = $this->createStub(SeQuraOrderRepositoryInterface::class);
+        $repository->method('getByShopReference')->willReturnMap([['000000123', $seQuraOrder]]);
+        ServiceRegister::registerService(SeQuraOrderRepositoryInterface::class, static function () use ($repository) {
+            return $repository;
+        });
     }
 
     /**
