@@ -23,9 +23,8 @@ wait_for() {
 	done
 	return 1
 }
-echo "🚀 Waiting for ngrok tunnel to be ready..."
-result=$(wait_for curl -H "ngrok-skip-browser-warning: 1" -s -o /dev/null --head --fail "${PUBLIC_URL}")
-if [ "$result" == "1" ]; then
+echo "🚀 Waiting for the tunnel to be ready..."
+if ! wait_for curl -H "ngrok-skip-browser-warning: 1" -s -o /dev/null --head --fail "${PUBLIC_URL}"; then
 	echo "❌ Magento is not available at: ${PUBLIC_URL}"
 	exit 1
 fi
