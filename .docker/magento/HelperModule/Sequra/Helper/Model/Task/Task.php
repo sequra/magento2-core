@@ -8,9 +8,11 @@
 namespace Sequra\Helper\Model\Task;
 
 use Magento\Framework\DB\Ddl\Table;
+use Magento\Framework\App\ObjectManager;
 use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\Webapi\Exception;
 use Magento\Framework\Phrase;
+use Sequra\Core\Services\Bootstrap;
 use Sequra\Core\Setup\DatabaseHandler;
 
 class Task
@@ -45,6 +47,18 @@ class Task
     public function execute(array $args = [])
     {
         throw new \Exception('Task not implemented', 500);
+    }
+
+    /**
+     * Initializes the SeQura service register.
+     *
+     * @return void
+     */
+    protected function initSeQuraServices(): void
+    {
+        /** @var Bootstrap $bootstrap */
+        $bootstrap = ObjectManager::getInstance()->get(Bootstrap::class);
+        $bootstrap->initInstance();
     }
 
     /**
