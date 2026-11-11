@@ -109,7 +109,7 @@ export default class CheckoutPage extends BaseCheckoutPage {
      */
     async #waitForFinishLoading() {
         do {
-            await this.expect(this.locators.loader().first()).toBeHidden();
+            await this.expect(this.locators.loader().first()).toBeHidden({ timeout: 30000 });
         } while ((await this.locators.loader()) > 0);
     }
 

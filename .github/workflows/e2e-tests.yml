@@ -1,0 +1,110 @@
+name: E2E tests
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - master
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - '**'
+      - '!**.md'
+      - '!.claude/**'
+      - '!.githooks/**'
+      - '!.github/**'
+      - '.github/workflows/e2e-tests.yml'
+      - '!Test/**'
+      - '!phpstan.neon'
+      - '!.phpcs.xml.dist'
+
+concurrency:
+  group: e2e-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tunnel:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    outputs:
+      configured: ${{ steps.secrets.outputs.configured }}
+    steps:
+      - name: Check the tunnel secrets
+        id: secrets
+        env:
+          CLOUDFLARED_TUNNEL_TOKEN: ${{ secrets.CLOUDFLARED_TUNNEL_TOKEN }}
+          CLOUDFLARED_TUNNEL_URL: ${{ secrets.CLOUDFLARED_TUNNEL_URL }}
+        run: |
+          if [ -n "$CLOUDFLARED_TUNNEL_TOKEN" ] && [ -n "$CLOUDFLARED_TUNNEL_URL" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::E2E tests skipped: set the CLOUDFLARED_TUNNEL_TOKEN and CLOUDFLARED_TUNNEL_URL secrets to run them."
+          fi
+
+  e2e-tests:
+    needs: tunnel
+    if: needs.tunnel.outputs.configured == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    concurrency:
+      group: e2e-cloudflared-tunnel
+      cancel-in-progress: false
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install npm dependencies
+        run: |
+          git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
+          npm ci --no-audit --no-fund --no-progress
+
+      - name: Set up the environment
+        env:
+          M2_COMPOSER_REPO_KEY: ${{ secrets.M2_COMPOSER_REPO_KEY }}
+          M2_COMPOSER_REPO_SECRET: ${{ secrets.M2_COMPOSER_REPO_SECRET }}
+          CLOUDFLARED_TUNNEL_TOKEN: ${{ secrets.CLOUDFLARED_TUNNEL_TOKEN }}
+          CLOUDFLARED_TUNNEL_URL: ${{ secrets.CLOUDFLARED_TUNNEL_URL }}
+        run: |
+          playwright_image=$(grep -o 'mcr.microsoft.com/playwright:[^ ]*' bin/playwright)
+          docker pull --quiet "$playwright_image" > /dev/null &
+          playwright_pull=$!
+          cp .env.sample .env
+          for key in M2_COMPOSER_REPO_KEY M2_COMPOSER_REPO_SECRET CLOUDFLARED_TUNNEL_TOKEN CLOUDFLARED_TUNNEL_URL; do
+            sed -i "s|^$key=.*|$key=${!key}|" .env
+          done
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u sequra --password-stdin || (echo "❌ Can't log in to the GitHub Container Registry" && exit 1)
+          ./setup.sh --cloudflared
+          wait "$playwright_pull"
+
+      - name: Run the E2E tests
+        run: ./bin/playwright
+
+      - name: Collect diagnostics
+        if: failure()
+        run: |
+          mkdir -p diagnostics
+          docker compose logs --no-color magento > diagnostics/magento.log 2>&1 || true
+          set -a; source .env; set +a
+          docker logs "${CLOUDFLARED_CONTAINER_NAME:-magento-cloudflared}" > diagnostics/cloudflared.log 2>&1 || true
+          docker compose exec -T magento sh -c 'tail -n 500 var/log/*.log' > diagnostics/magento-var-log.txt 2>&1 || true
+
+      - name: Upload the test results and diagnostics
+        uses: actions/upload-artifact@v5
+        if: failure()
+        with:
+          name: e2e-failure
+          path: |
+            test-results
+            diagnostics
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: Tear down the environment
+        if: always()
+        run: ./teardown.sh

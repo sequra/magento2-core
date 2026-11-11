@@ -39,6 +39,8 @@
     ]
   },
   "enabledPlugins": {
-    "sq-integrations@claude-sequra-tech-plugins": true
+    "sq-integrations@claude-sequra-tech-plugins": true,
+    "sq-php@claude-sequra-tech-plugins": true,
+    "sq-review@claude-sequra-tech-plugins": true
   }
 }

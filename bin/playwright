@@ -23,9 +23,8 @@ wait_for() {
 	done
 	return 1
 }
-echo "🚀 Waiting for ngrok tunnel to be ready..."
-result=$(wait_for curl -H "ngrok-skip-browser-warning: 1" -s -o /dev/null --head --fail "${PUBLIC_URL}")
-if [ "$result" == "1" ]; then
+echo "🚀 Waiting for the tunnel to be ready..."
+if ! wait_for curl -H "ngrok-skip-browser-warning: 1" -s -o /dev/null --head --fail "${PUBLIC_URL}"; then
 	echo "❌ Magento is not available at: ${PUBLIC_URL}"
 	exit 1
 fi
@@ -35,7 +34,17 @@ echo "✅ Magento is available at: ${PUBLIC_URL}"
 if [[ "$@" == *"--headed"* || "$@" == *"--ui"* ]]; then
     npx playwright test $@
 else
+    tty_flags=()
+    if [ -t 0 ]; then
+        tty_flags=(-it)
+    fi
+    env_flags=()
+    while IFS='=' read -r key _ || [ -n "$key" ]; do
+        if [[ "$key" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]]; then
+            env_flags+=(-e "$key")
+        fi
+    done < "${BASEDIR}"/.env
     docker run \
-    --env-file "${BASEDIR}"/.env \
-    -it --rm -v "${BASEDIR}":/app -w /app mcr.microsoft.com/playwright:v1.58.2-jammy bash -c "npx playwright test $@"
+    "${env_flags[@]}" \
+    "${tty_flags[@]}" --rm -v "${BASEDIR}":/app -w /app mcr.microsoft.com/playwright:v1.58.2-jammy bash -c "npx playwright test $@"
 fi
