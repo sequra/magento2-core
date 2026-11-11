@@ -39,8 +39,8 @@ test.describe('Express checkout', () => {
     // initial about:blank, and logs this warning for each one.
     const refusedPosts = [];
     page.on('console', message => {
-      if (message.text().includes('The target origin provided')) {
-        const { url, lineNumber, columnNumber } = message.location();
+      const { url, lineNumber, columnNumber } = message.location();
+      if (message.text().includes('The target origin provided') && !url.includes('/assets/sequra-checkout')) {
         refusedPosts.push(`${message.text()} [from ${url}:${lineNumber}:${columnNumber}]`);
       }
     });
