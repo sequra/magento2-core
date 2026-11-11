@@ -21,6 +21,8 @@ use SeQura\Core\BusinessLogic\WebhookAPI\WebhookAPI;
 use SeQura\Core\Infrastructure\Logger\Logger;
 use SeQura\Core\Infrastructure\ServiceRegister;
 use Sequra\Core\Controller\CsrfExemptTrait;
+use Sequra\Core\Model\Webhook\OrderWebhookLock;
+use Sequra\Core\Model\Webhook\WebhookAuthenticator;
 
 /**
  * Form-key validation is skipped ({@see CsrfExemptTrait}): SeQura's callbacks are
@@ -67,6 +69,16 @@ class Index extends Action implements CsrfAwareActionInterface
     protected $orderRepository;
 
     /**
+     * @var OrderWebhookLock
+     */
+    private $orderWebhookLock;
+
+    /**
+     * @var WebhookAuthenticator
+     */
+    private $webhookAuthenticator;
+
+    /**
      * Constructor for Index controller
      *
      * @param Context $context
@@ -75,6 +87,8 @@ class Index extends Action implements CsrfAwareActionInterface
      * @param TransactionFactory $transactionFactory
      * @param SearchCriteriaBuilder $searchCriteriaBuilder
      * @param OrderRepositoryInterface $orderRepository
+     * @param OrderWebhookLock $orderWebhookLock
+     * @param WebhookAuthenticator $webhookAuthenticator
      */
     public function __construct(
         Context                  $context,
@@ -82,7 +96,9 @@ class Index extends Action implements CsrfAwareActionInterface
         InvoiceRepository        $invoiceRepository,
         TransactionFactory       $transactionFactory,
         SearchCriteriaBuilder    $searchCriteriaBuilder,
-        OrderRepositoryInterface $orderRepository
+        OrderRepositoryInterface $orderRepository,
+        OrderWebhookLock         $orderWebhookLock,
+        WebhookAuthenticator     $webhookAuthenticator
     ) {
         parent::__construct($context);
         $this->invoiceService = $invoiceService;
@@ -90,6 +106,8 @@ class Index extends Action implements CsrfAwareActionInterface
         $this->transactionFactory = $transactionFactory;
         $this->searchCriteriaBuilder = $searchCriteriaBuilder;
         $this->orderRepository = $orderRepository;
+        $this->orderWebhookLock = $orderWebhookLock;
+        $this->webhookAuthenticator = $webhookAuthenticator;
     }
 
     /**
@@ -117,14 +135,45 @@ class Index extends Action implements CsrfAwareActionInterface
             return;
         }
 
+        $orderReference = is_string($modifiedPayload['order_ref'] ?? null) ? $modifiedPayload['order_ref'] : '';
+        $storeId = is_scalar($modifiedPayload['storeId']) ? (string)$modifiedPayload['storeId'] : '';
+        if ($orderReference === '' || !$this->webhookAuthenticator->isAuthentic($storeId, $modifiedPayload)) {
+            $this->processWebhook($modifiedPayload, $orderReference);
+
+            return;
+        }
+
+        $processed = $this->orderWebhookLock->runExclusively(
+            $orderReference,
+            function () use ($modifiedPayload, $orderReference): void {
+                $this->processWebhook($modifiedPayload, $orderReference);
+            }
+        );
+
+        if (!$processed) {
+            $this->sendErrorResponse(503, 'Another webhook for this order is still being processed.');
+        }
+    }
+
+    /**
+     * Handles the webhook and answers SeQura when it fails.
+     *
+     * @param array $payload
+     * @param string $orderReference
+     * @phpstan-param array<string, mixed> $payload
+     *
+     * @return void
+     */
+    private function processWebhook(array $payload, string $orderReference): void
+    {
         self::setIsWebhookProcessing(true);
         // @phpstan-ignore-next-line
-        $response = WebhookAPI::webhookHandler($modifiedPayload['storeId'])->handleRequest($modifiedPayload);
+        $response = WebhookAPI::webhookHandler($payload['storeId'])->handleRequest($payload);
         self::setIsWebhookProcessing(false);
 
         if ($response->isSuccessful()) {
-            if ($modifiedPayload['sq_state'] === OrderStates::STATE_APPROVED) {
-                $this->createInvoiceForOrder($modifiedPayload['order_ref']);
+            if ($payload['sq_state'] === OrderStates::STATE_APPROVED) {
+                $this->createInvoiceForOrder($orderReference);
             }
 
             return;
@@ -133,12 +182,25 @@ class Index extends Action implements CsrfAwareActionInterface
         $responseToArray = $response->toArray();
         $code = (isset($responseToArray['errorCode']) && $responseToArray['errorCode'] === 409) ? 409 : 410;
 
+        $this->sendErrorResponse($code, $responseToArray['errorMessage']);
+    }
+
+    /**
+     * Sends SeQura an error status with its message.
+     *
+     * @param int $code
+     * @param string $message
+     *
+     * @return void
+     */
+    private function sendErrorResponse(int $code, string $message): void
+    {
         /**
          * @var \Magento\Framework\App\Response\HttpInterface $httpResponse
          */
         $httpResponse = $this->getResponse();
         $httpResponse->setHttpResponseCode($code);
-        $httpResponse->setBody($responseToArray['errorMessage']);
+        $httpResponse->setBody($message);
         $httpResponse->sendResponse();
     }
 

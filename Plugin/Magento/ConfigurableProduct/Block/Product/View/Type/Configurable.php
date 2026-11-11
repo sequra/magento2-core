@@ -5,9 +5,9 @@ namespace Sequra\Core\Plugin\Magento\ConfigurableProduct\Block\Product\View\Type
 use Magento\ConfigurableProduct\Block\Product\View\Type\Configurable as ConfigurableProduct;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Store\Model\StoreManagerInterface;
+use Sequra\Core\Model\Config\PaymentMethodStatus;
 use SeQura\Core\BusinessLogic\AdminAPI\AdminAPI;
 use SeQura\Core\BusinessLogic\AdminAPI\GeneralSettings\GeneralSettingsController;
-use Sequra\Core\Model\Config\PaymentMethodStatus;
 
 class Configurable
 {
@@ -43,17 +43,17 @@ class Configurable
      */
     public function afterGetJsonConfig(ConfigurableProduct $subject, $result): string
     {
+        $excludedProducts = [];
+        if ($this->paymentMethodStatus->isActive()) {
+            $excludedProducts = $this->getExcludedProducts((string) $this->storeManager->getStore()->getId());
+        }
+
         $jsonResult = json_decode($result, true);
         if (!is_array($jsonResult)) {
             $jsonResult = [];
         }
         $jsonResult['skus'] = [];
-        $jsonResult['excludedProducts'] = [];
-        if ($this->paymentMethodStatus->isActive()) {
-            $jsonResult['excludedProducts'] = $this->getExcludedProducts(
-                (string) $this->storeManager->getStore()->getId()
-            );
-        }
+        $jsonResult['excludedProducts'] = $excludedProducts;
 
         foreach ($subject->getAllowProducts() as $simpleProduct) {
             $jsonResult['skus'][$simpleProduct->getId()] = $simpleProduct->getSku();
