@@ -5,22 +5,6 @@ import { BackOffice, CheckoutPage as BaseCheckoutPage } from "playwright-fixture
  */
 export default class CheckoutPage extends BaseCheckoutPage {
 
-    constructor(page, baseURL, expect, request) {
-        super(page, baseURL, expect, request);
-        this.#followTheExpressFormWithACartSummary();
-    }
-
-    #followTheExpressFormWithACartSummary() {
-        const locators = this.checkoutForm.locators;
-        const actionButton = locators.iframeBtn;
-        locators.paymentOption = (iframe, product) => iframe
-            .locator(`[data-testid^="express-payment-option-${product}-"]`)
-            .first();
-        locators.iframeBtn = iframe => iframe
-            .locator('[data-testid="cart-summary-continue"]:visible')
-            .or(actionButton(iframe));
-    }
-
     /**
     * Init the locators with the locators available
     * 
