@@ -22,6 +22,7 @@ use SeQura\Core\Infrastructure\Logger\Logger;
 use SeQura\Core\Infrastructure\ServiceRegister;
 use Sequra\Core\Controller\CsrfExemptTrait;
 use Sequra\Core\Model\Webhook\OrderWebhookLock;
+use Sequra\Core\Model\Webhook\WebhookAuthenticator;
 
 /**
  * Form-key validation is skipped ({@see CsrfExemptTrait}): SeQura's callbacks are
@@ -73,6 +74,11 @@ class Index extends Action implements CsrfAwareActionInterface
     private $orderWebhookLock;
 
     /**
+     * @var WebhookAuthenticator
+     */
+    private $webhookAuthenticator;
+
+    /**
      * Constructor for Index controller
      *
      * @param Context $context
@@ -82,6 +88,7 @@ class Index extends Action implements CsrfAwareActionInterface
      * @param SearchCriteriaBuilder $searchCriteriaBuilder
      * @param OrderRepositoryInterface $orderRepository
      * @param OrderWebhookLock $orderWebhookLock
+     * @param WebhookAuthenticator $webhookAuthenticator
      */
     public function __construct(
         Context                  $context,
@@ -90,7 +97,8 @@ class Index extends Action implements CsrfAwareActionInterface
         TransactionFactory       $transactionFactory,
         SearchCriteriaBuilder    $searchCriteriaBuilder,
         OrderRepositoryInterface $orderRepository,
-        OrderWebhookLock         $orderWebhookLock
+        OrderWebhookLock         $orderWebhookLock,
+        WebhookAuthenticator     $webhookAuthenticator
     ) {
         parent::__construct($context);
         $this->invoiceService = $invoiceService;
@@ -99,6 +107,7 @@ class Index extends Action implements CsrfAwareActionInterface
         $this->searchCriteriaBuilder = $searchCriteriaBuilder;
         $this->orderRepository = $orderRepository;
         $this->orderWebhookLock = $orderWebhookLock;
+        $this->webhookAuthenticator = $webhookAuthenticator;
     }
 
     /**
@@ -127,7 +136,8 @@ class Index extends Action implements CsrfAwareActionInterface
         }
 
         $orderReference = is_string($modifiedPayload['order_ref'] ?? null) ? $modifiedPayload['order_ref'] : '';
-        if ($orderReference === '') {
+        $storeId = is_scalar($modifiedPayload['storeId']) ? (string)$modifiedPayload['storeId'] : '';
+        if ($orderReference === '' || !$this->webhookAuthenticator->isAuthentic($storeId, $modifiedPayload)) {
             $this->processWebhook($modifiedPayload, $orderReference);
 
             return;
