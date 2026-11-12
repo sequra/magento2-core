@@ -44,7 +44,11 @@ bin/phpstan                 # PHPStan level 9, config phpstan.neon — REQUIRES 
 ```
 CI also runs `php -l` syntax linting across PHP 7.4–8.4. `composer.json` requires `php >=7.4 <8.6`.
 
-**Unit/integration tests** (`Test/`, PHPUnit) run against a Magento install — see `Test/README.md`. Tests autoload core's test base classes from `vendor/sequra/integration-core/tests/...` (see `autoload-dev` in `composer.json`). Note: tests fail if the module is installed in Magento *and* present locally (double-load); rename one folder when running.
+**Unit tests** (`Test/Unit`, PHPUnit) run against the Magento install in the container, on the `vendor/sequra/magento2-core` copy — so `bin/update-sequra` first, as for phpstan. CI runs them in `.github/workflows/unit-tests.yml`.
+```bash
+bin/phpunit                 # the Test/Unit suite; extra args go to phpunit (e.g. --filter WebhookAuthenticatorTest)
+```
+Two tests extend core's test base classes from `vendor/sequra/integration-core/tests/`. The dist package ships without `tests/`, so `bin/phpunit` reinstalls integration-core from source when they are missing, and `Test/Unit/bootstrap.php` maps `SeQura\Core\Tests\` onto it (the module's own `autoload-dev` is ignored when Magento installs it as a dependency). See `Test/README.md` for the integration suite.
 
 **E2E tests** (`tests-e2e/`, Playwright):
 ```bash

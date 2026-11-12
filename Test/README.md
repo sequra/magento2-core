@@ -1,6 +1,19 @@
 # Sequra Magento 2 plugin - developer instructions
 
 ## Run unit tests
+
+With the Docker environment up (`./setup.sh`), install the working tree into Magento and run the suite in the container:
+
+```bash
+bin/update-sequra
+bin/phpunit                                   # Test/Unit/phpunit.xml.dist
+bin/phpunit --filter WebhookAuthenticatorTest # extra arguments go to phpunit
+```
+
+`bin/phpunit` reinstalls `sequra/integration-core` from source the first time, because its dist package ships without the
+`tests/` base classes some tests extend. CI runs the same command in `.github/workflows/unit-tests.yml` on every push.
+
+### PhpStorm
 Configuration for phpunit is in the `./phpunit.xml` file.
 
 If you haven't already done so, you can setup unit tests in PHPStorm.
