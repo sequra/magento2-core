@@ -3,6 +3,7 @@
 namespace Sequra\Core\Test\Unit\Model\ExpressCheckout;
 
 use Magento\Customer\Api\CustomerRepositoryInterface;
+use Magento\Customer\Api\Data\AddressInterface;
 use Magento\Directory\Model\Region;
 use Magento\Directory\Model\RegionFactory;
 use Magento\Framework\Locale\ResolverInterface;
@@ -139,10 +140,11 @@ class PlaceableAddressTest extends TestCase
      */
     private function address($verdict, ?array $rates = null): Address
     {
-        $rate = $this->createMock(Rate::class);
-        $rate->method('getCode')->willReturn('flatrate_flatrate');
-        $rate->method('getPrice')->willReturn(4.95);
-        $rate->method('getErrorMessage')->willReturn(false);
+        $rate = $this->getMockBuilder(Rate::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods([])
+            ->getMock();
+        $rate->setData(['code' => 'flatrate_flatrate', 'price' => 4.95, 'error_message' => false]);
 
         $address = $this->getMockBuilder(Address::class)
             ->disableOriginalConstructor()
@@ -157,6 +159,7 @@ class PlaceableAddressTest extends TestCase
         $address->method('validate')->willReturn($verdict);
         // Reached only when the billing address does not stand on its own and the shipping one is
         // copied over it; the copy itself is not what these cases are about.
+        $address->method('exportCustomerAddress')->willReturn($this->createMock(AddressInterface::class));
         $address->method('importCustomerAddressData')->willReturnSelf();
         $address->setData('country_id', 'ES');
 
