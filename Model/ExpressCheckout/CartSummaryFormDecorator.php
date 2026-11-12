@@ -12,9 +12,14 @@ use Magento\Quote\Model\Cart\ShippingMethodConverter;
 use Magento\Quote\Model\Quote;
 use Magento\Quote\Model\Quote\Address;
 use Magento\Theme\ViewModel\Block\Html\Header\LogoPathResolver;
+use SeQura\Core\BusinessLogic\Domain\ExpressCheckout\Models\ExpressCheckoutSettings;
+use SeQura\Core\BusinessLogic\Domain\ExpressCheckout\Services\ExpressCheckoutService;
+use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
+use SeQura\Core\Infrastructure\ServiceRegister;
 use Sequra\Core\Model\QuoteEmailResolver;
 use Sequra\Core\Services\BusinessLogic\Utility\TransformEntityService;
 use SeQura\Core\Infrastructure\Logger\Logger;
+use Throwable;
 
 /**
  * Class CartSummaryFormDecorator
@@ -77,10 +82,6 @@ class CartSummaryFormDecorator
      * @var DirectoryHelper
      */
     private DirectoryHelper $directoryHelper;
-    /**
-     * @var TermsAndConditionsUrlReader
-     */
-    private TermsAndConditionsUrlReader $termsAndConditionsUrlReader;
 
     /**
      * CartSummaryFormDecorator constructor.
@@ -92,7 +93,6 @@ class CartSummaryFormDecorator
      * @param FormKey $formKey
      * @param QuoteEmailResolver $emailResolver
      * @param DirectoryHelper $directoryHelper
-     * @param TermsAndConditionsUrlReader $termsAndConditionsUrlReader
      */
     public function __construct(
         ImageHelper $imageHelper,
@@ -101,8 +101,7 @@ class CartSummaryFormDecorator
         LogoPathResolver $logoPathResolver,
         FormKey $formKey,
         QuoteEmailResolver $emailResolver,
-        DirectoryHelper $directoryHelper,
-        TermsAndConditionsUrlReader $termsAndConditionsUrlReader
+        DirectoryHelper $directoryHelper
     ) {
         $this->imageHelper = $imageHelper;
         $this->itemResolver = $itemResolver;
@@ -111,7 +110,6 @@ class CartSummaryFormDecorator
         $this->formKey = $formKey;
         $this->emailResolver = $emailResolver;
         $this->directoryHelper = $directoryHelper;
-        $this->termsAndConditionsUrlReader = $termsAndConditionsUrlReader;
     }
 
     /**
@@ -390,12 +388,37 @@ class CartSummaryFormDecorator
         }
 
         $storeId = $quote->getStore()->getId();
-        $termsAndConditionsUrl = $this->termsAndConditionsUrlReader->read(is_scalar($storeId) ? (string)$storeId : '');
+        $termsAndConditionsUrl = $this->readTermsAndConditionsUrl(is_scalar($storeId) ? (string)$storeId : '');
         if ($termsAndConditionsUrl !== null) {
             $data['termsAndConditionsUrl'] = $termsAndConditionsUrl;
         }
 
         return $data;
+    }
+
+    /**
+     * @param string $storeId
+     *
+     * @return string|null
+     */
+    private function readTermsAndConditionsUrl(string $storeId): ?string
+    {
+        try {
+            $settings = StoreContext::doWithStore($storeId, static function () {
+                /** @var ExpressCheckoutService $service */
+                $service = ServiceRegister::getService(ExpressCheckoutService::class);
+
+                return $service->getExpressCheckoutSettings();
+            });
+        } catch (Throwable $exception) {
+            Logger::logWarning(
+                'Express Checkout terms and conditions URL could not be read: ' . $exception->getMessage()
+            );
+
+            return null;
+        }
+
+        return $settings instanceof ExpressCheckoutSettings ? $settings->getTermsAndConditionsUrl() : null;
     }
 
     /**

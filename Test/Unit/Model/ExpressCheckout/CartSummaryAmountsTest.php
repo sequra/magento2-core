@@ -13,8 +13,18 @@ use Magento\Store\Model\Store;
 use Magento\Theme\ViewModel\Block\Html\Header\LogoPathResolver;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
+use SeQura\Core\BusinessLogic\Domain\ExpressCheckout\Models\ExpressCheckoutSettings;
+use SeQura\Core\BusinessLogic\Domain\ExpressCheckout\Services\ExpressCheckoutService;
+use SeQura\Core\BusinessLogic\Domain\Integration\Store\StoreIdProvider;
+use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
+use SeQura\Core\Infrastructure\Configuration\Configuration;
+use SeQura\Core\Infrastructure\Logger\Interfaces\ShopLoggerAdapter;
+use SeQura\Core\Infrastructure\Logger\Logger;
+use SeQura\Core\Infrastructure\Logger\LoggerConfiguration;
+use SeQura\Core\Infrastructure\ServiceRegister;
+use SeQura\Core\Infrastructure\Utility\TimeProvider;
 use Sequra\Core\Model\ExpressCheckout\CartSummaryFormDecorator;
-use Sequra\Core\Model\ExpressCheckout\TermsAndConditionsUrlReader;
 use Sequra\Core\Model\QuoteEmailResolver;
 
 /**
@@ -49,6 +59,28 @@ class CartSummaryAmountsTest extends TestCase
      * @var MockObject&Quote
      */
     private $quote;
+
+    /**
+     * @var string[]
+     */
+    private array $settingsReadInStores = [];
+
+    /**
+     * @return void
+     */
+    protected function setUp(): void
+    {
+        $this->givenStoredSettings(null);
+    }
+
+    /**
+     * @return void
+     */
+    protected function tearDown(): void
+    {
+        Logger::resetInstance();
+        LoggerConfiguration::resetInstance();
+    }
 
     /**
      * The grand total is sent in cents with tax, off the same getter the create-order request
@@ -122,10 +154,12 @@ class CartSummaryAmountsTest extends TestCase
      */
     public function testSendsTheTermsAndConditionsUrlOfTheQuoteStore(): void
     {
-        $data = $this->decorator('https://shop.example.com/terms')
-            ->buildCartData(self::FORM, $this->quoteWith(43.0, 5.0, 'flatrate_flatrate'));
+        $this->givenStoredSettings(new ExpressCheckoutSettings([], null, 'https://shop.example.com/terms'));
+
+        $data = $this->decorator()->buildCartData(self::FORM, $this->quoteWith(43.0, 5.0, 'flatrate_flatrate'));
 
         $this->assertSame('https://shop.example.com/terms', $data['termsAndConditionsUrl']);
+        $this->assertSame(['3'], $this->settingsReadInStores);
     }
 
     /**
@@ -133,9 +167,39 @@ class CartSummaryAmountsTest extends TestCase
      */
     public function testOmitsTheTermsAndConditionsUrlWhenNoneIsSet(): void
     {
+        $this->givenStoredSettings(new ExpressCheckoutSettings());
+
         $data = $this->decorator()->buildCartData(self::FORM, $this->quoteWith(43.0, 5.0, 'flatrate_flatrate'));
 
         $this->assertArrayNotHasKey('termsAndConditionsUrl', $data);
+    }
+
+    /**
+     * @return void
+     */
+    public function testOmitsTheTermsAndConditionsUrlWhenTheStoreHasNoSettings(): void
+    {
+        $data = $this->decorator()->buildCartData(self::FORM, $this->quoteWith(43.0, 5.0, 'flatrate_flatrate'));
+
+        $this->assertArrayNotHasKey('termsAndConditionsUrl', $data);
+    }
+
+    /**
+     * @return void
+     */
+    public function testOmitsTheTermsAndConditionsUrlWhenTheSettingsCannotBeRead(): void
+    {
+        $this->registerLogger();
+        $service = $this->createStub(ExpressCheckoutService::class);
+        $service->method('getExpressCheckoutSettings')->willThrowException(new RuntimeException('Database is gone.'));
+        ServiceRegister::registerService(ExpressCheckoutService::class, static function () use ($service) {
+            return $service;
+        });
+
+        $data = $this->decorator()->buildCartData(self::FORM, $this->quoteWith(43.0, 5.0, 'flatrate_flatrate'));
+
+        $this->assertArrayNotHasKey('termsAndConditionsUrl', $data);
+        $this->assertSame(4300, $data['totalWithTax']);
     }
 
     /**
@@ -189,16 +253,10 @@ class CartSummaryAmountsTest extends TestCase
      * Builds the decorator with every collaborator stubbed to the quiet answer, so only the money
      * the quote carries reaches the payload.
      *
-     * @param string|null $termsAndConditionsUrl
-     *
      * @return CartSummaryFormDecorator
      */
-    private function decorator(?string $termsAndConditionsUrl = null): CartSummaryFormDecorator
+    private function decorator(): CartSummaryFormDecorator
     {
-        $termsAndConditionsUrlReader = $this->createMock(TermsAndConditionsUrlReader::class);
-        $termsAndConditionsUrlReader->expects($this->once())->method('read')->with('3')
-            ->willReturn($termsAndConditionsUrl);
-
         $emailResolver = $this->createMock(QuoteEmailResolver::class);
         $emailResolver->method('resolve')->willReturn('marina@example.com');
 
@@ -218,8 +276,49 @@ class CartSummaryAmountsTest extends TestCase
             $logoPathResolver,
             $formKey,
             $emailResolver,
-            $directoryHelper,
-            $termsAndConditionsUrlReader
+            $directoryHelper
         );
+    }
+
+    /**
+     * @param ExpressCheckoutSettings|null $settings
+     *
+     * @return void
+     */
+    private function givenStoredSettings(?ExpressCheckoutSettings $settings): void
+    {
+        $service = $this->createStub(ExpressCheckoutService::class);
+        $service->method('getExpressCheckoutSettings')->willReturnCallback(function () use ($settings) {
+            $this->settingsReadInStores[] = StoreContext::getInstance()->getStoreId();
+
+            return $settings;
+        });
+        ServiceRegister::registerService(ExpressCheckoutService::class, static function () use ($service) {
+            return $service;
+        });
+        $storeIdProvider = $this->createStub(StoreIdProvider::class);
+        ServiceRegister::registerService(StoreIdProvider::class, static function () use ($storeIdProvider) {
+            return $storeIdProvider;
+        });
+    }
+
+    /**
+     * @return void
+     */
+    private function registerLogger(): void
+    {
+        $configuration = $this->createStub(Configuration::class);
+        $configuration->method('getIntegrationName')->willReturn('Magento2');
+        $shopLogger = $this->createStub(ShopLoggerAdapter::class);
+
+        ServiceRegister::registerService(ShopLoggerAdapter::CLASS_NAME, static function () use ($shopLogger) {
+            return $shopLogger;
+        });
+        ServiceRegister::registerService(TimeProvider::CLASS_NAME, function () {
+            return $this->createStub(TimeProvider::class);
+        });
+        ServiceRegister::registerService(Configuration::CLASS_NAME, static function () use ($configuration) {
+            return $configuration;
+        });
     }
 }
