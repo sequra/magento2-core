@@ -1,0 +1,263 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CURRENT_REPO="$(cd "$SCRIPT_DIR/.." && pwd)"
+GIT_COMMON_DIR="$(cd "$CURRENT_REPO" && cd "$(git rev-parse --git-common-dir)" && pwd)"
+REPO_ROOT="$(dirname "$GIT_COMMON_DIR")"
+WORKSPACES_DIR="${MAGENTO2_CORE_WORKSPACES_DIR:-"$(dirname "$REPO_ROOT")/magento2-core-workspaces"}"
+
+SLOT_STEP=1000
+MAX_SLOT=55
+BASE_PORTS=(
+    M2_HTTP_PORT=8018
+    MARIADB_PORT=3328
+    REDIS_PORT=6380
+    OPENSEARCH_API_PORT=9201
+    OPENSEARCH_INTERNODE_PORT=9600
+    ELASTICSEARCH_API_PORT=9200
+    ELASTICSEARCH_INTERNODE_PORT=9300
+    NGROK_PORT=4740
+)
+
+usage() {
+    cat <<EOF
+Usage:
+  bin/workspace <name> [--branch <branch>]
+  bin/workspace list
+  bin/workspace rm <name>
+
+Commands:
+  <name>      Create a worktree in $WORKSPACES_DIR/<name>
+              with a .env of its own: host ports +$SLOT_STEP per workspace, its own
+              compose project and tunnel containers.
+  list        Show every workspace with its branch, ports and whether its shop runs.
+  rm <name>   Tear down the workspace's shop (containers and volumes) and remove the
+              worktree. The branch is kept.
+
+Options:
+  --branch <branch>   Check out this branch instead of one named <name>. A branch
+                      that does not exist yet is created from origin/master.
+
+Environment:
+  MAGENTO2_CORE_WORKSPACES_DIR   Where workspaces live
+                                 (default: ../magento2-core-workspaces)
+
+Examples:
+  bin/workspace lis-123-short-title --branch LIS-123-short-title
+  bin/workspace list
+  bin/workspace rm lis-123-short-title
+EOF
+    exit "${1:-0}"
+}
+
+die() { echo "❌ $*" >&2; exit 1; }
+info() { echo "▶ $*"; }
+ok() { echo "✅ $*"; }
+
+lowercase() {
+    echo "$1" | tr '[:upper:]' '[:lower:]'
+}
+
+env_value() {
+    local file="$1" key="$2"
+    [ -f "$file" ] || return 0
+    sed -n "s/^${key}=//p" "$file" | tail -1 | sed 's/[[:space:]]*#.*$//' | tr -d '\r'
+}
+
+set_env() {
+    local file="$1" key="$2" value="$3"
+    if grep -q "^${key}=" "$file"; then
+        sed -i.bak "s|^${key}=.*|${key}=${value}|" "$file"
+        rm -f "$file.bak"
+    else
+        [ -z "$(tail -c1 "$file")" ] || printf '\n' >> "$file"
+        printf '%s=%s\n' "$key" "$value" >> "$file"
+    fi
+}
+
+base_http_port() {
+    echo "${BASE_PORTS[0]#*=}"
+}
+
+next_slot() {
+    local base max_port port env_file
+    base="$(base_http_port)"
+    max_port=$base
+    for env_file in "$WORKSPACES_DIR"/*/.env; do
+        [ -f "$env_file" ] || continue
+        port="$(env_value "$env_file" M2_HTTP_PORT)"
+        if [[ "$port" =~ ^[0-9]+$ ]] && [ "$port" -gt "$max_port" ]; then
+            max_port=$port
+        fi
+    done
+    echo $(( (max_port - base) / SLOT_STEP + 1 ))
+}
+
+project_name() {
+    lowercase "magento2-core-$1"
+}
+
+prepare_branch() {
+    local branch="$1"
+    if git -C "$REPO_ROOT" show-ref --verify --quiet "refs/heads/$branch"; then
+        return
+    fi
+    info "Fetching origin"
+    git -C "$REPO_ROOT" fetch --quiet origin
+    if git -C "$REPO_ROOT" show-ref --verify --quiet "refs/remotes/origin/$branch"; then
+        git -C "$REPO_ROOT" branch --quiet --track "$branch" "origin/$branch"
+    else
+        git -C "$REPO_ROOT" branch --quiet --no-track "$branch" origin/master
+        info "Created branch $branch from origin/master"
+    fi
+}
+
+write_env() {
+    local name="$1" workspace="$2" slot="$3"
+    local env_file="$workspace/.env"
+    local project entry
+    project="$(project_name "$name")"
+
+    if [ -f "$REPO_ROOT/.env" ]; then
+        cp "$REPO_ROOT/.env" "$env_file"
+    else
+        cp "$REPO_ROOT/.env.sample" "$env_file"
+    fi
+
+    set_env "$env_file" COMPOSE_PROJECT_NAME "$project"
+    for entry in "${BASE_PORTS[@]}"; do
+        set_env "$env_file" "${entry%%=*}" "$(( ${entry#*=} + slot * SLOT_STEP ))"
+    done
+    set_env "$env_file" M2_URL 'http://$M2_HTTP_HOST:$M2_HTTP_PORT'
+    set_env "$env_file" NGROK_CONTAINER_NAME "$project-ngrok"
+    set_env "$env_file" CLOUDFLARED_CONTAINER_NAME "$project-cloudflared"
+    set_env "$env_file" CLOUDFLARED_TUNNEL_TOKEN ""
+    set_env "$env_file" CLOUDFLARED_TUNNEL_URL ""
+    set_env "$env_file" PUBLIC_URL ""
+}
+
+create() {
+    local name="$1" branch="$2"
+    local workspace="$WORKSPACES_DIR/$name"
+
+    [[ "$name" =~ ^[a-zA-Z0-9_-]+$ ]] || die "Workspace names take letters, digits, '-' and '_' only. Pass a branch with '/' through --branch."
+    [ -e "$workspace" ] && die "$workspace already exists."
+    [ -n "$branch" ] || branch="$name"
+
+    local slot
+    slot="$(next_slot)"
+    [ "$slot" -le "$MAX_SLOT" ] || die "No free port slot left: remove a workspace first."
+
+    prepare_branch "$branch"
+    mkdir -p "$WORKSPACES_DIR"
+
+    info "Adding worktree $workspace on $branch"
+    git -C "$REPO_ROOT" worktree add --quiet "$workspace" "$branch"
+
+    write_env "$name" "$workspace" "$slot"
+
+    ok "Workspace $name is ready (slot $slot)"
+    cat <<EOF
+
+  cd $workspace && claude
+  ./setup.sh     # its own shop at http://$(env_value "$workspace/.env" M2_HTTP_HOST):$(env_value "$workspace/.env" M2_HTTP_PORT)
+EOF
+}
+
+workspace_dirs() {
+    git -C "$REPO_ROOT" worktree list --porcelain | sed -n 's/^worktree //p' | while read -r dir; do
+        case "$dir" in
+            "$WORKSPACES_DIR"/*) echo "$dir" ;;
+        esac
+    done
+}
+
+shop_state() {
+    local project="$1"
+    if [ -n "$(docker compose -p "$project" ps -q 2>/dev/null)" ]; then
+        echo "running"
+    else
+        echo "stopped"
+    fi
+}
+
+list() {
+    printf '%-32s %-40s %-6s %-6s %s\n' NAME BRANCH HTTP DB SHOP
+    local dir name branch
+    workspace_dirs | while read -r dir; do
+        name="$(basename "$dir")"
+        branch="$(git -C "$dir" symbolic-ref --short HEAD 2>/dev/null || echo '(detached)')"
+        printf '%-32s %-40s %-6s %-6s %s\n' "$name" "$branch" \
+            "$(env_value "$dir/.env" M2_HTTP_PORT)" "$(env_value "$dir/.env" MARIADB_PORT)" \
+            "$(shop_state "$(project_name "$name")")"
+    done
+}
+
+stop_shop() {
+    local workspace="$1" project="$2" key container
+    docker compose --project-directory "$workspace" -p "$project" down --volumes --remove-orphans || return 1
+    for key in NGROK_CONTAINER_NAME CLOUDFLARED_CONTAINER_NAME; do
+        container="$(env_value "$workspace/.env" "$key")"
+        case "$container" in
+            "$project"-*) docker rm -f "$container" > /dev/null 2>&1 || true ;;
+        esac
+    done
+}
+
+remove() {
+    local name="$1"
+    [[ "$name" =~ ^[a-zA-Z0-9_-]+$ ]] || die "No workspace is named '$name'."
+    local workspace="$WORKSPACES_DIR/$name"
+    [ -d "$workspace" ] || die "No workspace at $workspace."
+
+    local resolved
+    resolved="$(cd "$workspace" && pwd -P)"
+    [ "$resolved" != "$(cd "$REPO_ROOT" && pwd -P)" ] || die "Refusing to remove the primary checkout."
+    case "$resolved" in
+        "$(cd "$WORKSPACES_DIR" && pwd -P)"/*) ;;
+        *) die "$workspace is not inside $WORKSPACES_DIR." ;;
+    esac
+    workspace_dirs | grep -qx "$workspace" || die "$workspace is not a worktree of this repository."
+
+    if [ -f "$workspace/.env" ]; then
+        local project
+        project="$(project_name "$name")"
+        info "Stopping the shop of $name (compose project $project)"
+        stop_shop "$workspace" "$project" || die "Could not stop the shop of $name; the worktree is left in place."
+    fi
+
+    local branch
+    branch="$(git -C "$workspace" symbolic-ref --short HEAD 2>/dev/null || true)"
+    info "Removing worktree $workspace"
+    git -C "$REPO_ROOT" worktree remove "$workspace" \
+        || die "git refused to remove the worktree (uncommitted or untracked files?). Commit or discard them, then retry."
+    ok "Removed $name${branch:+; branch $branch is kept}"
+}
+
+[ "$#" -gt 0 ] || usage 1
+
+case "$1" in
+    -h|--help) usage 0 ;;
+    list) list ;;
+    rm)
+        [ "$#" -eq 2 ] || usage 1
+        remove "$2"
+        ;;
+    *)
+        name="$1"
+        shift
+        branch=""
+        while [ "$#" -gt 0 ]; do
+            case "$1" in
+                --branch)
+                    [ "$#" -ge 2 ] || usage 1
+                    branch="$2"
+                    shift 2
+                    ;;
+                *) usage 1 ;;
+            esac
+        done
+        create "$name" "$branch"
+        ;;
+esac
