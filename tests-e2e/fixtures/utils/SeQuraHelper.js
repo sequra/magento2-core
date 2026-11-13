@@ -19,6 +19,7 @@ export default class SeQuraHelper extends BaseSeQuraHelper {
             get_order_cleanup_state: 'get_order_cleanup_state',
             set_order_cleanup_next_run: 'set_order_cleanup_next_run',
             wake_task_runner: 'wake_task_runner',
+            put_order_on_hold: 'put_order_on_hold',
         };
     }
 
@@ -74,5 +75,15 @@ export default class SeQuraHelper extends BaseSeQuraHelper {
 
     async wakeTaskRunner() {
         await this.executeWebhook({ webhook: this.webhooks.wake_task_runner });
+    }
+
+    async putOrderOnHold(orderNumber) {
+        const [, { cart_id }] = await this.executeWebhook({
+            webhook: this.webhooks.put_order_on_hold,
+            args: [{ name: 'order_id', value: orderNumber }],
+            returnResponse: true,
+        });
+
+        return cart_id;
     }
 }

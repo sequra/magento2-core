@@ -12,8 +12,10 @@ use Magento\Quote\Model\Quote\Address;
 use Magento\Store\Model\Store;
 use Magento\Theme\ViewModel\Block\Html\Header\LogoPathResolver;
 use PHPUnit\Framework\TestCase;
+use SeQura\Core\BusinessLogic\Domain\ExpressCheckout\Services\ExpressCheckoutService;
+use SeQura\Core\BusinessLogic\Domain\Integration\Store\StoreIdProvider;
+use SeQura\Core\Infrastructure\ServiceRegister;
 use Sequra\Core\Model\ExpressCheckout\CartSummaryFormDecorator;
-use Sequra\Core\Model\ExpressCheckout\TermsAndConditionsUrlReader;
 use Sequra\Core\Model\QuoteEmailResolver;
 
 /**
@@ -152,6 +154,18 @@ class CartSummaryAddressTest extends TestCase
         $formKey = $this->createMock(FormKey::class);
         $formKey->method('getFormKey')->willReturn('formkey');
 
+        $expressCheckoutService = $this->createStub(ExpressCheckoutService::class);
+        ServiceRegister::registerService(
+            ExpressCheckoutService::class,
+            static function () use ($expressCheckoutService) {
+                return $expressCheckoutService;
+            }
+        );
+        $storeIdProvider = $this->createStub(StoreIdProvider::class);
+        ServiceRegister::registerService(StoreIdProvider::class, static function () use ($storeIdProvider) {
+            return $storeIdProvider;
+        });
+
         return new CartSummaryFormDecorator(
             $this->createMock(ImageHelper::class),
             $this->createMock(ItemResolverInterface::class),
@@ -159,8 +173,7 @@ class CartSummaryAddressTest extends TestCase
             $logoPathResolver,
             $formKey,
             $emailResolver,
-            $directoryHelper,
-            $this->createStub(TermsAndConditionsUrlReader::class)
+            $directoryHelper
         );
     }
 }

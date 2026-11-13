@@ -3,11 +3,15 @@
 namespace Sequra\Core\Test\Unit\Services\BusinessLogic\ExpressCheckout;
 
 use PHPUnit\Framework\TestCase;
-use SeQura\Core\BusinessLogic\DataAccess\ExpressCheckout\Entities\ExpressCheckoutSettings as CoreEntity;
+use SeQura\Core\BusinessLogic\ConfigurationWebhookAPI\Handlers\ExpressCheckout\GetExpressCheckoutSettingsHandler;
+use SeQura\Core\BusinessLogic\ConfigurationWebhookAPI\Handlers\ExpressCheckout\SaveExpressCheckoutSettingsHandler;
+use SeQura\Core\BusinessLogic\DataAccess\ExpressCheckout\Entities\ExpressCheckoutSettings as SettingsEntity;
+use SeQura\Core\BusinessLogic\DataAccess\ExpressCheckout\Repositories\ExpressCheckoutSettingsRepository;
 use SeQura\Core\BusinessLogic\Domain\Checkout\Services\CheckoutService;
 use SeQura\Core\BusinessLogic\Domain\CountryConfiguration\Services\CountryConfigurationService;
+use SeQura\Core\BusinessLogic\Domain\ExpressCheckout\Exceptions\InvalidTermsAndConditionsUrlException;
 use SeQura\Core\BusinessLogic\Domain\ExpressCheckout\Models\ExpressCheckoutPage;
-use SeQura\Core\BusinessLogic\Domain\ExpressCheckout\Models\ExpressCheckoutSettings as CoreSettings;
+use SeQura\Core\BusinessLogic\Domain\ExpressCheckout\Models\ExpressCheckoutSettings;
 use SeQura\Core\BusinessLogic\Domain\ExpressCheckout\Services\ExpressCheckoutService;
 use SeQura\Core\BusinessLogic\Domain\Integration\ExpressCheckout\ExpressCheckoutIntegrationInterface;
 use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
@@ -15,12 +19,6 @@ use SeQura\Core\BusinessLogic\Domain\Order\Service\OrderService;
 use SeQura\Core\BusinessLogic\Domain\PaymentMethod\Services\PaymentMethodsService;
 use SeQura\Core\Infrastructure\ORM\Entity;
 use SeQura\Core\Infrastructure\ORM\Interfaces\RepositoryInterface;
-use Sequra\Core\Services\BusinessLogic\ExpressCheckout\Entities\ExpressCheckoutSettings as SettingsEntity;
-use Sequra\Core\Services\BusinessLogic\ExpressCheckout\Exceptions\InvalidTermsAndConditionsUrlException;
-use Sequra\Core\Services\BusinessLogic\ExpressCheckout\Handlers\GetExpressCheckoutSettingsHandler;
-use Sequra\Core\Services\BusinessLogic\ExpressCheckout\Handlers\SaveExpressCheckoutSettingsHandler;
-use Sequra\Core\Services\BusinessLogic\ExpressCheckout\Models\ExpressCheckoutSettings;
-use Sequra\Core\Services\BusinessLogic\ExpressCheckout\Repositories\ExpressCheckoutSettingsRepository;
 
 class ExpressCheckoutSettingsHandlersTest extends TestCase
 {
@@ -127,10 +125,10 @@ class ExpressCheckoutSettingsHandlersTest extends TestCase
         $this->assertArrayHasKey('termsAndConditionsUrl', $this->get());
         $this->assertNull($this->get()['termsAndConditionsUrl']);
 
-        $legacy = new CoreEntity();
-        $legacy->setStoreId('1');
-        $legacy->setExpressCheckoutSettings(new CoreSettings());
-        $this->row = $legacy;
+        $withoutUrl = new SettingsEntity();
+        $withoutUrl->setStoreId('1');
+        $withoutUrl->setExpressCheckoutSettings(new ExpressCheckoutSettings());
+        $this->row = $withoutUrl;
 
         $this->assertNull($this->get()['termsAndConditionsUrl']);
     }
