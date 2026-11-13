@@ -247,4 +247,7 @@
             <argument name="shippingHelper" xsi:type="object">SequraStorefrontShippingHelper</argument>
         </arguments>
     </type>
+    <type name="Magento\Sales\Model\Order">
+        <plugin name="sequra_order_can_cancel" type="Sequra\Core\Plugin\OrderCanCancelPlugin"/>
+    </type>
 </config>

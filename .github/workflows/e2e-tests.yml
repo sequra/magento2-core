@@ -19,7 +19,7 @@ on:
 
 concurrency:
   group: e2e-tests-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   tunnel:
@@ -31,14 +31,15 @@ jobs:
       - name: Check the tunnel secrets
         id: secrets
         env:
-          CLOUDFLARED_TUNNEL_TOKEN: ${{ secrets.CLOUDFLARED_TUNNEL_TOKEN }}
-          CLOUDFLARED_TUNNEL_URL: ${{ secrets.CLOUDFLARED_TUNNEL_URL }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.E2E_CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.E2E_CLOUDFLARE_ACCOUNT_ID }}
+          TUNNEL_DOMAIN: ${{ vars.E2E_TUNNEL_DOMAIN || secrets.E2E_TUNNEL_DOMAIN }}
         run: |
-          if [ -n "$CLOUDFLARED_TUNNEL_TOKEN" ] && [ -n "$CLOUDFLARED_TUNNEL_URL" ]; then
+          if [ -n "$CLOUDFLARE_API_TOKEN" ] && [ -n "$CLOUDFLARE_ACCOUNT_ID" ] && [ -n "$TUNNEL_DOMAIN" ]; then
             echo "configured=true" >> "$GITHUB_OUTPUT"
           else
             echo "configured=false" >> "$GITHUB_OUTPUT"
-            echo "::notice::E2E tests skipped: set the CLOUDFLARED_TUNNEL_TOKEN and CLOUDFLARED_TUNNEL_URL secrets to run them."
+            echo "::notice::E2E tests skipped: set the E2E_CLOUDFLARE_API_TOKEN and E2E_CLOUDFLARE_ACCOUNT_ID secrets and E2E_TUNNEL_DOMAIN to run them."
           fi
 
   e2e-tests:
@@ -46,10 +47,8 @@ jobs:
     if: needs.tunnel.outputs.configured == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 90
-
-    concurrency:
-      group: e2e-cloudflared-tunnel
-      cancel-in-progress: false
+    env:
+      E2E_HOST: magento2-core-${{ github.event.pull_request.number && format('pr-{0}', github.event.pull_request.number) || format('run-{0}', github.run_id) }}.${{ vars.E2E_TUNNEL_DOMAIN || secrets.E2E_TUNNEL_DOMAIN }}
 
     steps:
       - uses: actions/checkout@v5
@@ -64,18 +63,23 @@ jobs:
           git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
           npm ci --no-audit --no-fund --no-progress
 
+      - name: Open the tunnel
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.E2E_CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.E2E_CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          cp .env.sample .env
+          bin/e2e-tunnel up "$E2E_HOST"
+
       - name: Set up the environment
         env:
           M2_COMPOSER_REPO_KEY: ${{ secrets.M2_COMPOSER_REPO_KEY }}
           M2_COMPOSER_REPO_SECRET: ${{ secrets.M2_COMPOSER_REPO_SECRET }}
-          CLOUDFLARED_TUNNEL_TOKEN: ${{ secrets.CLOUDFLARED_TUNNEL_TOKEN }}
-          CLOUDFLARED_TUNNEL_URL: ${{ secrets.CLOUDFLARED_TUNNEL_URL }}
         run: |
           playwright_image=$(grep -o 'mcr.microsoft.com/playwright:[^ ]*' bin/playwright)
           docker pull --quiet "$playwright_image" > /dev/null &
           playwright_pull=$!
-          cp .env.sample .env
-          for key in M2_COMPOSER_REPO_KEY M2_COMPOSER_REPO_SECRET CLOUDFLARED_TUNNEL_TOKEN CLOUDFLARED_TUNNEL_URL; do
+          for key in M2_COMPOSER_REPO_KEY M2_COMPOSER_REPO_SECRET; do
             sed -i "s|^$key=.*|$key=${!key}|" .env
           done
           echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u sequra --password-stdin || (echo "❌ Can't log in to the GitHub Container Registry" && exit 1)
@@ -108,3 +112,10 @@ jobs:
       - name: Tear down the environment
         if: always()
         run: ./teardown.sh
+
+      - name: Close the tunnel
+        if: always()
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.E2E_CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.E2E_CLOUDFLARE_ACCOUNT_ID }}
+        run: bin/e2e-tunnel down "$E2E_HOST"
