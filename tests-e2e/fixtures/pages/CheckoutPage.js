@@ -13,7 +13,7 @@ export default class CheckoutPage extends BaseCheckoutPage {
     initLocators() {
         return {
             ...super.initLocators(),
-            loader: () => this.page.locator('.loading-mask', { state: 'visible' }),
+            loader: () => this.page.locator('.loading-mask:visible'),
             email: () => this.page.locator('#customer-email'),
             firstName: () => this.page.locator('[name=firstname]'),
             lastName: () => this.page.locator('[name=lastname]'),
@@ -109,9 +109,7 @@ export default class CheckoutPage extends BaseCheckoutPage {
      * @returns {Promise<void>}
      */
     async #waitForFinishLoading() {
-        do {
-            await this.expect(this.locators.loader().first()).toBeHidden({ timeout: 30000 });
-        } while ((await this.locators.loader()) > 0);
+        await this.expect(this.locators.loader()).toHaveCount(0, { timeout: 60000 });
     }
 
     /**

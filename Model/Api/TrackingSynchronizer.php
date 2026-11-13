@@ -10,6 +10,7 @@ use Magento\Sales\Api\OrderPaymentRepositoryInterface;
 use Magento\Sales\Api\OrderRepositoryInterface;
 use Magento\Sales\Model\Order;
 use SeQura\Core\BusinessLogic\AdminAPI\OrderManagement\Requests\OrderUpdateRequest;
+use SeQura\Core\BusinessLogic\Domain\Order\RepositoryContracts\SeQuraOrderRepositoryInterface;
 use SeQura\Core\Infrastructure\Logger\Logger;
 use SeQura\Core\Infrastructure\ServiceRegister;
 use SeQura\Core\Infrastructure\TaskExecution\QueueService;
@@ -155,7 +156,7 @@ class TrackingSynchronizer
     public function synchronize(int $orderId): void
     {
         $order = $this->findOrder($orderId);
-        if ($order === null) {
+        if ($order === null || !$this->isKnownToSeQura($order)) {
             return;
         }
 
@@ -188,6 +189,21 @@ class TrackingSynchronizer
         }
 
         return $order instanceof Order ? $order : null;
+    }
+
+    /**
+     * Tells whether integration-core has the seQura order of the order, which an update needs.
+     *
+     * @param Order $order
+     *
+     * @return bool
+     */
+    private function isKnownToSeQura(Order $order): bool
+    {
+        /** @var SeQuraOrderRepositoryInterface $repository */
+        $repository = ServiceRegister::getService(SeQuraOrderRepositoryInterface::class);
+
+        return $repository->getByShopReference((string)$order->getIncrementId()) !== null;
     }
 
     /**

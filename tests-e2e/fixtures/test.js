@@ -15,6 +15,16 @@ import ConnectionSettingsPage from "./pages/ConnectionSettingsPage";
 import SeQuraAdminPage from "./pages/SeQuraAdminPage";
 
 const test = baseTest.extend({
+    page: async ({ page, baseURL }, use) => {
+        if (baseURL && baseURL.includes('ngrok')) {
+            const shopOrigin = new URL(baseURL).origin;
+            await page.route(url => url.origin !== shopOrigin, route => {
+                const { 'ngrok-skip-browser-warning': _, ...headers } = route.request().headers();
+                return route.continue({ headers });
+            });
+        }
+        await use(page);
+    },
     dataProvider: async ({ page, baseURL, request }, use) => await use(new DataProvider(page, baseURL, expect, request)),
     backOffice: async ({ page, baseURL }, use) => await use(new BackOffice(page, baseURL, expect)),
     helper: async ({ page, baseURL, request }, use) => await use(new SeQuraHelper(page, baseURL, expect, request)),

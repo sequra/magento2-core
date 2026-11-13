@@ -2,6 +2,7 @@
 
 namespace Sequra\Core\ResourceModel;
 
+use Magento\Framework\DB\Adapter\AdapterInterface;
 use Magento\Framework\DB\Select;
 use Magento\Framework\Model\ResourceModel\Db\AbstractDb;
 use SeQura\Core\Infrastructure\ORM\Entity;
@@ -77,27 +78,31 @@ class SequraEntity extends AbstractDb
             return [];
         }
 
-        $select = $connection->select()
-            ->from($this->getMainTable())
-            ->where('type = ?', $entity->getConfig()->getType());
-
-        if ($filter !== null) {
-            $fieldIndexMap = IndexHelper::mapFieldsToIndexes($entity);
-
-            if (!empty($filter->getConditions())) {
-                $select->where($this->buildWhereCondition($filter, $fieldIndexMap));
-            }
-
-            if ($filter->getLimit()) {
-                $select->limit($filter->getLimit(), $filter->getOffset());
-            }
-
-            $select = $this->buildOrderBy($select, $filter, $fieldIndexMap);
-        }
-
-        $result = $connection->fetchAll($select);
+        $result = $connection->fetchAll($this->buildSelect($connection, $filter, $entity, '*'));
 
         return !empty($result) ? $result : [];
+    }
+
+    /**
+     * Selects the IDs of the records of a specific type of entity that match the given Sequra query filter.
+     *
+     * @param QueryFilter|null $filter Sequra query filter.
+     * @param Entity $entity Sequra entity.
+     *
+     * @return array IDs of the selected records.
+     * @phpstan-return array<int, int|string>
+     *
+     * @throws QueryFilterInvalidParamException
+     * @throws \Magento\Framework\Exception\LocalizedException
+     */
+    protected function selectIds(?QueryFilter $filter, Entity $entity): array
+    {
+        $connection = $this->getConnection();
+        if (!$connection) {
+            return [];
+        }
+
+        return $connection->fetchCol($this->buildSelect($connection, $filter, $entity, ['id']));
     }
 
     /**
@@ -177,6 +182,44 @@ class SequraEntity extends AbstractDb
     }
 
     /**
+     * Deletes the records of a specific type of entity that match the given Sequra query filter.
+     *
+     * Without a filter every record of the entity type is deleted. A filter with a limit deletes the records its
+     * select returns that still match its conditions, because Magento's adapter cannot run DELETE ... LIMIT.
+     *
+     * @param QueryFilter|null $filter Sequra query filter.
+     * @param Entity $entity Sequra entity.
+     *
+     * @return int Number of deleted records.
+     *
+     * @throws QueryFilterInvalidParamException
+     * @throws \Magento\Framework\Exception\LocalizedException
+     */
+    public function deleteEntities(?QueryFilter $filter, Entity $entity): int
+    {
+        $connection = $this->getConnection();
+        if (!$connection) {
+            return 0;
+        }
+
+        $where = [$connection->quoteInto('type = ?', $entity->getConfig()->getType())];
+        if ($filter !== null && $filter->getLimit()) {
+            $ids = $this->selectIds($filter, $entity);
+            if (empty($ids)) {
+                return 0;
+            }
+
+            $where[] = $connection->quoteInto('id IN (?)', $ids);
+        }
+
+        if ($filter !== null && !empty($filter->getConditions())) {
+            $where[] = $this->buildWhereCondition($connection, $filter, IndexHelper::mapFieldsToIndexes($entity));
+        }
+
+        return $connection->delete($this->getMainTable(), $where);
+    }
+
+    /**
      * Prepares data for inserting a new record or updating an existing one.
      *
      * @param Entity $entity Sequra entity object.
@@ -221,8 +264,44 @@ class SequraEntity extends AbstractDb
     }
 
     /**
+     * Builds a SELECT over a specific type of entity with given Sequra query filter.
+     *
+     * @param AdapterInterface $connection Database connection.
+     * @param QueryFilter|null $filter Sequra query filter.
+     * @param Entity $entity Sequra entity.
+     * @param string|string[] $columns Columns to select.
+     *
+     * @return Select
+     *
+     * @throws QueryFilterInvalidParamException
+     */
+    private function buildSelect(AdapterInterface $connection, ?QueryFilter $filter, Entity $entity, $columns): Select
+    {
+        $select = $connection->select()
+            ->from($this->getMainTable(), $columns)
+            ->where('type = ?', $entity->getConfig()->getType());
+
+        if ($filter !== null) {
+            $fieldIndexMap = IndexHelper::mapFieldsToIndexes($entity);
+
+            if (!empty($filter->getConditions())) {
+                $select->where($this->buildWhereCondition($connection, $filter, $fieldIndexMap));
+            }
+
+            if ($filter->getLimit()) {
+                $select->limit($filter->getLimit(), $filter->getOffset());
+            }
+
+            $select = $this->buildOrderBy($select, $filter, $fieldIndexMap);
+        }
+
+        return $select;
+    }
+
+    /**
      * Builds WHERE condition part of SELECT query.
      *
+     * @param AdapterInterface $connection Connection that quotes the condition values.
      * @param QueryFilter $filter Sequra query filter.
      * @param array $fieldIndexMap Array of index mappings.
      * @phpstan-param array<string, int> $fieldIndexMap
@@ -231,7 +310,7 @@ class SequraEntity extends AbstractDb
      *
      * @throws \SeQura\Core\Infrastructure\ORM\Exceptions\QueryFilterInvalidParamException
      */
-    private function buildWhereCondition(QueryFilter $filter, array $fieldIndexMap)
+    private function buildWhereCondition(AdapterInterface $connection, QueryFilter $filter, array $fieldIndexMap)
     {
         $whereCondition = '';
         if ($filter->getConditions()) {
@@ -240,18 +319,13 @@ class SequraEntity extends AbstractDb
                     $whereCondition .= ' ' . $condition->getChainOperator() . ' ';
                 }
 
-                if ($condition->getColumn() === 'id' && $this->getConnection()) {
-                    $whereCondition .= 'id = ' . $this->getConnection()->quote($condition->getValue());
-                    continue;
-                }
-
-                if (!array_key_exists($condition->getColumn(), $fieldIndexMap)) {
+                if ($condition->getColumn() !== 'id' && !array_key_exists($condition->getColumn(), $fieldIndexMap)) {
                     throw new QueryFilterInvalidParamException(
                         sprintf('Field %s is not indexed!', $condition->getColumn())
                     );
                 }
 
-                $whereCondition .= $this->addCondition($condition, $fieldIndexMap);
+                $whereCondition .= $this->addCondition($connection, $condition, $fieldIndexMap);
             }
         }
 
@@ -261,13 +335,14 @@ class SequraEntity extends AbstractDb
     /**
      * Filters records by given condition.
      *
+     * @param AdapterInterface $connection Connection that quotes the condition values.
      * @param QueryCondition $condition Query condition object.
      * @param array $indexMap Map of property indexes.
      * @phpstan-param array<string, int> $indexMap
      *
      * @return string A single WHERE condition.
      */
-    private function addCondition(QueryCondition $condition, array $indexMap)
+    private function addCondition(AdapterInterface $connection, QueryCondition $condition, array $indexMap)
     {
         $column = $condition->getColumn();
         $columnName = $column === 'id' ? 'id' : 'index_' . $indexMap[$column];
@@ -282,9 +357,13 @@ class SequraEntity extends AbstractDb
              * @var array<int, string|int|float> $arr
              */
             $arr = $condition->getValue();
-            $values = array_map(static function ($item) {
+            $values = array_map(static function ($item) use ($column, $connection) {
+                if ($column === 'id') {
+                    return (string)(int)$item;
+                }
+
                 if (is_string($item)) {
-                    return "'$item'";
+                    return $connection->quote($item);
                 }
 
                 if (is_int($item)) {
@@ -292,7 +371,7 @@ class SequraEntity extends AbstractDb
                      * @var int $val
                      */
                     $val = IndexHelper::castFieldValue($item, 'integer');
-                    return "'{$val}'";
+                    return $connection->quote((string)$val);
                 }
 
                 /**
@@ -300,13 +379,11 @@ class SequraEntity extends AbstractDb
                  */
                 $val = IndexHelper::castFieldValue($item, 'double');
 
-                return "'{$val}'";
+                return $connection->quote((string)$val);
             }, $arr);
             $conditionValue = '(' . implode(',', $values) . ')';
         } else {
-            // TODO: Part $conditionValue (array|int|string|null) of encapsed string cannot be cast to string.
-            // @phpstan-ignore-next-line
-            $conditionValue = "'$conditionValue'";
+            $conditionValue = $connection->quote(is_scalar($conditionValue) ? (string)$conditionValue : '');
         }
 
         return $columnName . ' ' . $condition->getOperator()

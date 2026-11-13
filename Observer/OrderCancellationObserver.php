@@ -91,12 +91,13 @@ class OrderCancellationObserver implements ObserverInterface
             throw new LocalizedException($this->translationProvider->translate('sequra.error.cannotCancel'));
         }
 
+        $currency = $orderData->getOrderCurrencyCode() ?? '';
         $this->orderUpdater->update(
             (string)$orderData->getStoreId(),
             new OrderUpdateRequest(
                 $orderData->getIncrementId(),
-                new SeQuraCart($orderData->getOrderCurrencyCode() ?? ''),
-                new SeQuraCart($orderData->getOrderCurrencyCode() ?? '')
+                new SeQuraCart($currency),
+                new SeQuraCart($currency)
             )
         );
     }

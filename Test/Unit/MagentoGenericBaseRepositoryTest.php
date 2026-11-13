@@ -3,12 +3,19 @@
 namespace Sequra\Core\Test\Unit;
 
 use Magento\Framework\App\ObjectManager;
+use Magento\Framework\App\ResourceConnection;
 use Magento\Setup\Module\Setup;
+use SeQura\Core\Infrastructure\ORM\Exceptions\RepositoryNotRegisteredException;
+use Sequra\Core\Repository\BaseRepository;
 use Sequra\Core\Services\Bootstrap;
+use SeQura\Core\Infrastructure\ORM\Exceptions\QueryFilterInvalidParamException;
+use SeQura\Core\Infrastructure\ORM\QueryFilter\Operators;
+use SeQura\Core\Infrastructure\ORM\QueryFilter\QueryFilter;
 use SeQura\Core\Infrastructure\ORM\RepositoryRegistry;
 use SeQura\Core\Tests\Infrastructure\Common\TestComponents\ORM\Entity\StudentEntity;
 use SeQura\Core\Tests\Infrastructure\ORM\AbstractGenericStudentRepositoryTest;
 use Sequra\Core\Setup\DatabaseHandler;
+use Sequra\Core\Test\Unit\Repository\StaleSelectRepository;
 use Sequra\Core\Test\Unit\Repository\TestRepository;
 
 class MagentoGenericBaseRepositoryTest extends AbstractGenericStudentRepositoryTest
@@ -43,6 +50,232 @@ class MagentoGenericBaseRepositoryTest extends AbstractGenericStudentRepositoryT
         $installer->endSetup();
 
         RepositoryRegistry::registerRepository(StudentEntity::CLASS_NAME, TestRepository::getClassName());
+    }
+
+    /**
+     * Deletes the entities whose ids are in the list.
+     *
+     * @return void
+     *
+     * @throws QueryFilterInvalidParamException
+     * @throws RepositoryNotRegisteredException
+     */
+    public function testDeleteWhereByIdIn()
+    {
+        $ids = [$this->saveStudent('ana'), $this->saveStudent('bob'), $this->saveStudent('eve')];
+        $repository = $this->repository();
+
+        $repository->deleteWhere((new QueryFilter())->where('id', Operators::IN, [$ids[0], $ids[2]]));
+
+        $this->assertSame(['bob'], $this->remainingUsernames());
+    }
+
+    /**
+     * Deletes the entities matching an indexed column that is NULL or equal to a value.
+     *
+     * @return void
+     *
+     * @throws QueryFilterInvalidParamException
+     * @throws RepositoryNotRegisteredException
+     */
+    public function testDeleteWhereByIndexedColumnNullOrEqual()
+    {
+        $this->saveStudent('ana', null);
+        $this->saveStudent('bob', '');
+        $this->saveStudent('eve', 'eve@example.com');
+        $repository = $this->repository();
+
+        $repository->deleteWhere(
+            (new QueryFilter())->where('email', Operators::NULL)->orWhere('email', Operators::EQUALS, '')
+        );
+
+        $this->assertSame(['eve'], $this->remainingUsernames());
+    }
+
+    /**
+     * Deletes only as many entities as the limit allows, in the order of the filter.
+     *
+     * @return void
+     *
+     * @throws QueryFilterInvalidParamException
+     * @throws RepositoryNotRegisteredException
+     */
+    public function testDeleteWhereRespectsTheLimit()
+    {
+        $this->saveStudent('ana');
+        $this->saveStudent('bob');
+        $this->saveStudent('eve');
+        $repository = $this->repository();
+
+        $repository->deleteWhere((new QueryFilter())->orderBy('id')->setLimit(2));
+
+        $this->assertSame(['eve'], $this->remainingUsernames());
+    }
+
+    /**
+     * A limited delete only removes rows that still match the filter conditions, even when its select returned more.
+     *
+     * @return void
+     *
+     * @throws QueryFilterInvalidParamException
+     * @throws RepositoryNotRegisteredException
+     */
+    public function testDeleteWhereWithLimitKeepsTheFilterConditions()
+    {
+        $this->saveStudent('ana', 'ana@example.com');
+        $this->saveStudent('bob', 'bob@example.com');
+        RepositoryRegistry::registerRepository(StudentEntity::CLASS_NAME, StaleSelectRepository::getClassName());
+
+        $this->repository()->deleteWhere(
+            (new QueryFilter())->where('email', Operators::EQUALS, 'ana@example.com')->setLimit(10)
+        );
+
+        $this->assertSame(['bob'], $this->remainingUsernames());
+    }
+
+    /**
+     * Quotes in a filter value are matched literally and cannot widen the delete.
+     *
+     * @return void
+     *
+     * @throws QueryFilterInvalidParamException
+     * @throws RepositoryNotRegisteredException
+     */
+    public function testDeleteWhereQuotesTheFilterValues()
+    {
+        $this->saveStudent('ana', "o'connor@example.com");
+        $this->saveStudent('bob', "d'arcy@example.com");
+        $this->saveStudent('eve', 'eve@example.com');
+        $repository = $this->repository();
+
+        $repository->deleteWhere((new QueryFilter())->where('email', Operators::EQUALS, "x' OR '1'='1"));
+        $repository->deleteWhere((new QueryFilter())->where('email', Operators::EQUALS, "o'connor@example.com"));
+        $repository->deleteWhere((new QueryFilter())->where('email', Operators::IN, ["d'arcy@example.com"]));
+
+        $this->assertSame(['eve'], $this->remainingUsernames());
+    }
+
+    /**
+     * Without a filter every entity of the repository's type is deleted, and nothing of another type.
+     *
+     * @return void
+     *
+     * @throws RepositoryNotRegisteredException
+     */
+    public function testDeleteWhereWithoutFilterDeletesOnlyTheEntityType()
+    {
+        $this->saveStudent('ana');
+        $this->saveStudent('bob');
+        $connection = $this->getConnection();
+        $connection->insert($connection->getTableName(TestRepository::TABLE_NAME), ['type' => 'Other', 'data' => '{}']);
+        $repository = $this->repository();
+
+        $repository->deleteWhere();
+
+        $this->assertSame([], $this->remainingUsernames());
+        $this->assertSame(1, $this->countRowsOfType('Other'));
+    }
+
+    /**
+     * A condition on a column that is not indexed is refused.
+     *
+     * @return void
+     *
+     * @throws QueryFilterInvalidParamException
+     * @throws RepositoryNotRegisteredException
+     */
+    public function testDeleteWhereOnANotIndexedColumnThrows()
+    {
+        $repository = $this->repository();
+
+        $this->expectException(QueryFilterInvalidParamException::class);
+
+        $repository->deleteWhere((new QueryFilter())->where('addresses', Operators::EQUALS, 'x'));
+    }
+
+    /**
+     * Returns the repository of the student entity under test.
+     *
+     * @return BaseRepository
+     *
+     * @throws RepositoryNotRegisteredException
+     */
+    private function repository()
+    {
+        /** @var BaseRepository $repository */
+        $repository = RepositoryRegistry::getRepository(StudentEntity::getClassName());
+
+        return $repository;
+    }
+
+    /**
+     * Saves a student with the given username and email.
+     *
+     * @param string $username
+     * @param string|null $email
+     *
+     * @return int
+     *
+     * @throws RepositoryNotRegisteredException
+     */
+    private function saveStudent($username, $email = 'student@example.com')
+    {
+        $student = new StudentEntity();
+        $student->localId = 1;
+        $student->username = $username;
+        $student->email = $email;
+        $student->gender = 'F';
+        $student->firstName = $username;
+        $student->lastName = $username;
+
+        return (int)$this->repository()->save($student);
+    }
+
+    /**
+     * Returns the usernames of the students still stored, in id order.
+     *
+     * @return string[]
+     *
+     * @throws QueryFilterInvalidParamException
+     * @throws RepositoryNotRegisteredException
+     */
+    private function remainingUsernames()
+    {
+        $students = $this->repository()->select((new QueryFilter())->orderBy('id'));
+
+        return array_map(static function (StudentEntity $student) {
+            return $student->username;
+        }, $students);
+    }
+
+    /**
+     * Counts the rows of the given type in the test table.
+     *
+     * @param string $type
+     *
+     * @return int
+     */
+    private function countRowsOfType($type)
+    {
+        $connection = $this->getConnection();
+        $select = $connection->select()
+            ->from($connection->getTableName(TestRepository::TABLE_NAME), 'COUNT(*)')
+            ->where('type = ?', $type);
+
+        return (int)$connection->fetchOne($select);
+    }
+
+    /**
+     * Returns the database connection.
+     *
+     * @return \Magento\Framework\DB\Adapter\AdapterInterface
+     */
+    private function getConnection()
+    {
+        /** @var ResourceConnection $resource */
+        $resource = ObjectManager::getInstance()->get(ResourceConnection::class);
+
+        return $resource->getConnection();
     }
 
     /**

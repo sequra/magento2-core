@@ -29,6 +29,7 @@ export default defineConfig({
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
     baseURL: process.env.PUBLIC_URL,
+    actionTimeout: 30 * 1000,
     trace: 'retain-on-failure',
     /* Add ngrok-skip-browser-warning header to all HTTP requests */
     extraHTTPHeaders: process.env.PUBLIC_URL && process.env.PUBLIC_URL.includes('ngrok') ? { 'ngrok-skip-browser-warning': '1' } : undefined,

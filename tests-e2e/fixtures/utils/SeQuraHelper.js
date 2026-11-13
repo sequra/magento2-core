@@ -15,6 +15,10 @@ export default class SeQuraHelper extends BaseSeQuraHelper {
             verify_order_has_merchant_id: 'verify_order_has_merchant_id',
             set_config: 'set_config',
             get_order_trackings: 'get_order_trackings',
+            seed_order_cleanup_solicitations: 'seed_order_cleanup_solicitations',
+            get_order_cleanup_state: 'get_order_cleanup_state',
+            set_order_cleanup_next_run: 'set_order_cleanup_next_run',
+            wake_task_runner: 'wake_task_runner',
             put_order_on_hold: 'put_order_on_hold',
         };
     }
@@ -40,6 +44,37 @@ export default class SeQuraHelper extends BaseSeQuraHelper {
         });
 
         return trackings;
+    }
+
+    async seedOrderCleanupSolicitations(orderNumber) {
+        const [, references] = await this.executeWebhook({
+            webhook: this.webhooks.seed_order_cleanup_solicitations,
+            args: [{ name: 'order_id', value: orderNumber }],
+            returnResponse: true,
+        });
+
+        return references;
+    }
+
+    async getOrderCleanupState(references = []) {
+        const [, state] = await this.executeWebhook({
+            webhook: this.webhooks.get_order_cleanup_state,
+            args: [{ name: 'references', value: references.join(',') }],
+            returnResponse: true,
+        });
+
+        return state;
+    }
+
+    async setOrderCleanupNextRun(timestamp) {
+        await this.executeWebhook({
+            webhook: this.webhooks.set_order_cleanup_next_run,
+            args: [{ name: 'timestamp', value: String(timestamp) }],
+        });
+    }
+
+    async wakeTaskRunner() {
+        await this.executeWebhook({ webhook: this.webhooks.wake_task_runner });
     }
 
     async putOrderOnHold(orderNumber) {
