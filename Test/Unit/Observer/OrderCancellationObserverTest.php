@@ -14,12 +14,12 @@ use Magento\Sales\Model\ResourceModel\Order as OrderResource;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use ReflectionProperty;
-use SeQura\Core\BusinessLogic\Domain\Integration\Store\StoreIdProvider;
+use SeQura\Core\BusinessLogic\AdminAPI\OrderManagement\Requests\OrderUpdateRequest;
 use SeQura\Core\BusinessLogic\Domain\Order\Models\OrderUpdateData;
-use SeQura\Core\BusinessLogic\Domain\Order\Service\OrderService;
+use SeQura\Core\BusinessLogic\Domain\Order\Models\SeQuraOrder;
 use SeQura\Core\Infrastructure\Logger\Logger;
-use SeQura\Core\Infrastructure\ServiceRegister;
 use Sequra\Core\Controller\Webhook\Index as WebhookController;
+use Sequra\Core\Model\Api\OrderUpdater;
 use Sequra\Core\Model\Ui\ConfigProvider;
 use Sequra\Core\Observer\OrderCancellationObserver;
 use Sequra\Core\Services\BusinessLogic\Utility\SeQuraTranslationProvider;
@@ -37,9 +37,9 @@ use Sequra\Core\Services\BusinessLogic\Utility\SeQuraTranslationProvider;
 class OrderCancellationObserverTest extends TestCase
 {
     /**
-     * @var MockObject&OrderService
+     * @var MockObject&OrderUpdater
      */
-    private $orderService;
+    private $orderUpdater;
 
     /**
      * @var MockObject&AdapterInterface
@@ -56,14 +56,7 @@ class OrderCancellationObserverTest extends TestCase
      */
     protected function setUp(): void
     {
-        $this->orderService = $this->createMock(OrderService::class);
-        $orderService = $this->orderService;
-        ServiceRegister::registerService(OrderService::class, static function () use ($orderService) {
-            return $orderService;
-        });
-        ServiceRegister::registerService(StoreIdProvider::class, static function () {
-            return new StoreIdProvider();
-        });
+        $this->orderUpdater = $this->createMock(OrderUpdater::class);
         $this->replaceLogger();
     }
 
@@ -72,7 +65,6 @@ class OrderCancellationObserverTest extends TestCase
      */
     protected function tearDown(): void
     {
-        $this->setStatic(ServiceRegister::class, 'instance', null);
         $this->setStatic(WebhookController::class, 'isWebhookProcessing', false);
         Logger::resetInstance();
     }
@@ -87,13 +79,17 @@ class OrderCancellationObserverTest extends TestCase
         $observer = $this->observer(Order::STATE_PENDING_PAYMENT);
 
         $this->connection->expects($this->once())->method('fetchOne');
-        $this->orderService->expects($this->once())
-            ->method('updateOrder')
-            ->with($this->callback(static function (OrderUpdateData $data) {
+        $this->orderUpdater->expects($this->once())
+            ->method('update')
+            ->with('1', $this->callback(static function (OrderUpdateRequest $request) {
+                /** @var OrderUpdateData $data */
+                $data = $request->transformToDomainModel();
+
                 return $data->getOrderShopReference() === '100000001'
                     && $data->getShippedCart() !== null && $data->getShippedCart()->getItems() === []
                     && $data->getUnshippedCart() !== null && $data->getUnshippedCart()->getItems() === [];
-            }));
+            }))
+            ->willReturn($this->createStub(SeQuraOrder::class));
 
         $observer->execute($this->event($this->cancelledOrder()));
     }
@@ -107,7 +103,7 @@ class OrderCancellationObserverTest extends TestCase
     {
         $observer = $this->observer(Order::STATE_PAYMENT_REVIEW);
 
-        $this->orderService->expects($this->never())->method('updateOrder');
+        $this->orderUpdater->expects($this->never())->method('update');
 
         $this->expectException(LocalizedException::class);
 
@@ -123,7 +119,7 @@ class OrderCancellationObserverTest extends TestCase
     {
         $observer = $this->observer(Order::STATE_CANCELED);
 
-        $this->orderService->expects($this->never())->method('updateOrder');
+        $this->orderUpdater->expects($this->never())->method('update');
 
         $observer->execute($this->event($this->cancelledOrder()));
     }
@@ -138,7 +134,7 @@ class OrderCancellationObserverTest extends TestCase
         $observer = $this->observer(Order::STATE_PENDING_PAYMENT);
 
         $this->connection->expects($this->never())->method('fetchOne');
-        $this->orderService->expects($this->never())->method('updateOrder');
+        $this->orderUpdater->expects($this->never())->method('update');
 
         $observer->execute($this->event($this->cancelledOrder('checkmo')));
     }
@@ -154,7 +150,7 @@ class OrderCancellationObserverTest extends TestCase
         $this->setStatic(WebhookController::class, 'isWebhookProcessing', true);
 
         $this->connection->expects($this->never())->method('fetchOne');
-        $this->orderService->expects($this->never())->method('updateOrder');
+        $this->orderUpdater->expects($this->never())->method('update');
 
         $observer->execute($this->event($this->cancelledOrder()));
     }
@@ -168,7 +164,7 @@ class OrderCancellationObserverTest extends TestCase
     {
         $observer = $this->observer(Order::STATE_PENDING_PAYMENT);
 
-        $this->orderService->method('updateOrder')->willThrowException(new Exception('timeout'));
+        $this->orderUpdater->method('update')->willThrowException(new Exception('timeout'));
 
         $observer->execute($this->event($this->cancelledOrder()));
 
@@ -198,7 +194,7 @@ class OrderCancellationObserverTest extends TestCase
         $translationProvider = $this->createMock(SeQuraTranslationProvider::class);
         $translationProvider->method('translate')->willReturn(new Phrase('sequra.error.cannotCancel'));
 
-        return new OrderCancellationObserver($translationProvider, $resource);
+        return new OrderCancellationObserver($translationProvider, $this->orderUpdater, $resource);
     }
 
     /**
