@@ -10,11 +10,13 @@ use Sequra\Helper\Model\Task\ConfigureDummyTask;
 use Sequra\Helper\Model\Task\GetOrderCleanupStateTask;
 use Sequra\Helper\Model\Task\GetOrderTrackingsTask;
 use Sequra\Helper\Model\Task\SeedOrderCleanupSolicitationsTask;
+use Sequra\Helper\Model\Task\PutOrderOnHoldTask;
 use Sequra\Helper\Model\Task\SetConfigTask;
 use Sequra\Helper\Model\Task\SetOrderCleanupNextRunTask;
 use Sequra\Helper\Model\Task\Task;
 use Sequra\Helper\Model\Task\VerifyOrderHasMerchantIdTask;
 use Sequra\Helper\Model\Task\WakeTaskRunnerTask;
+use Sequra\Core\Services\Bootstrap;
 
 class Webhooks implements WebhooksInterface
 {
@@ -31,13 +33,20 @@ class Webhooks implements WebhooksInterface
     protected $conn;
 
     /**
+     * @var Bootstrap
+     */
+    private $bootstrap;
+
+    /**
      * Constructor
      *
      * @param ResourceConnection $resourceConnection
+     * @param Bootstrap $bootstrap
      */
-    public function __construct(ResourceConnection $resourceConnection)
+    public function __construct(ResourceConnection $resourceConnection, Bootstrap $bootstrap)
     {
         $this->conn = $resourceConnection;
+        $this->bootstrap = $bootstrap;
     }
 
     /**
@@ -45,6 +54,8 @@ class Webhooks implements WebhooksInterface
      */
     public function execute()
     {
+        $this->bootstrap->initInstance();
+
         return $this->getTaskForWebhook((string)($_GET['sq-webhook'] ?? null))->execute($_REQUEST);
     }
 
@@ -66,6 +77,7 @@ class Webhooks implements WebhooksInterface
             'get_order_cleanup_state' => GetOrderCleanupStateTask::class,
             'set_order_cleanup_next_run' => SetOrderCleanupNextRunTask::class,
             'wake_task_runner'      => WakeTaskRunnerTask::class,
+            'put_order_on_hold'     => PutOrderOnHoldTask::class,
         ];
         return ! isset($map[$webhook]) ? new Task($this->conn) : new $map[$webhook]($this->conn);
     }
