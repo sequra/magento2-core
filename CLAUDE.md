@@ -34,6 +34,11 @@ bin/magento <args>          # Magento CLI inside the container (e.g. setup:upgra
 bin/composer <args>         # Composer inside the container
 bin/update-sequra           # reinstall this module into Magento's vendor/ from the working tree
 bin/update-integration-core-ui   # re-import admin SPA assets after bumping the npm package
+
+# One worktree per write-capable session, each with its own ports and shop (see Git)
+bin/workspace <name> [--branch <branch>]
+bin/workspace list
+bin/workspace rm <name>
 ```
 
 **Lint & static analysis (these run in CI — match them before pushing):**
@@ -44,7 +49,11 @@ bin/phpstan                 # PHPStan level 9, config phpstan.neon — REQUIRES 
 ```
 CI also runs `php -l` syntax linting across PHP 7.4–8.4. `composer.json` requires `php >=7.4 <8.6`.
 
-**Unit/integration tests** (`Test/`, PHPUnit) run against a Magento install — see `Test/README.md`. Tests autoload core's test base classes from `vendor/sequra/integration-core/tests/...` (see `autoload-dev` in `composer.json`). Note: tests fail if the module is installed in Magento *and* present locally (double-load); rename one folder when running.
+**Unit tests** (`Test/Unit`, PHPUnit) run against the Magento install in the container, on the `vendor/sequra/magento2-core` copy — so `bin/update-sequra` first, as for phpstan. CI runs them in `.github/workflows/unit-tests.yml`.
+```bash
+bin/phpunit                 # the Test/Unit suite; extra args go to phpunit (e.g. --filter WebhookAuthenticatorTest)
+```
+Two tests extend core's test base classes from `vendor/sequra/integration-core/tests/`. The dist package ships without `tests/`, so `bin/phpunit` reinstalls integration-core from source when they are missing, and `Test/Unit/bootstrap.php` maps `SeQura\Core\Tests\` onto it (the module's own `autoload-dev` is ignored when Magento installs it as a dependency). See `Test/README.md` for the integration suite.
 
 **E2E tests** (`tests-e2e/`, Playwright):
 ```bash
@@ -55,6 +64,45 @@ bin/playwright tests-e2e/specs/example.spec.js   # single spec (path, or bare na
 ```
 E2E requires the container exposed to the internet for SeQura callbacks — run `./setup.sh --ngrok` (or `--cloudflared`) and set `SQ_MERCHANT_REF`, `SQ_USER_SECRET`, `SQ_ASSETS_KEY` in `.env`. Config: `playwright.config.js` (single `chromium` project covering `tests-e2e/specs/`).
 
+`.github/workflows/e2e-tests.yml` runs the suite on pull requests against a shop booted on the runner behind a Cloudflare tunnel **of its own**, `magento2-core-pr-<n>.<E2E_TUNNEL_DOMAIN>`, which `bin/e2e-tunnel up` creates (tunnel, route to `http://host:$M2_HTTP_PORT`, DNS record, token and URL written into `.env`) and `bin/e2e-tunnel down` deletes in an `always()` step. Never move CI onto one shared tunnel: connectors that share a tunnel token are replicas, and Cloudflare balances requests across them, so one runner would answer for another's hostname. `cancel-in-progress` stays `false`: a cancelled run's `down` would otherwise race the next run's `up` on the same hostname. The Cloudflare calls live in `bin/common/cloudflare.sh`. The API token reaches the script through the step's `env` only, never `.env`, which compose and `bin/playwright` forward whole into containers. Secrets: `E2E_CLOUDFLARE_API_TOKEN` (Tunnel Edit, DNS Edit, Zone Read), `E2E_CLOUDFLARE_ACCOUNT_ID`; `E2E_TUNNEL_DOMAIN` as a variable or a secret. Without them (forks, Dependabot) the job is skipped.
+
+## Git
+
+### One worktree per write-capable session
+
+Never run two write-capable sessions in the same checkout. A working tree has one HEAD and one index, so a second session's `git checkout` silently relocates the first session's next commit. Read-only sessions may share the primary checkout, but the moment work turns to writing the session moves into a worktree of its own **before** the first write.
+
+Create it with `bin/workspace`, never a bare `git worktree add`: a bare worktree has no `.env`, and a copied one carries the primary's eight host ports (`M2_HTTP_PORT`, `MARIADB_PORT`, `REDIS_PORT`, `OPENSEARCH_API_PORT`, `OPENSEARCH_INTERNODE_PORT`, `ELASTICSEARCH_API_PORT`, `ELASTICSEARCH_INTERNODE_PORT`, `NGROK_PORT`), its tunnel container names (`NGROK_CONTAINER_NAME`, `CLOUDFLARED_CONTAINER_NAME`), which are global to the Docker daemon and which `teardown.sh` removes by name, and its Cloudflare tunnel, whose hostname routes to one fixed port. `bin/workspace` adds the worktree under `../magento2-core-workspaces/` and writes a `.env` from the primary's (or `.env.sample`) with a port slot of its own (+1000 per workspace: the eight base ports differ in their last three digits, so no two slots ever collide), its own `COMPOSE_PROJECT_NAME`, tunnel container names and `M2_URL`, and a Cloudflare tunnel of its own when the primary `.env` allows it (below).
+
+```bash
+bin/workspace lis-123-short-title --branch LIS-123-short-title
+cd ../magento2-core-workspaces/lis-123-short-title && claude
+./setup.sh                              # inside the workspace: its own Magento on its own port
+bin/workspace list                      # workspaces, branches, ports, shop running or not
+bin/workspace rm lis-123-short-title    # stops its shop, drops its volumes, removes the worktree; keeps the branch
+```
+
+- **Workspace names are hostname labels** (lowercase letters, digits and inner '-'), since each becomes a compose project and a tunnel hostname, so any other branch name goes through `--branch`. Without it the branch is named after the workspace.
+- **A branch the script has to create starts from `origin/master`**, never from the primary checkout's HEAD; an existing local branch is checked out as-is, and one that exists only on `origin` is tracked. Never move the primary onto master to get a branch - that is the hazard this rule exists to prevent.
+- **The workspace builds what is gitignored itself**: `./setup.sh` installs Magento with the module into the workspace's own volumes (`--install` also imports the admin UI), and `npm ci` is needed before `bin/playwright`. No composer step runs at creation: `bin/composer` is `docker compose run`, which would start the whole stack.
+- **Only `bin/phpcs` and the syntax sweep run without a shop.** `bin/phpstan`, `bin/phpunit` and `bin/update-sequra` exec into the workspace's own `magento` container, so they need that workspace's `./setup.sh` to have run.
+- **Each workspace gets a Cloudflare tunnel of its own** when the primary `.env` has `CLOUDFLARE_API_TOKEN` (Tunnel Edit, DNS Edit, Zone Read) and `CLOUDFLARED_TUNNEL_URL`: `bin/workspace` runs `bin/e2e-tunnel up <name>-<primary tunnel host>`, the script CI uses, which writes the new tunnel's token and URL into the workspace's `.env`, so `./setup.sh --cloudflared` works there; `bin/workspace rm` deletes the tunnel and its DNS record after stopping the shop. The account comes from `CLOUDFLARE_ACCOUNT_ID`, or is decoded from the primary's `CLOUDFLARED_TUNNEL_TOKEN`. The API token is blanked in the workspace's `.env`. Without the API token the workspace has no tunnel and `--cloudflared` fails there; `--ngrok` always works, on the workspace's own container and port.
+- **Never let the harness create the worktree.** `EnterWorktree name=` and subagent `isolation: worktree` nest it under `.claude/worktrees/`, which this repository does not ignore: the tree then sits inside the primary checkout, shows up as untracked in its `git status`, and starts without a `.env`. The supported entry is `cd <worktree> && claude`.
+
+### Always branch, then open a PR
+
+No direct commits to `master`. Branch and commit through the `sq-git:commit` skill and open the PR through `sq-git:open-pr`.
+
+### Assert HEAD in the same breath as the commit
+
+A branch read earlier in the session is stale by the time you commit: another session, a rebase or the operator can move it in between. Check immediately before committing, not once at the start:
+
+```bash
+git symbolic-ref --short HEAD    # must be the branch you believe you are on
+```
+
+Push the branch you are actually on, `git push -u origin HEAD`. Never `git push origin <hardcoded-branch-name>`: it pushes the local ref of that name wherever HEAD points, and reports "Everything up-to-date" when that ref has not moved, so a misplaced commit fails silently.
+
 ## Conventions
 
 - After changing PHP that touches DI, observers, or schema, run `bin/magento setup:upgrade` and `bin/magento cache:flush` in the running container.
@@ -62,6 +110,7 @@ E2E requires the container exposed to the internet for SeQura callbacks — run 
 - `etc/module.xml` declares load-order `sequence` against Magento core modules — keep it in sync when adding dependencies on other Magento modules.
 - `bin/xdebug --mode=debug|profile|off` toggles XDebug; debug config and SeQura Helper dev webhooks are documented in `README.md`.
 - `phpstan.neon` paths point at `/var/www/html/...` (container paths) and include the dev-only `Sequra/Helper` module from `.docker/`.
+- **`set -e` does not reach a function or subshell called as `x || die ...`** — bash switches errexit off for everything run on the left of `||`/`&&` or in an `if` condition, so a failing command inside it is skipped and the block's status is its *last* command's. A command whose failure must stop such a block (as `docker compose down` in `bin/workspace rm`) carries its own `|| return 1`; `DOCKER_HOST=unix:///nonexistent.sock` makes docker fail for a real test of that path.
 
 ## Working style
 

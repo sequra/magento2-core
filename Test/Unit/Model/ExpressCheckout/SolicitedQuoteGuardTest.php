@@ -119,20 +119,11 @@ class SolicitedQuoteGuardTest extends TestCase
     }
 
     /**
-     * Mocks the create-order request builder factory.
-     *
-     * It is one of Magento's auto-generated factories, so it has no source file to autoload and
-     * `createMock()` cannot find it. The guard under test throws long before the factory is
-     * touched, so an unautoloaded double is enough.
-     *
      * @return MockObject
      */
     private function createOrderRequestBuilderFactory(): MockObject
     {
-        return $this->getMockBuilder(CreateOrderRequestBuilderFactory::class)
-            ->disableOriginalConstructor()
-            ->disableAutoload()
-            ->getMock();
+        return $this->createMock(CreateOrderRequestBuilderFactory::class);
     }
 
     /**

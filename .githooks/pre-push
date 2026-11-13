@@ -15,10 +15,9 @@
 #   2. Full phpcs (Magento2 standard) over the repo — via bin/phpcs.
 #   3. Full phpstan (level 9 over the module) — needs the "magento" container.
 #
-# PHPUnit is intentionally NOT run here: the suite needs a Magento install and
-# double-loads if the module is both installed in Magento and present locally
-# (see Test/README.md) — unsuitable for an automatic hook. It isn't part of the
-# CI lint gate either.
+# PHPUnit is intentionally NOT run here: it tests the vendor/ copy, so it only
+# covers the pushed code after a bin/update-sequra — too slow for an automatic
+# hook. CI runs it in .github/workflows/unit-tests.yml; locally use bin/phpunit.
 #
 # The hook inspects the commits being pushed and SKIPS when none touch PHP code
 # or the config that drives the checks (composer.json/lock, phpstan.neon,

@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+BASEDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ENV_FILE="${E2E_TUNNEL_ENV_FILE:-"$BASEDIR/.env"}"
+DNS_MARK="bin/e2e-tunnel"
+DEFAULT_HTTP_PORT=8018
+
+. "$BASEDIR/bin/common/env.sh"
+. "$BASEDIR/bin/common/cloudflare.sh"
+
+usage() {
+    cat <<EOF
+Usage:
+  bin/e2e-tunnel up <hostname>
+  bin/e2e-tunnel down <hostname>
+
+  up     Create a Cloudflare tunnel named <hostname> that routes https://<hostname>
+         to http://host:\$M2_HTTP_PORT, with its DNS record, and write its run token
+         and URL into .env for ./setup.sh --cloudflared. Whatever an earlier run left
+         under the same hostname is removed first.
+  down   Remove the tunnel named <hostname> and its DNS record. Safe to repeat.
+
+Environment:
+  CLOUDFLARE_API_TOKEN    Cloudflare Tunnel Edit, DNS Edit and Zone Read
+  CLOUDFLARE_ACCOUNT_ID   The account the tunnels are created in
+  E2E_TUNNEL_ENV_FILE     The .env to read the port from and write the tunnel into
+                          (default: the .env next to bin/)
+EOF
+    exit "${1:-0}"
+}
+
+die() { echo "❌ $*" >&2; exit 1; }
+info() { echo "▶ $*"; }
+ok() { echo "✅ $*"; }
+
+down() {
+    local host="$1"
+    cf_find_zone "$host" || die "Cannot find the DNS zone of $host."
+    cf_find_tunnel "$host" || die "Cannot list the tunnels of the account."
+    if [ -n "$CF_TUNNEL" ]; then
+        cf_remove_dns "$host" || die "Could not remove the DNS record of $host."
+        info "Deleting tunnel $host"
+        cf_delete_tunnel || die "Could not delete the tunnel $host; is its connector still running?"
+    fi
+    cf_remove_dns_marked "$host" "$DNS_MARK" || die "Could not remove the DNS record of $host."
+}
+
+up() {
+    local host="$1" port token
+    [ -f "$ENV_FILE" ] || die "No $ENV_FILE: copy .env.sample to .env first."
+    down "$host"
+    port="$(env_value "$ENV_FILE" M2_HTTP_PORT)"
+    port="${port:-$DEFAULT_HTTP_PORT}"
+    info "Creating tunnel $host"
+    cf_create_tunnel "$host" || die "Could not create the tunnel $host."
+    cf_set_route "$host" "http://host:$port" || die "Could not route $host."
+    cf_add_dns "$host" "$DNS_MARK" || die "Could not add the DNS record of $host."
+    token="$(cf_tunnel_token)" || die "Could not read the run token of $host."
+    [ -n "$token" ] || die "Cloudflare returned an empty run token for $host."
+    if [ -n "${GITHUB_ACTIONS:-}" ]; then
+        echo "::add-mask::$token"
+    fi
+    set_env "$ENV_FILE" CLOUDFLARED_TUNNEL_TOKEN "$token"
+    set_env "$ENV_FILE" CLOUDFLARED_TUNNEL_URL "https://$host"
+    ok "https://$host routes to http://host:$port"
+}
+
+[ "$#" -eq 2 ] || usage 1
+[[ "$2" =~ ^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$ ]] || die "'$2' is not a hostname."
+[ -n "${CLOUDFLARE_API_TOKEN:-}" ] || die "CLOUDFLARE_API_TOKEN is not set."
+[ -n "${CLOUDFLARE_ACCOUNT_ID:-}" ] || die "CLOUDFLARE_ACCOUNT_ID is not set."
+cf_require_tools || exit 1
+
+CF_API_TOKEN="$CLOUDFLARE_API_TOKEN"
+CF_ACCOUNT="$CLOUDFLARE_ACCOUNT_ID"
+
+case "$1" in
+    up) up "$2" ;;
+    down) down "$2" && ok "Removed the tunnel and DNS record of $2" ;;
+    *) usage 1 ;;
+esac

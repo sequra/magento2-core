@@ -179,10 +179,13 @@ class StaleRegionTest extends TestCase
      */
     private function regionFactory(string $province, int $id, string $code)
     {
-        $region = $this->createMock(Region::class);
+        $region = $this->getMockBuilder(Region::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(['loadByName', 'getId'])
+            ->getMock();
         $region->method('loadByName')->willReturnSelf();
         $region->method('getId')->willReturn($province === '' ? null : $id);
-        $region->method('getCode')->willReturn($code);
+        $region->setData('code', $code);
 
         $factory = $this->createMock(RegionFactory::class);
         $factory->method('create')->willReturn($region);

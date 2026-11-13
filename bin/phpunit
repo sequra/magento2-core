@@ -1,0 +1,10 @@
+#!/bin/bash
+TTY=""
+[ -t 1 ] || TTY="-T"
+docker compose exec $TTY -u www-data magento bash -c '
+if [ ! -d vendor/sequra/integration-core/tests ]; then
+    echo "▶ Reinstalling sequra/integration-core from source for its test base classes"
+    composer reinstall --no-interaction --quiet --prefer-install=source sequra/integration-core || exit 1
+fi
+vendor/bin/phpunit -c vendor/sequra/magento2-core/Test/Unit/phpunit.xml.dist "$@"
+' bash "$@"

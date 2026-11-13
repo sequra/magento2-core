@@ -92,6 +92,8 @@ Additionally, the setup script supports the following arguments:
 | `--cloudflared-token=YOUR_CLOUDFLARED_TUNNEL_TOKEN` | Define the Cloudflared Tunnel Token. Get yours at https://dash.cloudflare.com/ |
 | `--open-browser` | Open the browser and navigate to the Magento root URL once the installation is complete |
 
+`bin/e2e-tunnel up <hostname>` creates a Cloudflare tunnel for `--cloudflared` instead of the dashboard: the tunnel, its route to `http://host:$M2_HTTP_PORT`, the DNS record, and the token and URL in `.env`. `bin/e2e-tunnel down <hostname>` deletes them. Both need `CLOUDFLARE_API_TOKEN` (Tunnel Edit, DNS Edit, Zone Read) and `CLOUDFLARE_ACCOUNT_ID` in the environment, plus `jq` and `curl`. The E2E workflow opens one per pull request, and `bin/workspace` one per workspace.
+
 ### Customization
 
 When the setup script runs, it takes the configuration from the `.env` file in the root of the repository. If the file doesn't exists, it will create a new one, copying the `.env.sample` template. In order to customize your environment before the setup occurs, you might create your `.env` file. To avoid errors, is important that you make a duplicate of `.env.sample` and then rename it to `.env`
