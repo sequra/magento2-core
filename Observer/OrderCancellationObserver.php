@@ -7,7 +7,7 @@ use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Sales\Model\Order;
-use Magento\Sales\Model\Order\Interceptor as MagentoOrder;
+use Magento\Sales\Model\ResourceModel\Order as OrderResource;
 use Sequra\Core\Controller\Webhook\Index as WebhookController;
 use SeQura\Core\BusinessLogic\AdminAPI\OrderManagement\Requests\OrderUpdateRequest;
 use SeQura\Core\BusinessLogic\Domain\Order\Models\OrderRequest\Cart as SeQuraCart;
@@ -29,13 +29,23 @@ class OrderCancellationObserver implements ObserverInterface
     private $orderUpdater;
 
     /**
+     * @var OrderResource
+     */
+    private $orderResource;
+
+    /**
      * @param SeQuraTranslationProvider $translationProvider
      * @param OrderUpdater $orderUpdater
+     * @param OrderResource $orderResource
      */
-    public function __construct(SeQuraTranslationProvider $translationProvider, OrderUpdater $orderUpdater)
-    {
+    public function __construct(
+        SeQuraTranslationProvider $translationProvider,
+        OrderUpdater $orderUpdater,
+        OrderResource $orderResource
+    ) {
         $this->translationProvider = $translationProvider;
         $this->orderUpdater = $orderUpdater;
+        $this->orderResource = $orderResource;
     }
 
     /**
@@ -46,15 +56,20 @@ class OrderCancellationObserver implements ObserverInterface
     public function execute(Observer $observer): void
     {
         $orderData = $observer->getData('order');
-        if (WebhookController::isWebhookProcessing() || ! $orderData instanceof MagentoOrder ||
+        if (WebhookController::isWebhookProcessing() || ! $orderData instanceof Order ||
             $orderData->getStatus() !== Order::STATE_CANCELED ||
             !$orderData->getPayment() ||
             $orderData->getPayment()->getMethod() !== ConfigProvider::CODE) {
             return;
         }
 
+        $previousStatus = $this->getPreviousStatus($orderData);
+        if ($previousStatus === Order::STATE_CANCELED) {
+            return;
+        }
+
         try {
-            $this->handleCancellation($orderData);
+            $this->handleCancellation($orderData, $previousStatus);
         } catch (Exception $e) {
             $this->handleCancellationError($e);
         }
@@ -63,18 +78,16 @@ class OrderCancellationObserver implements ObserverInterface
     /**
      * Handles order cancellation.
      *
-     * @param MagentoOrder $orderData
+     * @param Order $orderData
+     * @param string|null $previousStatus Status stored for the order before this save.
      *
      * @return void
      *
      * @throws Exception
      */
-    private function handleCancellation(MagentoOrder $orderData): void
+    private function handleCancellation(Order $orderData, ?string $previousStatus): void
     {
-        $statusHistory = $orderData->getAllStatusHistory();
-        if (count($statusHistory) >= 2
-            && $statusHistory[count($statusHistory) - 2]->getStatus() === Order::STATE_PAYMENT_REVIEW
-        ) {
+        if ($previousStatus === Order::STATE_PAYMENT_REVIEW) {
             throw new LocalizedException($this->translationProvider->translate('sequra.error.cannotCancel'));
         }
 
@@ -86,6 +99,37 @@ class OrderCancellationObserver implements ObserverInterface
                 new SeQuraCart($orderData->getOrderCurrencyCode() ?? '')
             )
         );
+    }
+
+    /**
+     * Returns the status stored for the order before this save.
+     *
+     * Reads it from the database instead of the original data: orders saved through the REST API have no original
+     * data, and the original data is not refreshed when the same order is saved twice in one request.
+     *
+     * @param Order $orderData
+     *
+     * @return string|null
+     */
+    private function getPreviousStatus(Order $orderData): ?string
+    {
+        $orderId = $orderData->getId();
+        if (!is_numeric($orderId)) {
+            return null;
+        }
+
+        $connection = $this->orderResource->getConnection();
+        if (!$connection) {
+            return null;
+        }
+
+        $status = $connection->fetchOne(
+            $connection->select()
+                ->from($this->orderResource->getMainTable(), ['status'])
+                ->where($this->orderResource->getIdFieldName() . ' = ?', (int)$orderId)
+        );
+
+        return is_string($status) ? $status : null;
     }
 
     /**
