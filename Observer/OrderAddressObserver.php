@@ -8,12 +8,10 @@ use Magento\Framework\Event\ObserverInterface;
 use Magento\Framework\Exception\LocalizedException;
 use Magento\Sales\Model\Order;
 use Magento\Sales\Model\Order\Address as MagentoAddress;
-use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
-use SeQura\Core\BusinessLogic\Domain\Order\Models\OrderUpdateData;
-use SeQura\Core\BusinessLogic\Domain\Order\Service\OrderService;
+use SeQura\Core\BusinessLogic\AdminAPI\OrderManagement\Requests\OrderUpdateRequest;
 use Sequra\Core\Controller\Webhook\Index as WebhookController;
 use SeQura\Core\Infrastructure\Logger\Logger;
-use SeQura\Core\Infrastructure\ServiceRegister;
+use Sequra\Core\Model\Api\OrderUpdater;
 use Sequra\Core\Model\Ui\ConfigProvider;
 use Sequra\Core\Services\BusinessLogic\Utility\SeQuraTranslationProvider;
 use Sequra\Core\Services\BusinessLogic\Utility\TransformEntityService;
@@ -31,17 +29,25 @@ class OrderAddressObserver implements ObserverInterface
     private $transformService;
 
     /**
+     * @var OrderUpdater
+     */
+    private $orderUpdater;
+
+    /**
      * Constructor
      *
      * @param SeQuraTranslationProvider $translationProvider
      * @param TransformEntityService $transformService
+     * @param OrderUpdater $orderUpdater
      */
     public function __construct(
         SeQuraTranslationProvider $translationProvider,
-        TransformEntityService $transformService
+        TransformEntityService $transformService,
+        OrderUpdater $orderUpdater
     ) {
         $this->translationProvider = $translationProvider;
         $this->transformService = $transformService;
+        $this->orderUpdater = $orderUpdater;
     }
 
     /**
@@ -92,22 +98,16 @@ class OrderAddressObserver implements ObserverInterface
         $isShippingAddress = $magentoAddress->getAddressType() === 'shipping';
         $address = $this->transformService->transformAddressToSeQuraOrderAddress($magentoAddress);
 
-        /**
-         * @var OrderService $orderService
-         */
-        $orderService = StoreContext::doWithStore((string) $magentoOrder->getStoreId(), function () {
-            return ServiceRegister::getService(OrderService::class);
-        });
-
-        StoreContext::doWithStore((string) $magentoOrder->getStoreId(), [$orderService, 'updateOrder'], [
-            new OrderUpdateData(
+        $this->orderUpdater->update(
+            (string) $magentoOrder->getStoreId(),
+            new OrderUpdateRequest(
                 $magentoOrder->getIncrementId(),
                 null,
                 null,
                 $isShippingAddress ? $address : null,
                 !$isShippingAddress ? $address : null
             )
-        ]);
+        );
     }
 
     /**

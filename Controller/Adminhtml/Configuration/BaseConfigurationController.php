@@ -4,6 +4,7 @@ namespace Sequra\Core\Controller\Adminhtml\Configuration;
 
 use Magento\Backend\App\Action;
 use Magento\Backend\App\Action\Context;
+use Magento\Framework\App\Request\Http;
 use Magento\Framework\App\ResponseInterface;
 use Magento\Framework\Controller\Result\Json;
 use Magento\Framework\Controller\Result\JsonFactory;
@@ -32,11 +33,6 @@ class BaseConfigurationController extends Action
      * @var string
      */
     protected $storeId;
-
-    /**
-     * @var string|null
-     */
-    protected $identifier;
 
     /**
      * Configuration constructor.
@@ -70,9 +66,7 @@ class BaseConfigurationController extends Action
             return $this->result->setData(
                 [
                     'success' => false,
-                    // TODO: The use of function _() is discouraged; use AdapterInterface::translate() instead
-                    // phpcs:ignore Magento2.Functions.DiscouragedFunction.DiscouragedWithAlternative
-                    'message' => _('Wrong action requested.'),
+                    'message' => __('Wrong action requested.')->render(),
                 ]
             );
         }
@@ -82,12 +76,6 @@ class BaseConfigurationController extends Action
          */
         $storeId = $request->getParam('storeId');
         $this->storeId = $storeId;
-
-        /**
-         * @var string $identifier
-         */
-        $identifier = $request->getParam('identifier');
-        $this->identifier = $identifier;
 
         // These AJAX actions only read request params and call the SeQura API; they never touch session data.
         // Release the session write lock now so the onboarding page's parallel requests don't exhaust the
@@ -106,9 +94,10 @@ class BaseConfigurationController extends Action
      */
     protected function getSequraPostData(): array
     {
-        // TODO: The use of function file_get_contents() is discouraged
-        // phpcs:ignore Magento2.Functions.DiscouragedFunction.Discouraged
-        $json = json_decode((string) file_get_contents('php://input'), true);
+        $request = $this->getRequest();
+        $content = $request instanceof Http ? $request->getContent() : '';
+        $json = json_decode(is_string($content) ? $content : '', true);
+
         return is_array($json) ? $json : [];
     }
 

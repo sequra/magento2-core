@@ -14,6 +14,8 @@ export default class SeQuraHelper extends BaseSeQuraHelper {
             clear_front_end_cache: 'clear_front_end_cache',
             verify_order_has_merchant_id: 'verify_order_has_merchant_id',
             set_config: 'set_config',
+            get_order_trackings: 'get_order_trackings',
+            put_order_on_hold: 'put_order_on_hold',
         };
     }
 
@@ -28,5 +30,25 @@ export default class SeQuraHelper extends BaseSeQuraHelper {
      getWebhookUrl(options = { webhook, args: [] }) {
         const { webhook, args } = options;
         return `${this.baseURL}/rest/V1/sequrahelper/webhook/?sq-webhook=${webhook}${this.getWebhookUrlArgs(args)}`;
+    }
+
+    async getOrderTrackings(orderNumber) {
+        const [, { trackings }] = await this.executeWebhook({
+            webhook: this.webhooks.get_order_trackings,
+            args: [{ name: 'order_id', value: orderNumber }],
+            returnResponse: true,
+        });
+
+        return trackings;
+    }
+
+    async putOrderOnHold(orderNumber) {
+        const [, { cart_id }] = await this.executeWebhook({
+            webhook: this.webhooks.put_order_on_hold,
+            args: [{ name: 'order_id', value: orderNumber }],
+            returnResponse: true,
+        });
+
+        return cart_id;
     }
 }

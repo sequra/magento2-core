@@ -26,12 +26,11 @@ export default class BackOffice extends BaseBackOffice {
         const user = process.env.M2_ADMIN_USER;
         const pass = process.env.M2_ADMIN_PASSWORD;
         const usernameInput = this.locators.usernameInput();
+        const ordersLink = this.locators.menuBarItemOrdersLink();
 
-        try {
-            await this.page.goto(`${this.baseURL}/${process.env.M2_BACKEND_FRONTNAME}`, { waitUntil: 'domcontentloaded' });
-            await this.expect(usernameInput, 'Username input is visible').toBeVisible({ timeout: 100 });
-        }
-        catch {
+        await this.page.goto(`${this.baseURL}/${process.env.M2_BACKEND_FRONTNAME}`, { waitUntil: 'domcontentloaded' });
+        await this.expect(usernameInput.or(ordersLink), 'The login form or the admin menu is loaded').toBeAttached();
+        if (await usernameInput.count() === 0) {
             return;
         }
 

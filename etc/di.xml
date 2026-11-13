@@ -59,6 +59,11 @@
             <argument name="methodCode" xsi:type="const">Sequra\Core\Model\Ui\ConfigProvider::CODE</argument>
         </arguments>
     </virtualType>
+    <type name="Sequra\Core\Model\Config\PaymentMethodStatus">
+        <arguments>
+            <argument name="gatewayConfig" xsi:type="object">SequraPaymentGatewayConfig</argument>
+        </arguments>
+    </type>
 
 
     <virtualType name="SequraCustomerPaymentService"
@@ -230,6 +235,16 @@
     <type name="Sequra\Core\Model\ExpressCheckout\SolicitRateLimiter">
         <arguments>
             <argument name="remoteAddress" xsi:type="object">SequraExpressSolicitPeerAddress</argument>
+        </arguments>
+    </type>
+    <virtualType name="SequraStorefrontShippingHelper" type="Magento\Shipping\Helper\Data">
+        <arguments>
+            <argument name="url" xsi:type="object">Magento\Framework\Url</argument>
+        </arguments>
+    </virtualType>
+    <type name="Sequra\Core\Model\Api\Builders\TrackingBuilder">
+        <arguments>
+            <argument name="shippingHelper" xsi:type="object">SequraStorefrontShippingHelper</argument>
         </arguments>
     </type>
     <type name="Magento\Sales\Model\Order">

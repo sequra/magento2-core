@@ -13,6 +13,17 @@ use Magento\Store\Model\Store;
 use Magento\Theme\ViewModel\Block\Html\Header\LogoPathResolver;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
+use SeQura\Core\BusinessLogic\Domain\ExpressCheckout\Models\ExpressCheckoutSettings;
+use SeQura\Core\BusinessLogic\Domain\ExpressCheckout\Services\ExpressCheckoutService;
+use SeQura\Core\BusinessLogic\Domain\Integration\Store\StoreIdProvider;
+use SeQura\Core\BusinessLogic\Domain\Multistore\StoreContext;
+use SeQura\Core\Infrastructure\Configuration\Configuration;
+use SeQura\Core\Infrastructure\Logger\Interfaces\ShopLoggerAdapter;
+use SeQura\Core\Infrastructure\Logger\Logger;
+use SeQura\Core\Infrastructure\Logger\LoggerConfiguration;
+use SeQura\Core\Infrastructure\ServiceRegister;
+use SeQura\Core\Infrastructure\Utility\TimeProvider;
 use Sequra\Core\Model\ExpressCheckout\CartSummaryFormDecorator;
 use Sequra\Core\Model\QuoteEmailResolver;
 
@@ -48,6 +59,28 @@ class CartSummaryAmountsTest extends TestCase
      * @var MockObject&Quote
      */
     private $quote;
+
+    /**
+     * @var string[]
+     */
+    private array $settingsReadInStores = [];
+
+    /**
+     * @return void
+     */
+    protected function setUp(): void
+    {
+        $this->givenStoredSettings(null);
+    }
+
+    /**
+     * @return void
+     */
+    protected function tearDown(): void
+    {
+        Logger::resetInstance();
+        LoggerConfiguration::resetInstance();
+    }
 
     /**
      * The grand total is sent in cents with tax, off the same getter the create-order request
@@ -117,6 +150,59 @@ class CartSummaryAmountsTest extends TestCase
     }
 
     /**
+     * @return void
+     */
+    public function testSendsTheTermsAndConditionsUrlOfTheQuoteStore(): void
+    {
+        $this->givenStoredSettings(new ExpressCheckoutSettings([], null, 'https://shop.example.com/terms'));
+
+        $data = $this->decorator()->buildCartData(self::FORM, $this->quoteWith(43.0, 5.0, 'flatrate_flatrate'));
+
+        $this->assertSame('https://shop.example.com/terms', $data['termsAndConditionsUrl']);
+        $this->assertSame(['3'], $this->settingsReadInStores);
+    }
+
+    /**
+     * @return void
+     */
+    public function testOmitsTheTermsAndConditionsUrlWhenNoneIsSet(): void
+    {
+        $this->givenStoredSettings(new ExpressCheckoutSettings());
+
+        $data = $this->decorator()->buildCartData(self::FORM, $this->quoteWith(43.0, 5.0, 'flatrate_flatrate'));
+
+        $this->assertArrayNotHasKey('termsAndConditionsUrl', $data);
+    }
+
+    /**
+     * @return void
+     */
+    public function testOmitsTheTermsAndConditionsUrlWhenTheStoreHasNoSettings(): void
+    {
+        $data = $this->decorator()->buildCartData(self::FORM, $this->quoteWith(43.0, 5.0, 'flatrate_flatrate'));
+
+        $this->assertArrayNotHasKey('termsAndConditionsUrl', $data);
+    }
+
+    /**
+     * @return void
+     */
+    public function testOmitsTheTermsAndConditionsUrlWhenTheSettingsCannotBeRead(): void
+    {
+        $this->registerLogger();
+        $service = $this->createStub(ExpressCheckoutService::class);
+        $service->method('getExpressCheckoutSettings')->willThrowException(new RuntimeException('Database is gone.'));
+        ServiceRegister::registerService(ExpressCheckoutService::class, static function () use ($service) {
+            return $service;
+        });
+
+        $data = $this->decorator()->buildCartData(self::FORM, $this->quoteWith(43.0, 5.0, 'flatrate_flatrate'));
+
+        $this->assertArrayNotHasKey('termsAndConditionsUrl', $data);
+        $this->assertSame(4300, $data['totalWithTax']);
+    }
+
+    /**
      * Builds a quote carrying the given money, with everything else the payload reads stubbed
      * away: no items, no rates, no regions.
      *
@@ -146,6 +232,7 @@ class CartSummaryAmountsTest extends TestCase
 
         $store = $this->createMock(Store::class);
         $store->method('getFrontendName')->willReturn('Tienda');
+        $store->method('getId')->willReturn(3);
         $store->method('getBaseUrl')->willReturn('https://shop.example.com/media/');
         $store->method('getUrl')->willReturn('https://shop.example.com/sequra/expresscheckout/cartupdate');
 
@@ -191,5 +278,47 @@ class CartSummaryAmountsTest extends TestCase
             $emailResolver,
             $directoryHelper
         );
+    }
+
+    /**
+     * @param ExpressCheckoutSettings|null $settings
+     *
+     * @return void
+     */
+    private function givenStoredSettings(?ExpressCheckoutSettings $settings): void
+    {
+        $service = $this->createStub(ExpressCheckoutService::class);
+        $service->method('getExpressCheckoutSettings')->willReturnCallback(function () use ($settings) {
+            $this->settingsReadInStores[] = StoreContext::getInstance()->getStoreId();
+
+            return $settings;
+        });
+        ServiceRegister::registerService(ExpressCheckoutService::class, static function () use ($service) {
+            return $service;
+        });
+        $storeIdProvider = $this->createStub(StoreIdProvider::class);
+        ServiceRegister::registerService(StoreIdProvider::class, static function () use ($storeIdProvider) {
+            return $storeIdProvider;
+        });
+    }
+
+    /**
+     * @return void
+     */
+    private function registerLogger(): void
+    {
+        $configuration = $this->createStub(Configuration::class);
+        $configuration->method('getIntegrationName')->willReturn('Magento2');
+        $shopLogger = $this->createStub(ShopLoggerAdapter::class);
+
+        ServiceRegister::registerService(ShopLoggerAdapter::CLASS_NAME, static function () use ($shopLogger) {
+            return $shopLogger;
+        });
+        ServiceRegister::registerService(TimeProvider::CLASS_NAME, function () {
+            return $this->createStub(TimeProvider::class);
+        });
+        ServiceRegister::registerService(Configuration::CLASS_NAME, static function () use ($configuration) {
+            return $configuration;
+        });
     }
 }

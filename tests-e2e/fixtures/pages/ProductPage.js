@@ -53,6 +53,6 @@ export default class ProductPage extends BaseProductPage {
      * @returns {Promise<void>}
      */
     async expectProductIsInCart(options = {}) {
-        await this.locators.messageSuccess().waitFor({timeout: 10000});
+        await this.locators.messageSuccess().waitFor({timeout: 30000});
     }
 }

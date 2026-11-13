@@ -68,7 +68,8 @@ use Sequra\Core\Services\BusinessLogic\Order\MerchantDataProvider;
 use Sequra\Core\Services\BusinessLogic\OrderReportService;
 use Sequra\Core\Services\BusinessLogic\OrderServiceFactory;
 use Sequra\Core\Services\BusinessLogic\Order\OrderCreationFactory;
-use Sequra\Core\Services\BusinessLogic\PaymentMethodsService;
+use Sequra\Core\Model\Api\TrackingSynchronizer;
+use Sequra\Core\Model\Api\TrackingSynchronizerFactory;
 use Sequra\Core\Services\BusinessLogic\ProductService;
 use Sequra\Core\Services\BusinessLogic\PromotionalWidget\MiniWidgetMessagesProvider;
 use Sequra\Core\Services\BusinessLogic\PromotionalWidget\WidgetConfigurator;
@@ -163,6 +164,9 @@ class Bootstrap extends BootstrapComponent
 
     /** @var OrderCreationFactory */
     private $orderCreationFactory;
+
+    /** @var TrackingSynchronizerFactory */
+    private $trackingSynchronizerFactory;
     /**
      * @var LogService
      */
@@ -195,6 +199,7 @@ class Bootstrap extends BootstrapComponent
      * @param LogService $logService
      * @param StoreInfoService $storeInfoService
      * @param OrderCreationFactory $orderCreationFactory
+     * @param TrackingSynchronizerFactory $trackingSynchronizerFactory
      */
     public function __construct(
         DefaultLoggerAdapter $defaultLoggerAdapter,
@@ -216,7 +221,8 @@ class Bootstrap extends BootstrapComponent
         MerchantDataProvider $merchantDataProvider,
         LogService $logService,
         StoreInfoService $storeInfoService,
-        OrderCreationFactory $orderCreationFactory
+        OrderCreationFactory $orderCreationFactory,
+        TrackingSynchronizerFactory $trackingSynchronizerFactory
     ) {
         $this->defaultLoggerAdapter = $defaultLoggerAdapter;
         $this->shopLoggerAdapter = $shopLoggerAdapter;
@@ -238,6 +244,7 @@ class Bootstrap extends BootstrapComponent
         $this->logService = $logService;
         $this->storeInfoService = $storeInfoService;
         $this->orderCreationFactory = $orderCreationFactory;
+        $this->trackingSynchronizerFactory = $trackingSynchronizerFactory;
 
         static::$instance = $this;
     }
@@ -398,9 +405,9 @@ class Bootstrap extends BootstrapComponent
         );
 
         ServiceRegister::registerService(
-            PaymentMethodsService::class,
+            TrackingSynchronizer::class,
             static function () {
-                return new PaymentMethodsService();
+                return static::$instance->trackingSynchronizerFactory->create();
             }
         );
 

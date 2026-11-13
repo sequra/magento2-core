@@ -11,10 +11,12 @@ use Magento\Framework\HTTP\PhpEnvironment\Request;
 use Magento\Framework\Pricing\Render\Amount;
 use Magento\Store\Model\StoreManagerInterface;
 use SeQura\Core\BusinessLogic\CheckoutAPI\CheckoutAPI;
+use SeQura\Core\BusinessLogic\CheckoutAPI\PromotionalWidgets\PromotionalWidgetsCheckoutController;
 use SeQura\Core\BusinessLogic\CheckoutAPI\PromotionalWidgets\Requests\PromotionalWidgetsCheckoutRequest;
 use SeQura\Core\BusinessLogic\CheckoutAPI\PromotionalWidgets\Responses\GetWidgetsCheckoutResponse;
 use SeQura\Core\Infrastructure\Logger\Logger;
 use Sequra\Core\Block\WidgetTrait;
+use Sequra\Core\Model\Config\PaymentMethodStatus;
 use Magento\Framework\Locale\ResolverInterface;
 
 /**
@@ -38,12 +40,18 @@ class MiniWidgets
     private $htmlEscaper;
 
     /**
+     * @var PaymentMethodStatus
+     */
+    private PaymentMethodStatus $paymentMethodStatus;
+
+    /**
      * @param StoreManagerInterface $storeManager
      * @param ScopeResolverInterface $scopeResolver
      * @param ResolverInterface $localeResolver
      * @param Session $checkoutSession
      * @param Request $request
      * @param Escaper $htmlEscaper
+     * @param PaymentMethodStatus $paymentMethodStatus
      */
     public function __construct(
         StoreManagerInterface  $storeManager,
@@ -51,7 +59,8 @@ class MiniWidgets
         ResolverInterface      $localeResolver,
         Session                $checkoutSession,
         Request                $request,
-        Escaper                $htmlEscaper
+        Escaper                $htmlEscaper,
+        PaymentMethodStatus    $paymentMethodStatus
     ) {
         $this->storeManager = $storeManager;
         $this->scopeResolver = $scopeResolver;
@@ -59,6 +68,7 @@ class MiniWidgets
         $this->checkoutSession = $checkoutSession;
         $this->request = $request;
         $this->htmlEscaper = $htmlEscaper;
+        $this->paymentMethodStatus = $paymentMethodStatus;
     }
 
     /**
@@ -78,6 +88,10 @@ class MiniWidgets
             return $result;
         }
 
+        if (!$this->paymentMethodStatus->isActive()) {
+            return $result;
+        }
+
         // @phpstan-ignore-next-line
         $product = $amount->getPrice() ? $amount->getPrice()->getProduct() : null;
         if (!$product) {
@@ -86,8 +100,10 @@ class MiniWidgets
 
         try {
             $storeId = (string)$this->storeManager->getStore()->getId();
+            /** @var PromotionalWidgetsCheckoutController $widgetsController */
+            $widgetsController = CheckoutAPI::get()->promotionalWidgets($storeId);
             /** @var GetWidgetsCheckoutResponse $miniWidget */
-            $miniWidget = CheckoutAPI::get()->promotionalWidgets($storeId)
+            $miniWidget = $widgetsController
                 ->getAvailableMiniWidgetForProductListingPage(new PromotionalWidgetsCheckoutRequest(
                     $this->getShippingAddressCountry(),
                     $this->getCurrentCountry(),

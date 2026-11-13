@@ -5,7 +5,11 @@ namespace Sequra\Core\Block\Adminhtml\Configuration;
 use Magento\Backend\Block\Template;
 use Magento\Backend\Block\Template\Context;
 use Magento\Backend\Model\Auth\Session;
+use Magento\Framework\Exception\FileSystemException;
 use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Filesystem\Driver\File;
+use Magento\Framework\Module\Dir;
+use Magento\Framework\Module\Dir\Reader;
 use Sequra\Core\Helper\UrlHelper;
 use SeQura\Core\Infrastructure\Utility\RegexProvider;
 
@@ -23,6 +27,14 @@ class Index extends Template
      * @var RegexProvider
      */
     private $regexProvider;
+    /**
+     * @var Reader
+     */
+    private $moduleDirReader;
+    /**
+     * @var File
+     */
+    private $fileDriver;
 
     /**
      * Content constructor.
@@ -31,6 +43,8 @@ class Index extends Template
      * @param UrlHelper $urlHelper
      * @param Session $authSession
      * @param RegexProvider $regexProvider
+     * @param Reader $moduleDirReader
+     * @param File $fileDriver
      * @param mixed[] $data
      */
     public function __construct(
@@ -38,6 +52,8 @@ class Index extends Template
         UrlHelper $urlHelper,
         Session $authSession,
         RegexProvider $regexProvider,
+        Reader $moduleDirReader,
+        File $fileDriver,
         array $data = []
     ) {
         if (!is_iterable($data)) {
@@ -48,6 +64,8 @@ class Index extends Template
         $this->urlHelper = $urlHelper;
         $this->authSession = $authSession;
         $this->regexProvider = $regexProvider;
+        $this->moduleDirReader = $moduleDirReader;
+        $this->fileDriver = $fileDriver;
     }
 
     /**
@@ -56,25 +74,18 @@ class Index extends Template
      * @param string $controllerName Name of the configuration controller.
      * @param string $storeId Store id.
      * @param string $action Controller action.
-     * @param string|null $identifier Optional identifier parameter.
      *
      * @return string URL to backend configuration controller.
      *
      * @throws LocalizedException
      */
-    public function getControllerUrl(
-        string $controllerName,
-        string $storeId,
-        string $action,
-        ?string $identifier = null
-    ): string {
+    public function getControllerUrl(string $controllerName, string $storeId, string $action): string
+    {
         $routeParams = [
             'storeId' => $storeId,
             'action' => $action,
             'form_key' => $this->formKey->getFormKey()
         ];
-
-        $identifier && $routeParams['identifier'] = $identifier;
 
         return $this->urlHelper->getBackendUrl('sequra/configuration/' . strtolower($controllerName), $routeParams);
     }
@@ -88,22 +99,9 @@ class Index extends Template
     {
         $user = $this->authSession->getUser();
         $currentLocale = strtolower($user ? substr($user->getInterfaceLocale(), 0, 2) : 'en');
-        $langDir = __DIR__ . '/../../../view/adminhtml/web/lang/';
-        // TODO: The use of function file_get_contents() is discouraged
-        // phpcs:ignore Magento2.Functions.DiscouragedFunction.Discouraged
-        $default = json_decode((string) file_get_contents($langDir . 'en.json'), false);
-        $current = [];
-
-        // TODO: The use of function file_exists() is discouraged
-        // phpcs:ignore Magento2.Functions.DiscouragedFunction.Discouraged
-        if (file_exists($langDir . $currentLocale . '.json')) {
-            $current = json_decode(
-                // TODO: The use of function file_get_contents() is discouraged
-                // phpcs:ignore Magento2.Functions.DiscouragedFunction.Discouraged
-                (string) file_get_contents($langDir . $currentLocale . '.json'),
-                false
-            );
-        }
+        $langDir = $this->moduleDirReader->getModuleDir(Dir::MODULE_VIEW_DIR, 'Sequra_Core') . '/adminhtml/web/lang/';
+        $default = $this->readJson($langDir . 'en.json');
+        $current = $this->readJson($langDir . $currentLocale . '.json') ?? [];
 
         return [
             'default' => str_replace("'", "\\'", (string) json_encode($default)),
@@ -112,14 +110,23 @@ class Index extends Template
     }
 
     /**
-     * Get the admin language
+     * Reads and decodes a JSON file, or returns null when the file is missing or cannot be read.
      *
-     * @return string
+     * @param string $path
+     *
+     * @return mixed
      */
-    public function getAdminLanguage(): string
+    private function readJson(string $path)
     {
-        $user = $this->authSession->getUser();
-        return strtoupper($user ? substr($user->getInterfaceLocale(), 0, 2) : 'en');
+        try {
+            if (!$this->fileDriver->isExists($path)) {
+                return null;
+            }
+
+            return json_decode($this->fileDriver->fileGetContents($path), false);
+        } catch (FileSystemException $e) {
+            return null;
+        }
     }
 
     /**

@@ -155,14 +155,14 @@ abstract class AbstractExpressCheckoutBlock extends Template
         $this->state = AvailabilityEvaluator::STATE_HIDDEN;
 
         try {
-            $quote = $this->checkoutSession->getQuote();
-            if (!$quote || (int)$quote->getItemsCount() < 1) {
+            if (!$this->availabilityEvaluator->isPaymentMethodActive(
+                (string)$this->_storeManager->getStore()->getId()
+            )) {
                 return $this->state;
             }
 
-            // SeQura is unavailable when the cart contains a virtual product, mirroring the
-            // regular checkout guard (CreateOrderRequestBuilder::isAllowedFor). Render nothing.
-            if ($this->hasVirtualItem($quote)) {
+            $quote = $this->checkoutSession->getQuote();
+            if (!$quote || (int)$quote->getItemsCount() < 1) {
                 return $this->state;
             }
 
@@ -191,27 +191,6 @@ abstract class AbstractExpressCheckoutBlock extends Template
 
             return $this->state;
         }
-    }
-
-    /**
-     * Whether the cart contains at least one virtual product.
-     *
-     * SeQura is not offered for virtual items (parity with the regular checkout availability
-     * check), so the button must not render.
-     *
-     * @param Quote $quote
-     *
-     * @return bool
-     */
-    private function hasVirtualItem(Quote $quote): bool
-    {
-        foreach ($quote->getAllVisibleItems() as $item) {
-            if ($item->getIsVirtual()) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     /**

@@ -7,12 +7,14 @@ use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\View\Element\Template;
 use Magento\Framework\View\Element\Template\Context;
 use Magento\Store\Model\StoreManagerInterface;
+use SeQura\Core\BusinessLogic\CheckoutAPI\Banners\BannerCheckoutController;
 use SeQura\Core\BusinessLogic\CheckoutAPI\Banners\Requests\GetBannerForLocationRequest;
 use SeQura\Core\BusinessLogic\CheckoutAPI\Banners\Responses\GetBannerForLocationResponse;
 use SeQura\Core\BusinessLogic\CheckoutAPI\CheckoutAPI;
 use SeQura\Core\Infrastructure\Logger\Logger;
 use Sequra\Core\Services\BusinessLogic\BannerService;
 use Sequra\Core\Services\BusinessLogic\CountryResolverService;
+use Sequra\Core\Model\Config\PaymentMethodStatus;
 use Throwable;
 
 /**
@@ -45,9 +47,15 @@ class Banner extends Template implements IdentityInterface
     private StoreManagerInterface $storeManager;
 
     /**
+     * @var PaymentMethodStatus
+     */
+    private PaymentMethodStatus $paymentMethodStatus;
+
+    /**
      * @param Context $context
      * @param CountryResolverService $countryResolver
      * @param StoreManagerInterface $storeManager
+     * @param PaymentMethodStatus $paymentMethodStatus
      * @param array $data
      *
      * @phpstan-param array<string, mixed> $data
@@ -56,10 +64,12 @@ class Banner extends Template implements IdentityInterface
         Context $context,
         CountryResolverService $countryResolver,
         StoreManagerInterface $storeManager,
+        PaymentMethodStatus $paymentMethodStatus,
         array $data = []
     ) {
         parent::__construct($context, $data);
         $this->countryResolver = $countryResolver;
+        $this->paymentMethodStatus = $paymentMethodStatus;
         $this->storeManager = $storeManager;
     }
 
@@ -70,6 +80,10 @@ class Banner extends Template implements IdentityInterface
      */
     public function getBannerData(): array
     {
+        if (!$this->paymentMethodStatus->isActive()) {
+            return [];
+        }
+
         try {
             $rawLocation = $this->getData('display_location');
             $displayLocation = is_string($rawLocation) ? $rawLocation : '';
@@ -88,8 +102,10 @@ class Banner extends Template implements IdentityInterface
 
             $storeId = (string)$this->storeManager->getStore()->getId();
 
+            /** @var BannerCheckoutController $bannerController */
+            $bannerController = CheckoutAPI::get()->banners($storeId);
             /** @var GetBannerForLocationResponse $response */
-            $response = CheckoutAPI::get()->banners($storeId)
+            $response = $bannerController
                 ->getBannerForLocation(new GetBannerForLocationRequest($country, $displayLocation));
 
             return $response->isSuccessful() ? $response->toArray() : [];

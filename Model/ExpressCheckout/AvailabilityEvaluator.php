@@ -4,11 +4,13 @@ namespace Sequra\Core\Model\ExpressCheckout;
 
 use Exception;
 use SeQura\Core\BusinessLogic\CheckoutAPI\CheckoutAPI;
+use SeQura\Core\BusinessLogic\CheckoutAPI\ExpressCheckout\Controller\ExpressCheckoutController;
 use SeQura\Core\BusinessLogic\CheckoutAPI\ExpressCheckout\Requests\ExpressCheckoutAvailabilityRequest;
 use SeQura\Core\BusinessLogic\CheckoutAPI\ExpressCheckout\Requests\GuestExpressCheckoutAvailabilityRequest;
 use SeQura\Core\BusinessLogic\CheckoutAPI\ExpressCheckout\Responses\ExpressCheckoutAvailabilityResponse;
 use SeQura\Core\BusinessLogic\CheckoutAPI\ExpressCheckout\Responses\GuestExpressCheckoutAvailabilityResponse;
 use SeQura\Core\Infrastructure\Logger\Logger;
+use Sequra\Core\Model\Config\PaymentMethodStatus;
 
 /**
  * Class AvailabilityEvaluator
@@ -47,6 +49,31 @@ class AvailabilityEvaluator
     public const STATE_HIDDEN = 'hidden';
 
     /**
+     * @var PaymentMethodStatus
+     */
+    private PaymentMethodStatus $paymentMethodStatus;
+
+    /**
+     * @param PaymentMethodStatus $paymentMethodStatus
+     */
+    public function __construct(PaymentMethodStatus $paymentMethodStatus)
+    {
+        $this->paymentMethodStatus = $paymentMethodStatus;
+    }
+
+    /**
+     * Whether the payment method is active in the given store.
+     *
+     * @param string $storeId
+     *
+     * @return bool
+     */
+    public function isPaymentMethodActive(string $storeId): bool
+    {
+        return $this->paymentMethodStatus->isActive($storeId);
+    }
+
+    /**
      * Evaluates the render state for the given storefront context.
      *
      * @param string $storeId
@@ -69,10 +96,19 @@ class AvailabilityEvaluator
         array $productIds,
         array $categoryIds
     ): array {
+        if (!$this->paymentMethodStatus->isActive($storeId)) {
+            return [
+                'state' => self::STATE_HIDDEN,
+                'buttonStyle' => null,
+            ];
+        }
+
         try {
+            /** @var ExpressCheckoutController $expressCheckoutController */
+            $expressCheckoutController = CheckoutAPI::get()->expressCheckout($storeId);
             if ($country !== '') {
                 /** @var ExpressCheckoutAvailabilityResponse $response */
-                $response = CheckoutAPI::get()->expressCheckout($storeId)->isAvailable(
+                $response = $expressCheckoutController->isAvailable(
                     new ExpressCheckoutAvailabilityRequest(
                         $page,
                         $currency,
@@ -85,7 +121,7 @@ class AvailabilityEvaluator
                 $unavailableState = self::STATE_MESSAGE;
             } else {
                 /** @var GuestExpressCheckoutAvailabilityResponse $response */
-                $response = CheckoutAPI::get()->expressCheckout($storeId)->isAvailableForGuest(
+                $response = $expressCheckoutController->isAvailableForGuest(
                     new GuestExpressCheckoutAvailabilityRequest(
                         $page,
                         $currency,
