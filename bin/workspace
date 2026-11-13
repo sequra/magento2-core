@@ -20,6 +20,8 @@ BASE_PORTS=(
     NGROK_PORT=4740
 )
 
+. "$SCRIPT_DIR/common/env.sh"
+
 usage() {
     cat <<EOF
 Usage:
@@ -30,10 +32,12 @@ Usage:
 Commands:
   <name>      Create a worktree in $WORKSPACES_DIR/<name>
               with a .env of its own: host ports +$SLOT_STEP per workspace, its own
-              compose project and tunnel containers.
+              compose project and tunnel containers. With CLOUDFLARE_API_TOKEN
+              in the primary .env, it also creates a Cloudflare tunnel of its own
+              at https://<name>-<primary tunnel host> for ./setup.sh --cloudflared.
   list        Show every workspace with its branch, ports and whether its shop runs.
-  rm <name>   Tear down the workspace's shop (containers and volumes) and remove the
-              worktree. The branch is kept.
+  rm <name>   Tear down the workspace's shop (containers and volumes), delete its
+              tunnel and DNS record, and remove the worktree. The branch is kept.
 
 Options:
   --branch <branch>   Check out this branch instead of one named <name>. A branch
@@ -59,23 +63,6 @@ lowercase() {
     echo "$1" | tr '[:upper:]' '[:lower:]'
 }
 
-env_value() {
-    local file="$1" key="$2"
-    [ -f "$file" ] || return 0
-    sed -n "s/^${key}=//p" "$file" | tail -1 | sed 's/[[:space:]]*#.*$//' | tr -d '\r'
-}
-
-set_env() {
-    local file="$1" key="$2" value="$3"
-    if grep -q "^${key}=" "$file"; then
-        sed -i.bak "s|^${key}=.*|${key}=${value}|" "$file"
-        rm -f "$file.bak"
-    else
-        [ -z "$(tail -c1 "$file")" ] || printf '\n' >> "$file"
-        printf '%s=%s\n' "$key" "$value" >> "$file"
-    fi
-}
-
 base_http_port() {
     echo "${BASE_PORTS[0]#*=}"
 }
@@ -96,6 +83,42 @@ next_slot() {
 
 project_name() {
     lowercase "magento2-core-$1"
+}
+
+host_of() {
+    echo "$1" | sed -e 's|^[a-zA-Z]*://||' -e 's|/.*||'
+}
+
+cloudflare_account() {
+    local account
+    account="$(env_value "$REPO_ROOT/.env" CLOUDFLARE_ACCOUNT_ID)"
+    if [ -z "$account" ] && command -v jq > /dev/null; then
+        account="$(env_value "$REPO_ROOT/.env" CLOUDFLARED_TUNNEL_TOKEN | jq -Rr '@base64d | fromjson | .a // empty' 2> /dev/null)" || account=""
+    fi
+    echo "$account"
+}
+
+tunnels_configured() {
+    [ -n "$(env_value "$REPO_ROOT/.env" CLOUDFLARE_API_TOKEN)" ] \
+        && [ -n "$(env_value "$REPO_ROOT/.env" CLOUDFLARED_TUNNEL_URL)" ]
+}
+
+workspace_hostname() {
+    local name="$1" primary_host label
+    primary_host="$(host_of "$(env_value "$REPO_ROOT/.env" CLOUDFLARED_TUNNEL_URL)")"
+    label="$name-${primary_host%%.*}"
+    [ "${#label}" -le 63 ] || return 1
+    echo "$label.${primary_host#*.}"
+}
+
+tunnel() {
+    local action="$1" host="$2" workspace="$3" account
+    account="$(cloudflare_account)"
+    [ -n "$account" ] || { echo "Set CLOUDFLARE_ACCOUNT_ID in $REPO_ROOT/.env." >&2; return 1; }
+    CLOUDFLARE_API_TOKEN="$(env_value "$REPO_ROOT/.env" CLOUDFLARE_API_TOKEN)" \
+        CLOUDFLARE_ACCOUNT_ID="$account" \
+        E2E_TUNNEL_ENV_FILE="$workspace/.env" \
+        "$SCRIPT_DIR/e2e-tunnel" "$action" "$host"
 }
 
 prepare_branch() {
@@ -132,6 +155,7 @@ write_env() {
     set_env "$env_file" M2_URL 'http://$M2_HTTP_HOST:$M2_HTTP_PORT'
     set_env "$env_file" NGROK_CONTAINER_NAME "$project-ngrok"
     set_env "$env_file" CLOUDFLARED_CONTAINER_NAME "$project-cloudflared"
+    set_env "$env_file" CLOUDFLARE_API_TOKEN ""
     set_env "$env_file" CLOUDFLARED_TUNNEL_TOKEN ""
     set_env "$env_file" CLOUDFLARED_TUNNEL_URL ""
     set_env "$env_file" PUBLIC_URL ""
@@ -141,9 +165,14 @@ create() {
     local name="$1" branch="$2"
     local workspace="$WORKSPACES_DIR/$name"
 
-    [[ "$name" =~ ^[a-zA-Z0-9_-]+$ ]] || die "Workspace names take letters, digits, '-' and '_' only. Pass a branch with '/' through --branch."
+    [[ "$name" =~ ^[a-z0-9]([a-z0-9-]*[a-z0-9])?$ ]] || die "Workspace names take lowercase letters, digits and inner '-' only, since each becomes a hostname label and a compose project. Pass any other branch name through --branch."
     [ -e "$workspace" ] && die "$workspace already exists."
     [ -n "$branch" ] || branch="$name"
+
+    local tunnel_host=""
+    if tunnels_configured; then
+        tunnel_host="$(workspace_hostname "$name")" || die "$name makes a hostname label longer than 63 characters."
+    fi
 
     local slot
     slot="$(next_slot)"
@@ -157,12 +186,20 @@ create() {
 
     write_env "$name" "$workspace" "$slot"
 
+    if [ -n "$tunnel_host" ]; then
+        tunnel up "$tunnel_host" "$workspace" \
+            || die "Could not create the tunnel of $name. Fix the cause above, then bin/workspace rm $name and create it again."
+    fi
+
     ok "Workspace $name is ready (slot $slot)"
     cat <<EOF
 
   cd $workspace && claude
   ./setup.sh     # its own shop at http://$(env_value "$workspace/.env" M2_HTTP_HOST):$(env_value "$workspace/.env" M2_HTTP_PORT)
 EOF
+    if [ -n "$tunnel_host" ]; then
+        echo "  ./setup.sh --cloudflared     # the same shop at https://$tunnel_host"
+    fi
 }
 
 workspace_dirs() {
@@ -220,11 +257,26 @@ remove() {
     esac
     workspace_dirs | grep -qx "$workspace" || die "$workspace is not a worktree of this repository."
 
+    local tunnel_host
+    tunnel_host="$(host_of "$(env_value "$workspace/.env" CLOUDFLARED_TUNNEL_URL)")"
+    if [ -n "$tunnel_host" ]; then
+        [ "$tunnel_host" != "$(host_of "$(env_value "$REPO_ROOT/.env" CLOUDFLARED_TUNNEL_URL)")" ] \
+            || die "$tunnel_host is the primary checkout's own hostname; blank CLOUDFLARED_TUNNEL_URL in $workspace/.env."
+        [ -n "$(env_value "$REPO_ROOT/.env" CLOUDFLARE_API_TOKEN)" ] && [ -n "$(cloudflare_account)" ] \
+            || die "Cannot delete the tunnel of $tunnel_host, so nothing was stopped or removed. Set CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID in $REPO_ROOT/.env, or blank CLOUDFLARED_TUNNEL_URL in $workspace/.env to leave the tunnel behind."
+    fi
+
     if [ -f "$workspace/.env" ]; then
         local project
         project="$(project_name "$name")"
         info "Stopping the shop of $name (compose project $project)"
         stop_shop "$workspace" "$project" || die "Could not stop the shop of $name; the worktree is left in place."
+    fi
+
+    if [ -n "$tunnel_host" ]; then
+        info "Deleting the tunnel and DNS record of $tunnel_host"
+        tunnel down "$tunnel_host" "$workspace" \
+            || die "Could not delete the tunnel of $tunnel_host; the worktree is left in place. Retry bin/workspace rm $name."
     fi
 
     local branch
