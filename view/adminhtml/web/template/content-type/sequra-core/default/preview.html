@@ -1,0 +1,15 @@
+<!--preview.html-->
+<div attr="data.main.attributes" ko-style="data.main.style" class="pagebuilder-content-type type-nested"
+     css="data.main.css" event="{ mouseover: onMouseOver, mouseout: onMouseOut }, mouseoverBubble: false">
+    <div class="sequra-spinner spinner" style="display: none">
+        <span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span>
+    </div>
+    <span class="sequra-widgets-error"
+          style="background-color: #facccc; color: #720000; display: none; height: 50px;
+      font-size: 16px; line-height: 50px; padding-left: 10px;"
+          data-bind="i18n: 'Please enable promotional widgets in the SeQura module.'"
+    ></span>
+    <render args="getOptions().template"/>
+</div>
+

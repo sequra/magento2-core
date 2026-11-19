@@ -1,0 +1,555 @@
+<?php
+
+namespace Sequra\Core\Model\Api\Builders;
+
+use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\Framework\App\DeploymentConfig;
+use Magento\Framework\App\ProductMetadataInterface;
+use Magento\Framework\Config\ConfigOptionsListConstants;
+use Magento\Framework\DB\Adapter\ConnectionException;
+use Magento\Framework\DB\Adapter\SqlVersionProvider;
+use Magento\Framework\Exception\FileSystemException;
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\Exception\RuntimeException;
+use Magento\Framework\HTTP\PhpEnvironment\Request;
+use Magento\Framework\Module\ResourceInterface;
+use Magento\Quote\Api\CartRepositoryInterface;
+use Magento\Quote\Model\Quote as QuoteEntity;
+use Magento\Quote\Model\Quote\Address;
+use Magento\Sales\Model\Order;
+use Magento\Sales\Model\OrderFactory;
+use Magento\Store\Model\ScopeInterface;
+use Magento\Tax\Model\Config;
+use SeQura\Core\BusinessLogic\Domain\Order\Exceptions\InvalidCartItemsException;
+use SeQura\Core\BusinessLogic\Domain\Order\Exceptions\InvalidDateException;
+use SeQura\Core\BusinessLogic\Domain\Order\Exceptions\InvalidDurationException;
+use SeQura\Core\BusinessLogic\Domain\Order\Exceptions\InvalidGuiLayoutValueException;
+use SeQura\Core\BusinessLogic\Domain\Order\Exceptions\InvalidQuantityException;
+use SeQura\Core\BusinessLogic\Domain\Order\Exceptions\InvalidServiceEndTimeException;
+use SeQura\Core\BusinessLogic\Domain\Order\Exceptions\InvalidTimestampException;
+use SeQura\Core\BusinessLogic\Domain\Order\Exceptions\InvalidUrlException;
+use SeQura\Core\BusinessLogic\Domain\Order\Models\OrderRequest\CreateOrderRequest;
+use SeQura\Core\BusinessLogic\Domain\Order\Models\OrderRequest\Item\ItemType;
+use SeQura\Core\BusinessLogic\Domain\Order\Builders\CreateOrderRequestBuilder as CoreCreateOrderRequestBuilder;
+use Sequra\Core\Model\QuoteEmailResolver;
+
+class CreateOrderRequestBuilder implements CoreCreateOrderRequestBuilder
+{
+    /**
+     * @var string
+     */
+    private $cartId;
+    /**
+     * @var CartRepositoryInterface
+     */
+    private $quoteRepository;
+    /**
+     * @var QuoteEntity
+     */
+    private $quote;
+    /**
+     * @var string
+     */
+    private $storeId;
+    /**
+     * @var ProductMetadataInterface
+     */
+    private $productMetadata;
+    /**
+     * @var ResourceInterface
+     */
+    private $moduleResource;
+    /**
+     * @var DeploymentConfig
+     */
+    private $deploymentConfig;
+    /**
+     * @var SqlVersionProvider
+     */
+    private $sqlVersionProvider;
+    /**
+     * @var ScopeConfigInterface
+     */
+    private $scopeConfig;
+
+    /**
+     * @var OrderFactory
+     */
+    private $orderFactory;
+    /**
+     * @var Request
+     */
+    protected $request;
+    /**
+     * @var QuoteEmailResolver
+     */
+    private $emailResolver;
+
+    /**
+     * Constructor for CreateOrderRequestBuilder
+     *
+     * @param CartRepositoryInterface $quoteRepository
+     * @param ProductMetadataInterface $productMetadata
+     * @param ResourceInterface $moduleResource
+     * @param DeploymentConfig $deploymentConfig
+     * @param SqlVersionProvider $sqlVersionProvider
+     * @param ScopeConfigInterface $scopeConfig
+     * @param string $cartId
+     * @param string $storeId
+     * @param OrderFactory $orderFactory
+     * @param Request $request
+     * @param QuoteEmailResolver $emailResolver
+     */
+    public function __construct(
+        CartRepositoryInterface $quoteRepository,
+        ProductMetadataInterface $productMetadata,
+        ResourceInterface $moduleResource,
+        DeploymentConfig $deploymentConfig,
+        SqlVersionProvider $sqlVersionProvider,
+        ScopeConfigInterface $scopeConfig,
+        string $cartId,
+        string $storeId,
+        OrderFactory $orderFactory,
+        Request $request,
+        QuoteEmailResolver $emailResolver
+    ) {
+        $this->quoteRepository = $quoteRepository;
+        $this->productMetadata = $productMetadata;
+        $this->moduleResource = $moduleResource;
+        $this->deploymentConfig = $deploymentConfig;
+        $this->sqlVersionProvider = $sqlVersionProvider;
+        $this->scopeConfig = $scopeConfig;
+        $this->cartId = $cartId;
+        $this->storeId = $storeId;
+        $this->orderFactory = $orderFactory;
+        $this->request = $request;
+        $this->emailResolver = $emailResolver;
+    }
+
+    /**
+     * Builds the CreateOrderRequest object
+     *
+     * @return CreateOrderRequest The order request object
+     *
+     * @throws InvalidCartItemsException
+     * @throws InvalidDateException
+     * @throws InvalidDurationException
+     * @throws InvalidGuiLayoutValueException
+     * @throws InvalidQuantityException
+     * @throws InvalidServiceEndTimeException
+     * @throws InvalidTimestampException
+     * @throws InvalidUrlException
+     * @throws NoSuchEntityException If the quote cannot be found
+     */
+    public function build(): CreateOrderRequest
+    {
+        $this->quote = $this->loadQuote();
+
+        return $this->generateCreateOrderRequest();
+    }
+
+    /**
+     * Loads the quote of the cart, the active one first.
+     *
+     * @return QuoteEntity
+     *
+     * @throws NoSuchEntityException If the quote cannot be found
+     */
+    private function loadQuote(): QuoteEntity
+    {
+        try {
+            $quote = $this->quoteRepository->getActive((int)$this->cartId);
+        } catch (NoSuchEntityException $e) {
+            $quote = $this->quoteRepository->get((int)$this->cartId);
+        }
+
+        if (!$quote instanceof QuoteEntity) {
+            throw NoSuchEntityException::singleField('cartId', $this->cartId);
+        }
+
+        return $quote;
+    }
+
+    /**
+     * Generates the CreateOrderRequest object with all necessary data
+     *
+     * @return CreateOrderRequest Fully populated order request
+     *
+     * @throws InvalidCartItemsException
+     * @throws InvalidDateException
+     * @throws InvalidDurationException
+     * @throws InvalidGuiLayoutValueException
+     * @throws InvalidQuantityException
+     * @throws InvalidServiceEndTimeException
+     * @throws InvalidTimestampException
+     * @throws InvalidUrlException
+     */
+    private function generateCreateOrderRequest(): CreateOrderRequest
+    {
+        //@var string
+        $shippingMethod = $this->quote->getShippingAddress()->getShippingMethod();
+        return CreateOrderRequest::fromArray([
+            'state' => '',
+            'cart' => $this->getCart(),
+            'delivery_method' => [
+                'name' => $shippingMethod,
+                'home_delivery' => !in_array(
+                    $shippingMethod,
+                    [
+                        //Magento MSI In-Store Pickup (BOPIS)
+                        'msi_instore_pickup',
+                        'instore_pickup',
+                        //Amasty Store Pickup
+                        'amstorepickup_amstorepickup',
+                        'amstorepickup_storepickup',
+                        //Mageplaza Store Pickup
+                        'mageplaza_storepickup',
+                        //Mirasvit Store Pickup
+                        'mirasvit_pickup',
+                        'mirasvit_storepickup',
+                        //MageWorx Store Pickup
+                        'mageworx_storepickup',
+                        'mageworx_instore_pickup',
+                        //Webkul Store Pickup
+                        'webkul_storepickup',
+                        //Other/Generic or Custom Store Pickup
+                        'storepickup_storepickup',
+                        'pickup_storepickup',
+                        'clickandcollect_clickandcollect',
+                        'instorepickup_instorepickup',
+                        'pickup_pickup',
+                        'clickandcollect',
+                        'pick_instore',
+                        'pickup',
+                    ]
+                ),
+            ],
+            'delivery_address' => $this->getAddress($this->quote->getShippingAddress()),
+            'invoice_address' => $this->getAddress($this->quote->getBillingAddress()),
+            'customer' => $this->getCustomer(),
+            'gui' => [
+                'layout' => 'desktop',
+            ],
+            'platform' => $this->getPlatform()
+        ]);
+    }
+
+    /**
+     * Gets cart data for the order request
+     *
+     * @return array<string, mixed> Cart information including totals, currency and items
+     */
+    private function getCart(): array
+    {
+        return [
+            'currency' => $this->quote->getQuoteCurrencyCode(),
+            'gift' => false,
+            'order_total_with_tax' => (int)round(100 * $this->quote->getGrandTotal()),
+            'cart_ref' => $this->cartId,
+            'created_at' => $this->quote->getCreatedAt(),
+            'updated_at' => $this->quote->getUpdatedAt(),
+            'items' => $this->getOrderItems()
+        ];
+    }
+
+    /**
+     * Gets all order items including products, shipping and discounts
+     *
+     * @return array<int, mixed> Array of order items
+     */
+    private function getOrderItems(): array
+    {
+        $items = [];
+
+        foreach ($this->quote->getAllVisibleItems() as $item) {
+            $items[] = [
+                'type' => ItemType::TYPE_PRODUCT,
+                'reference' => $item->getSku(),
+                'name' => $item->getName(),
+                'price_with_tax' => (int)round(100 * $item->getPriceInclTax()),
+                'quantity' => $item->getQty(),
+                'total_with_tax' => (int)round(100 * $item->getRowTotalInclTax()),
+                'downloadable' => (bool)$item->getIsVirtual(),
+                'description' => $item->getDescription(),
+                'category' => $item->getProduct()->getCategory() ? $item->getProduct()->getCategory()->getName() : '',
+                'product_id' => $item->getProduct()->getId(),
+                'url' => $item->getProduct()->getProductUrl(),
+            ];
+        }
+
+        if ($this->quote->getShippingAddress()->getAllVisibleItems() !== null) {
+            $items[] = [
+                'type' => 'handling',
+                'reference' => 'shipping cost',
+                'name' => 'Shipping cost',
+                'total_with_tax' => (int)round(100 * $this->quote->getShippingAddress()->getShippingInclTax()),
+            ];
+        }
+
+        $discount = $this->getTotalDiscountAmount();
+        if ($discount < 0) {
+            $items[] = [
+                'type' => 'discount',
+                'reference' => 'discount',
+                'name' => 'Discount',
+                'total_with_tax' => $discount,
+            ];
+        }
+
+        return $items;
+    }
+
+    /**
+     * Calculates the total discount amount for the order
+     *
+     * @return int Total discount amount in cents (negative value)
+     */
+    private function getTotalDiscountAmount(): int
+    {
+        $totalDiscount = 0;
+
+        $taxAfterDiscount = $this->scopeConfig->getValue(
+            Config::CONFIG_XML_PATH_APPLY_AFTER_DISCOUNT,
+            ScopeInterface::SCOPE_STORE,
+            $this->storeId
+        );
+
+        $pricesIncludeTax = $this->scopeConfig->getValue(
+            Config::CONFIG_XML_PATH_PRICE_INCLUDES_TAX,
+            ScopeInterface::SCOPE_STORE,
+            $this->storeId
+        );
+
+        /** @var QuoteEntity\Item $item */
+        foreach ($this->quote->getAllItems() as $item) {
+            $discount = $item->getDiscountAmount();
+
+            // Needed because of tax difference on SeQura and Magento
+            if ($taxAfterDiscount && !$pricesIncludeTax) {
+                $discount *= (1 + $item->getTaxPercent() / 100);
+            }
+
+            $totalDiscount += (int)round(100 * $discount);
+        }
+
+        return -1 * $totalDiscount;
+    }
+
+    /**
+     * Formats an address into the required format for Sequra
+     *
+     * @param Address $address The Magento address object
+     *
+     * @return array<string, mixed> Formatted address data
+     */
+    private function getAddress(Address $address): array
+    {
+        return [
+            'given_names' => $address->getFirstname(),
+            'surnames' => $address->getLastname(),
+            'company' => $address->getCompany(),
+            'address_line_1' => $address->getStreetFull(),
+            'address_line_2' => '',
+            'postal_code' => $address->getPostcode(),
+            'city' => $address->getCity(),
+            'country_code' => $address->getCountryId(),
+            'phone' => $address->getTelephone(),
+            'state' => $address->getRegion(),
+        ];
+    }
+
+    /**
+     * Gets customer information for the order request
+     *
+     * @return array<string, mixed> Customer details including personal information and order history
+     */
+    private function getCustomer(): array
+    {
+        // The account name, then the name on the addresses — for the same reason the email goes
+        // through QuoteEmailResolver: a guest has no account to read, and Express Checkout writes
+        // the name the shopper typed onto the quote address, not onto the (empty) customer.
+        // SeQura's customer block has no phone field at all; the phone travels on the address
+        // blocks below, see getAddress().
+        $billingAddress = $this->quote->getBillingAddress();
+        $shippingAddress = $this->quote->getShippingAddress();
+
+        return [
+            'given_names' => $this->quote->getCustomer()->getFirstname()
+                ?: $billingAddress->getFirstname() ?: $shippingAddress->getFirstname(),
+            'surnames' => $this->quote->getCustomer()->getLastname()
+                ?: $billingAddress->getLastname() ?: $shippingAddress->getLastname(),
+            'email' => $this->emailResolver->resolve($this->quote),
+            'logged_in' => !$this->quote->getCustomerIsGuest(),
+            'language_code' => $this->quote->getStore()->getConfig('general/locale/code'),
+            'ip_number' => $this->getCustomerIpAddress(),
+            'user_agent' => $this->getUserAgent(),
+            'date_of_birth' => $this->quote->getCustomer()->getDob(),
+            'company' => $billingAddress->getCompany(),
+            'vat_number' => $billingAddress->getVatId(),
+            'created_at' => $this->quote->getCustomer()->getCreatedAt(),
+            'updated_at' => $this->quote->getCustomer()->getUpdatedAt(),
+            'previous_orders' => $this->getPreviousOrders($this->quote->getCustomer()->getId()),
+        ];
+    }
+
+    /**
+     * Get previous orders for a customer
+     *
+     * @param int $customerId
+     *
+     * @return array<array<string, mixed>> Array of previous orders
+     */
+    private function getPreviousOrders($customerId): array
+    {
+        $orderModel = $this->orderFactory->create();
+        $orderCollection = $orderModel->getCollection()->addFieldToFilter('customer_id', ['eq' => $customerId]);
+        $orders = [];
+
+        if (!$orderCollection) {
+            return $orders;
+        }
+
+        /**
+         * @var Order $orderRow
+         */
+        foreach ($orderCollection as $orderRow) {
+            $order = [];
+            $order['amount'] = $this->formatPrice(is_numeric($orderRow->getData('grand_total'))
+                ? (float)$orderRow->getData('grand_total') : 0);
+            $order['currency'] = $orderRow->getData('order_currency_code');
+            $createdAt = $orderRow->getData('created_at');
+            $order['created_at'] = str_replace(' ', 'T', is_string($createdAt) ? $createdAt : '');
+            $order['raw_status'] = $orderRow->getData('status');
+            $billingAddress = $orderRow->getBillingAddress();
+            $order['postal_code'] = $billingAddress ? $billingAddress->getPostCode() : '';
+            $order['country_code'] = $billingAddress ? $billingAddress->getCountryId() : '';
+            $order['status'] = $this->mapOrderStatus(is_string($order['raw_status']) ? $order['raw_status'] : '');
+            $payment = $orderRow->getPayment();
+            $additionalInfo = $payment ? $payment->getAdditionalInformation() : [];
+            $order['payment_method_raw'] = (is_array($additionalInfo) && isset($additionalInfo['method_title'])
+                && is_string($additionalInfo['method_title'])) ? $additionalInfo['method_title'] : '';
+            $order['payment_method'] = $payment ? $this->mapPaymentName($payment->getMethod()) : '';
+
+            $orders[] = $order;
+        }
+
+        return $orders;
+    }
+
+    /**
+     * Maps the payment method name to a Sequra-compatible format
+     *
+     * @param string $name
+     *
+     * @return string
+     */
+    private function mapPaymentName(string $name): string
+    {
+        if (str_contains($name, 'card')) {
+            return 'CC';
+        }
+
+        if (str_contains($name, 'paypal')) {
+            return 'PP';
+        }
+
+        if ($name === 'banktransfer') {
+            return 'TR';
+        }
+
+        if ($name === 'cashondelivery') {
+            return 'COD';
+        }
+
+        if (str_contains($name, 'sequra')) {
+            return 'SQ';
+        }
+
+        return 'O/' . $name;
+    }
+
+    /**
+     * Maps the order status to a Sequra-compatible format
+     *
+     * @param string $magentoStatus
+     *
+     * @return string
+     */
+    private function mapOrderStatus(string $magentoStatus): string
+    {
+        switch ($magentoStatus) {
+            case Order::STATE_COMPLETE:
+                return 'shipped';
+            case Order::STATE_CANCELED:
+                return 'cancelled';
+        }
+
+        return 'processing';
+    }
+
+    /**
+     * Formats the price to an integer value in cents
+     *
+     * @param float $price
+     *
+     * @return int
+     */
+    private function formatPrice($price): int
+    {
+        if (!is_numeric($price)) {
+            return 0;
+        }
+
+        return (int)round(100 * $price);
+    }
+
+    /**
+     * Gets platform information for the order request
+     *
+     * @return array<string, string> Platform details including version information
+     *
+     * @throws ConnectionException
+     * @throws FileSystemException
+     * @throws RuntimeException
+     */
+    private function getPlatform(): array
+    {
+        $connectionData = $this->deploymentConfig->get(
+            ConfigOptionsListConstants::CONFIG_PATH_DB_CONNECTION_DEFAULT,
+            []
+        );
+
+        return [
+            'name' => 'magento2',
+            'version' => (string)$this->productMetadata->getVersion(),
+            'plugin_version' => (string)$this->moduleResource->getDbVersion('Sequra_Core'),
+            'uname' => php_uname(),
+            'db_name' => is_array($connectionData) && !empty($connectionData['model'])
+            && is_string($connectionData['model']) ? $connectionData['model'] : 'mysql',
+            'db_version' => (string)$this->sqlVersionProvider->getSqlVersion(),
+            'php_version' => (string)phpversion(),
+        ];
+    }
+
+    /**
+     * Gets the customer's IP address from server variables
+     *
+     * @return string IP address
+     */
+    private function getCustomerIpAddress(): string
+    {
+        return $this->request->getClientIp();
+    }
+
+    /**
+     * Gets the shopper's user agent, or an empty string when the request carries none.
+     *
+     * @return string
+     */
+    private function getUserAgent(): string
+    {
+        $userAgent = $this->request->getServer('HTTP_USER_AGENT', '');
+
+        return is_string($userAgent) ? $userAgent : '';
+    }
+}

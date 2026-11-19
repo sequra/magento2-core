@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright © 2017 SeQura Engineering. All rights reserved.
+ */
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <type name="Magento\Checkout\Model\CompositeConfigProvider">
+        <arguments>
+            <argument name="configProviders" xsi:type="array">
+                <item name="sequra_payment_config_provider" xsi:type="object">Sequra\Core\Model\Ui\ConfigProvider</item>
+            </argument>
+        </arguments>
+    </type>
+    <type name="Magento\Framework\Pricing\Render\Amount">
+        <plugin name="sequra_mini_widgets" type="Sequra\Core\Plugin\MiniWidgets"/>
+    </type>
+    <type name="Magento\Checkout\CustomerData\Cart">
+        <plugin name="sequra_express_minicart_button" type="Sequra\Core\Plugin\ExpressCheckout\MiniCartButton"/>
+    </type>
+    <type name="Magento\ConfigurableProduct\Block\Product\View\Type\Configurable">
+        <plugin disabled="false" name="sequra_config_attributes" sortOrder="10"
+                type="Sequra\Core\Plugin\Magento\ConfigurableProduct\Block\Product\View\Type\Configurable"/>
+    </type>
+    <type name="Magento\Swatches\Block\Product\Renderer\Configurable">
+        <plugin disabled="false"
+                name="sequra_config_products"
+                sortOrder="10"
+                type="Sequra\Core\Plugin\Magento\ConfigurableProduct\Block\Product\View\Type\Configurable"/>
+    </type>
+    <type name="Magento\Framework\App\ActionInterface">
+        <plugin name="sequra_core_country_http_context"
+                type="Sequra\Core\Plugin\CountryHttpContextPlugin"
+                sortOrder="20"/>
+    </type>
+</config>

@@ -1,0 +1,182 @@
+{
+  "general": {
+    "viewInPortal": "View integration in the Merchant Portal",
+    "save": "Save",
+    "saveChanges": "Save changes",
+    "cancel": "Cancel",
+    "disconnect": "Disconnect",
+    "confirm": "Confirm",
+    "continue": "Continue",
+    "search": "Search...",
+    "selectStore": "Select store:",
+    "selectStorePlaceholder": "Select store",
+    "switchStore": "Switch store:",
+    "downloadNewVersion": "Download new version",
+    "merchant": "Merchant:",
+    "settings": "Settings",
+    "changesSaved": "Changes saved.",
+    "noItemsAvailable": "No items available",
+    "and": " and ",
+    "mode": {
+      "test": "Sandbox mode",
+      "live": "Live mode"
+    },
+    "errors": {
+      "InvalidOperationException": "Something went wrong on our side. Check the data and try again.",
+      "unknown": "Something went wrong. Try again in a few minutes.",
+      "backgroundDataFetchFailure": "We couldn't refresh the data. Reload the page to see the latest version.",
+      "empty": "This value can't be empty.",
+      "saveEntityFailed": "We couldn't save the data because %s",
+      "getEntityFailed": "We couldn't load the data because %s",
+      "failedToRetrieveStores": "We couldn't load your stores.",
+      "stores": {
+        "failed": "We couldn't load your stores.",
+        "invalidIdAndStatus": "The status ID and name aren't valid."
+      },
+      "version": {
+        "failed": "We couldn't check the version."
+      },
+      "connection": {
+        "invalidUsernameOrPassword": "The username or password is wrong. Check your credentials.",
+        "invalidUsernameOrPasswordForDeployment": "The username or password for %s is wrong. Check your credentials.",
+        "invalidMerchantId": "The merchant ID isn't valid.",
+        "invalidEnvironment": "The environment isn't valid.",
+        "emptyStoreId": "The store ID is missing.",
+        "invalidMode": "The mode isn't valid.",
+        "emptyData": "The connection data is missing.",
+        "settingsNotFound": "We couldn't find the connection settings.",
+        "invalidRoles": "This user is missing some required roles.",
+        "invalidSettings": "The connection settings aren't valid.",
+        "credentialsDoNotExist": "We couldn't find the API credentials.",
+        "testKeyChanged": "The sandbox API key has changed.",
+        "liveKeyChanged": "The live API key has changed.",
+        "testMerchantIdChanged": "The sandbox merchant ID has changed.",
+        "liveMerchantIdChanged": "The live merchant ID has changed.",
+        "companyLevelKey": "This API key isn't a merchant-level key.",
+        "invalidKey": "The API key isn't valid.",
+        "originFailed": "We couldn't add the allowed origin.",
+        "clientKeyGenerationFailed": "We couldn't generate the client key."
+      },
+      "countries": {
+        "noCountries": "None of the countries where seQura operates is active in your store. Activate at least one to accept payments with seQura. Need help? Contact seQura support.",
+        "empty": "The country setting can't be empty.",
+        "countryCode": "The country code in the country settings isn't valid.",
+        "sellingCountries": "We couldn't load the selling countries."
+      },
+      "webhooks": {
+        "merchantError": "We couldn't find the merchant with ID %s.",
+        "failedToRegisterWebhook": "We couldn't register the webhook.",
+        "hmacError": "We couldn't generate the HMAC."
+      }
+    }
+  },
+  "sidebar": {
+    "connectionSettings": "Connection settings",
+    "stepOneLabel": "Install the ecommerce integration",
+    "stepOneDescription": "Your integration is ready to connect.",
+    "stepTwoLabel": "Connect the integration",
+    "stepDeployments": "Select deployment targets"
+  },
+  "validation": {
+    "requiredField": "This field is required.",
+    "invalidField": "This field isn't valid.",
+    "invalidJSON": "Enter valid JSON.",
+    "invalidEmail": "Enter a valid email.",
+    "maxLength": "Use %s characters or fewer.",
+    "numeric": "Enter a valid number with up to 2 decimals.",
+    "greaterThanZero": "Enter a value greater than 0.",
+    "nonNegative": "Enter a value of 0 or more.",
+    "numberOfDecimalPlaces": "Use 2 decimal places.",
+    "integer": "Enter a whole number.",
+    "invalidUrl": "Enter a valid URL.",
+    "invalidFieldValue": "Set this field to \"%s\".",
+    "invalidMaxValue": "The maximum value is %s.",
+    "invalidImageType": "Upload a PNG, JPG or SVG image.",
+    "invalidImageSize": "The file is over 10 MB. Choose a smaller one."
+  },
+  "connection": {
+    "title": {
+      "onboarding": "Getting started",
+      "settings": "Connection settings"
+    },
+    "description": {
+      "onboarding": "Log in to the Merchant Portal first. You'll copy a few settings from there to fill in the fields below. Don't have an account yet? Create one ",
+      "settings": "Set up your seQura account and choose the environment to start processing payments. Don't have an account yet? Create one ",
+      "endLink": "here"
+    },
+    "environment": {
+      "label": "Environment",
+      "options": {
+        "live": "Live",
+        "sandbox": "Sandbox"
+      }
+    },
+    "deployments": {
+      "manage": "Manage deployment targets"
+    },
+    "username": {
+      "label": "Username",
+      "description": "You'll find your username in the email we sent you."
+    },
+    "password": {
+      "label": "Password",
+      "description": "You'll find your password in the email we sent you."
+    },
+    "modal": {
+      "title": "Change the environment?",
+      "message": "Changing the environment removes the settings of the current one and connects you to the new one."
+    },
+    "disconnect": {
+      "title": "Disconnect",
+      "message": "Do you want to disconnect?"
+    },
+    "successMessage": "You're connected.",
+    "successMessageForDeployment": "You're connected to %s.",
+    "webhookReRegistration": {
+      "title": "Re-register webhooks",
+      "successMessage": "Webhooks re-registered.",
+      "errorMessage": "We couldn't re-register the webhooks. Try again."
+    }
+  },
+  "deployments": {
+    "title": "Select deployment targets",
+    "description": "Select the deployment targets where you want to offer seQura payment methods.",
+    "selector": {
+      "label": "Where do you want to offer seQura payment methods?",
+      "description": "Each deployment target covers a different group of countries."
+    }
+  },
+  "countries": {
+    "ES": {
+      "label": "Spain",
+      "description": "Enter the seQura merchant ID for customers in Spain."
+    },
+    "FR": {
+      "label": "France",
+      "description": "Enter the seQura merchant ID for customers in France."
+    },
+    "CO": {
+      "label": "Colombia",
+      "description": "Enter the seQura merchant ID for customers in Colombia."
+    },
+    "IT": {
+      "label": "Italy",
+      "description": "Enter the seQura merchant ID for customers in Italy."
+    },
+    "PT": {
+      "label": "Portugal",
+      "description": "Enter the seQura merchant ID for customers in Portugal."
+    },
+    "PE": {
+      "label": "Peru",
+      "description": "Enter the seQura merchant ID for customers in Peru."
+    }
+  },
+  "supportLink": {
+    "label": "Need help?",
+    "link": "https://www.sequra.com/en/shoppers/contact"
+  },
+  "signupLink": {
+    "link": "https://portal.sequra.com/signup"
+  }
+}

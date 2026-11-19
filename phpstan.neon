@@ -1,0 +1,59 @@
+parameters:
+    level: 9
+    errorFormat: table
+    treatPhpDocTypesAsCertain: false
+    reportUnmatchedIgnoredErrors: false
+    paths:
+        - /var/www/html/vendor/sequra/magento2-core/registration.php
+        - /var/www/html/app/code/Sequra/Helper/Api
+        - /var/www/html/app/code/Sequra/Helper/Console
+        - /var/www/html/app/code/Sequra/Helper/Model
+        - /var/www/html/app/code/Sequra/Helper/registration.php
+        - /var/www/html/vendor/sequra/magento2-core/Api/
+        - /var/www/html/vendor/sequra/magento2-core/Block/
+        - /var/www/html/vendor/sequra/magento2-core/Console/
+        - /var/www/html/vendor/sequra/magento2-core/Controller/
+        - /var/www/html/vendor/sequra/magento2-core/Gateway/
+        - /var/www/html/vendor/sequra/magento2-core/Helper/
+        - /var/www/html/vendor/sequra/magento2-core/i18n/
+        - /var/www/html/vendor/sequra/magento2-core/Model/
+        - /var/www/html/vendor/sequra/magento2-core/Observer/
+        - /var/www/html/vendor/sequra/magento2-core/Plugin/
+        - /var/www/html/vendor/sequra/magento2-core/Repository/
+        - /var/www/html/vendor/sequra/magento2-core/ResourceModel/
+        - /var/www/html/vendor/sequra/magento2-core/Services/
+        - /var/www/html/vendor/sequra/magento2-core/Setup/
+        - /var/www/html/vendor/sequra/magento2-core/Ui/
+    ignoreErrors:
+        - '#unknown class Magento\\Sales\\Model\\OrderFactory#i'
+        - '#unknown class Magento\\Framework\\DB\\TransactionFactory#i'
+        - '#invalid type Magento\\Framework\\DB\\TransactionFactory#i'
+        - '#invalid type Magento\\Sales\\Model\\OrderFactory#i'
+        - '#invalid type Magento\\Framework\\Controller\\Result\\RawFactory#i'
+        - '#unknown class Magento\\Framework\\Controller\\Result\\RawFactory#i'
+        - '#unknown class Magento\\Quote\\Model\\QuoteFactory#i'
+        - '#invalid type Magento\\Quote\\Model\\QuoteFactory#i'
+        - '#invalid type Magento\\Payment\\Gateway\\Validator\\ResultInterfaceFactory#i'
+        - '#should be compatible with return type#i'
+        - '#Call to an undefined method Magento\\Framework\\Api\\ExtensibleDataInterface::#i'
+        - '#has unknown class Sequra\\Core\\Model\\Api\\Builders\\CreateOrderRequestBuilderFactory#i'
+        - '#has invalid type Sequra\\Core\\Model\\Api\\Builders\\CreateOrderRequestBuilderFactory#i'
+        - '#unknown class Sequra\\Core\\Model\\Api\\Builders\\CreateOrderRequestBuilderFactory#i'
+        - '#unknown class Magento\\Sales\\Model\\Order\\Interceptor#i'
+        - '#invalid type Magento\\Sales\\Model\\Order\\Interceptor#i'
+        - '#Magento\\Sales\\Model\\Order\\Interceptor not found#i'
+        - '#unknown class Sequra\\Core\\Services\\BusinessLogic\\OrderServiceFactory#i'
+        - '#invalid type Sequra\\Core\\Services\\BusinessLogic\\OrderServiceFactory#i'
+        - '#unknown class Magento\\Catalog\\Model\\ResourceModel\\Category\\CollectionFactory#i'
+        - '#invalid type Magento\\Catalog\\Model\\ResourceModel\\Category\\CollectionFactory#i'
+        - '#unknown class Magento\\Catalog\\Model\\ResourceModel\\Product\\CollectionFactory#i'
+        - '#invalid type Magento\\Catalog\\Model\\ResourceModel\\Product\\CollectionFactory#i'
+        - '#Call to an undefined method SeQura\\Core\\BusinessLogic\\Bootstrap\\Aspect\\Aspects::#i'
+        - '#(Class|type) Sequra\\Core\\Services\\BusinessLogic\\Order\\OrderCreationFactory (not found|unknown|invalid)#'
+        - '#Call to method create\(\) on an unknown class Sequra\\Core\\Services\\BusinessLogic\\Order\\OrderCreationFactory#'
+        - '#Parameter \$orderCreationFactory of method Sequra\\Core\\Services\\Bootstrap::__construct\(\) has invalid type Sequra\\Core\\Services\\BusinessLogic\\Order\\OrderCreationFactory\.#'
+        - '#Property Sequra\\Core\\Services\\Bootstrap::\$orderCreationFactory has unknown class Sequra\\Core\\Services\\BusinessLogic\\Order\\OrderCreationFactory as its type.#'
+        - '#(Class|type) Sequra\\Core\\Model\\Api\\TrackingSynchronizerFactory (not found|unknown|invalid)#'
+        - '#Call to method create\(\) on an unknown class Sequra\\Core\\Model\\Api\\TrackingSynchronizerFactory#'
+        - '#Parameter \$trackingSynchronizerFactory of method Sequra\\Core\\Services\\Bootstrap::__construct\(\) has invalid type Sequra\\Core\\Model\\Api\\TrackingSynchronizerFactory\.#'
+        - '#Property Sequra\\Core\\Services\\Bootstrap::\$trackingSynchronizerFactory has unknown class Sequra\\Core\\Model\\Api\\TrackingSynchronizerFactory as its type.#'

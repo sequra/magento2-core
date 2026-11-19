@@ -1,0 +1,197 @@
+<?php
+
+namespace Sequra\Core\Controller\Comeback;
+
+use Magento\Checkout\Controller\Onepage;
+use Magento\Customer\Api\AccountManagementInterface;
+use Magento\Customer\Api\CustomerRepositoryInterface;
+use Magento\Framework\App\CsrfAwareActionInterface;
+use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\Stdlib\CookieManagerInterface;
+use Magento\Framework\Stdlib\Cookie\CookieMetadataFactory;
+use Sequra\Core\Controller\CsrfExemptTrait;
+use Sequra\Core\Model\Api\ExpressCheckout\SolicitService;
+use Sequra\Core\Services\BusinessLogic\Utility\SeQuraTranslationProvider;
+
+/**
+ * Form-key validation is skipped ({@see CsrfExemptTrait}): the shopper returns from SeQura's
+ * own domain, so the request carries no form key of ours.
+ */
+class Index extends Onepage implements CsrfAwareActionInterface
+{
+    use CsrfExemptTrait;
+
+    /**
+     * @var \Magento\Framework\Message\ManagerInterface
+     */
+    private $manager;
+    /**
+     * @var \Magento\Sales\Model\OrderFactory
+     */
+    private $orderFactory;
+    /**
+     * @var CookieManagerInterface
+     */
+    private $cookieManager;
+    /**
+     * @var CookieMetadataFactory
+     */
+    private $cookieMetadataFactory;
+    /**
+     * @var SeQuraTranslationProvider
+     */
+    private $translationProvider;
+
+    /**
+     * Constructor for Index controller
+     *
+     * @param \Magento\Framework\App\Action\Context $context
+     * @param \Magento\Customer\Model\Session $customerSession
+     * @param CustomerRepositoryInterface $customerRepository
+     * @param AccountManagementInterface $accountManagement
+     * @param \Magento\Framework\Registry $coreRegistry
+     * @param \Magento\Framework\Translate\InlineInterface $translateInline
+     * @param \Magento\Framework\Data\Form\FormKey\Validator $formKeyValidator
+     * @param \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig
+     * @param \Magento\Framework\View\LayoutFactory $layoutFactory
+     * @param \Magento\Quote\Api\CartRepositoryInterface $quoteRepository
+     * @param \Magento\Framework\View\Result\PageFactory $resultPageFactory
+     * @param \Magento\Framework\View\Result\LayoutFactory $resultLayoutFactory
+     * @param \Magento\Framework\Controller\Result\RawFactory $resultRawFactory
+     * @param \Magento\Framework\Controller\Result\JsonFactory $resultJsonFactory
+     * @param \Magento\Framework\Message\ManagerInterface $manager
+     * @param \Magento\Sales\Model\OrderFactory $orderFactory
+     * @param CookieManagerInterface $cookieManager
+     * @param CookieMetadataFactory $cookieMetadataFactory
+     * @param SeQuraTranslationProvider $translationProvider
+     */
+    public function __construct(
+        \Magento\Framework\App\Action\Context $context,
+        \Magento\Customer\Model\Session $customerSession,
+        CustomerRepositoryInterface $customerRepository,
+        AccountManagementInterface $accountManagement,
+        \Magento\Framework\Registry $coreRegistry,
+        \Magento\Framework\Translate\InlineInterface $translateInline,
+        \Magento\Framework\Data\Form\FormKey\Validator $formKeyValidator,
+        \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
+        \Magento\Framework\View\LayoutFactory $layoutFactory,
+        \Magento\Quote\Api\CartRepositoryInterface $quoteRepository,
+        \Magento\Framework\View\Result\PageFactory $resultPageFactory,
+        \Magento\Framework\View\Result\LayoutFactory $resultLayoutFactory,
+        \Magento\Framework\Controller\Result\RawFactory $resultRawFactory,
+        \Magento\Framework\Controller\Result\JsonFactory $resultJsonFactory,
+        \Magento\Framework\Message\ManagerInterface $manager,
+        \Magento\Sales\Model\OrderFactory $orderFactory,
+        CookieManagerInterface $cookieManager,
+        CookieMetadataFactory $cookieMetadataFactory,
+        SeQuraTranslationProvider $translationProvider
+    ) {
+        parent::__construct(
+            $context,
+            $customerSession,
+            $customerRepository,
+            $accountManagement,
+            $coreRegistry,
+            $translateInline,
+            $formKeyValidator,
+            $scopeConfig,
+            $layoutFactory,
+            $quoteRepository,
+            $resultPageFactory,
+            $resultLayoutFactory,
+            $resultRawFactory,
+            $resultJsonFactory
+        );
+        $this->manager = $manager;
+        $this->orderFactory = $orderFactory;
+        $this->cookieManager = $cookieManager;
+        $this->cookieMetadataFactory = $cookieMetadataFactory;
+        $this->translationProvider = $translationProvider;
+    }
+
+    /**
+     * Execute action based on request and return result
+     *
+     * @return \Magento\Framework\Controller\ResultInterface
+     */
+    public function execute()
+    {
+        /**
+         * @var int $cartId
+         */
+        $cartId = $this->getRequest()->getParam('cartId');
+        $quote = $this->quoteRepository->get($cartId);
+        $order = $this->orderFactory->create()->loadByIncrementId((string) $quote->getReservedOrderId());
+        if (!$order->getId()) {
+            $this->manager->addWarningMessage(
+                $this->translationProvider->translate('sequra.error.somethingWentWrong')
+            );
+            $this->resultRedirectFactory->create()->setPath('checkout/cart');
+        }
+
+        $session = $this->getOnepage()->getCheckout();
+
+        // Empty the shopper's real cart after a successful cart/mini-cart express purchase. That
+        // order was placed from a detached clone, so the live cart still holds the items;
+        // deactivating it drops it from active-cart resolution (a fresh empty cart is created on
+        // the next request). SolicitService paired the clone id with the live cart at solicit time;
+        // clearing only fires when THIS comeback's cartId is that clone, so an unrelated return
+        // (PDP express / regular checkout) never empties the wrong cart. One-shot: cleared on match.
+        $expressCloneId = $session->getData(SolicitService::SESSION_KEY_CLONE);
+        if (is_scalar($expressCloneId) && (int) $expressCloneId === (int) $cartId) {
+            $sourceCartId = $session->getData(SolicitService::SESSION_KEY_SOURCE);
+            // @phpstan-ignore-next-line magic method forwarded to Storage via SessionManager::__call
+            $session->unsetData(SolicitService::SESSION_KEY_CLONE);
+            // @phpstan-ignore-next-line magic method forwarded to Storage via SessionManager::__call
+            $session->unsetData(SolicitService::SESSION_KEY_SOURCE);
+            if (is_scalar($sourceCartId) && (int) $sourceCartId > 0) {
+                $this->emptySourceCart((int) $sourceCartId);
+            }
+        }
+
+        // prepare session to success or cancellation page
+        $session->clearHelperData();
+        // TODO: Call to an undefined method Magento\Checkout\Model\Session::setLastQuoteId()
+        // @phpstan-ignore-next-line
+        $session->setLastQuoteId($quote->getId())
+            ->setLastSuccessQuoteId($quote->getId())
+            ->setLastOrderId($order->getId())
+            ->setLastRealOrderId($quote->getReservedOrderId());
+        // Reset minicart.
+        $metadata = $this->cookieMetadataFactory
+            ->createPublicCookieMetadata()
+            ->setPath('/');
+        $sectiondata = json_decode($this->cookieManager->getCookie('section_data_ids') ?: '');
+        if (is_object($sectiondata) && isset($sectiondata->cart)) {
+            $sectiondata->cart += 1000;
+            $this->cookieManager->setPublicCookie(
+                'section_data_ids',
+                (string) json_encode($sectiondata),
+                $metadata
+            );
+        }
+
+        return $this->resultRedirectFactory->create()->setPath('checkout/onepage/success');
+    }
+
+    /**
+     * Deactivates the given cart so it drops out of active-cart resolution (i.e. empties it).
+     *
+     * @param int $cartId
+     *
+     * @return void
+     */
+    private function emptySourceCart(int $cartId): void
+    {
+        try {
+            $quote = $this->quoteRepository->get($cartId);
+        } catch (NoSuchEntityException $e) {
+            return;
+        }
+
+        if ($quote->getIsActive()) {
+            $quote->setIsActive(false);
+            $this->quoteRepository->save($quote);
+        }
+    }
+}

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit bootstrap="./autoload.php" colors="true">
+    <testsuites>
+        <testsuite name="Magento Test Suite">
+            <directory>./Unit</directory>
+        </testsuite>
+    </testsuites>
+</phpunit>

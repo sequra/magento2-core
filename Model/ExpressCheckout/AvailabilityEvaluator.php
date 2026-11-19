@@ -1,0 +1,155 @@
+<?php
+
+namespace Sequra\Core\Model\ExpressCheckout;
+
+use Exception;
+use SeQura\Core\BusinessLogic\CheckoutAPI\CheckoutAPI;
+use SeQura\Core\BusinessLogic\CheckoutAPI\ExpressCheckout\Controller\ExpressCheckoutController;
+use SeQura\Core\BusinessLogic\CheckoutAPI\ExpressCheckout\Requests\ExpressCheckoutAvailabilityRequest;
+use SeQura\Core\BusinessLogic\CheckoutAPI\ExpressCheckout\Requests\GuestExpressCheckoutAvailabilityRequest;
+use SeQura\Core\BusinessLogic\CheckoutAPI\ExpressCheckout\Responses\ExpressCheckoutAvailabilityResponse;
+use SeQura\Core\BusinessLogic\CheckoutAPI\ExpressCheckout\Responses\GuestExpressCheckoutAvailabilityResponse;
+use SeQura\Core\Infrastructure\Logger\Logger;
+use Sequra\Core\Model\Config\PaymentMethodStatus;
+
+/**
+ * Class AvailabilityEvaluator
+ *
+ * Asks the integration-core availability guard whether SeQura Express Checkout applies for a
+ * given storefront context and maps the answer to the render state shared by every surface
+ * (cart, mini-cart, product page). What splits the two branches is whether the caller can name
+ * the delivery country, not whether the shopper is logged in:
+ *  - country known (a cart surface where the customer's default address or the cart itself names
+ *    one — see QuoteShippingResolver::getResolvableShippingCountry): the per-country check on the
+ *    very country the solicit would use. Not available yields the inline "not available" message
+ *    state, which is a claim worth making only because the country is the shopper's own. Only the
+ *    country decides this; a shopper without an address is eligible, and adds it on the express
+ *    screen.
+ *  - no country (the product page, whose HTML is full-page cached and shared by every shopper, so
+ *    nothing shopper-specific may enter the render decision; and any cart surface where nothing
+ *    names a delivery country yet): the country-agnostic guest check — a strict subset of the
+ *    country-aware one. Not available yields the hidden state, and the delivery country is
+ *    validated at solicit time instead (HTTP 422 backstop). Saying nothing is the right answer
+ *    when the destination is unknown: telling a shopper SeQura is unavailable on the strength of
+ *    the store view's locale would be wrong as often as it is right.
+ */
+class AvailabilityEvaluator
+{
+    /**
+     * Render the Express Checkout button.
+     */
+    public const STATE_BUTTON = 'button';
+    /**
+     * Render the inline "not available" message in place of the button.
+     */
+    public const STATE_MESSAGE = 'message';
+    /**
+     * Render nothing.
+     */
+    public const STATE_HIDDEN = 'hidden';
+
+    /**
+     * @var PaymentMethodStatus
+     */
+    private PaymentMethodStatus $paymentMethodStatus;
+
+    /**
+     * @param PaymentMethodStatus $paymentMethodStatus
+     */
+    public function __construct(PaymentMethodStatus $paymentMethodStatus)
+    {
+        $this->paymentMethodStatus = $paymentMethodStatus;
+    }
+
+    /**
+     * Whether the payment method is active in the given store.
+     *
+     * @param string $storeId
+     *
+     * @return bool
+     */
+    public function isPaymentMethodActive(string $storeId): bool
+    {
+        return $this->paymentMethodStatus->isActive($storeId);
+    }
+
+    /**
+     * Evaluates the render state for the given storefront context.
+     *
+     * @param string $storeId
+     * @param string $page Integration-core page identifier (e.g. 'cart', 'mini-cart', 'product').
+     * @param string $country ISO2 delivery country the solicit would use, or an empty string when
+     *                        the caller cannot name one (see the class docblock).
+     * @param string $currency Display currency code.
+     * @param string $ipAddress Shopper IP address.
+     * @param string[] $productIds Product entity IDs in context.
+     * @param string[] $categoryIds Category IDs in context.
+     *
+     * @return array{state: string, buttonStyle: string|null} State is one of self::STATE_*.
+     */
+    public function evaluate(
+        string $storeId,
+        string $page,
+        string $country,
+        string $currency,
+        string $ipAddress,
+        array $productIds,
+        array $categoryIds
+    ): array {
+        if (!$this->paymentMethodStatus->isActive($storeId)) {
+            return [
+                'state' => self::STATE_HIDDEN,
+                'buttonStyle' => null,
+            ];
+        }
+
+        try {
+            /** @var ExpressCheckoutController $expressCheckoutController */
+            $expressCheckoutController = CheckoutAPI::get()->expressCheckout($storeId);
+            if ($country !== '') {
+                /** @var ExpressCheckoutAvailabilityResponse $response */
+                $response = $expressCheckoutController->isAvailable(
+                    new ExpressCheckoutAvailabilityRequest(
+                        $page,
+                        $currency,
+                        $ipAddress,
+                        $country,
+                        $productIds,
+                        $categoryIds
+                    )
+                );
+                $unavailableState = self::STATE_MESSAGE;
+            } else {
+                /** @var GuestExpressCheckoutAvailabilityResponse $response */
+                $response = $expressCheckoutController->isAvailableForGuest(
+                    new GuestExpressCheckoutAvailabilityRequest(
+                        $page,
+                        $currency,
+                        $ipAddress,
+                        $productIds,
+                        $categoryIds
+                    )
+                );
+                $unavailableState = self::STATE_HIDDEN;
+            }
+
+            $data = $response->toArray();
+            $buttonStyle = $data['buttonStyle'] ?? null;
+
+            return [
+                'state' => ($response->isSuccessful() && !empty($data['available']))
+                    ? self::STATE_BUTTON
+                    : $unavailableState,
+                'buttonStyle' => is_string($buttonStyle) ? $buttonStyle : null,
+            ];
+        } catch (Exception $e) {
+            Logger::logError('Checking Express Checkout availability failed: ' . $e->getMessage() .
+                ' Trace: ' . $e->getTraceAsString());
+
+            return [
+                'state' => self::STATE_HIDDEN,
+                'buttonStyle' => null,
+            ];
+        }
+    }
+}

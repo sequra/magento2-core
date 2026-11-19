@@ -1,0 +1,62 @@
+<?php
+/** @var Sequra\Core\Block\Adminhtml\Configuration\Index $block */
+// TODO: Unescaped output detected
+// phpcs:disable Magento2.Security.XssTemplate.FoundUnescaped
+?>
+
+<div id="sequra-page">
+    <main id="sq-page-wrapper"></main>
+    <div class="sq-page-loader sqs--hidden" id="sq-spinner">
+        <div class="sq-loader sqt--large">
+            <span class="sqp-spinner"></span>
+        </div>
+    </div>
+</div>
+
+<script>
+    window.SequraFE = window.SequraFE || {};
+    SequraFE.regex = <?= $block->getRegexJson(); ?>;
+</script>
+
+<script src="<?= $block->getViewFileUrl('Sequra_Core::js/sequra-core/ValidationService.js'); ?>"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        SequraFE.translations = {
+            default: <?= $block->getTranslations()['default']; ?>,
+            current: <?= $block->getTranslations()['current']; ?>
+        };
+
+        SequraFE.utilities.showLoader();
+
+        const pageConfiguration = {
+            onboarding: {
+                getConnectionDataUrl: "<?= $block->getControllerUrl('Onboarding', '{storeId}', 'getConnectionData'); ?>",
+                connectUrl: "<?= $block->getControllerUrl('Onboarding', '{storeId}', 'connect'); ?>",
+                getDeploymentsUrl: "<?= $block->getControllerUrl('DeploymentsSettings', '{storeId}', 'getDeployments'); ?>"
+            },
+            settings: {
+                connectUrl: "<?= $block->getControllerUrl('Onboarding', '{storeId}', 'connect'); ?>",
+                getNotConnectedDeploymentsUrl: "<?= $block->getControllerUrl('DeploymentsSettings', '{storeId}', 'getNotConnectedDeployments'); ?>",
+                disconnectUrl: "<?= $block->getControllerUrl('Disconnect', '{storeId}', 'disconnect'); ?>",
+                reRegisterUrl: "<?= $block->getControllerUrl('Connection', '{storeId}', 'reRegisterWebhooks'); ?>"
+            }
+        };
+
+        SequraFE.state = new SequraFE.StateController({
+            storesUrl: "<?= $block->getControllerUrl('Stores', '{storeId}', 'getStores'); ?>",
+            currentStoreUrl: "<?= $block->getControllerUrl('Stores', '{storeId}', 'getCurrentStore'); ?>",
+            stateUrl: "<?= $block->getControllerUrl('Integration', '{storeId}', 'getState'); ?>",
+            versionUrl: "<?= $block->getControllerUrl('Integration', '{storeId}', 'getVersion'); ?>",
+            pageConfiguration: pageConfiguration
+        });
+
+        SequraFE.pages = {
+            onboarding: ['deployments', 'connect'],
+            settings: ['connection']
+        };
+
+        SequraFE.state.display();
+        SequraFE.utilities.hideLoader();
+    });
+</script>

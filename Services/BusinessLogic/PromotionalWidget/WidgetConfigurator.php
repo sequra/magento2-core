@@ -1,0 +1,131 @@
+<?php
+
+namespace Sequra\Core\Services\BusinessLogic\PromotionalWidget;
+
+use Magento\Framework\App\ScopeResolverInterface;
+use Magento\Framework\Locale\ResolverInterface;
+use Magento\Store\Model\Store;
+use NumberFormatter;
+use SeQura\Core\BusinessLogic\Domain\Integration\PromotionalWidgets\WidgetConfiguratorInterface;
+use SeQura\Core\BusinessLogic\Domain\PromotionalWidgets\Models\WidgetSettings;
+
+class WidgetConfigurator implements WidgetConfiguratorInterface
+{
+    /**
+     * @var ScopeResolverInterface
+     */
+    protected $scopeResolver;
+    /**
+     * @var ResolverInterface
+     */
+    protected $localeResolver;
+    /**
+     * @var NumberFormatter|null
+     */
+    protected $formatter;
+
+    /**
+     * Construct
+     *
+     * @param ScopeResolverInterface $scopeResolver
+     * @param ResolverInterface $localeResolver
+     */
+    public function __construct(
+        ScopeResolverInterface $scopeResolver,
+        ResolverInterface $localeResolver
+    ) {
+        $this->scopeResolver = $scopeResolver;
+        $this->localeResolver = $localeResolver;
+        $this->formatter = null;
+    }
+
+    /**
+     * Returns current locale
+     *
+     * @return string
+     */
+    public function getLocale(): string
+    {
+        return str_replace('_', '-', $this->localeResolver->getLocale());
+    }
+
+    /**
+     * Returns current currency
+     *
+     * @return string
+     */
+    public function getCurrency(): string
+    {
+        /**
+         * @var Store $store
+         */
+        $store = $this->scopeResolver->getScope();
+
+        return $store->getCurrentCurrency()->getCode();
+    }
+
+    /**
+     * Returns decimal separator
+     *
+     * @return string
+     */
+    public function getDecimalSeparator(): string
+    {
+        return (string) $this->getFormatter()->getSymbol(NumberFormatter::DECIMAL_SEPARATOR_SYMBOL);
+    }
+
+    /**
+     * Returns thousand separator
+     *
+     * @return string
+     */
+    public function getThousandsSeparator(): string
+    {
+        return (string) $this->getFormatter()->getSymbol(NumberFormatter::GROUPING_SEPARATOR_SYMBOL);
+    }
+
+    /**
+     * Returns an instance of WidgetSettings having the default values.
+     * See SeQura\Core\BusinessLogic\Domain\PromotionalWidgets\Models\WidgetSettings::createDefault().
+     */
+    public function getDefaultWidgetSettings(): WidgetSettings
+    {
+        $productPriceSelector = '.price-container .price';
+        $productLocationSelector = '.actions .action.primary.tocart';
+        $cartPriceSelector = '.grand.totals .price';
+        $cartLocationSelector = '.cart-summary';
+        $listingPriceSelector = '';
+        $listingLocationSelector = '';
+        $altProductPriceSelector = '[data-price-type="finalPrice"] .price';
+        $altProductPriceTriggerSelector = '.bundle-actions';
+
+        return WidgetSettings::createDefault(
+            $productPriceSelector,
+            $productLocationSelector,
+            $cartPriceSelector,
+            $cartLocationSelector,
+            $listingPriceSelector,
+            $listingLocationSelector,
+            $altProductPriceSelector,
+            $altProductPriceTriggerSelector
+        );
+    }
+
+    /**
+     * Get formatter instance.
+     *
+     * @return NumberFormatter
+     */
+    private function getFormatter(): NumberFormatter
+    {
+        if ($this->formatter === null) {
+            $localeCode = $this->localeResolver->getLocale();
+            $this->formatter = new NumberFormatter(
+                $localeCode . '@currency=' . $this->getCurrency(),
+                NumberFormatter::CURRENCY
+            );
+        }
+
+        return $this->formatter;
+    }
+}

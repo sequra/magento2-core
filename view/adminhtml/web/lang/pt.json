@@ -1,0 +1,182 @@
+{
+  "general": {
+    "viewInPortal": "Ver a integração no Merchant Portal",
+    "save": "Guardar",
+    "saveChanges": "Guardar alterações",
+    "cancel": "Cancelar",
+    "disconnect": "Desconectar",
+    "confirm": "Confirmar",
+    "continue": "Continuar",
+    "search": "Pesquisar...",
+    "selectStore": "Selecionar loja:",
+    "selectStorePlaceholder": "Selecionar loja",
+    "switchStore": "Trocar loja:",
+    "downloadNewVersion": "Descarregar nova versão",
+    "merchant": "Comerciante:",
+    "settings": "Definições",
+    "changesSaved": "Alterações guardadas.",
+    "noItemsAvailable": "Nenhum item disponível",
+    "and": " e ",
+    "mode": {
+      "test": "Modo Sandbox",
+      "live": "Modo Live"
+    },
+    "errors": {
+      "InvalidOperationException": "Algo correu mal no nosso servidor. Verifique os dados e tente novamente.",
+      "unknown": "Algo correu mal. Tente novamente dentro de alguns minutos.",
+      "backgroundDataFetchFailure": "Não foi possível atualizar os dados. Recarregue a página para ver a versão mais recente.",
+      "empty": "Este valor não pode estar vazio.",
+      "saveEntityFailed": "Não foi possível guardar os dados porque %s",
+      "getEntityFailed": "Não foi possível carregar os dados porque %s",
+      "failedToRetrieveStores": "Não foi possível carregar as suas lojas.",
+      "stores": {
+        "failed": "Não foi possível carregar as suas lojas.",
+        "invalidIdAndStatus": "O ID e o nome do estado não são válidos."
+      },
+      "version": {
+        "failed": "Não foi possível verificar a versão."
+      },
+      "connection": {
+        "invalidUsernameOrPassword": "Nome de utilizador ou palavra-passe incorretos. Verifique as suas credenciais.",
+        "invalidUsernameOrPasswordForDeployment": "Nome de utilizador ou palavra-passe incorretos para %s. Verifique as suas credenciais.",
+        "invalidMerchantId": "O ID de comerciante não é válido.",
+        "invalidEnvironment": "O ambiente não é válido.",
+        "emptyStoreId": "Falta o ID da loja.",
+        "invalidMode": "O modo não é válido.",
+        "emptyData": "Faltam os dados de ligação.",
+        "settingsNotFound": "Não encontrámos as definições de ligação.",
+        "invalidRoles": "Faltam algumas funções necessárias a este utilizador.",
+        "invalidSettings": "As definições de ligação não são válidas.",
+        "credentialsDoNotExist": "Não encontrámos as credenciais da API.",
+        "testKeyChanged": "A chave da API de sandbox foi alterada.",
+        "liveKeyChanged": "A chave da API de live foi alterada.",
+        "testMerchantIdChanged": "O ID de comerciante de sandbox foi alterado.",
+        "liveMerchantIdChanged": "O ID de comerciante de live foi alterado.",
+        "companyLevelKey": "Esta chave da API não é de nível de comerciante.",
+        "invalidKey": "A chave da API não é válida.",
+        "originFailed": "Não foi possível adicionar a origem permitida.",
+        "clientKeyGenerationFailed": "Não foi possível gerar a chave de cliente."
+      },
+      "countries": {
+        "noCountries": "Nenhum dos países de venda seQura está ativo na sua loja. Ative pelo menos um para aceitar pagamentos com seQura. Precisa de ajuda? Contacte o suporte seQura.",
+        "empty": "A definição do país não pode estar vazia.",
+        "countryCode": "O código de país na configuração não é válido.",
+        "sellingCountries": "Não foi possível carregar os países de venda."
+      },
+      "webhooks": {
+        "merchantError": "Não encontrámos o comerciante com o ID %s.",
+        "failedToRegisterWebhook": "Não foi possível registar o webhook.",
+        "hmacError": "Não foi possível gerar o HMAC."
+      }
+    }
+  },
+  "sidebar": {
+    "connectionSettings": "Definições de ligação",
+    "stepOneLabel": "Instalar a integração de ecommerce",
+    "stepOneDescription": "A sua integração está pronta para ligar.",
+    "stepTwoLabel": "Ligar a integração",
+    "stepDeployments": "Selecionar os destinos de implementação"
+  },
+  "validation": {
+    "requiredField": "Este campo é obrigatório.",
+    "invalidField": "Este campo não é válido.",
+    "invalidJSON": "Introduza um JSON válido.",
+    "invalidEmail": "Introduza um email válido.",
+    "maxLength": "Use no máximo %s caracteres.",
+    "numeric": "Introduza um número válido com no máximo 2 casas decimais.",
+    "greaterThanZero": "Introduza um valor superior a 0.",
+    "nonNegative": "Introduza um valor igual ou superior a 0.",
+    "numberOfDecimalPlaces": "Use 2 casas decimais.",
+    "integer": "Introduza um número inteiro.",
+    "invalidUrl": "Introduza um URL válido.",
+    "invalidFieldValue": "Este campo deve ser \"%s\".",
+    "invalidMaxValue": "O valor máximo é %s.",
+    "invalidImageType": "Carregue uma imagem PNG, JPG ou SVG.",
+    "invalidImageSize": "O ficheiro excede 10 MB. Escolha um mais pequeno."
+  },
+  "connection": {
+    "title": {
+      "onboarding": "Primeiros passos",
+      "settings": "Definições de ligação"
+    },
+    "description": {
+      "onboarding": "Primeiro, inicie sessão no Merchant Portal. Vai copiar de lá algumas definições para preencher os campos abaixo. Ainda não tem conta? Crie uma ",
+      "settings": "Configure a sua conta seQura e escolha o ambiente para começar a processar pagamentos. Ainda não tem conta? Crie uma ",
+      "endLink": "aqui"
+    },
+    "environment": {
+      "label": "Ambiente",
+      "options": {
+        "live": "Live",
+        "sandbox": "Sandbox"
+      }
+    },
+    "deployments": {
+      "manage": "Gerir destinos de implementação"
+    },
+    "username": {
+      "label": "Nome de utilizador",
+      "description": "Encontra o seu nome de utilizador no email que lhe enviámos."
+    },
+    "password": {
+      "label": "Palavra-passe",
+      "description": "Encontra a sua palavra-passe no email que lhe enviámos."
+    },
+    "modal": {
+      "title": "Alterar o ambiente?",
+      "message": "Ao alterar o ambiente, remove as definições do atual e liga-se ao novo."
+    },
+    "disconnect": {
+      "title": "Desconectar",
+      "message": "Quer desconectar-se?"
+    },
+    "successMessage": "Ligação estabelecida.",
+    "successMessageForDeployment": "Ligação a %s estabelecida.",
+    "webhookReRegistration": {
+      "title": "Registar novamente os webhooks",
+      "successMessage": "Webhooks registados novamente.",
+      "errorMessage": "Não foi possível registar novamente os webhooks. Tente novamente."
+    }
+  },
+  "deployments": {
+    "title": "Selecionar destinos de implementação",
+    "description": "Selecione os destinos de implementação onde quer oferecer métodos de pagamento seQura.",
+    "selector": {
+      "label": "Onde quer oferecer métodos de pagamento seQura?",
+      "description": "Cada destino de implementação abrange um grupo diferente de países."
+    }
+  },
+  "countries": {
+    "ES": {
+      "label": "Espanha",
+      "description": "Introduza o ID de comerciante seQura para clientes em Espanha."
+    },
+    "FR": {
+      "label": "França",
+      "description": "Introduza o ID de comerciante seQura para clientes em França."
+    },
+    "CO": {
+      "label": "Colômbia",
+      "description": "Introduza o ID de comerciante seQura para clientes na Colômbia."
+    },
+    "IT": {
+      "label": "Itália",
+      "description": "Introduza o ID de comerciante seQura para clientes em Itália."
+    },
+    "PT": {
+      "label": "Portugal",
+      "description": "Introduza o ID de comerciante seQura para clientes em Portugal."
+    },
+    "PE": {
+      "label": "Peru",
+      "description": "Introduza o ID de comerciante seQura para clientes no Peru."
+    }
+  },
+  "supportLink": {
+    "label": "Precisa de ajuda?",
+    "link": "https://www.sequra.com/pt/shoppers/contato"
+  },
+  "signupLink": {
+    "link": "https://portal.sequra.com/signup"
+  }
+}

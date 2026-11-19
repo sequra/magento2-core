@@ -1,0 +1,120 @@
+<?php
+
+namespace Sequra\Core\Controller\Adminhtml\Configuration;
+
+use Magento\Backend\App\Action;
+use Magento\Backend\App\Action\Context;
+use Magento\Framework\App\Request\Http;
+use Magento\Framework\App\ResponseInterface;
+use Magento\Framework\Controller\Result\Json;
+use Magento\Framework\Controller\Result\JsonFactory;
+use Magento\Framework\Controller\ResultInterface;
+use Magento\Framework\Webapi\Exception;
+use SeQura\Core\BusinessLogic\AdminAPI\Response\Response;
+
+class BaseConfigurationController extends Action
+{
+    /**
+     * Actions that are being handled by controllers.
+     *
+     * @var string[]
+     */
+    protected $allowedActions = [];
+    /**
+     * @var JsonFactory
+     */
+    protected $resultJsonFactory;
+    /**
+     * @var Json
+     */
+    protected $result;
+
+    /**
+     * @var string
+     */
+    protected $storeId;
+
+    /**
+     * Configuration constructor.
+     *
+     * @param Context $context
+     * @param JsonFactory $jsonFactory
+     */
+    public function __construct(Context $context, JsonFactory $jsonFactory)
+    {
+        parent::__construct($context);
+
+        $this->resultJsonFactory = $jsonFactory;
+        $this->result = $this->resultJsonFactory->create();
+    }
+
+    /**
+     * Execute action based on request and return result
+     *
+     * @return ResultInterface|ResponseInterface
+     */
+    public function execute()
+    {
+        $request = $this->getRequest();
+        /**
+         * @var string $action
+         */
+        $action = $request->getParam('action');
+        if (!$action || !method_exists($this, $action) || !in_array($action, $this->allowedActions, true)) {
+            $this->result->setHttpResponseCode(Exception::HTTP_BAD_REQUEST);
+
+            return $this->result->setData(
+                [
+                    'success' => false,
+                    'message' => __('Wrong action requested.')->render(),
+                ]
+            );
+        }
+
+        /**
+         * @var string $storeId
+         */
+        $storeId = $request->getParam('storeId');
+        $this->storeId = $storeId;
+
+        // These AJAX actions only read request params and call the SeQura API; they never touch session data.
+        // Release the session write lock now so the onboarding page's parallel requests don't exhaust the
+        // Redis session handler's max_concurrency and fail with "exceeded concurrent connections" (PAR-821).
+        // Admin authentication and ACL have already run during dispatch(), before execute().
+        // phpcs:ignore Magento2.Functions.DiscouragedFunction.Discouraged
+        session_write_close();
+
+        return $this->$action();
+    }
+
+    /**
+     * Returns post data from Sequra request.
+     *
+     * @return mixed[]
+     */
+    protected function getSequraPostData(): array
+    {
+        $request = $this->getRequest();
+        $content = $request instanceof Http ? $request->getContent() : '';
+        $json = json_decode(is_string($content) ? $content : '', true);
+
+        return is_array($json) ? $json : [];
+    }
+
+    /**
+     * Adds a response code to the result.
+     *
+     * @param Response $response
+     *
+     * @return void
+     */
+    protected function addResponseCode(Response $response): void
+    {
+        $statusCode = 200;
+        if (!$response->isSuccessful()) {
+            $arr = $response->toArray();
+            $statusCode = isset($arr['statusCode']) && is_numeric($arr['statusCode']) ? (int) $arr['statusCode'] : 500;
+        }
+        $this->result->setHttpResponseCode($statusCode);
+    }
+}
