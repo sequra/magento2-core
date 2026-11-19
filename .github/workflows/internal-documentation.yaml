@@ -1,0 +1,17 @@
+name: Internal Documentation Sync
+
+on:
+  pull_request_target:
+    paths:
+      - 'docs/internal-documentation/**'
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  protect:
+    uses: sequra/github-actions-workflows/.github/workflows/protect-internal-documentation.yml@master
+
+  auto-approve:
+    uses: sequra/github-actions-workflows/.github/workflows/auto-approve-internal-documentation.yml@master

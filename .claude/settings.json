@@ -1,0 +1,48 @@
+{
+  "permissions": {
+    "allow": [
+      "Read",
+      "Edit",
+      "Bash(docker-compose run *)",
+      "Bash(docker-compose exec *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git mv *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git show *)",
+      "Bash(git status)",
+      "Bash(git checkout *)",
+      "Bash(git stash *)",
+      "Bash(git fetch *)",
+      "Bash(git rebase *)",
+      "Bash(git branch *)",
+      "Bash(git rev-parse *)",
+      "Bash(git grep *)",
+      "Bash(gh pr *)",
+      "Bash(gh api *)",
+      "Bash(bundle exec *)",
+      "Bash(bundle info *)",
+      "Bash(bundle show *)",
+      "Bash(acli jira *)",
+      "WebFetch(domain:jenkinsci.sequrapps.com)"
+    ],
+    "deny": [
+      "Bash(git push * master)",
+      "Bash(git push origin master)"
+    ]
+  },
+  "enabledPlugins": {
+    "sq-git@claude-sequra-tech-plugins": true,
+    "sq-product@claude-sequra-tech-plugins": true,
+    "sq-ruby@claude-sequra-tech-plugins": true
+  },
+  "extraKnownMarketplaces": {
+    "claude-sequra-tech-plugins": {
+      "source": {
+        "source": "github",
+        "repo": "sequra/llm-tooling"
+      }
+    }
+  }
+}

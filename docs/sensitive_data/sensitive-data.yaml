@@ -1,0 +1,101 @@
+# Check the docs/sensitive_data/README.md file for more information
+# You can remove comments from this file once filled in
+
+service: NAME_OF_THE_SERVICE # Name of the service for the sensitive data
+sources: # List of sources of sensitive data used by the service
+  - database
+  - s3
+  - elasticsearch
+  - redis
+  - observability-logs
+  - observability-metrics
+  - observability-traces
+
+# All sensitive-data entries must be filled in with:
+# description:  A description of the sensitive data.
+# category:     The category of the sensitive data. List of categories is present in [Classification of PII by categories](https://sequra.atlassian.net/wiki/spaces/EN/pages/3880026161/Sensitive+data+classification+guide#Classification-of-PII-by-categories) page.
+# expiration:   The expiration date of the sensitive data, NEVER if it never expires.
+# comment:      Any additional information about the sensitive data. (This is an optional field.)
+# storage:      The storage where the sensitive data is stored.
+# storage_details: The specific details for the storage used. This field is a map of key-value pairs.
+
+# Note that this should be filled for production environments only.
+
+# For each `storage_details` entry, the following fields must be filled in, depending on the storage type:
+# - For `database` storage:
+#   - name: The name of the database where the sensitive data is stored.
+#   - table: The table where the sensitive data is stored.
+#   - column: The column where the sensitive data is stored.
+#
+# - For `s3` storage:
+#   - bucket: The bucket where the sensitive data is stored.
+#   - key_prefix: The bucket key prefix, meaning the folder in which the sensitive data is located.
+#
+# - For `elasticsearch` storage:
+#   - cluster_name: The name of the elasticsearch cluster where the sensitive data is stored.
+#   - index_name: The name of the index where the sensitive data is stored. In case of using aliasses for the index, the alias name should be used.
+#   - field: The field where the sensitive data is stored. In case of nested fields, the full path should be used.
+#
+# - For `redis` storage:
+#   - cluster_name: The name of the redis cluster where the sensitive data is stored.
+#   - key: The key where the sensitive data is stored.
+#
+# Note that adding sensitive data to observability tooling is not recommended.
+# Cleaning up and handling expirations is extremely expensive since information gets replicated and backed-up in multiple destinations.
+# If you need to add sensitive data to observability tooling, please ensure you have a good reason.
+# We encourage you to use different data to identify the information in the observability tooling, for instance, order identifiers.
+#
+# - For `observability-logs` storage:
+#   - field: The field where the sensitive data is stored. In case of nested fields, the full path should be used.
+#   - query: The query used to retrieve the sensitive data.
+#
+# - For `observability-metrics` storage:
+#   - key: The key where the sensitive data is stored.
+#
+# - For `observability-traces` storage:
+#   - service: The service name where the sensitive data is stored.
+#   - operation: The operation where the sensitive data is stored.
+
+sensitive-data:
+  -
+    description: Shopper phone
+    category: PII1
+    expiration: NEVER
+    storage: database
+    storage_details:
+      name: primary
+      table: persisted_carts
+      column: sms_mobile_phone
+  -
+    description: Shopper anti-money laundring images
+    category: PII2
+    expiration: NEVER
+    storage: s3
+    storage_details:
+      bucket: shopper-documentation
+      key_prefix: anti-money-laundering/files/
+  -
+    description: Shopper name, address, phone, email, and many more
+    category: PII1
+    expiration: When information is updated or removed in the source of the information.
+    storage: elasticsearch
+    storage_details:
+      cluster_name: primary
+      index_name: orders_indexes
+      field: "*"
+  -
+    description: Shopper name, surnames and date of birth
+    category: PII1
+    expiration: 2 days
+    storage: redis
+    storage_details:
+      cluster_name: primary
+      key: "factiva-data-#{given_names}-#{surnames}-#{date_of_birth}"
+  -
+    description: Shopper name, surnames and many more
+    category: PII1
+    expiration: NEVER
+    storage: observability-logs
+    storage_details:
+      field: request.params
+      query: app:timon AND controller:"OrdersController" AND action:create
